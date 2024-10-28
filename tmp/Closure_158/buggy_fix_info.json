@@ -1,0 +1,677 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.CommandLineRunnerTest::testWarningGuardOrdering2,com.google.javascript.jscomp.CommandLineRunnerTest::testWarningGuardOrdering4",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.AbstractCommandLineRunner,com.google.javascript.jscomp.CommandLineRunner,com.google.javascript.jscomp.DiagnosticGroups",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "158",
+  "workingDir": "../bugs/Closure_158_tmp",
+  "bug_name": "Closure_158",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.CommandLineRunnerTest",
+      "test_function": "testWarningGuardOrdering2",
+      "assertion_line": "126",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected exactly one warning or error Errors:"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.CommandLineRunnerTest",
+      "test_function": "testWarningGuardOrdering4",
+      "assertion_line": "138",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected exactly one warning or error Errors:"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/AbstractCommandLineRunner.java",
+        "src/com/google/javascript/jscomp/AbstractCommandLineRunner.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.AbstractCommandLineRunner\\$CommandLineConfig:setWarningGuardSpec:[WarningGuardSpec spec]:CommandLineConfig",
+            "com.google.javascript.jscomp.AbstractCommandLineRunner\\$WarningGuardSpec:add:[CheckLevel level, String groupName]:void",
+            "com.google.javascript.jscomp.AbstractCommandLineRunner\\$WarningGuardSpec\\$Entry:Entry:[CheckLevel level, String groupName]:null",
+            "com.google.javascript.jscomp.AbstractCommandLineRunner\\$WarningGuardSpec:clear:[]:void",
+            "com.google.javascript.jscomp.AbstractCommandLineRunner:setRunOptions:[CompilerOptions options]:void"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.AbstractCommandLineRunner\\$CommandLineConfig:setJscompWarning:[List\u003cString\u003e jscompWarning]:CommandLineConfig",
+            "com.google.javascript.jscomp.AbstractCommandLineRunner\\$CommandLineConfig:setJscompError:[List\u003cString\u003e jscompError]:CommandLineConfig",
+            "com.google.javascript.jscomp.AbstractCommandLineRunner\\$CommandLineConfig:setJscompOff:[List\u003cString\u003e jscompOff]:CommandLineConfig",
+            "com.google.javascript.jscomp.AbstractCommandLineRunner:setRunOptions:[CompilerOptions options]:void",
+            "com.google.javascript.jscomp.AbstractCommandLineRunner\\$CommandLineConfig:setOutputManifest:[String outputManifest]:CommandLineConfig"
+          ],
+          "num": 5
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "197",
+            "198",
+            "199",
+            "200",
+            "201",
+            "1496",
+            "1501",
+            "1502",
+            "1614",
+            "1615",
+            "1616",
+            "1617",
+            "1619",
+            "1620",
+            "1621",
+            "1622",
+            "1623",
+            "1626",
+            "1628",
+            "1629",
+            "1630",
+            "1632",
+            "1633",
+            "1634",
+            "1635"
+          ],
+          "num": 25
+        },
+        {
+          "qualified_names": [
+            "197",
+            "198",
+            "199",
+            "200",
+            "201",
+            "202",
+            "1497",
+            "1502",
+            "1503",
+            "1504",
+            "1505",
+            "1506",
+            "1507",
+            "1508",
+            "1509",
+            "1510",
+            "1511",
+            "1512",
+            "1513",
+            "1514",
+            "1515",
+            "1516",
+            "1599"
+          ],
+          "num": 23
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/AbstractCommandLineRunner.java b/src/com/google/javascript/jscomp/AbstractCommandLineRunner.java\nindex e2e102c..3a7f427 100644\n--- a/src/com/google/javascript/jscomp/AbstractCommandLineRunner.java\n+++ b/src/com/google/javascript/jscomp/AbstractCommandLineRunner.java\n@@ -194,11 +194,12 @@\n       throws FlagUsageException, IOException {\n     DiagnosticGroups diagnosticGroups \u003d getDiagnosticGroups();\n \n-    if (config.warningGuards !\u003d null) {\n-      for (WarningGuardSpec.Entry entry : config.warningGuards.entries) {\n-        diagnosticGroups.setWarningLevel(options, entry.groupName, entry.level);\n-      }\n-    }\n+    diagnosticGroups.setWarningLevels(\n+        options, config.jscompError, CheckLevel.ERROR);\n+    diagnosticGroups.setWarningLevels(\n+        options, config.jscompWarning, CheckLevel.WARNING);\n+    diagnosticGroups.setWarningLevels(\n+        options, config.jscompOff, CheckLevel.OFF);\n \n     createDefineOrTweakReplacements(config.define, options, false);\n \n@@ -1493,13 +1494,26 @@\n       return this;\n     }\n \n-    private WarningGuardSpec warningGuards \u003d null;\n+    private final List\u003cString\u003e jscompError \u003d Lists.newArrayList();\n \n     /**\n      * Add warning guards.\n      */\n-    CommandLineConfig setWarningGuardSpec(WarningGuardSpec spec) {\n-      this.warningGuards \u003d spec;\n+    CommandLineConfig setJscompError(List\u003cString\u003e jscompError) {\n+      this.jscompError.clear();\n+      this.jscompError.addAll(jscompError);\n+      return this;\n+    }\n+    private final List\u003cString\u003e jscompWarning \u003d Lists.newArrayList();\n+    CommandLineConfig setJscompWarning(List\u003cString\u003e jscompWarning) {\n+      this.jscompWarning.clear();\n+      this.jscompWarning.addAll(jscompWarning);\n+      return this;\n+    }\n+    private final List\u003cString\u003e jscompOff \u003d Lists.newArrayList();\n+    CommandLineConfig setJscompOff(List\u003cString\u003e jscompOff) {\n+      this.jscompOff.clear();\n+      this.jscompOff.addAll(jscompOff);\n       return this;\n     }\n \n@@ -1611,26 +1625,9 @@\n    * A little helper class to make it easier to collect warning types\n    * from --jscomp_error, --jscomp_warning, and --jscomp_off.\n    */\n-  protected static class WarningGuardSpec {\n-    private static class Entry {\n-      private final CheckLevel level;\n-      private final String groupName;\n \n-      private Entry(CheckLevel level, String groupName) {\n-        this.level \u003d level;\n-        this.groupName \u003d groupName;\n-      }\n-    }\n \n     // The entries, in the order that they were added.\n-    private final List\u003cEntry\u003e entries \u003d Lists.newArrayList();\n \n-    protected void add(CheckLevel level, String groupName) {\n-      entries.add(new Entry(level, groupName));\n-    }\n \n-    protected void clear() {\n-      entries.clear();\n-    }\n-  }\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [47412,47474]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [47480,47684]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [47689,47753]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [47758,47929]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [47934,47994]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [47999,48150]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [6340,6430]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [6435,6529]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [6344,6372]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [6387,6415]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "QualifiedName: config.warningGuards.entries [6418,6446]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [6448,6538]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "EnhancedForStatement [6382,6538]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [6374,6544]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [6340,6544]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [47336,47382]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [47388,47551]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TypeDeclaration [50626,51354]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CommandLineRunner.java",
+        "src/com/google/javascript/jscomp/CommandLineRunner.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CommandLineRunner:initConfigFromFlags:[String[] args, PrintStream err]:void",
+            "com.google.javascript.jscomp.CommandLineRunner\\$Flags\\$WarningGuardSetter:isMultiValued:[]:boolean",
+            "com.google.javascript.jscomp.CommandLineRunner\\$Flags\\$WarningGuardSetter:getType:[]:Class",
+            "com.google.javascript.jscomp.CommandLineRunner\\$Flags\\$WarningGuardOffOptionHandler:WarningGuardOffOptionHandler:[CmdLineParser parser, OptionDef option, Setter\u003c? super String\u003e setter]:null",
+            "com.google.javascript.jscomp.CommandLineRunner:processFlagFile:[PrintStream err]:void",
+            "com.google.javascript.jscomp.CommandLineRunner\\$Flags\\$WarningGuardWarningOptionHandler:WarningGuardWarningOptionHandler:[CmdLineParser parser, OptionDef option, Setter\u003c? super String\u003e setter]:null",
+            "com.google.javascript.jscomp.CommandLineRunner\\$Flags\\$WarningGuardSetter:WarningGuardSetter:[Setter proxy, CheckLevel level]:null",
+            "com.google.javascript.jscomp.CommandLineRunner\\$Flags\\$WarningGuardSetter:addValue:[Object value]:void",
+            "com.google.javascript.jscomp.CommandLineRunner\\$Flags\\$WarningGuardErrorOptionHandler:WarningGuardErrorOptionHandler:[CmdLineParser parser, OptionDef option, Setter\u003c? super String\u003e setter]:null"
+          ],
+          "num": 9
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CommandLineRunner:initConfigFromFlags:[String[] args, PrintStream err]:void",
+            "com.google.javascript.jscomp.CommandLineRunner:createOptions:[]:CompilerOptions",
+            "com.google.javascript.jscomp.CommandLineRunner:createCompiler:[]:Compiler"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "26",
+            "95",
+            "96",
+            "234",
+            "240",
+            "246",
+            "395",
+            "396",
+            "397",
+            "398",
+            "399",
+            "400",
+            "401",
+            "402",
+            "404",
+            "405",
+            "406",
+            "407",
+            "408",
+            "409",
+            "410",
+            "411",
+            "412",
+            "414",
+            "415",
+            "416",
+            "417",
+            "418",
+            "419",
+            "420",
+            "421",
+            "423",
+            "424",
+            "425",
+            "427",
+            "428",
+            "429",
+            "430",
+            "432",
+            "434",
+            "436",
+            "437",
+            "438",
+            "439",
+            "440",
+            "530",
+            "546",
+            "599"
+          ],
+          "num": 48
+        },
+        {
+          "qualified_names": [
+            "25",
+            "95",
+            "236",
+            "400",
+            "552",
+            "553",
+            "554",
+            "574",
+            "591"
+          ],
+          "num": 9
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/CommandLineRunner.java b/src/com/google/javascript/jscomp/CommandLineRunner.java\nindex b1a7472..d9a381b 100644\n--- a/src/com/google/javascript/jscomp/CommandLineRunner.java\n+++ b/src/com/google/javascript/jscomp/CommandLineRunner.java\n@@ -23,7 +23,6 @@\n import com.google.common.collect.Sets;\n import com.google.common.io.Files;\n import com.google.common.io.LimitInputStream;\n-import com.google.javascript.jscomp.AbstractCommandLineRunner.WarningGuardSpec;\n \n import org.kohsuke.args4j.CmdLineException;\n import org.kohsuke.args4j.CmdLineParser;\n@@ -92,8 +91,6 @@\n   // I don\u0027t really care about unchecked warnings in this class.\n   @SuppressWarnings(\"unchecked\")\n   private static class Flags {\n-    private static final WarningGuardSpec warningGuardSpec \u003d\n-        new WarningGuardSpec();\n \n     @Option(name \u003d \"--help\",\n         handler \u003d BooleanOptionHandler.class,\n@@ -231,19 +228,16 @@\n     private String create_source_map \u003d \"\";\n \n     @Option(name \u003d \"--jscomp_error\",\n-        handler \u003d WarningGuardErrorOptionHandler.class,\n         usage \u003d \"Make the named class of warnings an error. Options:\" +\n         DiagnosticGroups.DIAGNOSTIC_GROUP_NAMES)\n     private List\u003cString\u003e jscomp_error \u003d Lists.newArrayList();\n \n     @Option(name \u003d \"--jscomp_warning\",\n-        handler \u003d WarningGuardWarningOptionHandler.class,\n         usage \u003d \"Make the named class of warnings a normal warning. \" +\n         \"Options:\" + DiagnosticGroups.DIAGNOSTIC_GROUP_NAMES)\n     private List\u003cString\u003e jscomp_warning \u003d Lists.newArrayList();\n \n     @Option(name \u003d \"--jscomp_off\",\n-        handler \u003d WarningGuardOffOptionHandler.class,\n         usage \u003d \"Turn off the named class of warnings. Options:\" +\n         DiagnosticGroups.DIAGNOSTIC_GROUP_NAMES)\n     private List\u003cString\u003e jscomp_off \u003d Lists.newArrayList();\n@@ -392,52 +386,13 @@\n \n     // Our own parser for warning guards that preserves the original order\n     // of the flags.\n-    public static class WarningGuardErrorOptionHandler\n-        extends StringOptionHandler {\n-      public WarningGuardErrorOptionHandler(\n-          CmdLineParser parser, OptionDef option,\n-          Setter\u003c? super String\u003e setter) {\n-        super(parser, option, new WarningGuardSetter(setter, CheckLevel.ERROR));\n-      }\n-    }\n \n-    public static class WarningGuardWarningOptionHandler\n-        extends StringOptionHandler {\n-      public WarningGuardWarningOptionHandler(\n-          CmdLineParser parser, OptionDef option,\n-          Setter\u003c? super String\u003e setter) {\n-        super(parser, option,\n-            new WarningGuardSetter(setter, CheckLevel.WARNING));\n-      }\n-    }\n \n-    public static class WarningGuardOffOptionHandler\n-        extends StringOptionHandler {\n-      public WarningGuardOffOptionHandler(\n-          CmdLineParser parser, OptionDef option,\n-          Setter\u003c? super String\u003e setter) {\n-        super(parser, option, new WarningGuardSetter(setter, CheckLevel.OFF));\n-      }\n-    }\n \n-    private static class WarningGuardSetter implements Setter {\n-      private final Setter proxy;\n-      private final CheckLevel level;\n \n-      private WarningGuardSetter(Setter proxy, CheckLevel level) {\n-        this.proxy \u003d proxy;\n-        this.level \u003d level;\n-      }\n \n-      @Override public boolean isMultiValued() { return proxy.isMultiValued(); }\n \n-      @Override public Class getType() { return proxy.getType(); }\n \n-      @Override public void addValue(Object value) throws CmdLineException {\n-        proxy.addValue((String) value);\n-        warningGuardSpec.add(level, (String) value);\n-      }\n-    }\n   }\n \n   /**\n@@ -527,7 +482,6 @@\n     List\u003cString\u003e processedFileArgs\n         \u003d processArgs(argsInFile.toArray(new String[] {}));\n     CmdLineParser parserFileArgs \u003d new CmdLineParser(flags);\n-    Flags.warningGuardSpec.clear();\n     parserFileArgs.parseArgument(processedFileArgs.toArray(new String[] {}));\n \n     // Currently we are not supporting this (prevent direct/indirect loops)\n@@ -543,7 +497,6 @@\n     List\u003cString\u003e processedArgs \u003d processArgs(args);\n \n     CmdLineParser parser \u003d new CmdLineParser(flags);\n-    Flags.warningGuardSpec.clear();\n     isConfigValid \u003d true;\n     try {\n       parser.parseArgument(processedArgs.toArray(new String[] {}));\n@@ -596,7 +549,9 @@\n           .setModuleWrapper(flags.module_wrapper)\n           .setModuleOutputPathPrefix(flags.module_output_path_prefix)\n           .setCreateSourceMap(flags.create_source_map)\n-          .setWarningGuardSpec(Flags.warningGuardSpec)\n+          .setJscompError(flags.jscomp_error)\n+          .setJscompWarning(flags.jscomp_warning)\n+          .setJscompOff(flags.jscomp_off)\n           .setDefine(flags.define)\n           .setCharset(flags.charset)\n           .setManageClosureDependencies(flags.manage_closure_dependencies)\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "NormalAnnotation [9076,9229]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "NormalAnnotation [9297,9465]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "NormalAnnotation [9535,9681]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [19896,21627]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [19896,21583]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [19896,21583]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [19896,21522]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: setJscompOff [21233,21245]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [21246,21262]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: setJscompWarning [21183,21199]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [21200,21220]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [945,1024]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [3141,3229]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "NormalAnnotation [9249,9458]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "NormalAnnotation [9526,9752]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "NormalAnnotation [9822,10022]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TypeDeclaration [16108,16429]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TypeDeclaration [16435,16774]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TypeDeclaration [16780,17095]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TypeDeclaration [17101,17699]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [20389,20420]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [20936,20967]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/DiagnosticGroups.java",
+        "src/com/google/javascript/jscomp/DiagnosticGroups.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.DiagnosticGroups:setWarningLevel:[CompilerOptions options, String name, CheckLevel level]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.DiagnosticGroups:setWarningLevels:[CompilerOptions options, List\u003cString\u003e diagnosticGroups, CheckLevel level]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "22",
+            "185",
+            "186"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "23",
+            "186",
+            "187",
+            "188",
+            "192"
+          ],
+          "num": 5
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/DiagnosticGroups.java b/src/com/google/javascript/jscomp/DiagnosticGroups.java\nindex cf0beda..271492f 100644\n--- a/src/com/google/javascript/jscomp/DiagnosticGroups.java\n+++ b/src/com/google/javascript/jscomp/DiagnosticGroups.java\n@@ -20,6 +20,7 @@\n import com.google.common.collect.ImmutableMap;\n import com.google.common.collect.Maps;\n \n+import java.util.List;\n import java.util.Map;\n \n /**\n@@ -182,10 +183,12 @@\n   /**\n    * Adds warning levels by name.\n    */\n-  void setWarningLevel(CompilerOptions options,\n-      String name, CheckLevel level) {\n+  void setWarningLevels(CompilerOptions options,\n+      List\u003cString\u003e diagnosticGroups, CheckLevel level) {\n+    for (String name : diagnosticGroups) {\n     DiagnosticGroup group \u003d forName(name);\n     Preconditions.checkNotNull(group, \"No warning class for name: \" + name);\n     options.setWarningLevel(group, level);\n+    }\n   }\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [785,807]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [7001,7030]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "EnhancedForStatement [7056,7263]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [7061,7072]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: diagnosticGroups [7075,7091]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [7093,7263]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [6977,6988]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.CommandLineRunner:createOptions:[]:CompilerOptions",
+        "com.google.javascript.jscomp.DiagnosticGroups:setWarningLevels:[CompilerOptions options, List\u003cString\u003e diagnosticGroups, CheckLevel level]:void",
+        "com.google.javascript.jscomp.AbstractCommandLineRunner\\$CommandLineConfig:setJscompOff:[List\u003cString\u003e jscompOff]:CommandLineConfig",
+        "com.google.javascript.jscomp.AbstractCommandLineRunner\\$CommandLineConfig:setJscompError:[List\u003cString\u003e jscompError]:CommandLineConfig",
+        "com.google.javascript.jscomp.AbstractCommandLineRunner\\$CommandLineConfig:setOutputManifest:[String outputManifest]:CommandLineConfig",
+        "com.google.javascript.jscomp.CommandLineRunner:createCompiler:[]:Compiler",
+        "com.google.javascript.jscomp.AbstractCommandLineRunner\\$CommandLineConfig:setJscompWarning:[List\u003cString\u003e jscompWarning]:CommandLineConfig"
+      ],
+      "num": 7
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.CommandLineRunner:processFlagFile:[PrintStream err]:void",
+        "com.google.javascript.jscomp.DiagnosticGroups:setWarningLevel:[CompilerOptions options, String name, CheckLevel level]:void",
+        "com.google.javascript.jscomp.AbstractCommandLineRunner\\$WarningGuardSpec:add:[CheckLevel level, String groupName]:void",
+        "com.google.javascript.jscomp.AbstractCommandLineRunner\\$WarningGuardSpec\\$Entry:Entry:[CheckLevel level, String groupName]:null",
+        "com.google.javascript.jscomp.CommandLineRunner\\$Flags\\$WarningGuardSetter:WarningGuardSetter:[Setter proxy, CheckLevel level]:null",
+        "com.google.javascript.jscomp.CommandLineRunner\\$Flags\\$WarningGuardSetter:isMultiValued:[]:boolean",
+        "com.google.javascript.jscomp.CommandLineRunner\\$Flags\\$WarningGuardOffOptionHandler:WarningGuardOffOptionHandler:[CmdLineParser parser, OptionDef option, Setter\u003c? super String\u003e setter]:null",
+        "com.google.javascript.jscomp.CommandLineRunner\\$Flags\\$WarningGuardWarningOptionHandler:WarningGuardWarningOptionHandler:[CmdLineParser parser, OptionDef option, Setter\u003c? super String\u003e setter]:null",
+        "com.google.javascript.jscomp.CommandLineRunner\\$Flags\\$WarningGuardSetter:getType:[]:Class",
+        "com.google.javascript.jscomp.CommandLineRunner\\$Flags\\$WarningGuardSetter:addValue:[Object value]:void",
+        "com.google.javascript.jscomp.CommandLineRunner\\$Flags\\$WarningGuardErrorOptionHandler:WarningGuardErrorOptionHandler:[CmdLineParser parser, OptionDef option, Setter\u003c? super String\u003e setter]:null",
+        "com.google.javascript.jscomp.AbstractCommandLineRunner\\$CommandLineConfig:setWarningGuardSpec:[WarningGuardSpec spec]:CommandLineConfig",
+        "com.google.javascript.jscomp.AbstractCommandLineRunner\\$WarningGuardSpec:clear:[]:void"
+      ],
+      "num": 13
+    }
+  }
+}

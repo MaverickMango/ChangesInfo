@@ -1,0 +1,2628 @@
+diff --git a/src/java/org/apache/commons/math/MessagesResources_fr.java b/src/java/org/apache/commons/math/MessagesResources_fr.java
+index 04d4654..08afd7d 100644
+--- a/src/java/org/apache/commons/math/MessagesResources_fr.java
++++ b/src/java/org/apache/commons/math/MessagesResources_fr.java
+@@ -196,15 +196,15 @@
+       "taille de vecteur invalide : {0} au lieu de {1} attendue" },
+     { "dimensions mismatch: got {0}x{1} but expected {2}x{3}",
+       "dimensions incoh\u00e9rentes : {0}x{1} \u00e0 la place de {2}x{3}" },
+-
+-    // org.apache.commons.math.linear.BigMatrixImpl
+-    // org.apache.commons.math.linear.RealMatrixImpl
+     { "matrix must have at least one row",
+       "une matrice doit comporter au moins une ligne" },
+     { "matrix must have at least one column",
+       "une matrice doit comporter au moins une colonne" },
+     { "some rows have length {0} while others have length {1}",
+       "certaines ligne ont une longueur de {0} alors que d''autres ont une longueur de {1}" },
++
++    // org.apache.commons.math.linear.BigMatrixImpl
++    // org.apache.commons.math.linear.RealMatrixImpl
+     { "row index {0} out of allowed range [{1}, {2}]",
+       "index de ligne {0} hors de la plage autoris\u00e9e [{1}, {2}]" },
+     { "column index {0} out of allowed range [{1}, {2}]",
+@@ -261,6 +261,18 @@
+    { "identical abscissas x[{0}] == x[{1}] == {2} cause division by zero",
+      "division par z\u00e9ro caus\u00e9e par les abscisses identiques x[{0}] == x[{1}] == {2}" },
+ 
++   // org.apache.commons.math.analysis.UnivariateRealSolverImpl
++   { "function to solve cannot be null",
++     "la fonction \u00e0 r\u00e9soudre ne peux pas \u00eatre nulle" },
++
++   // org.apache.commons.math.analysis.LaguerreSolver
++   { "function is not polynomial",
++     "la fonction n''est pas p\u00f4lynomiale" },
++
++   // org.apache.commons.math.analysis.NewtonSolver
++   { "function is not differentiable",
++     "la fonction n''est pas diff\u00e9rentiable" },
++
+    // org.apache.commons.math.fraction.Fraction
+    { "zero denominator in fraction {0}/{1}",
+      "d\u00e9nominateur null dans le nombre rationnel {0}/{1}" },
+diff --git a/src/java/org/apache/commons/math/analysis/BisectionSolver.java b/src/java/org/apache/commons/math/analysis/BisectionSolver.java
+index 3488b55..6f3f1e8 100644
+--- a/src/java/org/apache/commons/math/analysis/BisectionSolver.java
++++ b/src/java/org/apache/commons/math/analysis/BisectionSolver.java
+@@ -30,49 +30,54 @@
+ public class BisectionSolver extends UnivariateRealSolverImpl {
+     
+     /** Serializable version identifier */
+-    private static final long serialVersionUID = 4963578633786538912L;
++    private static final long serialVersionUID = 5227509383222989438L;
+ 
+     /**
+      * Construct a solver for the given function.
+      * 
+      * @param f function to solve.
++     * @deprecated as of 2.0 the function to solve is passed as an argument
++     * to the {@link #solve(UnivariateRealFunction, double, double)} or
++     * {@link UnivariateRealSolverImpl#solve(UnivariateRealFunction, double, double, double)}
++     * method.
+      */
++    @Deprecated
+     public BisectionSolver(UnivariateRealFunction f) {
+         super(f, 100, 1E-6);
+     }
+ 
+     /**
+-     * Find a zero in the given interval.
++     * Construct a solver.
+      * 
+-     * @param min the lower bound for the interval.
+-     * @param max the upper bound for the interval.
+-     * @param initial the start value to use (ignored).
+-     * @return the value where the function is zero
+-     * @throws MaxIterationsExceededException the maximum iteration count is exceeded 
+-     * @throws FunctionEvaluationException if an error occurs evaluating
+-     *  the function
+-     * @throws IllegalArgumentException if min is not less than max
+      */
++    public BisectionSolver() {
++        super(100, 1E-6);
++    }
++
++    /** {@inheritDoc} */
++    @Deprecated
+     public double solve(double min, double max, double initial)
+         throws MaxIterationsExceededException, FunctionEvaluationException {
+-          
+-        return solve(min, max);
++        return solve(f, min, max);
+     }
+     
+-    /**
+-     * Find a zero root in the given interval.
+-     * 
+-     * @param min the lower bound for the interval
+-     * @param max the upper bound for the interval
+-     * @return the value where the function is zero
+-     * @throws MaxIterationsExceededException if the maximum iteration count is exceeded.
+-     * @throws FunctionEvaluationException if an error occurs evaluating the
+-     * function
+-     * @throws IllegalArgumentException if min is not less than max
+-     */
+-    public double solve(double min, double max) throws MaxIterationsExceededException,
+-        FunctionEvaluationException {
+-        
++    /** {@inheritDoc} */
++    @Deprecated
++    public double solve(double min, double max)
++        throws MaxIterationsExceededException, FunctionEvaluationException {
++        return solve(f, min, max);
++    }
++
++    /** {@inheritDoc} */
++    public double solve(final UnivariateRealFunction f, double min, double max, double initial)
++        throws MaxIterationsExceededException, FunctionEvaluationException {
++        return solve(min, max);
++    }
++
++    /** {@inheritDoc} */
++    public double solve(final UnivariateRealFunction f, double min, double max)
++        throws MaxIterationsExceededException, FunctionEvaluationException {
++            
+         clearResult();
+         verifyInterval(min,max);
+         double m;
+diff --git a/src/java/org/apache/commons/math/analysis/BrentSolver.java b/src/java/org/apache/commons/math/analysis/BrentSolver.java
+index 57f64a9..cec1ea2 100644
+--- a/src/java/org/apache/commons/math/analysis/BrentSolver.java
++++ b/src/java/org/apache/commons/math/analysis/BrentSolver.java
+@@ -31,24 +31,51 @@
+ public class BrentSolver extends UnivariateRealSolverImpl {
+     
+     /** Serializable version identifier */
+-    private static final long serialVersionUID = -2136672307739067002L;
++    private static final long serialVersionUID = 7694577816772532779L;
+ 
+     /**
+      * Construct a solver for the given function.
+      * 
+      * @param f function to solve.
++     * @deprecated as of 2.0 the function to solve is passed as an argument
++     * to the {@link #solve(UnivariateRealFunction, double, double)} or
++     * {@link UnivariateRealSolverImpl#solve(UnivariateRealFunction, double, double, double)}
++     * method.
+      */
++    @Deprecated
+     public BrentSolver(UnivariateRealFunction f) {
+         super(f, 100, 1E-6);
+     }
+ 
+     /**
++     * Construct a solver.
++     */
++    public BrentSolver() {
++        super(100, 1E-6);
++    }
++
++    /** {@inheritDoc} */
++    @Deprecated
++    public double solve(double min, double max)
++        throws MaxIterationsExceededException, FunctionEvaluationException {
++        return solve(f, min, max);
++    }
++
++    /** {@inheritDoc} */
++    @Deprecated
++    public double solve(double min, double max, double initial)
++        throws MaxIterationsExceededException, FunctionEvaluationException {
++        return solve(f, min, max, initial);
++    }
++
++    /**
+      * Find a zero in the given interval with an initial guess.
+      * <p>Throws <code>IllegalArgumentException</code> if the values of the
+      * function at the three points have the same sign (note that it is
+      * allowed to have endpoints with the same sign if the initial point has
+      * opposite sign function-wise).</p>
+      * 
++     * @param f function to solve.
+      * @param min the lower bound for the interval.
+      * @param max the upper bound for the interval.
+      * @param initial the start value to use (must be set to min if no
+@@ -61,7 +88,8 @@
+      * @throws IllegalArgumentException if initial is not between min and max
+      * (even if it <em>is</em> a root)
+      */
+-    public double solve(double min, double max, double initial)
++    public double solve(final UnivariateRealFunction f,
++                        final double min, final double max, final double initial)
+         throws MaxIterationsExceededException, FunctionEvaluationException {
+ 
+         if (((initial - min) * (max -initial)) < 0) {
+@@ -86,7 +114,7 @@
+ 
+         // reduce interval if min and initial bracket the root
+         if (yInitial * yMin < 0) {
+-            return solve(min, yMin, initial, yInitial, min, yMin);
++            return solve(f, min, yMin, initial, yInitial, min, yMin);
+         }
+ 
+         // return the second endpoint if it is good enough
+@@ -98,11 +126,11 @@
+ 
+         // reduce interval if initial and max bracket the root
+         if (yInitial * yMax < 0) {
+-            return solve(initial, yInitial, max, yMax, initial, yInitial);
++            return solve(f, initial, yInitial, max, yMax, initial, yInitial);
+         }
+ 
+         // full Brent algorithm starting with provided initial guess
+-        return solve(min, yMin, max, yMax, initial, yInitial);
++        return solve(f, min, yMin, max, yMax, initial, yInitial);
+ 
+     }
+     
+@@ -122,7 +150,9 @@
+      * @throws IllegalArgumentException if min is not less than max or the
+      * signs of the values of the function at the endpoints are not opposites
+      */
+-    public double solve(double min, double max) throws MaxIterationsExceededException, 
++    public double solve(final UnivariateRealFunction f,
++                        final double min, final double max)
++        throws MaxIterationsExceededException, 
+         FunctionEvaluationException {
+         
+         clearResult();
+@@ -152,7 +182,7 @@
+             }
+         } else if (sign < 0){
+             // solve using only the first endpoint as initial guess
+-            ret = solve(min, yMin, max, yMax, min, yMin);
++            ret = solve(f, min, yMin, max, yMax, min, yMin);
+         } else {
+             // either min or max is a root
+             if (yMin == 0.0) {
+@@ -167,6 +197,7 @@
+         
+     /**
+      * Find a zero starting search according to the three provided points.
++     * @param f the function to solve
+      * @param x0 old approximation for the root
+      * @param y0 function value at the approximation for the root
+      * @param x1 last calculated approximation for the root
+@@ -181,7 +212,8 @@
+      * @throws FunctionEvaluationException if an error occurs evaluating
+      * the function 
+      */
+-    private double solve(double x0, double y0,
++    private double solve(final UnivariateRealFunction f,
++                         double x0, double y0,
+                          double x1, double y1,
+                          double x2, double y2)
+     throws MaxIterationsExceededException, FunctionEvaluationException {
+diff --git a/src/java/org/apache/commons/math/analysis/LaguerreSolver.java b/src/java/org/apache/commons/math/analysis/LaguerreSolver.java
+index 546a411..13470a5 100644
+--- a/src/java/org/apache/commons/math/analysis/LaguerreSolver.java
++++ b/src/java/org/apache/commons/math/analysis/LaguerreSolver.java
+@@ -18,6 +18,7 @@
+ 
+ import org.apache.commons.math.ConvergenceException;
+ import org.apache.commons.math.FunctionEvaluationException;
++import org.apache.commons.math.MathRuntimeException;
+ import org.apache.commons.math.MaxIterationsExceededException;
+ import org.apache.commons.math.complex.Complex;
+ 
+@@ -38,7 +39,10 @@
+     /** serializable version identifier */
+     private static final long serialVersionUID = -3775334783473775723L;
+ 
+-    /** polynomial function to solve */
++    /** polynomial function to solve.
++     * @deprecated as of 2.0 the function is not stored anymore in the instance
++     */
++    @Deprecated
+     private PolynomialFunction p;
+ 
+     /**
+@@ -46,32 +50,60 @@
+      *
+      * @param f function to solve
+      * @throws IllegalArgumentException if function is not polynomial
++     * @deprecated as of 2.0 the function to solve is passed as an argument
++     * to the {@link #solve(UnivariateRealFunction, double, double)} or
++     * {@link UnivariateRealSolverImpl#solve(UnivariateRealFunction, double, double, double)}
++     * method.
+      */
++    @Deprecated
+     public LaguerreSolver(UnivariateRealFunction f) throws
+         IllegalArgumentException {
+-
+         super(f, 100, 1E-6);
+         if (f instanceof PolynomialFunction) {
+-            p = (PolynomialFunction)f;
++            p = (PolynomialFunction) f;
+         } else {
+-            throw new IllegalArgumentException("Function is not polynomial.");
++            throw MathRuntimeException.createIllegalArgumentException("function is not polynomial", null);
+         }
+     }
+ 
+     /**
++     * Construct a solver.
++     */
++    public LaguerreSolver() {
++        super(100, 1E-6);
++    }
++
++    /**
+      * Returns a copy of the polynomial function.
+      * 
+      * @return a fresh copy of the polynomial function
++     * @deprecated as of 2.0 the function is not stored anymore within the instance.
+      */
++    @Deprecated
+     public PolynomialFunction getPolynomialFunction() {
+         return new PolynomialFunction(p.getCoefficients());
+     }
+ 
++    /** {@inheritDoc} */
++    @Deprecated
++    public double solve(final double min, final double max)
++        throws ConvergenceException, FunctionEvaluationException {
++        return solve(p, min, max);
++    }
++
++    /** {@inheritDoc} */
++    @Deprecated
++    public double solve(final double min, final double max, final double initial)
++        throws ConvergenceException, FunctionEvaluationException {
++        return solve(p, min, max, initial);
++    }
++
+     /**
+      * Find a real root in the given interval with initial value.
+      * <p>
+      * Requires bracketing condition.</p>
+      * 
++     * @param f function to solve (must be polynomial)
+      * @param min the lower bound for the interval
+      * @param max the upper bound for the interval
+      * @param initial the start value to use
+@@ -82,21 +114,23 @@
+      * function
+      * @throws IllegalArgumentException if any parameters are invalid
+      */
+-    public double solve(double min, double max, double initial) throws
+-        ConvergenceException, FunctionEvaluationException {
++    public double solve(final UnivariateRealFunction f,
++                        final double min, final double max, final double initial)
++        throws ConvergenceException, FunctionEvaluationException {
+ 
+         // check for zeros before verifying bracketing
+-        if (p.value(min) == 0.0) { return min; }
+-        if (p.value(max) == 0.0) { return max; }
+-        if (p.value(initial) == 0.0) { return initial; }
++        if (f.value(min) == 0.0) { return min; }
++        if (f.value(max) == 0.0) { return max; }
++        if (f.value(initial) == 0.0) { return initial; }
+ 
+-        verifyBracketing(min, max, p);
++        verifyBracketing(min, max, f);
+         verifySequence(min, initial, max);
+-        if (isBracketing(min, initial, p)) {
+-            return solve(min, initial);
++        if (isBracketing(min, initial, f)) {
++            return solve(f, min, initial);
+         } else {
+-            return solve(initial, max);
++            return solve(f, initial, max);
+         }
++
+     }
+ 
+     /**
+@@ -108,6 +142,7 @@
+      * another initial value, or, as we did here, call solveAll() to obtain
+      * all roots and pick up the one that we're looking for.</p>
+      *
++     * @param f the function to solve
+      * @param min the lower bound for the interval
+      * @param max the upper bound for the interval
+      * @return the point at which the function value is zero
+@@ -117,15 +152,21 @@
+      * function 
+      * @throws IllegalArgumentException if any parameters are invalid
+      */
+-    public double solve(double min, double max) throws ConvergenceException, 
+-        FunctionEvaluationException {
++    public double solve(final UnivariateRealFunction f,
++                        final double min, final double max)
++        throws ConvergenceException, FunctionEvaluationException {
++
++        // check function type
++        if (!(f instanceof PolynomialFunction)) {
++            throw MathRuntimeException.createIllegalArgumentException("function is not polynomial", null);
++        }
+ 
+         // check for zeros before verifying bracketing
+-        if (p.value(min) == 0.0) { return min; }
+-        if (p.value(max) == 0.0) { return max; }
+-        verifyBracketing(min, max, p);
++        if (f.value(min) == 0.0) { return min; }
++        if (f.value(max) == 0.0) { return max; }
++        verifyBracketing(min, max, f);
+ 
+-        double coefficients[] = p.getCoefficients();
++        double coefficients[] = ((PolynomialFunction) f).getCoefficients();
+         Complex c[] = new Complex[coefficients.length];
+         for (int i = 0; i < coefficients.length; i++) {
+             c[i] = new Complex(coefficients[i], 0.0);
+diff --git a/src/java/org/apache/commons/math/analysis/MullerSolver.java b/src/java/org/apache/commons/math/analysis/MullerSolver.java
+index 6784e23..ed8cbdb 100644
+--- a/src/java/org/apache/commons/math/analysis/MullerSolver.java
++++ b/src/java/org/apache/commons/math/analysis/MullerSolver.java
+@@ -16,6 +16,7 @@
+  */
+ package org.apache.commons.math.analysis;
+ 
++import org.apache.commons.math.ConvergenceException;
+ import org.apache.commons.math.FunctionEvaluationException;
+ import org.apache.commons.math.MaxIterationsExceededException;
+ import org.apache.commons.math.util.MathUtils;
+@@ -36,22 +37,49 @@
+ public class MullerSolver extends UnivariateRealSolverImpl {
+ 
+     /** serializable version identifier */
+-    private static final long serialVersionUID = 6552227503458976920L;
++    private static final long serialVersionUID = 7768903775784754323L;
+ 
+     /**
+      * Construct a solver for the given function.
+      * 
+      * @param f function to solve
++     * @deprecated as of 2.0 the function to solve is passed as an argument
++     * to the {@link #solve(UnivariateRealFunction, double, double)} or
++     * {@link UnivariateRealSolverImpl#solve(UnivariateRealFunction, double, double, double)}
++     * method.
+      */
++    @Deprecated
+     public MullerSolver(UnivariateRealFunction f) {
+         super(f, 100, 1E-6);
+     }
+ 
+     /**
++     * Construct a solver.
++     */
++    public MullerSolver() {
++        super(100, 1E-6);
++    }
++
++    /** {@inheritDoc} */
++    @Deprecated
++    public double solve(final double min, final double max)
++        throws ConvergenceException, FunctionEvaluationException {
++        return solve(f, min, max);
++    }
++
++    /** {@inheritDoc} */
++    @Deprecated
++    public double solve(final double min, final double max, final double initial)
++        throws ConvergenceException, FunctionEvaluationException {
++        return solve(f, min, max, initial);
++    }
++
++    /**
+      * Find a real root in the given interval with initial value.
+      * <p>
+      * Requires bracketing condition.</p>
+      * 
++     * @param f the function to solve
+      * @param min the lower bound for the interval
+      * @param max the upper bound for the interval
+      * @param initial the start value to use
+@@ -62,8 +90,9 @@
+      * function
+      * @throws IllegalArgumentException if any parameters are invalid
+      */
+-    public double solve(double min, double max, double initial) throws
+-        MaxIterationsExceededException, FunctionEvaluationException {
++    public double solve(final UnivariateRealFunction f,
++                        final double min, final double max, final double initial)
++        throws MaxIterationsExceededException, FunctionEvaluationException {
+ 
+         // check for zeros before verifying bracketing
+         if (f.value(min) == 0.0) { return min; }
+@@ -73,9 +102,9 @@
+         verifyBracketing(min, max, f);
+         verifySequence(min, initial, max);
+         if (isBracketing(min, initial, f)) {
+-            return solve(min, initial);
++            return solve(f, min, initial);
+         } else {
+-            return solve(initial, max);
++            return solve(f, initial, max);
+         }
+     }
+ 
+@@ -94,6 +123,7 @@
+      * <p>
+      * The formulas here use divided differences directly.</p>
+      * 
++     * @param f the function to solve
+      * @param min the lower bound for the interval
+      * @param max the upper bound for the interval
+      * @return the point at which the function value is zero
+@@ -103,8 +133,9 @@
+      * function 
+      * @throws IllegalArgumentException if any parameters are invalid
+      */
+-    public double solve(double min, double max) throws MaxIterationsExceededException, 
+-        FunctionEvaluationException {
++    public double solve(final UnivariateRealFunction f,
++                        final double min, final double max)
++        throws MaxIterationsExceededException, FunctionEvaluationException {
+ 
+         // [x0, x2] is the bracketing interval in each iteration
+         // x1 is the last approximation and an interpolation point in (x0, x2)
+@@ -208,9 +239,43 @@
+      * @throws FunctionEvaluationException if an error occurs evaluating the
+      * function 
+      * @throws IllegalArgumentException if any parameters are invalid
++     * @deprecated replaced by {@link #solve2(UnivariateRealFunction, double, double)
++     * since 2.0
+      */
+-    public double solve2(double min, double max) throws MaxIterationsExceededException, 
+-        FunctionEvaluationException {
++    @Deprecated
++    public double solve2(final double min, final double max)
++        throws MaxIterationsExceededException, FunctionEvaluationException {
++        return solve2(f, min, max);
++    }
++
++    /**
++     * Find a real root in the given interval.
++     * <p>
++     * solve2() differs from solve() in the way it avoids complex operations.
++     * Except for the initial [min, max], solve2() does not require bracketing
++     * condition, e.g. f(x0), f(x1), f(x2) can have the same sign. If complex
++     * number arises in the computation, we simply use its modulus as real
++     * approximation.</p>
++     * <p>
++     * Because the interval may not be bracketing, bisection alternative is
++     * not applicable here. However in practice our treatment usually works
++     * well, especially near real zeros where the imaginary part of complex
++     * approximation is often negligible.</p>
++     * <p>
++     * The formulas here do not use divided differences directly.</p>
++     * 
++     * @param min the lower bound for the interval
++     * @param max the upper bound for the interval
++     * @return the point at which the function value is zero
++     * @throws MaxIterationsExceededException if the maximum iteration count is exceeded
++     * or the solver detects convergence problems otherwise
++     * @throws FunctionEvaluationException if an error occurs evaluating the
++     * function 
++     * @throws IllegalArgumentException if any parameters are invalid
++     */
++    public double solve2(final UnivariateRealFunction f,
++                         final double min, final double max)
++        throws MaxIterationsExceededException, FunctionEvaluationException {
+ 
+         // x2 is the last root approximation
+         // x is the new approximation and new x2 for next round
+diff --git a/src/java/org/apache/commons/math/analysis/NewtonSolver.java b/src/java/org/apache/commons/math/analysis/NewtonSolver.java
+index 1526055..55f72cd 100644
+--- a/src/java/org/apache/commons/math/analysis/NewtonSolver.java
++++ b/src/java/org/apache/commons/math/analysis/NewtonSolver.java
+@@ -17,8 +17,8 @@
+ 
+ package org.apache.commons.math.analysis;
+ 
+-import java.io.IOException;
+-import org.apache.commons.math.FunctionEvaluationException; 
++import org.apache.commons.math.FunctionEvaluationException;
++import org.apache.commons.math.MathRuntimeException;
+ import org.apache.commons.math.MaxIterationsExceededException;
+ 
+ /**
+@@ -32,18 +32,41 @@
+ public class NewtonSolver extends UnivariateRealSolverImpl {
+     
+     /** Serializable version identifier */
+-    private static final long serialVersionUID = 2067325783137941016L;
++    private static final long serialVersionUID = 7579593514004764309L;
+ 
+-    /** The first derivative of the target function. */
+-    private transient UnivariateRealFunction derivative;
+-    
+     /**
+      * Construct a solver for the given function.
+      * @param f function to solve.
++     * @deprecated as of 2.0 the function to solve is passed as an argument
++     * to the {@link #solve(UnivariateRealFunction, double, double)} or
++     * {@link UnivariateRealSolverImpl#solve(UnivariateRealFunction, double, double, double)}
++     * method.
+      */
++    @Deprecated
+     public NewtonSolver(DifferentiableUnivariateRealFunction f) {
+         super(f, 100, 1E-6);
+-        derivative = f.derivative();
++    }
++
++    /**
++     * Construct a solver.
++     */
++    public NewtonSolver() {
++        super(100, 1E-6);
++    }
++
++    /** {@inheritDoc} */
++    @Deprecated
++    public double solve(final double min, final double max)
++        throws MaxIterationsExceededException, 
++        FunctionEvaluationException  {
++        return solve(f, min, max);
++    }
++
++    /** {@inheritDoc} */
++    @Deprecated
++    public double solve(final double min, final double max, final double startValue)
++        throws MaxIterationsExceededException, FunctionEvaluationException  {
++        return solve(f, min, max, startValue);
+     }
+ 
+     /**
+@@ -57,9 +80,10 @@
+      * function or derivative
+      * @throws IllegalArgumentException if min is not less than max
+      */
+-    public double solve(double min, double max) throws MaxIterationsExceededException, 
+-        FunctionEvaluationException  {
+-        return solve(min, max, UnivariateRealSolverUtils.midpoint(min, max));
++    public double solve(final UnivariateRealFunction f,
++                        final double min, final double max)
++        throws MaxIterationsExceededException, FunctionEvaluationException  {
++        return solve(f, min, max, UnivariateRealSolverUtils.midpoint(min, max));
+     }
+ 
+     /**
+@@ -72,43 +96,41 @@
+      * @throws MaxIterationsExceededException if the maximum iteration count is exceeded 
+      * @throws FunctionEvaluationException if an error occurs evaluating the
+      * function or derivative
+-     * @throws IllegalArgumentException if startValue is not between min and max
++     * @throws IllegalArgumentException if startValue is not between min and max or
++     * if function is not a {@link DifferentiableUnivariateRealFunction} instance
+      */
+-    public double solve(double min, double max, double startValue)
++    public double solve(final UnivariateRealFunction f,
++                        final double min, final double max, final double startValue)
+         throws MaxIterationsExceededException, FunctionEvaluationException {
+-        
+-        clearResult();
+-        verifySequence(min, startValue, max);
+ 
+-        double x0 = startValue;
+-        double x1;
+-        
+-        int i = 0;
+-        while (i < maximalIterationCount) {
+-            x1 = x0 - (f.value(x0) / derivative.value(x0));
+-            if (Math.abs(x1 - x0) <= absoluteAccuracy) {
+-                
+-                setResult(x1, i);
+-                return x1;
++        try {
++
++            final UnivariateRealFunction derivative =
++                ((DifferentiableUnivariateRealFunction) f).derivative();
++            clearResult();
++            verifySequence(min, startValue, max);
++
++            double x0 = startValue;
++            double x1;
++
++            int i = 0;
++            while (i < maximalIterationCount) {
++
++                x1 = x0 - (f.value(x0) / derivative.value(x0));
++                if (Math.abs(x1 - x0) <= absoluteAccuracy) {
++                    setResult(x1, i);
++                    return x1;
++                }
++
++                x0 = x1;
++                ++i;
+             }
+-            
+-            x0 = x1;
+-            ++i;
++
++            throw new MaxIterationsExceededException(maximalIterationCount);
++        } catch (ClassCastException cce) {
++            throw MathRuntimeException.createIllegalArgumentException("function is not differentiable",
++                                                                      null);
+         }
+-        
+-        throw new MaxIterationsExceededException(maximalIterationCount);
+     }
+     
+-    /**
+-     * Custom deserialization to initialize transient deriviate field.
+-     * 
+-     * @param in serialized object input stream
+-     * @throws IOException if IO error occurs 
+-     * @throws ClassNotFoundException if instantiation error occurs
+-     */
+-    private void readObject(java.io.ObjectInputStream in)
+-    throws IOException, ClassNotFoundException {
+-        in.defaultReadObject();
+-        derivative = ((DifferentiableUnivariateRealFunction) f).derivative();
+-    }    
+ }
+diff --git a/src/java/org/apache/commons/math/analysis/RiddersSolver.java b/src/java/org/apache/commons/math/analysis/RiddersSolver.java
+index d46be02..58a17f8 100644
+--- a/src/java/org/apache/commons/math/analysis/RiddersSolver.java
++++ b/src/java/org/apache/commons/math/analysis/RiddersSolver.java
+@@ -16,6 +16,7 @@
+  */
+ package org.apache.commons.math.analysis;
+ 
++import org.apache.commons.math.ConvergenceException;
+ import org.apache.commons.math.FunctionEvaluationException;
+ import org.apache.commons.math.MaxIterationsExceededException;
+ import org.apache.commons.math.util.MathUtils;
+@@ -35,22 +36,49 @@
+ public class RiddersSolver extends UnivariateRealSolverImpl {
+ 
+     /** serializable version identifier */
+-    private static final long serialVersionUID = -4703139035737911735L;
++    private static final long serialVersionUID = -1556464494585337088L;
+ 
+     /**
+      * Construct a solver for the given function.
+      * 
+      * @param f function to solve
++     * @deprecated as of 2.0 the function to solve is passed as an argument
++     * to the {@link #solve(UnivariateRealFunction, double, double)} or
++     * {@link UnivariateRealSolverImpl#solve(UnivariateRealFunction, double, double, double)}
++     * method.
+      */
++    @Deprecated
+     public RiddersSolver(UnivariateRealFunction f) {
+         super(f, 100, 1E-6);
+     }
+ 
+     /**
++     * Construct a solver.
++     */
++    public RiddersSolver() {
++        super(100, 1E-6);
++    }
++
++    /** {@inheritDoc} */
++    @Deprecated
++    public double solve(final double min, final double max)
++        throws ConvergenceException, FunctionEvaluationException {
++        return solve(f, min, max);
++    }
++
++    /** {@inheritDoc} */
++    @Deprecated
++    public double solve(final double min, final double max, final double initial)
++        throws ConvergenceException, FunctionEvaluationException {
++        return solve(f, min, max, initial);
++    }
++
++    /**
+      * Find a root in the given interval with initial value.
+      * <p>
+      * Requires bracketing condition.</p>
+      * 
++     * @param f the function to solve
+      * @param min the lower bound for the interval
+      * @param max the upper bound for the interval
+      * @param initial the start value to use
+@@ -60,8 +88,9 @@
+      * function
+      * @throws IllegalArgumentException if any parameters are invalid
+      */
+-    public double solve(double min, double max, double initial) throws
+-        MaxIterationsExceededException, FunctionEvaluationException {
++    public double solve(final UnivariateRealFunction f,
++                        final double min, final double max, final double initial)
++        throws MaxIterationsExceededException, FunctionEvaluationException {
+ 
+         // check for zeros before verifying bracketing
+         if (f.value(min) == 0.0) { return min; }
+@@ -71,9 +100,9 @@
+         verifyBracketing(min, max, f);
+         verifySequence(min, initial, max);
+         if (isBracketing(min, initial, f)) {
+-            return solve(min, initial);
++            return solve(f, min, initial);
+         } else {
+-            return solve(initial, max);
++            return solve(f, initial, max);
+         }
+     }
+ 
+@@ -82,6 +111,7 @@
+      * <p>
+      * Requires bracketing condition.</p>
+      * 
++     * @param f the function to solve
+      * @param min the lower bound for the interval
+      * @param max the upper bound for the interval
+      * @return the point at which the function value is zero
+@@ -90,8 +120,9 @@
+      * function 
+      * @throws IllegalArgumentException if any parameters are invalid
+      */
+-    public double solve(double min, double max) throws MaxIterationsExceededException, 
+-        FunctionEvaluationException {
++    public double solve(final UnivariateRealFunction f,
++                        final double min, final double max)
++        throws MaxIterationsExceededException, FunctionEvaluationException {
+ 
+         // [x1, x2] is the bracketing interval in each iteration
+         // x3 is the midpoint of [x1, x2]
+diff --git a/src/java/org/apache/commons/math/analysis/SecantSolver.java b/src/java/org/apache/commons/math/analysis/SecantSolver.java
+index 59de5f6..499453e 100644
+--- a/src/java/org/apache/commons/math/analysis/SecantSolver.java
++++ b/src/java/org/apache/commons/math/analysis/SecantSolver.java
+@@ -18,6 +18,7 @@
+ 
+ import java.io.Serializable;
+ 
++import org.apache.commons.math.ConvergenceException;
+ import org.apache.commons.math.FunctionEvaluationException;
+ import org.apache.commons.math.MaxIterationsExceededException;
+ 
+@@ -41,19 +42,46 @@
+ public class SecantSolver extends UnivariateRealSolverImpl implements Serializable {
+     
+     /** Serializable version identifier */
+-    private static final long serialVersionUID = 1984971194738974867L;
++    private static final long serialVersionUID = 2477470651270304246L;
+ 
+     /**
+      * Construct a solver for the given function.
+      * @param f function to solve.
++     * @deprecated as of 2.0 the function to solve is passed as an argument
++     * to the {@link #solve(UnivariateRealFunction, double, double)} or
++     * {@link UnivariateRealSolverImpl#solve(UnivariateRealFunction, double, double, double)}
++     * method.
+      */
++    @Deprecated
+     public SecantSolver(UnivariateRealFunction f) {
+         super(f, 100, 1E-6);
+     }
+ 
+     /**
++     * Construct a solver.
++     */
++    public SecantSolver() {
++        super(100, 1E-6);
++    }
++
++    /** {@inheritDoc} */
++    @Deprecated
++    public double solve(final double min, final double max)
++        throws ConvergenceException, FunctionEvaluationException {
++        return solve(f, min, max);
++    }
++
++    /** {@inheritDoc} */
++    @Deprecated
++    public double solve(final double min, final double max, final double initial)
++        throws ConvergenceException, FunctionEvaluationException {
++        return solve(f, min, max, initial);
++    }
++
++    /**
+      * Find a zero in the given interval.
+      * 
++     * @param f the function to solve
+      * @param min the lower bound for the interval
+      * @param max the upper bound for the interval
+      * @param initial the start value to use (ignored)
+@@ -64,14 +92,15 @@
+      * @throws IllegalArgumentException if min is not less than max or the
+      * signs of the values of the function at the endpoints are not opposites
+      */
+-    public double solve(double min, double max, double initial)
++    public double solve(final UnivariateRealFunction f,
++                        final double min, final double max, final double initial)
+         throws MaxIterationsExceededException, FunctionEvaluationException {
+-            
+-        return solve(min, max);
++        return solve(f, min, max);
+     }
+     
+     /**
+      * Find a zero in the given interval.
++     * @param f the function to solve
+      * @param min the lower bound for the interval.
+      * @param max the upper bound for the interval.
+      * @return the value where the function is zero
+@@ -81,8 +110,9 @@
+      * @throws IllegalArgumentException if min is not less than max or the
+      * signs of the values of the function at the endpoints are not opposites
+      */
+-    public double solve(double min, double max) throws MaxIterationsExceededException, 
+-        FunctionEvaluationException {
++    public double solve(final UnivariateRealFunction f,
++                        final double min, final double max)
++        throws MaxIterationsExceededException, FunctionEvaluationException {
+         
+         clearResult();
+         verifyInterval(min, max);
+diff --git a/src/java/org/apache/commons/math/analysis/UnivariateRealSolver.java b/src/java/org/apache/commons/math/analysis/UnivariateRealSolver.java
+index 3bf6dc1..1e5dae7 100644
+--- a/src/java/org/apache/commons/math/analysis/UnivariateRealSolver.java
++++ b/src/java/org/apache/commons/math/analysis/UnivariateRealSolver.java
+@@ -158,11 +158,34 @@
+      * function
+      * @throws IllegalArgumentException if min > max or the endpoints do not
+      * satisfy the requirements specified by the solver
++     * @deprecated replaced by {@link #solve(UnivariateRealFunction, double, double)
++     * since 2.0
+      */
++    @Deprecated
+     double solve(double min, double max) throws ConvergenceException, 
+         FunctionEvaluationException;
+ 
+     /**
++     * Solve for a zero root in the given interval.
++     * A solver may require that the interval brackets a single zero root.
++     * 
++     * @param f the function to solve.
++     * @param min the lower bound for the interval.
++     * @param max the upper bound for the interval.
++     * @return a value where the function is zero
++     * @throws ConvergenceException if the maximum iteration count is exceeded
++     * or the solver detects convergence problems otherwise.
++     * @throws FunctionEvaluationException if an error occurs evaluating the
++     * function
++     * @throws IllegalArgumentException if min > max or the endpoints do not
++     * satisfy the requirements specified by the solver
++     * @since 2.0
++     */
++    double solve(UnivariateRealFunction f, double min, double max)
++        throws ConvergenceException, 
++        FunctionEvaluationException;
++
++    /**
+      * Solve for a zero in the given interval, start at startValue.
+      * A solver may require that the interval brackets a single zero root.
+      * 
+@@ -176,11 +199,34 @@
+      * function
+      * @throws IllegalArgumentException if min > max or the arguments do not
+      * satisfy the requirements specified by the solver
++     * @deprecated replaced by {@link #solve(UnivariateRealFunction, double, double, double)
++     * since 2.0
+      */
++    @Deprecated
+     double solve(double min, double max, double startValue)
+         throws ConvergenceException, FunctionEvaluationException;
+ 
+     /**
++     * Solve for a zero in the given interval, start at startValue.
++     * A solver may require that the interval brackets a single zero root.
++     * 
++     * @param f the function to solve.
++     * @param min the lower bound for the interval.
++     * @param max the upper bound for the interval.
++     * @param startValue the start value to use
++     * @return a value where the function is zero
++     * @throws ConvergenceException if the maximum iteration count is exceeded
++     * or the solver detects convergence problems otherwise.
++     * @throws FunctionEvaluationException if an error occurs evaluating the
++     * function
++     * @throws IllegalArgumentException if min > max or the arguments do not
++     * satisfy the requirements specified by the solver
++     * @since 2.0
++     */
++    double solve(UnivariateRealFunction f, double min, double max, double startValue)
++        throws ConvergenceException, FunctionEvaluationException;
++
++    /**
+      * Get the result of the last run of the solver.
+      * 
+      * @return the last result.
+diff --git a/src/java/org/apache/commons/math/analysis/UnivariateRealSolverFactory.java b/src/java/org/apache/commons/math/analysis/UnivariateRealSolverFactory.java
+index 74f36d8..d398a67 100644
+--- a/src/java/org/apache/commons/math/analysis/UnivariateRealSolverFactory.java
++++ b/src/java/org/apache/commons/math/analysis/UnivariateRealSolverFactory.java
+@@ -31,8 +31,8 @@
+  * Common usage:<pre>
+  * SolverFactory factory = UnivariateRealSolverFactory.newInstance();</p>
+  *
+- * // create a Brent solver to use with a UnivariateRealFunction f
+- * BrentSolver solver = factory.newBrentSolver(f);
++ * // create a Brent solver to use
++ * BrentSolver solver = factory.newBrentSolver();
+  * </pre>
+  *
+  * @version $Revision$ $Date$
+@@ -53,47 +53,38 @@
+     }
+     
+     /**
+-     * Create a new {@link UnivariateRealSolver} for the given function.  The
++     * Create a new {@link UnivariateRealSolver}.  The
+      * actual solver returned is determined by the underlying factory.
+-     * @param f the function.
+      * @return the new solver.
+      */
+-    public abstract UnivariateRealSolver newDefaultSolver(
+-        UnivariateRealFunction f);
++    public abstract UnivariateRealSolver newDefaultSolver();
+     
+     /**
+-     * Create a new {@link UnivariateRealSolver} for the given function.  The
++     * Create a new {@link UnivariateRealSolver}.  The
+      * solver is an implementation of the bisection method.
+-     * @param f the function.
+      * @return the new solver.
+      */
+-    public abstract UnivariateRealSolver newBisectionSolver(
+-        UnivariateRealFunction f);
++    public abstract UnivariateRealSolver newBisectionSolver();
+     
+     /**
+-     * Create a new {@link UnivariateRealSolver} for the given function.  The
++     * Create a new {@link UnivariateRealSolver}.  The
+      * solver is an implementation of the Brent method.
+-     * @param f the function.
+      * @return the new solver.
+      */
+-    public abstract UnivariateRealSolver newBrentSolver(
+-        UnivariateRealFunction f);
++    public abstract UnivariateRealSolver newBrentSolver();
+     
+     /**
+-     * Create a new {@link UnivariateRealSolver} for the given function.  The
++     * Create a new {@link UnivariateRealSolver}.  The
+      * solver is an implementation of Newton's Method.
+-     * @param f the function.
+      * @return the new solver.
+      */
+-    public abstract UnivariateRealSolver newNewtonSolver(
+-        DifferentiableUnivariateRealFunction f);
++    public abstract UnivariateRealSolver newNewtonSolver();
+     
+     /**
+-     * Create a new {@link UnivariateRealSolver} for the given function.  The
++     * Create a new {@link UnivariateRealSolver}.  The
+      * solver is an implementation of the secant method.
+-     * @param f the function.
+      * @return the new solver.
+      */
+-    public abstract UnivariateRealSolver newSecantSolver(
+-        UnivariateRealFunction f);
++    public abstract UnivariateRealSolver newSecantSolver();
++
+ }
+diff --git a/src/java/org/apache/commons/math/analysis/UnivariateRealSolverFactoryImpl.java b/src/java/org/apache/commons/math/analysis/UnivariateRealSolverFactoryImpl.java
+index 29d701b..e4b9fdd 100644
+--- a/src/java/org/apache/commons/math/analysis/UnivariateRealSolverFactoryImpl.java
++++ b/src/java/org/apache/commons/math/analysis/UnivariateRealSolverFactoryImpl.java
+@@ -32,58 +32,28 @@
+     public UnivariateRealSolverFactoryImpl() {
+     }
+ 
+-    /**
+-     * Create a new {@link UnivariateRealSolver} for the given function.  The
+-     * actual solver returned is determined by the underlying factory.
+-     * 
+-     * This factory returns a {@link BrentSolver} instance.
+-     *
+-     * @param f the function.
+-     * @return the new solver.
+-     */
+-    public UnivariateRealSolver newDefaultSolver(UnivariateRealFunction f) {
+-        return newBrentSolver(f);
++    /** {@inheritDoc} */
++    public UnivariateRealSolver newDefaultSolver() {
++        return newBrentSolver();
+     }
+     
+-    /**
+-     * Create a new {@link UnivariateRealSolver} for the given function.  The
+-     * solver is an implementation of the bisection method.
+-     * @param f the function.
+-     * @return the new solver.
+-     */
+-    public UnivariateRealSolver newBisectionSolver(UnivariateRealFunction f) {
+-        return new BisectionSolver(f);
++    /** {@inheritDoc} */
++    public UnivariateRealSolver newBisectionSolver() {
++        return new BisectionSolver();
+     }
+ 
+-    /**
+-     * Create a new {@link UnivariateRealSolver} for the given function.  The
+-     * solver is an implementation of the Brent method.
+-     * @param f the function.
+-     * @return the new solver.
+-     */
+-    public UnivariateRealSolver newBrentSolver(UnivariateRealFunction f) {
+-        return new BrentSolver(f);
++    /** {@inheritDoc} */
++    public UnivariateRealSolver newBrentSolver() {
++        return new BrentSolver();
+     }
+     
+-    /**
+-     * Create a new {@link UnivariateRealSolver} for the given function.  The
+-     * solver is an implementation of Newton's Method.
+-     * @param f the function.
+-     * @return the new solver.
+-     */
+-    public UnivariateRealSolver newNewtonSolver(
+-        DifferentiableUnivariateRealFunction f) {
+-        
+-        return new NewtonSolver(f);
++    /** {@inheritDoc} */
++    public UnivariateRealSolver newNewtonSolver() {
++        return new NewtonSolver();
+     }
+     
+-    /**
+-     * Create a new {@link UnivariateRealSolver} for the given function.  The
+-     * solver is an implementation of the secant method.
+-     * @param f the function.
+-     * @return the new solver.
+-     */
+-    public UnivariateRealSolver newSecantSolver(UnivariateRealFunction f) {
+-        return new SecantSolver(f);
++    /** {@inheritDoc} */
++    public UnivariateRealSolver newSecantSolver() {
++        return new SecantSolver();
+     }
+ }
+diff --git a/src/java/org/apache/commons/math/analysis/UnivariateRealSolverImpl.java b/src/java/org/apache/commons/math/analysis/UnivariateRealSolverImpl.java
+index 04bed1e..7d1f753 100644
+--- a/src/java/org/apache/commons/math/analysis/UnivariateRealSolverImpl.java
++++ b/src/java/org/apache/commons/math/analysis/UnivariateRealSolverImpl.java
+@@ -68,7 +68,12 @@
+     /** The last iteration count. */
+     protected int iterationCount;
+ 
+-    /** The function to solve. */
++    /** The function to solve.
++     * @deprecated as of 2.0 the function to solve is passed as an argument
++     * to the {@link #solve(UnivariateRealFunction, double, double)} or
++     * {@link UnivariateRealSolverImpl#solve(UnivariateRealFunction, double, double, double)}
++     * method. */
++    @Deprecated
+     protected UnivariateRealFunction f;
+ 
+     /**
+@@ -79,19 +84,43 @@
+      * @param defaultMaximalIterationCount maximum number of iterations
+      * @throws IllegalArgumentException if f is null or the 
+      * defaultAbsoluteAccuracy is not valid
++     * @deprecated as of 2.0 the function to solve is passed as an argument
++     * to the {@link #solve(UnivariateRealFunction, double, double)} or
++     * {@link UnivariateRealSolverImpl#solve(UnivariateRealFunction, double, double, double)}
++     * method.
+      */
++    @Deprecated
+     protected UnivariateRealSolverImpl(
+         UnivariateRealFunction f,
+         int defaultMaximalIterationCount,
+         double defaultAbsoluteAccuracy) {
+         
+-        super();
+-        
+         if (f == null) {
+-            throw new IllegalArgumentException("function can not be null.");
++            throw MathRuntimeException.createIllegalArgumentException("function to solve cannot be null",
++                                                                      null);
+         }
+-        
+         this.f = f;
++
++        this.defaultAbsoluteAccuracy = defaultAbsoluteAccuracy;
++        this.defaultRelativeAccuracy = 1E-14;
++        this.defaultFunctionValueAccuracy = 1E-15;
++        this.absoluteAccuracy = defaultAbsoluteAccuracy;
++        this.relativeAccuracy = defaultRelativeAccuracy;
++        this.functionValueAccuracy = defaultFunctionValueAccuracy;
++        this.defaultMaximalIterationCount = defaultMaximalIterationCount;
++        this.maximalIterationCount = defaultMaximalIterationCount;
++    }
++
++    /**
++     * Construct a solver with given iteration count and accuracy.
++     * 
++     * @param defaultAbsoluteAccuracy maximum absolute error
++     * @param defaultMaximalIterationCount maximum number of iterations
++     * @throws IllegalArgumentException if f is null or the 
++     * defaultAbsoluteAccuracy is not valid
++     */
++    protected UnivariateRealSolverImpl(int defaultMaximalIterationCount,
++                                       double defaultAbsoluteAccuracy) {
+         this.defaultAbsoluteAccuracy = defaultAbsoluteAccuracy;
+         this.defaultRelativeAccuracy = 1E-14;
+         this.defaultFunctionValueAccuracy = 1E-15;
+diff --git a/src/java/org/apache/commons/math/analysis/UnivariateRealSolverUtils.java b/src/java/org/apache/commons/math/analysis/UnivariateRealSolverUtils.java
+index 89eb019..8a8d55b 100644
+--- a/src/java/org/apache/commons/math/analysis/UnivariateRealSolverUtils.java
++++ b/src/java/org/apache/commons/math/analysis/UnivariateRealSolverUtils.java
+@@ -52,7 +52,7 @@
+     public static double solve(UnivariateRealFunction f, double x0, double x1)
+     throws ConvergenceException, FunctionEvaluationException {
+         setup(f);
+-        return factory.newDefaultSolver(f).solve(x0, x1);
++        return factory.newDefaultSolver().solve(f, x0, x1);
+     }
+ 
+     /**
+@@ -76,9 +76,9 @@
+             FunctionEvaluationException {    
+        
+         setup(f);
+-        UnivariateRealSolver solver = factory.newDefaultSolver(f);
++        UnivariateRealSolver solver = factory.newDefaultSolver();
+         solver.setAbsoluteAccuracy(absoluteAccuracy);
+-        return solver.solve(x0, x1);
++        return solver.solve(f, x0, x1);
+     }
+ 
+     /**
+diff --git a/src/site/xdoc/changes.xml b/src/site/xdoc/changes.xml
+index 95ee1dc..c4c88e1 100644
+--- a/src/site/xdoc/changes.xml
++++ b/src/site/xdoc/changes.xml
+@@ -39,6 +39,11 @@
+   </properties>
+   <body>
+     <release version="2.0" date="TBD" description="TBD">
++      <action dev="luc" type="update" issue="MATH-218" >
++        The root solvers now take the function to solve as a parameter to
++        the solve methods, thus allowing to reuse the same solver for different
++        functions.
++      </action>
+       <action dev="luc" type="add" issue="MATH-234" >
+         Added setter methods for rows and columns in matrices.
+       </action>
+diff --git a/src/site/xdoc/userguide/analysis.xml b/src/site/xdoc/userguide/analysis.xml
+index 4569844..1f240e5 100644
+--- a/src/site/xdoc/userguide/analysis.xml
++++ b/src/site/xdoc/userguide/analysis.xml
+@@ -50,6 +50,12 @@
+           Newton's Method</a></li>
+           <li><a href="../apidocs/org/apache/commons/math/analysis/SecantSolver.html">
+           Secant Method</a></li>
++          <li><a href="../apidocs/org/apache/commons/math/analysis/MullerSolver.html">
++          Muller's Method</a></li>
++          <li><a href="../apidocs/org/apache/commons/math/analysis/LaguerreSolver.html">
++          Laguerre's Method</a></li>
++          <li><a href="../apidocs/org/apache/commons/math/analysis/RidderSolver.html">
++          Ridder's Method</a></li>
+           </ul>      
+         </p>
+         <p>
+@@ -83,9 +89,8 @@
+           used to create all of the solver objects supported by Commons-Math.  
+           The typical usage of <code>UnivariateRealSolverFactory</code>
+           to create a solver object would be:</p>
+-        <source>UnivariateRealFunction function = // some user defined function object
+-UnivariateRealSolverFactory factory = UnivariateRealSolverFactory.newInstance();
+-UnivariateRealSolver solver = factory.newDefaultSolver(function);</source>
++        <source>UnivariateRealSolverFactory factory = UnivariateRealSolverFactory.newInstance();
++UnivariateRealSolver solver = factory.newDefaultSolver();</source>
+         <p>
+           The solvers that can be instantiated via the 
+           <code>UnivariateRealSolverFactory</code> are detailed below:
+@@ -95,6 +100,9 @@
+             <tr><td>Brent</td><td>newBrentSolver</td><td><div>Root must be bracketted.</div><div>Super-linear, guaranteed convergence</div></td></tr>
+             <tr><td>Newton</td><td>newNewtonSolver</td><td><div>Uses single value for initialization.</div><div>Super-linear, non-guaranteed convergence</div><div>Function must be differentiable</div></td></tr>
+             <tr><td>Secant</td><td>newSecantSolver</td><td><div>Root must be bracketted.</div><div>Super-linear, non-guaranteed convergence</div></td></tr>
++            <tr><td>Muller</td><td>newMullerSolver</td><td><div>Root must be bracketted.</div><div>We restrict ourselves to real valued functions, not complex ones</div></td></tr>
++            <tr><td>Laguerre</td><td>newLaguerreSolver</td><td><div>Root must be bracketted.</div><div>Function must be a polynomial</div></td></tr>
++            <tr><td>Ridder</td><td>newRidderSolver</td><td><div>Root must be bracketted.</div><div></div></td></tr>
+           </table>
+         </p>
+         <p>
+@@ -111,8 +119,8 @@
+         </p>
+         <source>UnivariateRealFunction function = // some user defined function object
+ UnivariateRealSolverFactory factory = UnivariateRealSolverFactory.newInstance();
+-UnivariateRealSolver solver = factory.newBisectionSolver(function);
+-double c = solver.solve(1.0, 5.0);</source>
++UnivariateRealSolver solver = factory.newBisectionSolver();
++double c = solver.solve(function, 1.0, 5.0);</source>
+         <p>
+           The <code>BrentSolve</code> uses the Brent-Dekker algorithm which is
+           fast and robust.  This algorithm is recommended for most users and  the 
+diff --git a/src/test/org/apache/commons/math/analysis/BisectionSolverTest.java b/src/test/org/apache/commons/math/analysis/BisectionSolverTest.java
+index 3f6712e..c41dbc5 100644
+--- a/src/test/org/apache/commons/math/analysis/BisectionSolverTest.java
++++ b/src/test/org/apache/commons/math/analysis/BisectionSolverTest.java
+@@ -25,10 +25,9 @@
+  * @version $Revision$ $Date$
+  */
+ public final class BisectionSolverTest extends TestCase {
+-    /**
+-     *
+-     */
+-    public void testSinZero() throws MathException {
++
++    @Deprecated
++    public void testDeprecated() throws MathException {
+         UnivariateRealFunction f = new SinFunction();
+         double result;
+         
+@@ -40,45 +39,54 @@
+         assertEquals(result, Math.PI, solver.getAbsoluteAccuracy());
+     }
+ 
+-    /**
+-     *
+-     */
+-    public void testQuinticZero() throws MathException {
++    public void testSinZero() throws MathException {
++        UnivariateRealFunction f = new SinFunction();
++        double result;
++        
++        UnivariateRealSolver solver = new BisectionSolver();
++        result = solver.solve(f, 3, 4);
++        assertEquals(result, Math.PI, solver.getAbsoluteAccuracy());
++
++        result = solver.solve(f, 1, 4);
++        assertEquals(result, Math.PI, solver.getAbsoluteAccuracy());
++    }
++
++   public void testQuinticZero() throws MathException {
+         UnivariateRealFunction f = new QuinticFunction();
+         double result;
+ 
+-        UnivariateRealSolver solver = new BisectionSolver(f);
+-        result = solver.solve(-0.2, 0.2);
++        UnivariateRealSolver solver = new BisectionSolver();
++        result = solver.solve(f, -0.2, 0.2);
+         assertEquals(result, 0, solver.getAbsoluteAccuracy());
+ 
+-        result = solver.solve(-0.1, 0.3);
++        result = solver.solve(f, -0.1, 0.3);
+         assertEquals(result, 0, solver.getAbsoluteAccuracy());
+ 
+-        result = solver.solve(-0.3, 0.45);
++        result = solver.solve(f, -0.3, 0.45);
+         assertEquals(result, 0, solver.getAbsoluteAccuracy());
+ 
+-        result = solver.solve(0.3, 0.7);
++        result = solver.solve(f, 0.3, 0.7);
+         assertEquals(result, 0.5, solver.getAbsoluteAccuracy());
+ 
+-        result = solver.solve(0.2, 0.6);
++        result = solver.solve(f, 0.2, 0.6);
+         assertEquals(result, 0.5, solver.getAbsoluteAccuracy());
+ 
+-        result = solver.solve(0.05, 0.95);
++        result = solver.solve(f, 0.05, 0.95);
+         assertEquals(result, 0.5, solver.getAbsoluteAccuracy());
+ 
+-        result = solver.solve(0.85, 1.25);
++        result = solver.solve(f, 0.85, 1.25);
+         assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+ 
+-        result = solver.solve(0.8, 1.2);
++        result = solver.solve(f, 0.8, 1.2);
+         assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+ 
+-        result = solver.solve(0.85, 1.75);
++        result = solver.solve(f, 0.85, 1.75);
+         assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+ 
+-        result = solver.solve(0.55, 1.45);
++        result = solver.solve(f, 0.55, 1.45);
+         assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+ 
+-        result = solver.solve(0.85, 5);
++        result = solver.solve(f, 0.85, 5);
+         assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+         
+         assertEquals(result, solver.getResult(), 0);
+@@ -90,8 +98,7 @@
+      */
+     public void testSetFunctionValueAccuracy(){
+         double expected = 1.0e-2;    
+-        UnivariateRealFunction f = new QuinticFunction();
+-        UnivariateRealSolver solver = new BisectionSolver(f);
++        UnivariateRealSolver solver = new BisectionSolver();
+         solver.setFunctionValueAccuracy(expected);
+         assertEquals(expected, solver.getFunctionValueAccuracy(), 1.0e-2);
+     }        
+@@ -101,8 +108,7 @@
+      */
+     public void testResetFunctionValueAccuracy(){
+         double newValue = 1.0e-2;    
+-        UnivariateRealFunction f = new QuinticFunction();
+-        UnivariateRealSolver solver = new BisectionSolver(f);
++        UnivariateRealSolver solver = new BisectionSolver();
+         double oldValue = solver.getFunctionValueAccuracy();
+         solver.setFunctionValueAccuracy(newValue);
+         solver.resetFunctionValueAccuracy();
+@@ -114,8 +120,7 @@
+      */
+     public void testSetAbsoluteAccuracy(){
+         double expected = 1.0e-2; 
+-        UnivariateRealFunction f = new QuinticFunction();
+-        UnivariateRealSolver solver = new BisectionSolver(f);
++        UnivariateRealSolver solver = new BisectionSolver();
+         solver.setAbsoluteAccuracy(expected);
+         assertEquals(expected, solver.getAbsoluteAccuracy(), 1.0e-2); 
+     }        
+@@ -125,8 +130,7 @@
+      */
+     public void testResetAbsoluteAccuracy(){
+         double newValue = 1.0e-2;       
+-        UnivariateRealFunction f = new QuinticFunction();
+-        UnivariateRealSolver solver = new BisectionSolver(f);
++        UnivariateRealSolver solver = new BisectionSolver();
+         double oldValue = solver.getAbsoluteAccuracy();
+         solver.setAbsoluteAccuracy(newValue);
+         solver.resetAbsoluteAccuracy();
+@@ -138,9 +142,7 @@
+      */
+     public void testSetMaximalIterationCount(){
+         int expected = 100;
+-        
+-        UnivariateRealFunction f = new QuinticFunction();
+-        UnivariateRealSolver solver = new BisectionSolver(f);
++        UnivariateRealSolver solver = new BisectionSolver();
+         solver.setMaximalIterationCount(expected);
+         assertEquals(expected, solver.getMaximalIterationCount());
+     }        
+@@ -150,9 +152,7 @@
+      */
+     public void testResetMaximalIterationCount(){
+         int newValue = 10000;
+-        
+-        UnivariateRealFunction f = new QuinticFunction();
+-        UnivariateRealSolver solver = new BisectionSolver(f);
++        UnivariateRealSolver solver = new BisectionSolver();
+         int oldValue = solver.getMaximalIterationCount();
+         solver.setMaximalIterationCount(newValue);
+         solver.resetMaximalIterationCount();
+@@ -164,9 +164,7 @@
+      */
+     public void testSetRelativeAccuracy(){
+         double expected = 1.0e-2;
+-        
+-        UnivariateRealFunction f = new QuinticFunction();
+-        UnivariateRealSolver solver = new BisectionSolver(f);
++        UnivariateRealSolver solver = new BisectionSolver();
+         solver.setRelativeAccuracy(expected);
+         assertEquals(expected, solver.getRelativeAccuracy(), 1.0e-2);
+     }        
+@@ -176,8 +174,7 @@
+      */
+     public void testResetRelativeAccuracy(){
+         double newValue = 1.0e-2;        
+-        UnivariateRealFunction f = new QuinticFunction();
+-        UnivariateRealSolver solver = new BisectionSolver(f);
++        UnivariateRealSolver solver = new BisectionSolver();
+         double oldValue = solver.getRelativeAccuracy();
+         solver.setRelativeAccuracy(newValue);
+         solver.resetRelativeAccuracy();
+@@ -191,57 +188,57 @@
+        UnivariateRealFunction f = (UnivariateRealFunction)TestUtils.serializeAndRecover(new QuinticFunction());
+        double result;
+        
+-       BisectionSolver solver = new BisectionSolver(f);
++       BisectionSolver solver = new BisectionSolver();
+        UnivariateRealSolver solver2 = (UnivariateRealSolver)TestUtils.serializeAndRecover(solver);
+        
+-       result = solver.solve(-0.2, 0.2);
++       result = solver.solve(f, -0.2, 0.2);
+        assertEquals(result, 0, solver.getAbsoluteAccuracy());
+-       assertEquals(solver2.solve(-0.2, 0.2), result, solver2.getAbsoluteAccuracy());
++       assertEquals(solver2.solve(f, -0.2, 0.2), result, solver2.getAbsoluteAccuracy());
+        
+-       result = solver.solve(-0.1, 0.3);
++       result = solver.solve(f, -0.1, 0.3);
+        assertEquals(result, 0, solver.getAbsoluteAccuracy());
+-       assertEquals(solver2.solve(-0.1, 0.3), result, solver2.getAbsoluteAccuracy());
++       assertEquals(solver2.solve(f, -0.1, 0.3), result, solver2.getAbsoluteAccuracy());
+        
+-       result = solver.solve(-0.3, 0.45);
++       result = solver.solve(f, -0.3, 0.45);
+        assertEquals(result, 0, solver.getAbsoluteAccuracy());
+-       assertEquals(solver2.solve(-0.3, 0.45), result, solver2.getAbsoluteAccuracy());
++       assertEquals(solver2.solve(f, -0.3, 0.45), result, solver2.getAbsoluteAccuracy());
+        
+-       result = solver.solve(0.3, 0.7);
++       result = solver.solve(f, 0.3, 0.7);
+        assertEquals(result, 0.5, solver.getAbsoluteAccuracy());
+-       assertEquals(solver2.solve(0.3, 0.7), result, solver2.getAbsoluteAccuracy());
++       assertEquals(solver2.solve(f, 0.3, 0.7), result, solver2.getAbsoluteAccuracy());
+        
+-       result = solver.solve(0.2, 0.6);
++       result = solver.solve(f, 0.2, 0.6);
+        assertEquals(result, 0.5, solver.getAbsoluteAccuracy());
+-       assertEquals(solver2.solve(0.2, 0.6), result, solver2.getAbsoluteAccuracy());
++       assertEquals(solver2.solve(f, 0.2, 0.6), result, solver2.getAbsoluteAccuracy());
+        
+-       result = solver.solve(0.05, 0.95);
++       result = solver.solve(f, 0.05, 0.95);
+        assertEquals(result, 0.5, solver.getAbsoluteAccuracy());
+-       assertEquals(solver2.solve(0.05, 0.95), result, solver2.getAbsoluteAccuracy());
++       assertEquals(solver2.solve(f, 0.05, 0.95), result, solver2.getAbsoluteAccuracy());
+        
+-       result = solver.solve(0.85, 1.25);
++       result = solver.solve(f, 0.85, 1.25);
+        assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+-       assertEquals(solver2.solve(0.85, 1.25), result, solver2.getAbsoluteAccuracy());
++       assertEquals(solver2.solve(f, 0.85, 1.25), result, solver2.getAbsoluteAccuracy());
+        
+-       result = solver.solve(0.8, 1.2);
++       result = solver.solve(f, 0.8, 1.2);
+        assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+-       assertEquals(solver2.solve(0.8, 1.2), result, solver2.getAbsoluteAccuracy());
++       assertEquals(solver2.solve(f, 0.8, 1.2), result, solver2.getAbsoluteAccuracy());
+        
+-       result = solver.solve(0.85, 1.75);
++       result = solver.solve(f, 0.85, 1.75);
+        assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+-       assertEquals(solver2.solve(0.85, 1.75), result, solver2.getAbsoluteAccuracy());
++       assertEquals(solver2.solve(f, 0.85, 1.75), result, solver2.getAbsoluteAccuracy());
+        
+-       result = solver.solve(0.55, 1.45);
++       result = solver.solve(f, 0.55, 1.45);
+        assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+-       assertEquals(solver2.solve(0.55, 1.45), result, solver2.getAbsoluteAccuracy());
++       assertEquals(solver2.solve(f, 0.55, 1.45), result, solver2.getAbsoluteAccuracy());
+        
+-       result = solver.solve(0.85, 5);
++       result = solver.solve(f, 0.85, 5);
+        assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+-       assertEquals(solver2.solve(0.85, 5), result, solver2.getAbsoluteAccuracy());
++       assertEquals(solver2.solve(f, 0.85, 5), result, solver2.getAbsoluteAccuracy());
+        
+        /* Test Reset */
+        double newValue = 1.0e-2;
+        f = (UnivariateRealFunction)TestUtils.serializeAndRecover(new QuinticFunction());
+-       solver = new BisectionSolver(f);
++       solver = new BisectionSolver();
+        
+        double oldValue = solver.getRelativeAccuracy();
+        solver.setRelativeAccuracy(newValue);
+diff --git a/src/test/org/apache/commons/math/analysis/BrentSolverTest.java b/src/test/org/apache/commons/math/analysis/BrentSolverTest.java
+index 49c93aa..d756c3a 100644
+--- a/src/test/org/apache/commons/math/analysis/BrentSolverTest.java
++++ b/src/test/org/apache/commons/math/analysis/BrentSolverTest.java
+@@ -45,7 +45,8 @@
+         return suite;
+     }
+ 
+-    public void testSinZero() throws MathException {
++    @Deprecated
++    public void testDeprecated() throws MathException {
+         // The sinus function is behaved well around the root at #pi. The second
+         // order derivative is zero, which means linar approximating methods will
+         // still converge quadratically. 
+@@ -82,7 +83,44 @@
+         assertEquals(result, solver.getResult(), 0);
+     }
+ 
+-    public void testQuinticZero() throws MathException {
++    public void testSinZero() throws MathException {
++        // The sinus function is behaved well around the root at #pi. The second
++        // order derivative is zero, which means linar approximating methods will
++        // still converge quadratically. 
++        UnivariateRealFunction f = new SinFunction();
++        double result;
++        UnivariateRealSolver solver = new BrentSolver();
++        // Somewhat benign interval. The function is monotone.
++        result = solver.solve(f, 3, 4);
++        //System.out.println(
++        //    "Root: " + result + " Iterations: " + solver.getIterationCount());
++        assertEquals(result, Math.PI, solver.getAbsoluteAccuracy());
++        // 4 iterations on i586 JDK 1.4.1.
++        assertTrue(solver.getIterationCount() <= 5);
++        // Larger and somewhat less benign interval. The function is grows first.
++        result = solver.solve(f, 1, 4);
++        //System.out.println(
++        //    "Root: " + result + " Iterations: " + solver.getIterationCount());
++        assertEquals(result, Math.PI, solver.getAbsoluteAccuracy());
++        // 5 iterations on i586 JDK 1.4.1.
++        assertTrue(solver.getIterationCount() <= 6);
++        solver = new SecantSolver();
++        result = solver.solve(f, 3, 4);
++        //System.out.println(
++        //    "Root: " + result + " Iterations: " + solver.getIterationCount());
++        assertEquals(result, Math.PI, solver.getAbsoluteAccuracy());
++        // 4 iterations on i586 JDK 1.4.1.
++        assertTrue(solver.getIterationCount() <= 5);
++        result = solver.solve(f, 1, 4);
++        //System.out.println(
++        //    "Root: " + result + " Iterations: " + solver.getIterationCount());
++        assertEquals(result, Math.PI, solver.getAbsoluteAccuracy());
++        // 5 iterations on i586 JDK 1.4.1.
++        assertTrue(solver.getIterationCount() <= 6);
++        assertEquals(result, solver.getResult(), 0);
++    }
++
++   public void testQuinticZero() throws MathException {
+         // The quintic function has zeros at 0, +-0.5 and +-1.
+         // Around the root of 0 the function is well behaved, with a second derivative
+         // of zero a 0.
+@@ -93,45 +131,45 @@
+         UnivariateRealFunction f = new QuinticFunction();
+         double result;
+         // Brent-Dekker solver.
+-        UnivariateRealSolver solver = new BrentSolver(f);
++        UnivariateRealSolver solver = new BrentSolver();
+         // Symmetric bracket around 0. Test whether solvers can handle hitting
+         // the root in the first iteration.
+-        result = solver.solve(-0.2, 0.2);
++        result = solver.solve(f, -0.2, 0.2);
+         //System.out.println(
+         //    "Root: " + result + " Iterations: " + solver.getIterationCount());
+         assertEquals(result, 0, solver.getAbsoluteAccuracy());
+         assertTrue(solver.getIterationCount() <= 2);
+         // 1 iterations on i586 JDK 1.4.1.
+         // Asymmetric bracket around 0, just for fun. Contains extremum.
+-        result = solver.solve(-0.1, 0.3);
++        result = solver.solve(f, -0.1, 0.3);
+         //System.out.println(
+         //    "Root: " + result + " Iterations: " + solver.getIterationCount());
+         assertEquals(result, 0, solver.getAbsoluteAccuracy());
+         // 5 iterations on i586 JDK 1.4.1.
+         assertTrue(solver.getIterationCount() <= 6);
+         // Large bracket around 0. Contains two extrema.
+-        result = solver.solve(-0.3, 0.45);
++        result = solver.solve(f, -0.3, 0.45);
+         //System.out.println(
+         //    "Root: " + result + " Iterations: " + solver.getIterationCount());
+         assertEquals(result, 0, solver.getAbsoluteAccuracy());
+         // 6 iterations on i586 JDK 1.4.1.
+         assertTrue(solver.getIterationCount() <= 7);
+         // Benign bracket around 0.5, function is monotonous.
+-        result = solver.solve(0.3, 0.7);
++        result = solver.solve(f, 0.3, 0.7);
+         //System.out.println(
+         //    "Root: " + result + " Iterations: " + solver.getIterationCount());
+         assertEquals(result, 0.5, solver.getAbsoluteAccuracy());
+         // 6 iterations on i586 JDK 1.4.1.
+         assertTrue(solver.getIterationCount() <= 7);
+         // Less benign bracket around 0.5, contains one extremum.
+-        result = solver.solve(0.2, 0.6);
++        result = solver.solve(f, 0.2, 0.6);
+         //System.out.println(
+         //    "Root: " + result + " Iterations: " + solver.getIterationCount());
+         assertEquals(result, 0.5, solver.getAbsoluteAccuracy());
+         // 6 iterations on i586 JDK 1.4.1.
+         assertTrue(solver.getIterationCount() <= 7);
+         // Large, less benign bracket around 0.5, contains both extrema.
+-        result = solver.solve(0.05, 0.95);
++        result = solver.solve(f, 0.05, 0.95);
+         //System.out.println(
+         //    "Root: " + result + " Iterations: " + solver.getIterationCount());
+         assertEquals(result, 0.5, solver.getAbsoluteAccuracy());
+@@ -139,91 +177,91 @@
+         assertTrue(solver.getIterationCount() <= 9);
+         // Relatively benign bracket around 1, function is monotonous. Fast growth for x>1
+         // is still a problem.
+-        result = solver.solve(0.85, 1.25);
++        result = solver.solve(f, 0.85, 1.25);
+         //System.out.println(
+         //    "Root: " + result + " Iterations: " + solver.getIterationCount());
+         assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+         // 8 iterations on i586 JDK 1.4.1.
+         assertTrue(solver.getIterationCount() <= 9);
+         // Less benign bracket around 1 with extremum.
+-        result = solver.solve(0.8, 1.2);
++        result = solver.solve(f, 0.8, 1.2);
+         //System.out.println(
+         //    "Root: " + result + " Iterations: " + solver.getIterationCount());
+         assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+         // 8 iterations on i586 JDK 1.4.1.
+         assertTrue(solver.getIterationCount() <= 9);
+         // Large bracket around 1. Monotonous.
+-        result = solver.solve(0.85, 1.75);
++        result = solver.solve(f, 0.85, 1.75);
+         //System.out.println(
+         //    "Root: " + result + " Iterations: " + solver.getIterationCount());
+         assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+         // 10 iterations on i586 JDK 1.4.1.
+         assertTrue(solver.getIterationCount() <= 11);
+         // Large bracket around 1. Interval contains extremum.
+-        result = solver.solve(0.55, 1.45);
++        result = solver.solve(f, 0.55, 1.45);
+         //System.out.println(
+         //    "Root: " + result + " Iterations: " + solver.getIterationCount());
+         assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+         // 7 iterations on i586 JDK 1.4.1.
+         assertTrue(solver.getIterationCount() <= 8);
+         // Very large bracket around 1 for testing fast growth behaviour.
+-        result = solver.solve(0.85, 5);
++        result = solver.solve(f, 0.85, 5);
+         //System.out.println(
+        //     "Root: " + result + " Iterations: " + solver.getIterationCount());
+         assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+         // 12 iterations on i586 JDK 1.4.1.
+         assertTrue(solver.getIterationCount() <= 13);
+         // Secant solver.
+-        solver = new SecantSolver(f);
+-        result = solver.solve(-0.2, 0.2);
++        solver = new SecantSolver();
++        result = solver.solve(f, -0.2, 0.2);
+         //System.out.println(
+         //    "Root: " + result + " Iterations: " + solver.getIterationCount());
+         assertEquals(result, 0, solver.getAbsoluteAccuracy());
+         // 1 iterations on i586 JDK 1.4.1.
+         assertTrue(solver.getIterationCount() <= 2);
+-        result = solver.solve(-0.1, 0.3);
++        result = solver.solve(f, -0.1, 0.3);
+         //System.out.println(
+         //    "Root: " + result + " Iterations: " + solver.getIterationCount());
+         assertEquals(result, 0, solver.getAbsoluteAccuracy());
+         // 5 iterations on i586 JDK 1.4.1.
+         assertTrue(solver.getIterationCount() <= 6);
+-        result = solver.solve(-0.3, 0.45);
++        result = solver.solve(f, -0.3, 0.45);
+         //System.out.println(
+         //    "Root: " + result + " Iterations: " + solver.getIterationCount());
+         assertEquals(result, 0, solver.getAbsoluteAccuracy());
+         // 6 iterations on i586 JDK 1.4.1.
+         assertTrue(solver.getIterationCount() <= 7);
+-        result = solver.solve(0.3, 0.7);
++        result = solver.solve(f, 0.3, 0.7);
+         //System.out.println(
+         //    "Root: " + result + " Iterations: " + solver.getIterationCount());
+         assertEquals(result, 0.5, solver.getAbsoluteAccuracy());
+         // 7 iterations on i586 JDK 1.4.1.
+         assertTrue(solver.getIterationCount() <= 8);
+-        result = solver.solve(0.2, 0.6);
++        result = solver.solve(f, 0.2, 0.6);
+         //System.out.println(
+         //    "Root: " + result + " Iterations: " + solver.getIterationCount());
+         assertEquals(result, 0.5, solver.getAbsoluteAccuracy());
+         // 6 iterations on i586 JDK 1.4.1.
+         assertTrue(solver.getIterationCount() <= 7);
+-        result = solver.solve(0.05, 0.95);
++        result = solver.solve(f, 0.05, 0.95);
+         //System.out.println(
+         //    "Root: " + result + " Iterations: " + solver.getIterationCount());
+         assertEquals(result, 0.5, solver.getAbsoluteAccuracy());
+         // 8 iterations on i586 JDK 1.4.1.
+         assertTrue(solver.getIterationCount() <= 9);
+-        result = solver.solve(0.85, 1.25);
++        result = solver.solve(f, 0.85, 1.25);
+         //System.out.println(
+         //    "Root: " + result + " Iterations: " + solver.getIterationCount());
+         assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+         // 10 iterations on i586 JDK 1.4.1.
+         assertTrue(solver.getIterationCount() <= 11);
+-        result = solver.solve(0.8, 1.2);
++        result = solver.solve(f, 0.8, 1.2);
+         //System.out.println(
+         //    "Root: " + result + " Iterations: " + solver.getIterationCount());
+         assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+         // 8 iterations on i586 JDK 1.4.1.
+         assertTrue(solver.getIterationCount() <= 9);
+-        result = solver.solve(0.85, 1.75);
++        result = solver.solve(f, 0.85, 1.75);
+         //System.out.println(
+         //    "Root: " + result + " Iterations: " + solver.getIterationCount());
+         assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+@@ -231,13 +269,13 @@
+         assertTrue(solver.getIterationCount() <= 15);
+         // The followig is especially slow because the solver first has to reduce
+         // the bracket to exclude the extremum. After that, convergence is rapide.
+-        result = solver.solve(0.55, 1.45);
++        result = solver.solve(f, 0.55, 1.45);
+         //System.out.println(
+         //    "Root: " + result + " Iterations: " + solver.getIterationCount());
+         assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+         // 7 iterations on i586 JDK 1.4.1.
+         assertTrue(solver.getIterationCount() <= 8);
+-        result = solver.solve(0.85, 5);
++        result = solver.solve(f, 0.85, 5);
+         //System.out.println(
+         //    "Root: " + result + " Iterations: " + solver.getIterationCount());
+         assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+@@ -270,27 +308,27 @@
+     
+     public void testRootEndpoints() throws Exception {
+         UnivariateRealFunction f = new SinFunction();
+-        UnivariateRealSolver solver = new BrentSolver(f);
++        UnivariateRealSolver solver = new BrentSolver();
+         
+         // endpoint is root
+-        double result = solver.solve(Math.PI, 4);
++        double result = solver.solve(f, Math.PI, 4);
+         assertEquals(result, Math.PI, solver.getAbsoluteAccuracy());
+ 
+-        result = solver.solve(3, Math.PI);
++        result = solver.solve(f, 3, Math.PI);
+         assertEquals(result, Math.PI, solver.getAbsoluteAccuracy());
+     }
+     
+     public void testBadEndpoints() throws Exception {
+         UnivariateRealFunction f = new SinFunction();
+-        UnivariateRealSolver solver = new BrentSolver(f);
++        UnivariateRealSolver solver = new BrentSolver();
+         try {  // bad interval
+-            solver.solve(1, -1);
++            solver.solve(f, 1, -1);
+             fail("Expecting IllegalArgumentException - bad interval");
+         } catch (IllegalArgumentException ex) {
+             // expected
+         }
+         try {  // no bracket
+-            solver.solve(1, 1.5);
++            solver.solve(f, 1, 1.5);
+             fail("Expecting IllegalArgumentException - non-bracketing");
+         } catch (IllegalArgumentException ex) {
+             // expected
+@@ -300,18 +338,18 @@
+     public void testInitialGuess() throws MathException {
+ 
+         MonitoredFunction f = new MonitoredFunction(new QuinticFunction());
+-        UnivariateRealSolver solver = new BrentSolver(f);
++        UnivariateRealSolver solver = new BrentSolver();
+         double result;
+ 
+         // no guess
+-        result = solver.solve(0.6, 7.0);
++        result = solver.solve(f, 0.6, 7.0);
+         assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+         int referenceCallsCount = f.getCallsCount();
+         assertTrue(referenceCallsCount >= 13);
+  
+         // invalid guess (it *is* a root, but outside of the range)
+         try {
+-          result = solver.solve(0.6, 7.0, 0.0);
++          result = solver.solve(f, 0.6, 7.0, 0.0);
+           fail("an IllegalArgumentException was expected");
+         } catch (IllegalArgumentException iae) {
+             // expected behaviour
+@@ -321,19 +359,19 @@
+  
+         // bad guess
+         f.setCallsCount(0);
+-        result = solver.solve(0.6, 7.0, 0.61);
++        result = solver.solve(f, 0.6, 7.0, 0.61);
+         assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+         assertTrue(f.getCallsCount() > referenceCallsCount);
+  
+         // good guess
+         f.setCallsCount(0);
+-        result = solver.solve(0.6, 7.0, 0.999999);
++        result = solver.solve(f, 0.6, 7.0, 0.999999);
+         assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+         assertTrue(f.getCallsCount() < referenceCallsCount);
+ 
+         // perfect guess
+         f.setCallsCount(0);
+-        result = solver.solve(0.6, 7.0, 1.0);
++        result = solver.solve(f, 0.6, 7.0, 1.0);
+         assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+         assertEquals(0, solver.getIterationCount());
+         assertEquals(1, f.getCallsCount());
+diff --git a/src/test/org/apache/commons/math/analysis/LaguerreSolverTest.java b/src/test/org/apache/commons/math/analysis/LaguerreSolverTest.java
+index 12d2bd5..301c443 100644
+--- a/src/test/org/apache/commons/math/analysis/LaguerreSolverTest.java
++++ b/src/test/org/apache/commons/math/analysis/LaguerreSolverTest.java
+@@ -34,9 +34,10 @@
+ public final class LaguerreSolverTest extends TestCase {
+ 
+     /**
+-     * Test of solver for the linear function.
++     * Test deprecated APIs.
+      */
+-    public void testLinearFunction() throws MathException {
++    @Deprecated
++    public void testDeprecated() throws MathException {
+         double min, max, expected, result, tolerance;
+ 
+         // p(x) = 4x - 1
+@@ -52,6 +53,24 @@
+     }
+ 
+     /**
++     * Test of solver for the linear function.
++     */
++    public void testLinearFunction() throws MathException {
++        double min, max, expected, result, tolerance;
++
++        // p(x) = 4x - 1
++        double coefficients[] = { -1.0, 4.0 };
++        PolynomialFunction f = new PolynomialFunction(coefficients);
++        UnivariateRealSolver solver = new LaguerreSolver();
++
++        min = 0.0; max = 1.0; expected = 0.25;
++        tolerance = Math.max(solver.getAbsoluteAccuracy(),
++                    Math.abs(expected * solver.getRelativeAccuracy()));
++        result = solver.solve(f, min, max);
++        assertEquals(expected, result, tolerance);
++    }
++
++    /**
+      * Test of solver for the quadratic function.
+      */
+     public void testQuadraticFunction() throws MathException {
+@@ -60,18 +79,18 @@
+         // p(x) = 2x^2 + 5x - 3 = (x+3)(2x-1)
+         double coefficients[] = { -3.0, 5.0, 2.0 };
+         PolynomialFunction f = new PolynomialFunction(coefficients);
+-        UnivariateRealSolver solver = new LaguerreSolver(f);
++        UnivariateRealSolver solver = new LaguerreSolver();
+ 
+         min = 0.0; max = 2.0; expected = 0.5;
+         tolerance = Math.max(solver.getAbsoluteAccuracy(),
+                     Math.abs(expected * solver.getRelativeAccuracy()));
+-        result = solver.solve(min, max);
++        result = solver.solve(f, min, max);
+         assertEquals(expected, result, tolerance);
+ 
+         min = -4.0; max = -1.0; expected = -3.0;
+         tolerance = Math.max(solver.getAbsoluteAccuracy(),
+                     Math.abs(expected * solver.getRelativeAccuracy()));
+-        result = solver.solve(min, max);
++        result = solver.solve(f, min, max);
+         assertEquals(expected, result, tolerance);
+     }
+ 
+@@ -84,24 +103,24 @@
+         // p(x) = x^5 - x^4 - 12x^3 + x^2 - x - 12 = (x+1)(x+3)(x-4)(x^2-x+1)
+         double coefficients[] = { -12.0, -1.0, 1.0, -12.0, -1.0, 1.0 };
+         PolynomialFunction f = new PolynomialFunction(coefficients);
+-        UnivariateRealSolver solver = new LaguerreSolver(f);
++        UnivariateRealSolver solver = new LaguerreSolver();
+ 
+         min = -2.0; max = 2.0; expected = -1.0;
+         tolerance = Math.max(solver.getAbsoluteAccuracy(),
+                     Math.abs(expected * solver.getRelativeAccuracy()));
+-        result = solver.solve(min, max);
++        result = solver.solve(f, min, max);
+         assertEquals(expected, result, tolerance);
+ 
+         min = -5.0; max = -2.5; expected = -3.0;
+         tolerance = Math.max(solver.getAbsoluteAccuracy(),
+                     Math.abs(expected * solver.getRelativeAccuracy()));
+-        result = solver.solve(min, max);
++        result = solver.solve(f, min, max);
+         assertEquals(expected, result, tolerance);
+ 
+         min = 3.0; max = 6.0; expected = 4.0;
+         tolerance = Math.max(solver.getAbsoluteAccuracy(),
+                     Math.abs(expected * solver.getRelativeAccuracy()));
+-        result = solver.solve(min, max);
++        result = solver.solve(f, min, max);
+         assertEquals(expected, result, tolerance);
+     }
+ 
+@@ -114,8 +133,7 @@
+ 
+         // p(x) = x^5 + 4x^3 + x^2 + 4 = (x+1)(x^2-x+1)(x^2+4)
+         double coefficients[] = { 4.0, 0.0, 1.0, 4.0, 0.0, 1.0 };
+-        PolynomialFunction f = new PolynomialFunction(coefficients);
+-        LaguerreSolver solver = new LaguerreSolver(f);
++        LaguerreSolver solver = new LaguerreSolver();
+         result = solver.solveAll(coefficients, initial);
+ 
+         expected = new Complex(0.0, -2.0);
+@@ -150,26 +168,25 @@
+     public void testParameters() throws Exception {
+         double coefficients[] = { -3.0, 5.0, 2.0 };
+         PolynomialFunction f = new PolynomialFunction(coefficients);
+-        UnivariateRealSolver solver = new LaguerreSolver(f);
++        UnivariateRealSolver solver = new LaguerreSolver();
+ 
+         try {
+             // bad interval
+-            solver.solve(1, -1);
++            solver.solve(f, 1, -1);
+             fail("Expecting IllegalArgumentException - bad interval");
+         } catch (IllegalArgumentException ex) {
+             // expected
+         }
+         try {
+             // no bracketing
+-            solver.solve(2, 3);
++            solver.solve(f, 2, 3);
+             fail("Expecting IllegalArgumentException - no bracketing");
+         } catch (IllegalArgumentException ex) {
+             // expected
+         }
+         try {
+             // bad function
+-            UnivariateRealFunction f2 = new SinFunction();
+-            new LaguerreSolver(f2);
++            solver.solve(new SinFunction(), -1, 1);
+             fail("Expecting IllegalArgumentException - bad function");
+         } catch (IllegalArgumentException ex) {
+             // expected
+diff --git a/src/test/org/apache/commons/math/analysis/MullerSolverTest.java b/src/test/org/apache/commons/math/analysis/MullerSolverTest.java
+index 8209d23..9ef5b50 100644
+--- a/src/test/org/apache/commons/math/analysis/MullerSolverTest.java
++++ b/src/test/org/apache/commons/math/analysis/MullerSolverTest.java
+@@ -35,9 +35,10 @@
+ public final class MullerSolverTest extends TestCase {
+ 
+     /**
+-     * Test of solver for the sine function.
++     * Test deprecated APIs.
+      */
+-    public void testSinFunction() throws MathException {
++    @Deprecated
++    public void testDeprecated() throws MathException {
+         UnivariateRealFunction f = new SinFunction();
+         UnivariateRealSolver solver = new MullerSolver(f);
+         double min, max, expected, result, tolerance;
+@@ -56,23 +57,72 @@
+     }
+ 
+     /**
++     * Test deprecated APIs.
++     */
++    @Deprecated
++    public void testDeprecated2() throws MathException {
++        UnivariateRealFunction f = new QuinticFunction();
++        MullerSolver solver = new MullerSolver(f);
++        double min, max, expected, result, tolerance;
++
++        min = -0.4; max = 0.2; expected = 0.0;
++        tolerance = Math.max(solver.getAbsoluteAccuracy(),
++                    Math.abs(expected * solver.getRelativeAccuracy()));
++        result = solver.solve2(min, max);
++        assertEquals(expected, result, tolerance);
++
++        min = 0.75; max = 1.5; expected = 1.0;
++        tolerance = Math.max(solver.getAbsoluteAccuracy(),
++                    Math.abs(expected * solver.getRelativeAccuracy()));
++        result = solver.solve2(min, max);
++        assertEquals(expected, result, tolerance);
++
++        min = -0.9; max = -0.2; expected = -0.5;
++        tolerance = Math.max(solver.getAbsoluteAccuracy(),
++                    Math.abs(expected * solver.getRelativeAccuracy()));
++        result = solver.solve2(min, max);
++        assertEquals(expected, result, tolerance);
++    }
++
++    /**
++     * Test of solver for the sine function.
++     */
++    public void testSinFunction() throws MathException {
++        UnivariateRealFunction f = new SinFunction();
++        UnivariateRealSolver solver = new MullerSolver();
++        double min, max, expected, result, tolerance;
++
++        min = 3.0; max = 4.0; expected = Math.PI;
++        tolerance = Math.max(solver.getAbsoluteAccuracy(),
++                    Math.abs(expected * solver.getRelativeAccuracy()));
++        result = solver.solve(f, min, max);
++        assertEquals(expected, result, tolerance);
++
++        min = -1.0; max = 1.5; expected = 0.0;
++        tolerance = Math.max(solver.getAbsoluteAccuracy(),
++                    Math.abs(expected * solver.getRelativeAccuracy()));
++        result = solver.solve(f, min, max);
++        assertEquals(expected, result, tolerance);
++    }
++
++    /**
+      * Test of solver for the sine function using solve2().
+      */
+     public void testSinFunction2() throws MathException {
+         UnivariateRealFunction f = new SinFunction();
+-        MullerSolver solver = new MullerSolver(f);
++        MullerSolver solver = new MullerSolver();
+         double min, max, expected, result, tolerance;
+ 
+         min = 3.0; max = 4.0; expected = Math.PI;
+         tolerance = Math.max(solver.getAbsoluteAccuracy(),
+                     Math.abs(expected * solver.getRelativeAccuracy()));
+-        result = solver.solve2(min, max);
++        result = solver.solve2(f, min, max);
+         assertEquals(expected, result, tolerance);
+ 
+         min = -1.0; max = 1.5; expected = 0.0;
+         tolerance = Math.max(solver.getAbsoluteAccuracy(),
+                     Math.abs(expected * solver.getRelativeAccuracy()));
+-        result = solver.solve2(min, max);
++        result = solver.solve2(f, min, max);
+         assertEquals(expected, result, tolerance);
+     }
+ 
+@@ -81,25 +131,25 @@
+      */
+     public void testQuinticFunction() throws MathException {
+         UnivariateRealFunction f = new QuinticFunction();
+-        UnivariateRealSolver solver = new MullerSolver(f);
++        UnivariateRealSolver solver = new MullerSolver();
+         double min, max, expected, result, tolerance;
+ 
+         min = -0.4; max = 0.2; expected = 0.0;
+         tolerance = Math.max(solver.getAbsoluteAccuracy(),
+                     Math.abs(expected * solver.getRelativeAccuracy()));
+-        result = solver.solve(min, max);
++        result = solver.solve(f, min, max);
+         assertEquals(expected, result, tolerance);
+ 
+         min = 0.75; max = 1.5; expected = 1.0;
+         tolerance = Math.max(solver.getAbsoluteAccuracy(),
+                     Math.abs(expected * solver.getRelativeAccuracy()));
+-        result = solver.solve(min, max);
++        result = solver.solve(f, min, max);
+         assertEquals(expected, result, tolerance);
+ 
+         min = -0.9; max = -0.2; expected = -0.5;
+         tolerance = Math.max(solver.getAbsoluteAccuracy(),
+                     Math.abs(expected * solver.getRelativeAccuracy()));
+-        result = solver.solve(min, max);
++        result = solver.solve(f, min, max);
+         assertEquals(expected, result, tolerance);
+     }
+ 
+@@ -108,25 +158,25 @@
+      */
+     public void testQuinticFunction2() throws MathException {
+         UnivariateRealFunction f = new QuinticFunction();
+-        MullerSolver solver = new MullerSolver(f);
++        MullerSolver solver = new MullerSolver();
+         double min, max, expected, result, tolerance;
+ 
+         min = -0.4; max = 0.2; expected = 0.0;
+         tolerance = Math.max(solver.getAbsoluteAccuracy(),
+                     Math.abs(expected * solver.getRelativeAccuracy()));
+-        result = solver.solve2(min, max);
++        result = solver.solve2(f, min, max);
+         assertEquals(expected, result, tolerance);
+ 
+         min = 0.75; max = 1.5; expected = 1.0;
+         tolerance = Math.max(solver.getAbsoluteAccuracy(),
+                     Math.abs(expected * solver.getRelativeAccuracy()));
+-        result = solver.solve2(min, max);
++        result = solver.solve2(f, min, max);
+         assertEquals(expected, result, tolerance);
+ 
+         min = -0.9; max = -0.2; expected = -0.5;
+         tolerance = Math.max(solver.getAbsoluteAccuracy(),
+                     Math.abs(expected * solver.getRelativeAccuracy()));
+-        result = solver.solve2(min, max);
++        result = solver.solve2(f, min, max);
+         assertEquals(expected, result, tolerance);
+     }
+ 
+@@ -139,25 +189,25 @@
+      */
+     public void testExpm1Function() throws MathException {
+         UnivariateRealFunction f = new Expm1Function();
+-        UnivariateRealSolver solver = new MullerSolver(f);
++        UnivariateRealSolver solver = new MullerSolver();
+         double min, max, expected, result, tolerance;
+ 
+         min = -1.0; max = 2.0; expected = 0.0;
+         tolerance = Math.max(solver.getAbsoluteAccuracy(),
+                     Math.abs(expected * solver.getRelativeAccuracy()));
+-        result = solver.solve(min, max);
++        result = solver.solve(f, min, max);
+         assertEquals(expected, result, tolerance);
+ 
+         min = -20.0; max = 10.0; expected = 0.0;
+         tolerance = Math.max(solver.getAbsoluteAccuracy(),
+                     Math.abs(expected * solver.getRelativeAccuracy()));
+-        result = solver.solve(min, max);
++        result = solver.solve(f, min, max);
+         assertEquals(expected, result, tolerance);
+ 
+         min = -50.0; max = 100.0; expected = 0.0;
+         tolerance = Math.max(solver.getAbsoluteAccuracy(),
+                     Math.abs(expected * solver.getRelativeAccuracy()));
+-        result = solver.solve(min, max);
++        result = solver.solve(f, min, max);
+         assertEquals(expected, result, tolerance);
+     }
+ 
+@@ -168,25 +218,25 @@
+      */
+     public void testExpm1Function2() throws MathException {
+         UnivariateRealFunction f = new Expm1Function();
+-        MullerSolver solver = new MullerSolver(f);
++        MullerSolver solver = new MullerSolver();
+         double min, max, expected, result, tolerance;
+ 
+         min = -1.0; max = 2.0; expected = 0.0;
+         tolerance = Math.max(solver.getAbsoluteAccuracy(),
+                     Math.abs(expected * solver.getRelativeAccuracy()));
+-        result = solver.solve2(min, max);
++        result = solver.solve2(f, min, max);
+         assertEquals(expected, result, tolerance);
+ 
+         min = -20.0; max = 10.0; expected = 0.0;
+         tolerance = Math.max(solver.getAbsoluteAccuracy(),
+                     Math.abs(expected * solver.getRelativeAccuracy()));
+-        result = solver.solve2(min, max);
++        result = solver.solve2(f, min, max);
+         assertEquals(expected, result, tolerance);
+ 
+         min = -50.0; max = 100.0; expected = 0.0;
+         tolerance = Math.max(solver.getAbsoluteAccuracy(),
+                     Math.abs(expected * solver.getRelativeAccuracy()));
+-        result = solver.solve2(min, max);
++        result = solver.solve2(f, min, max);
+         assertEquals(expected, result, tolerance);
+     }
+ 
+@@ -195,18 +245,18 @@
+      */
+     public void testParameters() throws Exception {
+         UnivariateRealFunction f = new SinFunction();
+-        UnivariateRealSolver solver = new MullerSolver(f);
++        UnivariateRealSolver solver = new MullerSolver();
+ 
+         try {
+             // bad interval
+-            solver.solve(1, -1);
++            solver.solve(f, 1, -1);
+             fail("Expecting IllegalArgumentException - bad interval");
+         } catch (IllegalArgumentException ex) {
+             // expected
+         }
+         try {
+             // no bracketing
+-            solver.solve(2, 3);
++            solver.solve(f, 2, 3);
+             fail("Expecting IllegalArgumentException - no bracketing");
+         } catch (IllegalArgumentException ex) {
+             // expected
+diff --git a/src/test/org/apache/commons/math/analysis/NewtonSolverTest.java b/src/test/org/apache/commons/math/analysis/NewtonSolverTest.java
+index 52c1bd5..f6b4cb6 100644
+--- a/src/test/org/apache/commons/math/analysis/NewtonSolverTest.java
++++ b/src/test/org/apache/commons/math/analysis/NewtonSolverTest.java
+@@ -26,10 +26,9 @@
+  * @version $Revision$ $Date$
+  */
+ public final class NewtonSolverTest extends TestCase {
+-    /**
+-     *
+-     */
+-    public void testSinZero() throws MathException {
++
++    @Deprecated
++    public void testDeprecated() throws MathException {
+         DifferentiableUnivariateRealFunction f = new SinFunction();
+         double result;
+         
+@@ -46,44 +45,63 @@
+     }
+ 
+     /**
++    *
++    */
++   public void testSinZero() throws MathException {
++       DifferentiableUnivariateRealFunction f = new SinFunction();
++       double result;
++       
++       UnivariateRealSolver solver = new NewtonSolver();
++       result = solver.solve(f, 3, 4);
++       assertEquals(result, Math.PI, solver.getAbsoluteAccuracy());
++
++       result = solver.solve(f, 1, 4);
++       assertEquals(result, Math.PI, solver.getAbsoluteAccuracy());
++       
++       //TODO:  create abstract solver test class, move these there
++       assertEquals(result, solver.getResult(), 0);
++       assertTrue(solver.getIterationCount() > 0);
++   }
++
++   /**
+      *
+      */
+     public void testQuinticZero() throws MathException {
+         DifferentiableUnivariateRealFunction f = new QuinticFunction();
+         double result;
+ 
+-        UnivariateRealSolver solver = new BisectionSolver(f);
+-        result = solver.solve(-0.2, 0.2);
++        UnivariateRealSolver solver = new NewtonSolver();
++        result = solver.solve(f, -0.2, 0.2);
+         assertEquals(result, 0, solver.getAbsoluteAccuracy());
+ 
+-        result = solver.solve(-0.1, 0.3);
++        result = solver.solve(f, -0.1, 0.3);
+         assertEquals(result, 0, solver.getAbsoluteAccuracy());
+ 
+-        result = solver.solve(-0.3, 0.45);
++        result = solver.solve(f, -0.3, 0.45);
+         assertEquals(result, 0, solver.getAbsoluteAccuracy());
+ 
+-        result = solver.solve(0.3, 0.7);
++        result = solver.solve(f, 0.3, 0.7);
+         assertEquals(result, 0.5, solver.getAbsoluteAccuracy());
+ 
+-        result = solver.solve(0.2, 0.6);
++        result = solver.solve(f, 0.2, 0.6);
+         assertEquals(result, 0.5, solver.getAbsoluteAccuracy());
+ 
+-        result = solver.solve(0.05, 0.95);
++        result = solver.solve(f, 0.05, 0.95);
+         assertEquals(result, 0.5, solver.getAbsoluteAccuracy());
+ 
+-        result = solver.solve(0.85, 1.25);
++        result = solver.solve(f, 0.85, 1.25);
+         assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+ 
+-        result = solver.solve(0.8, 1.2);
++        result = solver.solve(f, 0.8, 1.2);
+         assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+ 
+-        result = solver.solve(0.85, 1.75);
++        result = solver.solve(f, 0.85, 1.75);
+         assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+ 
+-        result = solver.solve(0.55, 1.45);
++        result = solver.solve(f, 0.55, 1.45);
+         assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+ 
+-        result = solver.solve(0.85, 5);
++        result = solver.solve(f, 0.85, 5);
+         assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+     }
+     
+@@ -94,57 +112,57 @@
+         DifferentiableUnivariateRealFunction f = new QuinticFunction();
+         double result;
+         
+-        NewtonSolver solver = new NewtonSolver(f);
++        NewtonSolver solver = new NewtonSolver();
+         NewtonSolver solver2 = (NewtonSolver)TestUtils.serializeAndRecover(solver);
+         
+-        result = solver.solve(-0.2, 0.2);
++        result = solver.solve(f, -0.2, 0.2);
+         assertEquals(result, 0, solver.getAbsoluteAccuracy());
+-        assertEquals(solver2.solve(-0.2, 0.2), result, solver2.getAbsoluteAccuracy());
++        assertEquals(solver2.solve(f, -0.2, 0.2), result, solver2.getAbsoluteAccuracy());
+         
+-        result = solver.solve(-0.1, 0.3);
++        result = solver.solve(f, -0.1, 0.3);
+         assertEquals(result, 0, solver.getAbsoluteAccuracy());
+-        assertEquals(solver2.solve(-0.1, 0.3), result, solver2.getAbsoluteAccuracy());
++        assertEquals(solver2.solve(f, -0.1, 0.3), result, solver2.getAbsoluteAccuracy());
+         
+-        result = solver.solve(-0.3, 0.45);
++        result = solver.solve(f, -0.3, 0.45);
+         assertEquals(result, 0, solver.getAbsoluteAccuracy());
+-        assertEquals(solver2.solve(-0.3, 0.45), result, solver2.getAbsoluteAccuracy());
++        assertEquals(solver2.solve(f, -0.3, 0.45), result, solver2.getAbsoluteAccuracy());
+         
+-        result = solver.solve(0.3, 0.7);
++        result = solver.solve(f, 0.3, 0.7);
+         assertEquals(result, 0.5, solver.getAbsoluteAccuracy());
+-        assertEquals(solver2.solve(0.3, 0.7), result, solver2.getAbsoluteAccuracy());
++        assertEquals(solver2.solve(f, 0.3, 0.7), result, solver2.getAbsoluteAccuracy());
+         
+-        result = solver.solve(0.2, 0.6);
++        result = solver.solve(f, 0.2, 0.6);
+         assertEquals(result, 0.5, solver.getAbsoluteAccuracy());
+-        assertEquals(solver2.solve(0.2, 0.6), result, solver2.getAbsoluteAccuracy());
++        assertEquals(solver2.solve(f, 0.2, 0.6), result, solver2.getAbsoluteAccuracy());
+         
+-        result = solver.solve(0.05, 0.95);
++        result = solver.solve(f, 0.05, 0.95);
+         assertEquals(result, 0.5, solver.getAbsoluteAccuracy());
+-        assertEquals(solver2.solve(0.05, 0.95), result, solver2.getAbsoluteAccuracy());
++        assertEquals(solver2.solve(f, 0.05, 0.95), result, solver2.getAbsoluteAccuracy());
+         
+-        result = solver.solve(0.85, 1.25);
++        result = solver.solve(f, 0.85, 1.25);
+         assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+-        assertEquals(solver2.solve(0.85, 1.25), result, solver2.getAbsoluteAccuracy());
++        assertEquals(solver2.solve(f, 0.85, 1.25), result, solver2.getAbsoluteAccuracy());
+         
+-        result = solver.solve(0.8, 1.2);
++        result = solver.solve(f, 0.8, 1.2);
+         assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+-        assertEquals(solver2.solve(0.8, 1.2), result, solver2.getAbsoluteAccuracy());
++        assertEquals(solver2.solve(f, 0.8, 1.2), result, solver2.getAbsoluteAccuracy());
+         
+-        result = solver.solve(0.85, 1.75);
++        result = solver.solve(f, 0.85, 1.75);
+         assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+-        assertEquals(solver2.solve(0.85, 1.75), result, solver2.getAbsoluteAccuracy());
++        assertEquals(solver2.solve(f, 0.85, 1.75), result, solver2.getAbsoluteAccuracy());
+         
+-        result = solver.solve(0.55, 1.45);
++        result = solver.solve(f, 0.55, 1.45);
+         assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+-        assertEquals(solver2.solve(0.55, 1.45), result, solver2.getAbsoluteAccuracy());
++        assertEquals(solver2.solve(f, 0.55, 1.45), result, solver2.getAbsoluteAccuracy());
+         
+-        result = solver.solve(0.85, 5);
++        result = solver.solve(f, 0.85, 5);
+         assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+-        assertEquals(solver2.solve(0.85, 5), result, solver2.getAbsoluteAccuracy());
++        assertEquals(solver2.solve(f, 0.85, 5), result, solver2.getAbsoluteAccuracy());
+         
+         /* Test Reset */
+         double newValue = 1.0e-2;
+         f = new QuinticFunction();
+-        solver = new NewtonSolver(f);
++        solver = new NewtonSolver();
+         
+         double oldValue = solver.getRelativeAccuracy();
+         solver.setRelativeAccuracy(newValue);
+diff --git a/src/test/org/apache/commons/math/analysis/RiddersSolverTest.java b/src/test/org/apache/commons/math/analysis/RiddersSolverTest.java
+index e0f4763..e174c82 100644
+--- a/src/test/org/apache/commons/math/analysis/RiddersSolverTest.java
++++ b/src/test/org/apache/commons/math/analysis/RiddersSolverTest.java
+@@ -33,9 +33,10 @@
+ public final class RiddersSolverTest extends TestCase {
+ 
+     /**
+-     * Test of solver for the sine function.
++     * Test the deprecated APIs.
+      */
+-    public void testSinFunction() throws MathException {
++    @Deprecated
++    public void testDeprecated() throws MathException {
+         UnivariateRealFunction f = new SinFunction();
+         UnivariateRealSolver solver = new RiddersSolver(f);
+         double min, max, expected, result, tolerance;
+@@ -54,29 +55,50 @@
+     }
+ 
+     /**
++     * Test of solver for the sine function.
++     */
++    public void testSinFunction() throws MathException {
++        UnivariateRealFunction f = new SinFunction();
++        UnivariateRealSolver solver = new RiddersSolver();
++        double min, max, expected, result, tolerance;
++
++        min = 3.0; max = 4.0; expected = Math.PI;
++        tolerance = Math.max(solver.getAbsoluteAccuracy(),
++                    Math.abs(expected * solver.getRelativeAccuracy()));
++        result = solver.solve(f, min, max);
++        assertEquals(expected, result, tolerance);
++
++        min = -1.0; max = 1.5; expected = 0.0;
++        tolerance = Math.max(solver.getAbsoluteAccuracy(),
++                    Math.abs(expected * solver.getRelativeAccuracy()));
++        result = solver.solve(f, min, max);
++        assertEquals(expected, result, tolerance);
++    }
++
++    /**
+      * Test of solver for the quintic function.
+      */
+     public void testQuinticFunction() throws MathException {
+         UnivariateRealFunction f = new QuinticFunction();
+-        UnivariateRealSolver solver = new RiddersSolver(f);
++        UnivariateRealSolver solver = new RiddersSolver();
+         double min, max, expected, result, tolerance;
+ 
+         min = -0.4; max = 0.2; expected = 0.0;
+         tolerance = Math.max(solver.getAbsoluteAccuracy(),
+                     Math.abs(expected * solver.getRelativeAccuracy()));
+-        result = solver.solve(min, max);
++        result = solver.solve(f, min, max);
+         assertEquals(expected, result, tolerance);
+ 
+         min = 0.75; max = 1.5; expected = 1.0;
+         tolerance = Math.max(solver.getAbsoluteAccuracy(),
+                     Math.abs(expected * solver.getRelativeAccuracy()));
+-        result = solver.solve(min, max);
++        result = solver.solve(f, min, max);
+         assertEquals(expected, result, tolerance);
+ 
+         min = -0.9; max = -0.2; expected = -0.5;
+         tolerance = Math.max(solver.getAbsoluteAccuracy(),
+                     Math.abs(expected * solver.getRelativeAccuracy()));
+-        result = solver.solve(min, max);
++        result = solver.solve(f, min, max);
+         assertEquals(expected, result, tolerance);
+     }
+ 
+@@ -85,25 +107,25 @@
+      */
+     public void testExpm1Function() throws MathException {
+         UnivariateRealFunction f = new Expm1Function();
+-        UnivariateRealSolver solver = new RiddersSolver(f);
++        UnivariateRealSolver solver = new RiddersSolver();
+         double min, max, expected, result, tolerance;
+ 
+         min = -1.0; max = 2.0; expected = 0.0;
+         tolerance = Math.max(solver.getAbsoluteAccuracy(),
+                     Math.abs(expected * solver.getRelativeAccuracy()));
+-        result = solver.solve(min, max);
++        result = solver.solve(f, min, max);
+         assertEquals(expected, result, tolerance);
+ 
+         min = -20.0; max = 10.0; expected = 0.0;
+         tolerance = Math.max(solver.getAbsoluteAccuracy(),
+                     Math.abs(expected * solver.getRelativeAccuracy()));
+-        result = solver.solve(min, max);
++        result = solver.solve(f, min, max);
+         assertEquals(expected, result, tolerance);
+ 
+         min = -50.0; max = 100.0; expected = 0.0;
+         tolerance = Math.max(solver.getAbsoluteAccuracy(),
+                     Math.abs(expected * solver.getRelativeAccuracy()));
+-        result = solver.solve(min, max);
++        result = solver.solve(f, min, max);
+         assertEquals(expected, result, tolerance);
+     }
+ 
+@@ -112,18 +134,18 @@
+      */
+     public void testParameters() throws Exception {
+         UnivariateRealFunction f = new SinFunction();
+-        UnivariateRealSolver solver = new RiddersSolver(f);
++        UnivariateRealSolver solver = new RiddersSolver();
+ 
+         try {
+             // bad interval
+-            solver.solve(1, -1);
++            solver.solve(f, 1, -1);
+             fail("Expecting IllegalArgumentException - bad interval");
+         } catch (IllegalArgumentException ex) {
+             // expected
+         }
+         try {
+             // no bracketing
+-            solver.solve(2, 3);
++            solver.solve(f, 2, 3);
+             fail("Expecting IllegalArgumentException - no bracketing");
+         } catch (IllegalArgumentException ex) {
+             // expected
+diff --git a/src/test/org/apache/commons/math/analysis/UnivariateRealSolverFactoryImplTest.java b/src/test/org/apache/commons/math/analysis/UnivariateRealSolverFactoryImplTest.java
+index 292e914..f7cd280 100644
+--- a/src/test/org/apache/commons/math/analysis/UnivariateRealSolverFactoryImplTest.java
++++ b/src/test/org/apache/commons/math/analysis/UnivariateRealSolverFactoryImplTest.java
+@@ -28,8 +28,6 @@
+     /** solver factory */
+     private UnivariateRealSolverFactory factory;
+     
+-    /** function */
+-    private DifferentiableUnivariateRealFunction function;
+     /**
+      * @throws java.lang.Exception
+      * @see junit.framework.TestCase#tearDown()
+@@ -37,7 +35,6 @@
+     protected void setUp() throws Exception {
+         super.setUp();
+         factory = new UnivariateRealSolverFactoryImpl();
+-        function = new SinFunction();
+     }
+     
+     /**
+@@ -46,67 +43,31 @@
+      */
+     protected void tearDown() throws Exception {
+         factory = null;
+-        function = null;
+         super.tearDown();
+     }
+ 
+-    public void testNewBisectionSolverNull() {
+-        try {
+-            factory.newBisectionSolver(null);
+-            fail();
+-        } catch(IllegalArgumentException ex) {
+-            // success
+-        }
+-    }
+-
+     public void testNewBisectionSolverValid() {
+-        UnivariateRealSolver solver = factory.newBisectionSolver(function);
++        UnivariateRealSolver solver = factory.newBisectionSolver();
+         assertNotNull(solver);
+         assertTrue(solver instanceof BisectionSolver);
+     }
+ 
+-    public void testNewNewtonSolverNull() {
+-        try {
+-            factory.newNewtonSolver(null);
+-            fail();
+-        } catch(IllegalArgumentException ex) {
+-            // success
+-        }
+-    }
+-
+     public void testNewNewtonSolverValid() {
+-        UnivariateRealSolver solver = factory.newNewtonSolver(function);
++        UnivariateRealSolver solver = factory.newNewtonSolver();
+         assertNotNull(solver);
+         assertTrue(solver instanceof NewtonSolver);
+     }
+ 
+-    public void testNewBrentSolverNull() {
+-        try {
+-            factory.newBrentSolver(null);
+-            fail();
+-        } catch(IllegalArgumentException ex) {
+-            // success
+-        }
+-    }
+-
+     public void testNewBrentSolverValid() {
+-        UnivariateRealSolver solver = factory.newBrentSolver(function);
++        UnivariateRealSolver solver = factory.newBrentSolver();
+         assertNotNull(solver);
+         assertTrue(solver instanceof BrentSolver);
+     }
+ 
+-    public void testNewSecantSolverNull() {
+-        try {
+-            factory.newSecantSolver(null);
+-            fail();
+-        } catch(IllegalArgumentException ex) {
+-            // success
+-        }
+-    }
+-
+     public void testNewSecantSolverValid() {
+-        UnivariateRealSolver solver = factory.newSecantSolver(function);
++        UnivariateRealSolver solver = factory.newSecantSolver();
+         assertNotNull(solver);
+         assertTrue(solver instanceof SecantSolver);
+     }
++
+ }

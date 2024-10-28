@@ -1,0 +1,196 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.lang.time.DateUtilsTest::testTruncateLang59",
+    "test.dir": "src/test",
+    "clz.modified": "org.apache.commons.lang.time.DateUtils",
+    "src.dir": "src/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Lang",
+  "id": "65",
+  "workingDir": "../bugs/Lang_65_tmp",
+  "bug_name": "Lang_65",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.lang.time.DateUtilsTest",
+      "test_function": "testTruncateLang59",
+      "assertion_line": "927",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Truncate Calendar.SECOND expected:\u003cSun Oct 31 01:02:03 MDT 2004\u003e but was:\u003cSun Oct 31 01:02:03 MST 2004\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/lang/time/DateUtils.java",
+        "src/java/org/apache/commons/lang/time/DateUtils.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.lang.time.DateUtils:modify:[Calendar val, int field, boolean round]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.lang.time.DateUtils:modify:[Calendar val, int field, boolean round]:void",
+            "org.apache.commons.lang.time.DateUtils:iterator:[Calendar focus, int rangeStyle]:Iterator"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "624",
+            "625",
+            "626",
+            "634",
+            "635",
+            "636",
+            "639",
+            "640",
+            "641",
+            "642",
+            "643",
+            "644",
+            "645",
+            "648",
+            "649",
+            "650",
+            "651",
+            "652",
+            "653",
+            "654",
+            "657",
+            "658",
+            "659",
+            "660",
+            "663",
+            "664",
+            "665",
+            "666",
+            "737",
+            "739"
+          ],
+          "num": 30
+        },
+        {
+          "qualified_names": [
+            "623",
+            "636",
+            "764"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/lang/time/DateUtils.java b/src/java/org/apache/commons/lang/time/DateUtils.java\nindex 79c13f0..531e73f 100644\n--- a/src/java/org/apache/commons/lang/time/DateUtils.java\n+++ b/src/java/org/apache/commons/lang/time/DateUtils.java\n@@ -621,9 +621,6 @@\n             throw new ArithmeticException(\"Calendar value too large for accurate calculations\");\n         }\n         \n-        if (field \u003d\u003d Calendar.MILLISECOND) {\n-            return;\n-        }\n \n         // ----------------- Fix for LANG-59 ---------------------- START ---------------\n         // see http://issues.apache.org/jira/browse/LANG-59\n@@ -631,39 +628,14 @@\n         // Manually truncate milliseconds, seconds and minutes, rather than using\n         // Calendar methods.\n \n-        Date date \u003d val.getTime();\n-        long time \u003d date.getTime();\n-        boolean done \u003d false;\n \n         // truncate milliseconds\n-        int millisecs \u003d val.get(Calendar.MILLISECOND);\n-        if (!round || millisecs \u003c 500) {\n-            time \u003d time - millisecs;\n-            if (field \u003d\u003d Calendar.SECOND) {\n-                done \u003d true;\n-            }\n-        }\n \n         // truncate seconds\n-        int seconds \u003d val.get(Calendar.SECOND);\n-        if (!done \u0026\u0026 (!round || seconds \u003c 30)) {\n-            time \u003d time - (seconds * 1000L);\n-            if (field \u003d\u003d Calendar.MINUTE) {\n-                done \u003d true;\n-            }\n-        }\n \n         // truncate minutes\n-        int minutes \u003d val.get(Calendar.MINUTE);\n-        if (!done \u0026\u0026 (!round || minutes \u003c 30)) {\n-            time \u003d time - (minutes * 60000L);\n-        }\n \n         // reset time\n-        if (date.getTime() !\u003d time) {\n-            date.setTime(time);\n-            val.setTime(date);\n-        }\n         // ----------------- Fix for LANG-59 ----------------------- END ----------------\n \n         boolean roundUp \u003d false;\n@@ -734,9 +706,7 @@\n                 roundUp \u003d offset \u003e ((max - min) / 2);\n             }\n             //We need to remove this field\n-            if (offset !\u003d 0) {\n                 val.set(fields[i][0], val.get(fields[i][0]) - offset);\n-            }\n         }\n         throw new IllegalArgumentException(\"The field \" + field + \" is not supported\");\n \n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [24656,24722]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [25005,25031]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [25040,25067]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [25076,25097]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [25140,25186]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [25195,25361]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [25399,25438]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [25447,25629]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [25667,25706]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [25715,25811]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [25843,25945]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [29439,29450]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [29452,29538]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [29435,29538]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.apache.commons.lang.time.DateUtils:iterator:[Calendar focus, int rangeStyle]:Iterator"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

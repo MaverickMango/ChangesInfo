@@ -1,0 +1,103 @@
+diff -u -r data/changesInfo//Compress_3/properties/modified_classes/inducing/src/main/java/org/apache/commons/compress/archivers/ar/ArArchiveOutputStream.java data/changesInfo//Compress_3/cleaned/fixing/src/main/java/org/apache/commons/compress/archivers/ar/ArArchiveOutputStream.java
+--- data/changesInfo//Compress_3/properties/modified_classes/inducing/src/main/java/org/apache/commons/compress/archivers/ar/ArArchiveOutputStream.java	2023-12-27 22:52:18.663434919 -0800
++++ data/changesInfo//Compress_3/cleaned/fixing/src/main/java/org/apache/commons/compress/archivers/ar/ArArchiveOutputStream.java	2023-07-27 01:19:04.528859241 -0700
+@@ -153,7 +153,6 @@
+     }
+ 
+     public void close() throws IOException {
+-        closeArchiveEntry();
+         out.close();
+         prevEntry = null;
+     }
+@@ -167,6 +166,8 @@
+      * @see org.apache.commons.compress.archivers.ArchiveOutputStream#finish()
+      */
+     public void finish() throws IOException {
+-        // Nothing to do
++        if(haveUnclosedEntry) {
++            throw new IOException("This archives contains unclosed entries.");
++        }
+     }
+ }
+Only in data/changesInfo//Compress_3/properties/modified_classes/inducing/src/main/java/org/apache/commons/compress/archivers: ArchiveOutputStream.java
+diff -u -r data/changesInfo//Compress_3/properties/modified_classes/inducing/src/main/java/org/apache/commons/compress/archivers/cpio/CpioArchiveOutputStream.java data/changesInfo//Compress_3/cleaned/fixing/src/main/java/org/apache/commons/compress/archivers/cpio/CpioArchiveOutputStream.java
+--- data/changesInfo//Compress_3/properties/modified_classes/inducing/src/main/java/org/apache/commons/compress/archivers/cpio/CpioArchiveOutputStream.java	2023-07-27 01:19:52.356000000 -0700
++++ data/changesInfo//Compress_3/cleaned/fixing/src/main/java/org/apache/commons/compress/archivers/cpio/CpioArchiveOutputStream.java	2023-07-27 01:20:28.232995146 -0700
+@@ -315,7 +315,7 @@
+             return;
+         }
+         if (this.entry != null) {
+-            closeArchiveEntry();
++            throw new IOException("This archives contains unclosed entries.");
+         }
+         this.entry = new CpioArchiveEntry(this.entryFormat);
+         this.entry.setName(CPIO_TRAILER);
+diff -u -r data/changesInfo//Compress_3/properties/modified_classes/inducing/src/main/java/org/apache/commons/compress/archivers/tar/TarArchiveOutputStream.java data/changesInfo//Compress_3/cleaned/fixing/src/main/java/org/apache/commons/compress/archivers/tar/TarArchiveOutputStream.java
+--- data/changesInfo//Compress_3/properties/modified_classes/inducing/src/main/java/org/apache/commons/compress/archivers/tar/TarArchiveOutputStream.java	2023-07-27 01:01:02.792302317 -0700
++++ data/changesInfo//Compress_3/cleaned/fixing/src/main/java/org/apache/commons/compress/archivers/tar/TarArchiveOutputStream.java	2023-07-27 01:06:22.945628320 -0700
+@@ -50,6 +50,7 @@
+     private int       longFileMode = LONGFILE_ERROR;
+ 
+     private boolean closed = false;
++    private boolean haveUnclosedEntry = false;
+ 
+     private final OutputStream out;
+ 
+@@ -107,6 +108,9 @@
+      * @throws IOException on error
+      */
+     public void finish() throws IOException {
++        if(haveUnclosedEntry) {
++            throw new IOException("This archives contains unclosed entries.");
++        }
+         writeEOFRecord();
+         writeEOFRecord();
+     }
+@@ -182,6 +186,7 @@
+             currSize = entry.getSize();
+         }
+         currName = entry.getName();
++        haveUnclosedEntry = true;
+     }
+ 
+     /**
+@@ -212,6 +217,7 @@
+                                   + "' before the '" + currSize
+                                   + "' bytes specified in the header were written");
+         }
++        haveUnclosedEntry = false;
+     }
+ 
+     /**
+diff -u -r data/changesInfo//Compress_3/properties/modified_classes/inducing/src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveOutputStream.java data/changesInfo//Compress_3/cleaned/fixing/src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveOutputStream.java
+--- data/changesInfo//Compress_3/properties/modified_classes/inducing/src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveOutputStream.java	2023-07-27 01:16:34.892000000 -0700
++++ data/changesInfo//Compress_3/cleaned/fixing/src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveOutputStream.java	2023-07-27 01:17:07.528714096 -0700
+@@ -334,7 +334,9 @@
+      * @throws IOException on error
+      */
+     public void finish() throws IOException {
+-        closeArchiveEntry();
++        if(entry != null) {
++            throw new IOException("This archives contains unclosed entries.");
++        }
+         cdOffset = written;
+         for (Iterator i = entries.iterator(); i.hasNext(); ) {
+             writeCentralFileHeader((ZipArchiveEntry) i.next());
+diff -u -r data/changesInfo//Compress_3/properties/modified_classes/inducing/src/test/java/org/apache/commons/compress/IOMethodsTest.java data/changesInfo//Compress_3/cleaned/fixing/src/test/java/org/apache/commons/compress/IOMethodsTest.java
+--- data/changesInfo//Compress_3/properties/modified_classes/inducing/src/test/java/org/apache/commons/compress/IOMethodsTest.java	2023-07-27 01:08:25.297000000 -0700
++++ data/changesInfo//Compress_3/cleaned/fixing/src/test/java/org/apache/commons/compress/IOMethodsTest.java	2023-07-27 01:12:09.088675328 -0700
+@@ -104,11 +104,11 @@
+         for (int i=0; i<byteTest.length; i++){
+             aos1.write(byteTest[i]);            
+         }
+-        aos1.close();
++        aos1.closeArchiveEntry();
+         aos2.write(byteTest);
+-        aos2.close();
++        aos2.closeArchiveEntry();
+         aos3.write(byteTest, 0, byteTest.length);
+-        aos3.close();
++        aos3.closeArchiveEntry();
+         assertEquals("out1!=out2",out1.toString(),out2.toString());
+         assertEquals("out1!=out3",out1.toString(),out3.toString());
+     }

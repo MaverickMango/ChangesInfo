@@ -1,0 +1,362 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.interop.DeprecatedTypeHandling1102Test::testExplicitMapType,com.fasterxml.jackson.databind.interop.DeprecatedTypeHandling1102Test::testExplicitCollectionType,com.fasterxml.jackson.databind.interop.DeprecatedTypeHandling1102Test::testPOJOSubType",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.type.CollectionType,com.fasterxml.jackson.databind.type.MapType,com.fasterxml.jackson.databind.type.SimpleType",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "38",
+  "workingDir": "../bugs/JacksonDatabind_38_tmp",
+  "bug_name": "JacksonDatabind_38",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.interop.DeprecatedTypeHandling1102Test",
+      "test_function": "testExplicitMapType",
+      "assertion_line": "85",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003cclass com.fasterxml.jackson.databind.interop.DeprecatedTypeHandling1102Test$Point\u003e but was:\u003cclass java.util.LinkedHashMap\u003e"
+    },
+    {
+      "test_class": "com.fasterxml.jackson.databind.interop.DeprecatedTypeHandling1102Test",
+      "test_function": "testExplicitCollectionType",
+      "assertion_line": "66",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003cclass com.fasterxml.jackson.databind.interop.DeprecatedTypeHandling1102Test$Point\u003e but was:\u003cclass java.util.LinkedHashMap\u003e"
+    },
+    {
+      "test_class": "com.fasterxml.jackson.databind.interop.DeprecatedTypeHandling1102Test",
+      "test_function": "testPOJOSubType",
+      "assertion_line": "47",
+      "exception": "com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException",
+      "message": "Unrecognized field \"x\" (class com.fasterxml.jackson.databind.interop.DeprecatedTypeHandling1102Test$Point3D), not marked as ignorable (one known property: \"z\"])"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/type/CollectionType.java",
+        "src/main/java/com/fasterxml/jackson/databind/type/CollectionType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.type.CollectionType:construct:[Class\u003c?\u003e rawType, JavaType elemT]:CollectionType"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.type.CollectionType:construct:[Class\u003c?\u003e rawType, JavaType elemT]:CollectionType"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "3",
+            "51",
+            "52",
+            "53",
+            "54",
+            "55",
+            "56",
+            "57",
+            "58"
+          ],
+          "num": 9
+        },
+        {
+          "qualified_names": [
+            "2",
+            "50"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/type/CollectionType.java b/src/main/java/com/fasterxml/jackson/databind/type/CollectionType.java\nindex e0a7856..39c1038 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/type/CollectionType.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/type/CollectionType.java\n@@ -1,6 +1,5 @@\n package com.fasterxml.jackson.databind.type;\n \n-import java.lang.reflect.TypeVariable;\n \n import com.fasterxml.jackson.databind.JavaType;\n \n@@ -48,14 +47,7 @@\n     public static CollectionType construct(Class\u003c?\u003e rawType, JavaType elemT) {\n         // First: may need to fabricate TypeBindings (needed for refining into\n         // concrete collection types, as per [databind#1102])\n-        TypeVariable\u003c?\u003e[] vars \u003d rawType.getTypeParameters();\n-        TypeBindings bindings;\n-        if ((vars \u003d\u003d null) || (vars.length !\u003d 1)) {\n-            bindings \u003d TypeBindings.emptyBindings();\n-        } else {\n-            bindings \u003d TypeBindings.create(rawType, elemT);\n-        }\n-        return new CollectionType(rawType, bindings,\n+        return new CollectionType(rawType, null,\n                 // !!! TODO: Wrong, does have supertypes, but:\n                 _bogusSuperClass(rawType), null, elemT,\n                 null, null, false);\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NullLiteral [1570,1574]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [46,84]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [1574,1627]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [1636,1658]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [1667,1850]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: bindings [1894,1902]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/type/MapType.java",
+        "src/main/java/com/fasterxml/jackson/databind/type/MapType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.type.MapType:construct:[Class\u003c?\u003e rawType, JavaType keyT, JavaType valueT]:MapType"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.type.MapType:construct:[Class\u003c?\u003e rawType, JavaType keyT, JavaType valueT]:MapType"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "3",
+            "48",
+            "49",
+            "50",
+            "51",
+            "52",
+            "53",
+            "54",
+            "56"
+          ],
+          "num": 9
+        },
+        {
+          "qualified_names": [
+            "2",
+            "48"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/type/MapType.java b/src/main/java/com/fasterxml/jackson/databind/type/MapType.java\nindex e71abb6..a11767f 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/type/MapType.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/type/MapType.java\n@@ -1,6 +1,5 @@\n package com.fasterxml.jackson.databind.type;\n \n-import java.lang.reflect.TypeVariable;\n \n import com.fasterxml.jackson.databind.JavaType;\n \n@@ -45,15 +44,8 @@\n     {\n         // First: may need to fabricate TypeBindings (needed for refining into\n         // concrete collection types, as per [databind#1102])\n-        TypeVariable\u003c?\u003e[] vars \u003d rawType.getTypeParameters();\n-        TypeBindings bindings;\n-        if ((vars \u003d\u003d null) || (vars.length !\u003d 2)) {\n-            bindings \u003d TypeBindings.emptyBindings();\n-        } else {\n-            bindings \u003d TypeBindings.create(rawType, keyT, valueT);\n-        }\n         // !!! TODO: Wrong, does have supertypes\n-        return new MapType(rawType, bindings, _bogusSuperClass(rawType), null,\n+        return new MapType(rawType, null, _bogusSuperClass(rawType), null,\n                 keyT, valueT, null, null, false);\n     }\n \n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NullLiteral [1588,1592]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [46,84]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [1550,1603]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [1612,1634]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [1643,1833]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: bindings [1919,1927]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/type/SimpleType.java",
+        "src/main/java/com/fasterxml/jackson/databind/type/SimpleType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.type.SimpleType:construct:[Class\u003c?\u003e cls]:SimpleType",
+            "com.fasterxml.jackson.databind.type.SimpleType:_buildSuperClass:[Class\u003c?\u003e superClass, TypeBindings b]:JavaType"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.type.SimpleType:toString:[]:String",
+            "com.fasterxml.jackson.databind.type.SimpleType:construct:[Class\u003c?\u003e cls]:SimpleType"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "116",
+            "117",
+            "118",
+            "252",
+            "253",
+            "254",
+            "255",
+            "256",
+            "257",
+            "258",
+            "259",
+            "260",
+            "261",
+            "262",
+            "263"
+          ],
+          "num": 15
+        },
+        {
+          "qualified_names": [
+            "116",
+            "117",
+            "252"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/type/SimpleType.java b/src/main/java/com/fasterxml/jackson/databind/type/SimpleType.java\nindex 1174710..ceb0117 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/type/SimpleType.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/type/SimpleType.java\n@@ -113,9 +113,8 @@\n         if (cls.isArray()) {\n             throw new IllegalArgumentException(\"Can not construct SimpleType for an array (class: \"+cls.getName()+\")\");\n         }\n-        TypeBindings b \u003d TypeBindings.emptyBindings();\n-        return new SimpleType(cls, b,\n-                _buildSuperClass(cls.getSuperclass(), b), null, null, null, false);\n+        return new SimpleType(cls, TypeBindings.emptyBindings(),\n+                _bogusSuperClass(cls), null, null, null, false);\n     }\n \n     @Override\n@@ -249,18 +248,6 @@\n      * \n      * @since 2.7 -- remove when not needed (2.8?)\n      */\n-    private static JavaType _buildSuperClass(Class\u003c?\u003e superClass, TypeBindings b)\n-    {\n-        if (superClass \u003d\u003d null) {\n-            return null;\n-        }\n-        if (superClass \u003d\u003d Object.class) {\n-            return TypeFactory.unknownType();\n-        }\n-        JavaType superSuper \u003d _buildSuperClass(superClass.getSuperclass(), b);\n-        return new SimpleType(superClass, b,\n-                superSuper, null, null, null, false);\n-    }\n \n     /*\n     /**********************************************************\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [8429,8598]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ReturnStatement [4379,4500]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ClassInstanceCreation [4386,4499]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [4390,4400]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: cls [4401,4404]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [4452,4473]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NullLiteral [4475,4479]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NullLiteral [4481,4485]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NullLiteral [4487,4491]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "BooleanLiteral: false [4493,4498]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [4379,4391]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: b [4392,4393]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [4392,4424]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [4379,4425]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [4434,4547]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [8476,9084]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.type.SimpleType:toString:[]:String"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.type.SimpleType:_buildSuperClass:[Class\u003c?\u003e superClass, TypeBindings b]:JavaType"
+      ],
+      "num": 1
+    }
+  }
+}

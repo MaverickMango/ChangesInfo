@@ -1,0 +1,307 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Closure",
+  "id": "80",
+  "workingDir": "../bugs/Closure_80_buggy",
+  "inducingCommit": "711b76ac1015234f86805f1735ff2c3da195f55c",
+  "originalCommit": "05b7dcdd4c4b017038586d582e8eebc4096a5619",
+  "bug_name": "Closure_80",
+  "derive": "defects4j",
+  "original_fixing_commit": "58786c3f717fa506280127265cd68fedf17de0a9",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/NodeUtil.java",
+        "src/com/google/javascript/jscomp/NodeUtil.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "getNumberValue",
+            "isAssociative"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "isBooleanResult",
+            "isNull",
+            "isAssociative",
+            "getNumberValue",
+            "isNumericResult",
+            "isUndefined",
+            "mayBeString"
+          ],
+          "num": 7
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "194",
+            "216",
+            "984"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "195",
+            "218",
+            "219",
+            "220",
+            "221",
+            "222",
+            "223",
+            "224",
+            "225",
+            "226",
+            "227",
+            "228",
+            "229",
+            "230",
+            "231",
+            "232",
+            "233",
+            "234",
+            "235",
+            "236",
+            "237",
+            "238",
+            "239",
+            "240",
+            "241",
+            "242",
+            "243",
+            "244",
+            "245",
+            "246",
+            "247",
+            "248",
+            "249",
+            "250",
+            "252",
+            "1020",
+            "1021",
+            "1022",
+            "1023",
+            "1024",
+            "1025",
+            "1026",
+            "1027",
+            "1028",
+            "1029",
+            "1030",
+            "1031",
+            "1032",
+            "1033",
+            "1034",
+            "1035",
+            "1036",
+            "1037",
+            "1038",
+            "1039",
+            "1040",
+            "1041",
+            "1042",
+            "1043",
+            "1044",
+            "1045",
+            "1046",
+            "1047",
+            "1048",
+            "1049",
+            "1050",
+            "1051",
+            "1052",
+            "1053",
+            "1054",
+            "1055",
+            "1056",
+            "1057",
+            "1058",
+            "1059",
+            "1060",
+            "1061",
+            "1062",
+            "1063",
+            "1064",
+            "1065",
+            "1066",
+            "1067",
+            "1068",
+            "1069",
+            "1070",
+            "1071",
+            "1072",
+            "1073",
+            "1074",
+            "1075",
+            "1076",
+            "1077",
+            "1078",
+            "1079",
+            "1080",
+            "1081",
+            "1082",
+            "1083",
+            "1084",
+            "1085",
+            "1086",
+            "1087",
+            "1088",
+            "1089",
+            "1090",
+            "1091",
+            "1092",
+            "1093",
+            "1094",
+            "1095",
+            "1096",
+            "1097",
+            "1098",
+            "1099",
+            "1100",
+            "1101",
+            "1102",
+            "1103",
+            "1104",
+            "1105",
+            "1106",
+            "1107",
+            "1108",
+            "1109"
+          ],
+          "num": 125
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/NodeUtil.java b/src/com/google/javascript/jscomp/NodeUtil.java\nindex 8425cd0..1e7a924 100644\n--- a/src/com/google/javascript/jscomp/NodeUtil.java\n+++ b/src/com/google/javascript/jscomp/NodeUtil.java\n@@ -192,6 +192,7 @@\n     switch (n.getType()) {\n       case Token.TRUE:\n         return 1.0;\n+\n       case Token.FALSE:\n       case Token.NULL:\n         return 0.0;\n@@ -214,7 +215,41 @@\n           return Double.POSITIVE_INFINITY;\n         }\n         return null;\n+\n+      case Token.NEG:\n+        if (n.getChildCount() \u003d\u003d 1 \u0026\u0026 n.getFirstChild().getType() \u003d\u003d Token.NAME\n+            \u0026\u0026 n.getFirstChild().getString().equals(\"Infinity\")) {\n+          return Double.NEGATIVE_INFINITY;\n+        }\n+        return null;\n+\n+      case Token.STRING:\n+        // TODO(johnlenz): handle less common string conversion cases:\n+        // \u0027-infinity\u0027, etc.\n+        String s \u003d n.getString();\n+\n+        if (s.length() \u003d\u003d 0) {\n+          return 0.0;\n+        }\n+\n+        if (s.length() \u003e 2\n+            \u0026\u0026 s.charAt(0) \u003d\u003d \u00270\u0027\n+            \u0026\u0026 (s.charAt(1) \u003d\u003d \u0027x\u0027 || s.charAt(1) \u003d\u003d \u0027X\u0027)) {\n+            // Attempt to convert hex numbers.\n+          try {\n+            return Double.valueOf(Integer.parseInt(s.substring(2), 16));\n+          } catch (NumberFormatException e) {\n+            return null;\n+          }\n+        }\n+\n+        try {\n+          return Double.parseDouble(s);\n+        } catch (NumberFormatException e) {\n+          return null;\n+        }\n     }\n+\n     return null;\n   }\n \n@@ -982,6 +1017,96 @@\n   }\n \n   /**\n+   * Returns true if the result of node evaluation is always a number\n+   */\n+  static boolean isNumericResult(Node n) {\n+    switch (n.getType()) {\n+      // NOTE: ADD is deliberately excluded as it may produce\n+      // a string.\n+      case Token.BITNOT:\n+      case Token.BITOR:\n+      case Token.BITXOR:\n+      case Token.BITAND:\n+      case Token.LSH:\n+      case Token.RSH:\n+      case Token.URSH:\n+      case Token.SUB:\n+      case Token.MUL:\n+      case Token.MOD:\n+      case Token.DIV:\n+      case Token.INC:\n+      case Token.DEC:\n+      case Token.POS:\n+      case Token.NEG:\n+      case Token.NUMBER:\n+        return true;\n+      case Token.NAME:\n+        String name \u003d n.getString();\n+        if (name.equals(\"NaN\")) {\n+          return true;\n+        }\n+        if (name.equals(\"Infinity\")) {\n+          return true;\n+        }\n+        return false;\n+      default:\n+        return false;\n+    }\n+  }\n+\n+  /**\n+   * @return Whether the result of node evaluation is always a boolean\n+   */\n+  static boolean isBooleanResult(Node n) {\n+    // TODO(johnlenz): Add a recursive option to recurse into\n+    // AND, OR, HOOK, COMMA and ASSIGN, like \"getExpressionBooleanValue\".\n+    switch (n.getType()) {\n+      // Primitives\n+      case Token.TRUE:\n+      case Token.FALSE:\n+      // Comparisons\n+      case Token.EQ:\n+      case Token.NE:\n+      case Token.SHEQ:\n+      case Token.SHNE:\n+      case Token.LT:\n+      case Token.GT:\n+      case Token.LE:\n+      case Token.GE:\n+      // Queryies\n+      case Token.IN:\n+      case Token.INSTANCEOF:\n+      // Inversion\n+      case Token.NOT:\n+        return true;\n+      default:\n+        return false;\n+    }\n+  }\n+\n+  static boolean isUndefined(Node n) {\n+    switch (n.getType()) {\n+      case Token.VOID:\n+        return true;\n+      case Token.NAME:\n+        return n.getString().equals(\"undefined\");\n+    }\n+    return false;\n+  }\n+\n+  static boolean isNull(Node n) {\n+    return n.getType() \u003d\u003d Token.NULL;\n+  }\n+\n+  /**\n+   * @returns Whether the results is possibly a string.\n+   */\n+  static boolean mayBeString(Node n) {\n+    return !isNumericResult(n) \u0026\u0026 !isBooleanResult(n)\n+        \u0026\u0026 !isUndefined(n) \u0026\u0026 !isNull(n);\n+  }\n+\n+  /**\n    * Returns true if the operator is associative.\n    * e.g. (a * b) * c \u003d a * (b * c)\n    * Note: \"+\" is not associative because it is also the concatenation\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [30550,31436]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [31440,32163]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [32167,32375]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [32379,32452]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [32456,32660]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SwitchCase [6608,6623]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [6632,6823]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [6832,6844]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SwitchCase [6852,6870]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [6979,7004]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [7014,7068]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [7078,7420]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TryStatement [7430,7552]"
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "mayBeString",
+        "isNumericResult",
+        "isNull",
+        "isUndefined",
+        "isBooleanResult"
+      ],
+      "num": 5
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.NodeUtilTest",
+      "test_function": "testLocalValue1",
+      "exception": "java.lang.IllegalStateException",
+      "message": "Unexpected expression nodeDELPROP 1 [sourcename:  [testcode] ] [parenthesized: true]"
+    }
+  ],
+  "fixing_changes": [],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

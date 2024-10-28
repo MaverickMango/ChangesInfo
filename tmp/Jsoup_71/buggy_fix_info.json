@@ -1,0 +1,194 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.jsoup.select.SelectorTest::splitOnBr,org.jsoup.select.SelectorTest::textAsElements",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.jsoup.nodes.PseudoTextElement,org.jsoup.select.Evaluator,org.jsoup.select.QueryParser",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Jsoup",
+  "id": "71",
+  "workingDir": "../bugs/Jsoup_71_tmp",
+  "bug_name": "Jsoup_71",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.jsoup.select.SelectorTest",
+      "test_function": "splitOnBr",
+      "assertion_line": "790",
+      "exception": "org.jsoup.select.Selector$SelectorParseException",
+      "message": "Could not parse query \u0027p:matchText\u0027: unexpected token at \u0027:matchText\u0027"
+    },
+    {
+      "test_class": "org.jsoup.select.SelectorTest",
+      "test_function": "textAsElements",
+      "assertion_line": "775",
+      "exception": "org.jsoup.select.Selector$SelectorParseException",
+      "message": "Could not parse query \u0027p:matchText:first-child\u0027: unexpected token at \u0027:matchText:first-child\u0027"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/select/Evaluator.java",
+        "src/main/java/org/jsoup/select/Evaluator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.select.Evaluator\\$MatchText:matches:[Element root, Element element]:boolean",
+            "org.jsoup.select.Evaluator\\$MatchText:toString:[]:String"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "9",
+            "10",
+            "756",
+            "758",
+            "759",
+            "760",
+            "761",
+            "763",
+            "764",
+            "765",
+            "766",
+            "767",
+            "768",
+            "769",
+            "770",
+            "771",
+            "772",
+            "773",
+            "774",
+            "775",
+            "776",
+            "777"
+          ],
+          "num": 22
+        },
+        {
+          "qualified_names": [
+            "8",
+            "757"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/select/Evaluator.java b/src/main/java/org/jsoup/select/Evaluator.java\nindex 735606f..87b1d48 100644\n--- a/src/main/java/org/jsoup/select/Evaluator.java\n+++ b/src/main/java/org/jsoup/select/Evaluator.java\n@@ -6,8 +6,6 @@\n import org.jsoup.nodes.DocumentType;\n import org.jsoup.nodes.Element;\n import org.jsoup.nodes.Node;\n-import org.jsoup.nodes.PseudoTextElement;\n-import org.jsoup.nodes.TextNode;\n import org.jsoup.nodes.XmlDeclaration;\n \n import java.util.List;\n@@ -753,26 +751,6 @@\n         }\n     }\n \n-    public static final class MatchText extends Evaluator {\n \n-        @Override\n-        public boolean matches(Element root, Element element) {\n-            if (element instanceof PseudoTextElement)\n-                return true;\n \n-            List\u003cTextNode\u003e textNodes \u003d element.textNodes();\n-            for (TextNode textNode : textNodes) {\n-                PseudoTextElement pel \u003d new PseudoTextElement(\n-                    org.jsoup.parser.Tag.valueOf(element.tagName()), element.baseUri(), element.attributes());\n-                textNode.replaceWith(pel);\n-                pel.appendChild(textNode);\n-            }\n-            return false;\n-        }\n-\n-        @Override\n-        public String toString() {\n-            return \":matchText\";\n-        }\n-    }\n }\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [224,265]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [266,298]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TypeDeclaration [19841,20586]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/select/QueryParser.java",
+        "src/main/java/org/jsoup/select/QueryParser.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.select.QueryParser:findElements:[]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.jsoup.select.QueryParser:findElements:[]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "203",
+            "204"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "202"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/select/QueryParser.java b/src/main/java/org/jsoup/select/QueryParser.java\nindex 99e5147..e00f46e 100644\n--- a/src/main/java/org/jsoup/select/QueryParser.java\n+++ b/src/main/java/org/jsoup/select/QueryParser.java\n@@ -200,8 +200,6 @@\n         \tevals.add(new Evaluator.IsEmpty());\n         else if (tq.matchChomp(\":root\"))\n         \tevals.add(new Evaluator.IsRoot());\n-        else if (tq.matchChomp(\":matchText\"))\n-            evals.add(new Evaluator.MatchText());\n \t\telse // unhandled\n             throw new Selector.SelectorParseException(\"Could not parse query \u0027%s\u0027: unexpected token at \u0027%s\u0027\", query, tq.remainder());\n \n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [7247,7274]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [7288,7325]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [7243,7479]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [
+        "src/main/java/org/jsoup/nodes/PseudoTextElement.java"
+      ],
+      "num": 1
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.jsoup.select.Evaluator\\$MatchText:matches:[Element root, Element element]:boolean",
+        "org.jsoup.select.Evaluator\\$MatchText:toString:[]:String"
+      ],
+      "num": 2
+    }
+  }
+}

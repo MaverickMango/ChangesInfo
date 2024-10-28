@@ -1,0 +1,146 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math3.fraction.BigFractionTest::testDigitLimitConstructor,org.apache.commons.math3.fraction.FractionTest::testDigitLimitConstructor",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math3.fraction.BigFraction,org.apache.commons.math3.fraction.Fraction",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "1",
+  "workingDir": "../bugs/Math_1_tmp",
+  "bug_name": "Math_1",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math3.fraction.BigFractionTest",
+      "test_function": "testDigitLimitConstructor",
+      "assertion_line": "159",
+      "exception": "org.apache.commons.math3.fraction.FractionConversionException",
+      "message": "illegal state: Overflow trying to convert 0.5 to fraction (2,499,999,794/4,999,999,587)"
+    },
+    {
+      "test_class": "org.apache.commons.math3.fraction.FractionTest",
+      "test_function": "testDigitLimitConstructor",
+      "assertion_line": "134",
+      "exception": "org.apache.commons.math3.fraction.FractionConversionException",
+      "message": "illegal state: Overflow trying to convert 0.5 to fraction (2,499,999,794/4,999,999,587)"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math3/fraction/BigFraction.java",
+        "src/main/java/org/apache/commons/math3/fraction/BigFraction.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.fraction.BigFraction:BigFraction:[final double value, final double epsilon, final int maxDenominator, int maxIterations]:null"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.fraction.BigFraction:BigFraction:[final double value, final double epsilon, final int maxDenominator, int maxIterations]:null"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "306",
+            "307",
+            "308"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "305"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math3/fraction/BigFraction.java b/src/main/java/org/apache/commons/math3/fraction/BigFraction.java\nindex 4ca33eb..ed4108d 100644\n--- a/src/main/java/org/apache/commons/math3/fraction/BigFraction.java\n+++ b/src/main/java/org/apache/commons/math3/fraction/BigFraction.java\n@@ -303,9 +303,6 @@\n             if ((p2 \u003e overflow) || (q2 \u003e overflow)) {\n                 // in maxDenominator mode, if the last fraction was very close to the actual value\n                 // q2 may overflow in the next iteration; in this case return the last one.\n-                if (epsilon \u003d\u003d 0.0 \u0026\u0026 FastMath.abs(q1) \u003c maxDenominator) {\n-                    break;\n-                }\n                 throw new FractionConversionException(value, p2, q2);\n             }\n \n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [11639,11742]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math3/fraction/Fraction.java",
+        "src/main/java/org/apache/commons/math3/fraction/Fraction.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.fraction.Fraction:Fraction:[double value, double epsilon, int maxDenominator, int maxIterations]:null"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.fraction.Fraction:Fraction:[double value, double epsilon, int maxDenominator, int maxIterations]:null"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "215",
+            "216",
+            "217"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "214"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math3/fraction/Fraction.java b/src/main/java/org/apache/commons/math3/fraction/Fraction.java\nindex 002dae9..8065885 100644\n--- a/src/main/java/org/apache/commons/math3/fraction/Fraction.java\n+++ b/src/main/java/org/apache/commons/math3/fraction/Fraction.java\n@@ -212,9 +212,6 @@\n             if ((FastMath.abs(p2) \u003e overflow) || (FastMath.abs(q2) \u003e overflow)) {\n                 // in maxDenominator mode, if the last fraction was very close to the actual value\n                 // q2 may overflow in the next iteration; in this case return the last one.\n-                if (epsilon \u003d\u003d 0.0 \u0026\u0026 FastMath.abs(q1) \u003c maxDenominator) {\n-                    break;\n-                }\n                 throw new FractionConversionException(value, p2, q2);\n             }\n \n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [7921,8024]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

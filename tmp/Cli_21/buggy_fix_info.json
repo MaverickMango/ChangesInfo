@@ -1,0 +1,328 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.cli2.bug.BugCLI150Test::testNegativeNumber",
+    "test.dir": "src/test",
+    "clz.modified": "org.apache.commons.cli2.WriteableCommandLine,org.apache.commons.cli2.commandline.WriteableCommandLineImpl,org.apache.commons.cli2.option.GroupImpl",
+    "src.dir": "src/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Cli",
+  "id": "21",
+  "workingDir": "../bugs/Cli_21_tmp",
+  "bug_name": "Cli_21",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.cli2.bug.BugCLI150Test",
+      "test_function": "testNegativeNumber",
+      "assertion_line": "56",
+      "exception": "org.apache.commons.cli2.OptionException",
+      "message": "Unexpected -42 while processing --num"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/cli2/WriteableCommandLine.java",
+        "src/java/org/apache/commons/cli2/WriteableCommandLine.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.cli2.WriteableCommandLine:setCurrentOption:[Option currentOption]:void",
+            "org.apache.commons.cli2.WriteableCommandLine:getCurrentOption:[]:Option"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "102",
+            "111"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "101",
+            "111"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/cli2/WriteableCommandLine.java b/src/java/org/apache/commons/cli2/WriteableCommandLine.java\nindex 8bd6752..d6aaf49 100644\n--- a/src/java/org/apache/commons/cli2/WriteableCommandLine.java\n+++ b/src/java/org/apache/commons/cli2/WriteableCommandLine.java\n@@ -99,7 +99,6 @@\n      *\n      * @return the current option\n      */\n-    Option getCurrentOption();\n \n     /**\n      * Sets the current option. This method is called by concrete option\n@@ -108,5 +107,4 @@\n      *\n      * @param currentOption the new current option\n      */\n-    void setCurrentOption(Option currentOption);\n }\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [3466,3604]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [3610,3951]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/cli2/commandline/WriteableCommandLineImpl.java",
+        "src/java/org/apache/commons/cli2/commandline/WriteableCommandLineImpl.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.cli2.commandline.WriteableCommandLineImpl:getCurrentOption:[]:Option",
+            "org.apache.commons.cli2.commandline.WriteableCommandLineImpl:WriteableCommandLineImpl:[final Option rootOption, final List arguments]:null",
+            "org.apache.commons.cli2.commandline.WriteableCommandLineImpl:setCurrentOption:[Option currentOption]:void",
+            "org.apache.commons.cli2.commandline.WriteableCommandLineImpl:looksLikeOption:[final String trigger]:boolean"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.cli2.commandline.WriteableCommandLineImpl:toString:[]:String"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "51",
+            "52",
+            "65",
+            "68",
+            "69",
+            "70",
+            "72",
+            "73",
+            "74",
+            "243",
+            "244",
+            "246",
+            "247",
+            "249",
+            "250",
+            "251",
+            "258",
+            "259",
+            "260",
+            "262",
+            "265",
+            "267",
+            "268",
+            "269",
+            "270",
+            "271"
+          ],
+          "num": 26
+        },
+        {
+          "qualified_names": [
+            "50",
+            "66",
+            "251"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/cli2/commandline/WriteableCommandLineImpl.java b/src/java/org/apache/commons/cli2/commandline/WriteableCommandLineImpl.java\nindex 8c5e29b..88d3286 100644\n--- a/src/java/org/apache/commons/cli2/commandline/WriteableCommandLineImpl.java\n+++ b/src/java/org/apache/commons/cli2/commandline/WriteableCommandLineImpl.java\n@@ -48,8 +48,6 @@\n     private final Map defaultSwitches \u003d new HashMap();\n     private final List normalised;\n     private final Set prefixes;\n-    private Option currentOption;\n-    private String checkForOption;\n \n     /**\n      * Creates a new WriteableCommandLineImpl rooted on the specified Option, to\n@@ -62,16 +60,9 @@\n                                     final List arguments) {\n         this.prefixes \u003d rootOption.getPrefixes();\n         this.normalised \u003d arguments;\n-        setCurrentOption(rootOption);\n     }\n \n-    public Option getCurrentOption() {\n-        return currentOption;\n-    }\n \n-    public void setCurrentOption(Option currentOption) {\n-        this.currentOption \u003d currentOption;\n-    }\n \n     public void addOption(Option option) {\n         options.add(option);\n@@ -240,35 +231,18 @@\n      */\n     public boolean looksLikeOption(final String trigger)\n     {\n-        if (checkForOption !\u003d null)\n-        {\n             // this is a reentrant call\n-            return !checkForOption.equals(trigger);\n-        }\n \n-        checkForOption \u003d trigger;\n-        try\n-        {\n             for (final Iterator i \u003d prefixes.iterator(); i.hasNext();)\n             {\n                 final String prefix \u003d (String) i.next();\n \n                 if (trigger.startsWith(prefix))\n                 {\n-                    if (getCurrentOption().canProcess(this, trigger)\n-                            || getCurrentOption().findOption(trigger) !\u003d null)\n-                    {\n                         return true;\n-                    }\n                 }\n             }\n-\n             return false;\n-        }\n-        finally\n-        {\n-            checkForOption \u003d null;\n-        }\n     }\n \n     public String toString() {\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [2078,2107]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [2112,2142]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [2619,2648]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [2660,2730]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [2736,2838]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [8907,9029]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [9051,9111]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [8903,9111]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [8477,8616]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [8626,8651]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [8672,9180]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [9205,9251]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TryStatement [8660,9251]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/cli2/option/GroupImpl.java",
+        "src/java/org/apache/commons/cli2/option/GroupImpl.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.cli2.option.GroupImpl:looksLikeOption:[final WriteableCommandLine commandLine, final String trigger]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.cli2.option.GroupImpl:looksLikeOption:[final WriteableCommandLine commandLine, final String trigger]:boolean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "513",
+            "514",
+            "515",
+            "517",
+            "518",
+            "519"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "512"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/cli2/option/GroupImpl.java b/src/java/org/apache/commons/cli2/option/GroupImpl.java\nindex fc5a82d..75d87f7 100644\n--- a/src/java/org/apache/commons/cli2/option/GroupImpl.java\n+++ b/src/java/org/apache/commons/cli2/option/GroupImpl.java\n@@ -510,13 +510,7 @@\n      */\n     private boolean looksLikeOption(final WriteableCommandLine commandLine,\n             final String trigger) {\n-        Option oldOption \u003d commandLine.getCurrentOption();\n-        try {\n-            commandLine.setCurrentOption(this);\n             return commandLine.looksLikeOption(trigger);\n-        } finally {\n-            commandLine.setCurrentOption(oldOption);\n-        }\n     }\n }\n \n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [16730,16780]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [16807,16842]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [16793,16909]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [16918,16982]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TryStatement [16789,16982]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.apache.commons.cli2.commandline.WriteableCommandLineImpl:toString:[]:String"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.apache.commons.cli2.WriteableCommandLine:getCurrentOption:[]:Option",
+        "org.apache.commons.cli2.commandline.WriteableCommandLineImpl:WriteableCommandLineImpl:[final Option rootOption, final List arguments]:null",
+        "org.apache.commons.cli2.commandline.WriteableCommandLineImpl:setCurrentOption:[Option currentOption]:void",
+        "org.apache.commons.cli2.commandline.WriteableCommandLineImpl:looksLikeOption:[final String trigger]:boolean",
+        "org.apache.commons.cli2.WriteableCommandLine:setCurrentOption:[Option currentOption]:void",
+        "org.apache.commons.cli2.commandline.WriteableCommandLineImpl:getCurrentOption:[]:Option"
+      ],
+      "num": 6
+    }
+  }
+}

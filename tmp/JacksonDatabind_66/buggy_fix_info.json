@@ -1,0 +1,135 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.module.TestCustomEnumKeyDeserializer::testCustomEnumKeySerializerWithPolymorphic",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.deser.std.StdKeyDeserializer",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "66",
+  "workingDir": "../bugs/JacksonDatabind_66_tmp",
+  "bug_name": "JacksonDatabind_66",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.module.TestCustomEnumKeyDeserializer",
+      "test_function": "testCustomEnumKeySerializerWithPolymorphic",
+      "assertion_line": "221",
+      "exception": "com.fasterxml.jackson.databind.exc.InvalidFormatException",
+      "message": "Can not deserialize Map key of type com.fasterxml.jackson.databind.module.TestCustomEnumKeyDeserializer$SuperTypeEnum from String \"FOO\": not a valid representation: No enum constant com.fasterxml.jackson.databind.module.TestCustomEnumKeyDeserializer.SuperTypeEnum.}"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/deser/std/StdKeyDeserializer.java",
+        "src/main/java/com/fasterxml/jackson/databind/deser/std/StdKeyDeserializer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.std.StdKeyDeserializer\\$DelegatingKD:deserializeKey:[String key, DeserializationContext ctxt]:Object"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.std.StdKeyDeserializer\\$DelegatingKD:deserializeKey:[String key, DeserializationContext ctxt]:Object"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "11",
+            "19",
+            "316",
+            "317",
+            "320",
+            "321",
+            "322"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "10",
+            "19",
+            "316"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/std/StdKeyDeserializer.java b/src/main/java/com/fasterxml/jackson/databind/deser/std/StdKeyDeserializer.java\nindex d1148ba..f827c31 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/deser/std/StdKeyDeserializer.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/deser/std/StdKeyDeserializer.java\n@@ -8,7 +8,6 @@\n import java.net.URL;\n import java.util.*;\n \n-import com.fasterxml.jackson.core.JsonParser;\n import com.fasterxml.jackson.core.JsonProcessingException;\n import com.fasterxml.jackson.core.io.NumberInput;\n import com.fasterxml.jackson.databind.*;\n@@ -16,7 +15,6 @@\n import com.fasterxml.jackson.databind.introspect.AnnotatedMethod;\n import com.fasterxml.jackson.databind.util.ClassUtil;\n import com.fasterxml.jackson.databind.util.EnumResolver;\n-import com.fasterxml.jackson.databind.util.TokenBuffer;\n \n /**\n  * Default {@link KeyDeserializer} implementation used for most {@link java.util.Map}\n@@ -313,13 +311,9 @@\n             if (key \u003d\u003d null) { // is this even legal call?\n                 return null;\n             }\n-            TokenBuffer tb \u003d new TokenBuffer(ctxt.getParser(), ctxt);\n-            tb.writeString(key);\n             try {\n                 // Ugh... should not have to give parser which may or may not be correct one...\n-                JsonParser p \u003d tb.asParser();\n-                p.nextToken();\n-                Object result \u003d _delegate.deserialize(p, ctxt);\n+                Object result \u003d _delegate.deserialize(ctxt.getParser(), ctxt);\n                 if (result !\u003d null) {\n                     return result;\n                 }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [11516,11532]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [252,297]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [690,745]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [11462,11519]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [11532,11552]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [11683,11712]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [11729,11743]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: p [11798,11799]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

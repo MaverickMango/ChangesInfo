@@ -1,0 +1,225 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Closure",
+  "id": "120",
+  "workingDir": "../bugs/Closure_120_buggy",
+  "inducingCommit": "000ea0f8d6684bb9ff84a483d4ff44952b29d3f7",
+  "originalCommit": "2aee36e667526ff8b0b5e6dad66506acee920ea6",
+  "bug_name": "Closure_120",
+  "derive": "defects4j",
+  "original_fixing_commit": "0123fd5303c85d0d26add64aa2e19fee33f73aaa",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/InlineVariables.java",
+        "src/com/google/javascript/jscomp/InlineVariables.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "inlineNonConstants"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "inlineNonConstants"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "302",
+            "303",
+            "304",
+            "305",
+            "306",
+            "307",
+            "308",
+            "309"
+          ],
+          "num": 8
+        },
+        {
+          "qualified_names": [
+            "302",
+            "303"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/InlineVariables.java b/src/com/google/javascript/jscomp/InlineVariables.java\nindex 5c9df61..b150053 100644\n--- a/src/com/google/javascript/jscomp/InlineVariables.java\n+++ b/src/com/google/javascript/jscomp/InlineVariables.java\n@@ -299,14 +299,8 @@\n       // reference data is out of sync. We\u0027re better off just waiting for\n       // the next pass.)\n       if (!maybeModifiedArguments \u0026\u0026\n-          !staleVars.contains(v) \u0026\u0026\n-          referenceInfo.isWellDefined() \u0026\u0026\n-          referenceInfo.isAssignedOnceInLifetime() \u0026\u0026\n-          // Inlining the variable based solely on well-defined and assigned\n-          // once is *NOT* correct. We relax the correctness requirement if\n-          // the variable is declared constant.\n-          (isInlineableDeclaredConstant(v, referenceInfo) ||\n-           referenceInfo.isOnlyAssignmentSameScopeAsDeclaration())) {\n+          !staleVars.contains(v) \u0026\u0026 referenceInfo.isWellDefined() \u0026\u0026\n+          referenceInfo.isAssignedOnceInLifetime()) {\n         List\u003cReference\u003e refs \u003d referenceInfo.references;\n         for (int i \u003d 1 /* start from a read */; i \u003c refs.size(); i++) {\n           Node nameNode \u003d refs.get(i).getNode();\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ParenthesizedExpression [11422,11539]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/ReferenceCollectingCallback.java",
+        "src/com/google/javascript/jscomp/ReferenceCollectingCallback.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "isAssignedOnceInLifetime",
+            "isOnlyAssignmentSameScopeAsDeclaration"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "isAssignedOnceInLifetime"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "426",
+            "439",
+            "440",
+            "441",
+            "442",
+            "443",
+            "444",
+            "445",
+            "446",
+            "447",
+            "448",
+            "449",
+            "450",
+            "451",
+            "452",
+            "453",
+            "454",
+            "455",
+            "456",
+            "457",
+            "458",
+            "459",
+            "460",
+            "461"
+          ],
+          "num": 24
+        },
+        {
+          "qualified_names": [
+            "426",
+            "438"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/ReferenceCollectingCallback.java b/src/com/google/javascript/jscomp/ReferenceCollectingCallback.java\nindex f89f10c..cdacc5f 100644\n--- a/src/com/google/javascript/jscomp/ReferenceCollectingCallback.java\n+++ b/src/com/google/javascript/jscomp/ReferenceCollectingCallback.java\n@@ -423,7 +423,7 @@\n       if (ref \u003d\u003d null) {\n         return false;\n       }\n-      \n+\n       // Make sure this assignment is not in a loop.\n       for (BasicBlock block \u003d ref.getBasicBlock();\n            block !\u003d null; block \u003d block.getParent()) {\n@@ -436,29 +436,6 @@\n \n       return true;\n     }\n-    \n-    /**\n-     * @return Whether the variable is only assigned a value once for its\n-     *     lifetime.\n-     */\n-    boolean isOnlyAssignmentSameScopeAsDeclaration() {\n-      Reference ref \u003d getOneAndOnlyAssignment();\n-      Preconditions.checkNotNull(ref);\n-      \n-      // Make sure the declaration is the same scope as the assignment.\n-      // Otherwise, the variable can be assigned multiple times and possibly\n-      // with a different variable.\n-      for (BasicBlock block \u003d ref.getBasicBlock();\n-           block !\u003d null; block \u003d block.getParent()) {\n-        if (block.isFunction) {\n-          if (ref.getSymbol().getScope() !\u003d ref.scope) {\n-            return false;\n-          }\n-        }\n-      }\n-\n-      return true;\n-    }\n \n     /**\n      * @return The one and only assignment. Returns if there are 0 or 2+\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [13071,13789]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "isOnlyAssignmentSameScopeAsDeclaration"
+      ],
+      "num": 1
+    }
+  },
+  "trigger_tests": [],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/ReferenceCollectingCallback.java",
+        "src/com/google/javascript/jscomp/ReferenceCollectingCallback.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "isAssignedOnceInLifetime"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "isAssignedOnceInLifetime"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "430"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "431",
+            "432",
+            "433"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Closure_120/properties/modified_classes/inducing/src/com/google/javascript/jscomp/ReferenceCollectingCallback.java data/changesInfo//Closure_120/cleaned/fixing/src/com/google/javascript/jscomp/ReferenceCollectingCallback.java\n--- data/changesInfo//Closure_120/properties/modified_classes/inducing/src/com/google/javascript/jscomp/ReferenceCollectingCallback.java\t2023-08-25 13:33:48.691883710 +0800\n+++ data/changesInfo//Closure_120/cleaned/fixing/src/com/google/javascript/jscomp/ReferenceCollectingCallback.java\t2023-06-20 21:27:22.560843023 +0800\n@@ -428,6 +428,9 @@\n       for (BasicBlock block \u003d ref.getBasicBlock();\n            block !\u003d null; block \u003d block.getParent()) {\n         if (block.isFunction) {\n+          if (ref.getSymbol().getScope() !\u003d ref.scope) {\n+            return false;\n+          }\n           break;\n         } else if (block.isLoop) {\n           return false;\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [12946,13030]"
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

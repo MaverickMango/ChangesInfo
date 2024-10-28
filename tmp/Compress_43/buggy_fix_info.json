@@ -1,0 +1,215 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.compress.archivers.zip.DataDescriptorTest::doesntWriteDataDescriptorWhenAddingRawEntries",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Compress",
+  "id": "43",
+  "workingDir": "../bugs/Compress_43_tmp",
+  "bug_name": "Compress_43",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.compress.archivers.zip.DataDescriptorTest",
+      "test_function": "doesntWriteDataDescriptorWhenAddingRawEntries",
+      "assertion_line": "162",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "arrays first differed at element [0]; expected:\u003c0\u003e but was:\u003c8\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveOutputStream.java",
+        "src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveOutputStream.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream:writeLocalFileHeader:[final ZipArchiveEntry ze, final boolean phased]:void",
+            "org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream:writeDataDescriptor:[final ZipArchiveEntry ze]:void",
+            "org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream:usesDataDescriptor:[final int zipMethod, boolean phased]:boolean",
+            "org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream:createLocalFileHeader:[final ZipArchiveEntry ze, final ByteBuffer name, final boolean encodable, final boolean phased, long archiveOffset]:byte[]"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream:writeDataDescriptor:[final ZipArchiveEntry ze]:void",
+            "org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream:usesDataDescriptor:[final int zipMethod]:boolean",
+            "org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream:createLocalFileHeader:[final ZipArchiveEntry ze, final ByteBuffer name, final boolean encodable, final boolean phased, long archiveOffset]:byte[]",
+            "org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream:writeLocalFileHeader:[final ZipArchiveEntry ze, final boolean phased]:void"
+          ],
+          "num": 4
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1034",
+            "1075",
+            "1171",
+            "1492",
+            "1493"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "1034",
+            "1075",
+            "1171",
+            "1492",
+            "1493"
+          ],
+          "num": 5
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveOutputStream.java b/src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveOutputStream.java\nindex 63aeba7..df1f63c 100644\n--- a/src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveOutputStream.java\n+++ b/src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveOutputStream.java\n@@ -1031,7 +1031,7 @@\n \n         final long localHeaderStart \u003d streamCompressor.getTotalBytesWritten();\n         final byte[] localHeader \u003d createLocalFileHeader(ze, name, encodable, phased, localHeaderStart);\n-        metaData.put(ze, new EntryMetaData(localHeaderStart, usesDataDescriptor(ze.getMethod(), phased)));\n+        metaData.put(ze, new EntryMetaData(localHeaderStart, usesDataDescriptor(ze.getMethod())));\n         entry.localDataStart \u003d localHeaderStart + LFH_CRC_OFFSET; // At crc offset\n         writeCounted(localHeader);\n         entry.dataStart \u003d streamCompressor.getTotalBytesWritten();\n@@ -1072,7 +1072,7 @@\n \n         //store method in local variable to prevent multiple method calls\n         final int zipMethod \u003d ze.getMethod();\n-        final boolean dataDescriptor \u003d usesDataDescriptor(zipMethod, phased);\n+        final boolean dataDescriptor \u003d usesDataDescriptor(zipMethod);\n \n         putShort(versionNeededToExtract(zipMethod, hasZip64Extra(ze), dataDescriptor), buf, LFH_VERSION_NEEDED_OFFSET);\n \n@@ -1168,7 +1168,7 @@\n      * @throws IOException on error\n      */\n     protected void writeDataDescriptor(final ZipArchiveEntry ze) throws IOException {\n-        if (!usesDataDescriptor(ze.getMethod(), false)) {\n+        if (ze.getMethod() !\u003d DEFLATED || channel !\u003d null) {\n             return;\n         }\n         writeCounted(DD_SIG);\n@@ -1489,8 +1489,8 @@\n         return versionNeededToExtractMethod(zipMethod);\n     }\n \n-    private boolean usesDataDescriptor(final int zipMethod, boolean phased) {\n-        return !phased \u0026\u0026 zipMethod \u003d\u003d DEFLATED \u0026\u0026 channel \u003d\u003d null;\n+    private boolean usesDataDescriptor(final int zipMethod) {\n+        return zipMethod \u003d\u003d DEFLATED \u0026\u0026 channel \u003d\u003d null;\n     }\n \n     private int versionNeededToExtractMethod(int zipMethod) {\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [45033,45078]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [45033,45059]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: || [45060,45062]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [45063,45078]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: !\u003d [45048,45050]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: DEFLATED [45051,45059]"
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: phased [38981,38987]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: phased [40986,40992]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PREFIX_EXPRESSION_OPERATOR: ! [45049,45050]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: usesDataDescriptor [45050,45068]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "BooleanLiteral: false [45085,45090]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [45069,45090]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [45050,45091]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PrefixExpression [45049,45091]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [57424,57438]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "PrefixExpression [57457,57464]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [57465,57467]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [57457,57508]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream:usesDataDescriptor:[final int zipMethod]:boolean"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream:usesDataDescriptor:[final int zipMethod, boolean phased]:boolean"
+      ],
+      "num": 1
+    }
+  }
+}

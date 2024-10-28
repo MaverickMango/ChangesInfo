@@ -1,0 +1,267 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.AmbiguatePropertiesTest::testImplementsAndExtends,com.google.javascript.jscomp.TypeCheckTest::testIssue86",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.AmbiguateProperties,com.google.javascript.jscomp.TypedScopeCreator",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "134",
+  "workingDir": "../bugs/Closure_134_tmp",
+  "bug_name": "Closure_134",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.AmbiguatePropertiesTest",
+      "test_function": "testImplementsAndExtends",
+      "assertion_line": "431",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function Foo(){}function Bar(){}Bar.prototype.b\u003dfunction(){return 3};function SubBar(){}function f(x){x.a\u003d3}function g(x){x.a\u003d3}\nResult: function Foo(){}function Bar(){}Bar.prototype.a\u003dfunction(){return 3};function SubBar(){}function f(x){x.a\u003d3}function g(x){x.a\u003d3}"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testIssue86",
+      "assertion_line": "6659",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected a warning"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/AmbiguateProperties.java",
+        "src/com/google/javascript/jscomp/AmbiguateProperties.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.AmbiguateProperties:process:[Node externs, Node root]:void",
+            "com.google.javascript.jscomp.AmbiguateProperties\\$PropertySubGraph:isIndependentOf:[Property prop]:boolean",
+            "com.google.javascript.jscomp.AmbiguateProperties\\$Property:addNonUnionType:[JSType newType]:void",
+            "com.google.javascript.jscomp.AmbiguateProperties\\$PropertySubGraph:addNode:[Property prop]:void"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.AmbiguateProperties:process:[Node externs, Node root]:void",
+            "com.google.javascript.jscomp.AmbiguateProperties\\$PropertySubGraph:addNode:[Property prop]:void",
+            "com.google.javascript.jscomp.AmbiguateProperties\\$PropertySubGraph:isIndependentOf:[Property prop]:boolean",
+            "com.google.javascript.jscomp.AmbiguateProperties\\$Property:addNonUnionType:[JSType newType]:void"
+          ],
+          "num": 4
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "209",
+            "355",
+            "365",
+            "556",
+            "593",
+            "594",
+            "595",
+            "596",
+            "597"
+          ],
+          "num": 9
+        },
+        {
+          "qualified_names": [
+            "210",
+            "356",
+            "366",
+            "553",
+            "594",
+            "595",
+            "596",
+            "597",
+            "599"
+          ],
+          "num": 9
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/AmbiguateProperties.java b/src/com/google/javascript/jscomp/AmbiguateProperties.java\nindex 14fe1c3..aad743f 100644\n--- a/src/com/google/javascript/jscomp/AmbiguateProperties.java\n+++ b/src/com/google/javascript/jscomp/AmbiguateProperties.java\n@@ -207,6 +207,7 @@\n     for (Property p : propertyMap.values()) {\n       if (!p.skipAmbiguating) {\n         ++numRenamedPropertyNames;\n+        computeRelatedTypes(p.type);\n         propsByFreq.add(p);\n       } else {\n         ++numSkippedPropertyNames;\n@@ -352,7 +353,7 @@\n       if (typesRelatedToSet.intersects(prop.typesSet)) {\n         return false;\n       }\n-      return !prop.relatedTypesSet.intersects(typesInSet);\n+      return !getRelated(prop.type).intersects(typesInSet);\n     }\n \n     /**\n@@ -362,7 +363,7 @@\n      */\n     public void addNode(Property prop) {\n       typesInSet.or(prop.typesSet);\n-      typesRelatedToSet.or(prop.relatedTypesSet);\n+      typesRelatedToSet.or(getRelated(prop.type));\n     }\n \n     /**\n@@ -549,11 +550,11 @@\n   /** Encapsulates the information needed for renaming a property. */\n   private class Property {\n     final String oldName;\n+    JSType type;\n     String newName;\n     int numOccurrences;\n     boolean skipAmbiguating;\n     JSTypeBitSet typesSet \u003d new JSTypeBitSet(intForType.size());\n-    JSTypeBitSet relatedTypesSet \u003d new JSTypeBitSet(intForType.size());\n \n     Property(String name) {\n       this.oldName \u003d name;\n@@ -590,12 +591,12 @@\n         return;\n       }\n \n-      int typeInt \u003d getIntForType(newType);\n-      if (!typesSet.get(typeInt)) {\n-        computeRelatedTypes(newType);\n-        typesSet.set(typeInt);\n-        relatedTypesSet.or(getRelatedTypesOnNonUnion(newType));\n+      if (type \u003d\u003d null) {\n+        type \u003d newType;\n+      } else {\n+        type \u003d type.getLeastSupertype(newType);\n       }\n+      typesSet.set(getIntForType(newType));\n     }\n   }\n \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [18879,18891]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [19923,20037]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [7437,7465]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [12766,12787]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [12410,12431]"
+        },
+        {
+          "type": "delete-node",
+          "from": "QualifiedName: prop.relatedTypesSet [12373,12393]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "QualifiedName: prop.relatedTypesSet [12728,12748]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [18978,19045]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: typeInt [20072,20079]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PrimitiveType: int [19939,19942]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: typeInt [19943,19950]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [19943,19975]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [19939,19976]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "PrefixExpression [19987,20009]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [20021,20050]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [20090,20145]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [20011,20153]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [19983,20153]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/TypedScopeCreator.java",
+        "src/com/google/javascript/jscomp/TypedScopeCreator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypedScopeCreator\\$AbstractScopeBuilder:findOverriddenFunction:[ObjectType ownerType, String propName]:FunctionType"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypedScopeCreator\\$AbstractScopeBuilder:findOverriddenFunction:[ObjectType ownerType, String propName]:FunctionType"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "560",
+            "563",
+            "564",
+            "565",
+            "566",
+            "567",
+            "568",
+            "569",
+            "570"
+          ],
+          "num": 9
+        },
+        {
+          "qualified_names": [
+            "560"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/TypedScopeCreator.java b/src/com/google/javascript/jscomp/TypedScopeCreator.java\nindex 9d2f7dd..5fdec75 100644\n--- a/src/com/google/javascript/jscomp/TypedScopeCreator.java\n+++ b/src/com/google/javascript/jscomp/TypedScopeCreator.java\n@@ -557,17 +557,9 @@\n       JSType propType \u003d ownerType.getPropertyType(propName);\n       if (propType instanceof FunctionType) {\n         return (FunctionType) propType;\n-      } else {\n+      }\n         // If it\u0027s not, then check to see if it\u0027s implemented\n         // on an implemented interface.\n-        for (ObjectType iface :\n-                 ownerType.getCtorImplementedInterfaces()) {\n-          propType \u003d iface.getPropertyType(propName);\n-          if (propType instanceof FunctionType) {\n-            return (FunctionType) propType;\n-          }\n-        }\n-      }\n \n       return null;\n     }\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "Block [22488,22862]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

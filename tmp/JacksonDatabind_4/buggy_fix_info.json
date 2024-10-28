@@ -1,0 +1,142 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.deser.TestCollectionDeserialization::testArrayIndexForExceptions",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.deser.std.StringArrayDeserializer",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "4",
+  "workingDir": "../bugs/JacksonDatabind_4_tmp",
+  "bug_name": "JacksonDatabind_4",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.deser.TestCollectionDeserialization",
+      "test_function": "testArrayIndexForExceptions",
+      "assertion_line": "224",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c1\u003e but was:\u003c0\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/deser/std/StringArrayDeserializer.java",
+        "src/main/java/com/fasterxml/jackson/databind/deser/std/StringArrayDeserializer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.std.StringArrayDeserializer:deserialize:[JsonParser jp, DeserializationContext ctxt]:String[]",
+            "com.fasterxml.jackson.databind.deser.std.StringArrayDeserializer:_deserializeCustom:[JsonParser jp, DeserializationContext ctxt]:String[]"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.std.StringArrayDeserializer:_deserializeCustom:[JsonParser jp, DeserializationContext ctxt]:String[]",
+            "com.fasterxml.jackson.databind.deser.std.StringArrayDeserializer:deserializeWithType:[JsonParser jp, DeserializationContext ctxt, TypeDeserializer typeDeserializer]:Object",
+            "com.fasterxml.jackson.databind.deser.std.StringArrayDeserializer:deserialize:[JsonParser jp, DeserializationContext ctxt]:String[]"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "59",
+            "76",
+            "78",
+            "79",
+            "97",
+            "107",
+            "109",
+            "110"
+          ],
+          "num": 8
+        },
+        {
+          "qualified_names": [
+            "58",
+            "76",
+            "100",
+            "111"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/std/StringArrayDeserializer.java b/src/main/java/com/fasterxml/jackson/databind/deser/std/StringArrayDeserializer.java\nindex be9bf44..d4a0b05 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/deser/std/StringArrayDeserializer.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/deser/std/StringArrayDeserializer.java\n@@ -56,7 +56,6 @@\n         int ix \u003d 0;\n         JsonToken t;\n \n-        try {\n             while ((t \u003d jp.nextToken()) !\u003d JsonToken.END_ARRAY) {\n                 // Ok: no need to convert Strings, but must recognize nulls\n                 String value;\n@@ -73,10 +72,7 @@\n                 }\n                 chunk[ix++] \u003d value;\n             }\n-        } catch (Exception e) {\n             // note: pass String.class, not String[].class, as we need element type for error info\n-            throw JsonMappingException.wrapWithPath(e, String.class, ix);\n-        }\n         String[] result \u003d buffer.completeAndClearBuffer(chunk, ix, String.class);\n         ctxt.returnObjectBuffer(buffer);\n         return result;\n@@ -94,7 +90,6 @@\n         int ix \u003d 0;\n         JsonToken t;\n \n-        try {\n             while ((t \u003d jp.nextToken()) !\u003d JsonToken.END_ARRAY) {\n                 // Ok: no need to convert Strings, but must recognize nulls\n                 String value \u003d (t \u003d\u003d JsonToken.VALUE_NULL) ? deser.getNullValue() : deser.deserialize(jp, ctxt);\n@@ -104,10 +99,7 @@\n                 }\n                 chunk[ix++] \u003d value;\n             }\n-        } catch (Exception e) {\n             // note: pass String.class, not String[].class, as we need element type for error info\n-            throw JsonMappingException.wrapWithPath(e, String.class, ix);\n-        }\n         String[] result \u003d buffer.completeAndClearBuffer(chunk, ix, String.class);\n         ctxt.returnObjectBuffer(buffer);\n         return result;\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [1922,2659]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "CatchClause [2660,2864]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TryStatement [1918,2864]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [3478,3947]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "CatchClause [3948,4152]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TryStatement [3474,4152]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.deser.std.StringArrayDeserializer:deserializeWithType:[JsonParser jp, DeserializationContext ctxt, TypeDeserializer typeDeserializer]:Object"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

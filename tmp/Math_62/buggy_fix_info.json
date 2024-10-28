@@ -1,0 +1,164 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math.optimization.univariate.MultiStartUnivariateRealOptimizerTest::testQuinticMin",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math.optimization.univariate.MultiStartUnivariateRealOptimizer",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "62",
+  "workingDir": "../bugs/Math_62_tmp",
+  "bug_name": "Math_62",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math.optimization.univariate.MultiStartUnivariateRealOptimizerTest",
+      "test_function": "testQuinticMin",
+      "assertion_line": "71",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c-0.2719561293\u003e but was:\u003c-0.2719561278056452\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/optimization/univariate/MultiStartUnivariateRealOptimizer.java",
+        "src/main/java/org/apache/commons/math/optimization/univariate/MultiStartUnivariateRealOptimizer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.optimization.univariate.MultiStartUnivariateRealOptimizer:optimize:[final FUNC f, final GoalType goal, final double min, final double max]:UnivariateRealPointValuePair",
+            "org.apache.commons.math.optimization.univariate.MultiStartUnivariateRealOptimizer:optimize:[final FUNC f, final GoalType goal, final double min, final double max, final double startValue]:UnivariateRealPointValuePair"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.optimization.univariate.MultiStartUnivariateRealOptimizer:optimize:[final FUNC f, final GoalType goal, final double min, final double max, final double startValue]:UnivariateRealPointValuePair",
+            "org.apache.commons.math.optimization.univariate.MultiStartUnivariateRealOptimizer:optimize:[final FUNC f, final GoalType goal, final double min, final double max]:UnivariateRealPointValuePair"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "146",
+            "160",
+            "161"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "146",
+            "160",
+            "161",
+            "162"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/optimization/univariate/MultiStartUnivariateRealOptimizer.java b/src/main/java/org/apache/commons/math/optimization/univariate/MultiStartUnivariateRealOptimizer.java\nindex 952e565..1200544 100644\n--- a/src/main/java/org/apache/commons/math/optimization/univariate/MultiStartUnivariateRealOptimizer.java\n+++ b/src/main/java/org/apache/commons/math/optimization/univariate/MultiStartUnivariateRealOptimizer.java\n@@ -143,7 +143,7 @@\n                                                  final GoalType goal,\n                                                  final double min, final double max)\n         throws FunctionEvaluationException {\n-        return optimize(f, goal, min, max, min + 0.5 * (max - min));\n+        return optimize(f, goal, min, max, 0);\n     }\n \n     /** {@inheritDoc} */\n@@ -157,8 +157,9 @@\n         // Multi-start loop.\n         for (int i \u003d 0; i \u003c starts; ++i) {\n             try {\n-                final double s \u003d (i \u003d\u003d 0) ? startValue : min + generator.nextDouble() * (max - min);\n-                optima[i] \u003d optimizer.optimize(f, goal, min, max, s);\n+                final double bound1 \u003d (i \u003d\u003d 0) ? min : min + generator.nextDouble() * (max - min);\n+                final double bound2 \u003d (i \u003d\u003d 0) ? max : min + generator.nextDouble() * (max - min);\n+                optima[i] \u003d optimizer.optimize(f, goal, FastMath.min(bound1, bound2), FastMath.max(bound1, bound2));\n             } catch (FunctionEvaluationException fee) {\n                 optima[i] \u003d null;\n             } catch (ConvergenceException ce) {\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NumberLiteral: 0 [5992,5993]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [6512,6594]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [6611,6693]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [6750,6778]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [6780,6808]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [6750,6758]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [6763,6777]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [6780,6788]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [6793,6807]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [5992,6015]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [6534,6618]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: s [6685,6686]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

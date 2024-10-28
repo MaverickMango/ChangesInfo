@@ -1,0 +1,548 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Math",
+  "id": "42",
+  "workingDir": "../bugs/Math_42_buggy",
+  "inducingCommit": "f36be8e8b7371fb8814456b6c095866aa802de78",
+  "originalCommit": "0878ad4bc8e4ac345a2c27449a0686b0877013d4",
+  "bug_name": "Math_42",
+  "derive": "defects4j",
+  "original_fixing_commit": "e98a5000cd211539bf4ba65f62cc7f81395e1726",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/optimization/linear/SimplexTableau.java",
+        "src/main/java/org/apache/commons/math/optimization/linear/SimplexTableau.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "getRhsOffset",
+            "getBasicRow",
+            "getSolution"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "getBasicRow",
+            "getNegativeDecisionVariableOffset",
+            "getBasicRow",
+            "getSolution",
+            "getBasicRowForSolution"
+          ],
+          "num": 5
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "274",
+            "321",
+            "322",
+            "323",
+            "324",
+            "325",
+            "326",
+            "327",
+            "328",
+            "329",
+            "330",
+            "331",
+            "332",
+            "333",
+            "334",
+            "335",
+            "336",
+            "337",
+            "338",
+            "432"
+          ],
+          "num": 20
+        },
+        {
+          "qualified_names": [
+            "273",
+            "274",
+            "275",
+            "276",
+            "277",
+            "278",
+            "279",
+            "280",
+            "281",
+            "282",
+            "283",
+            "284",
+            "285",
+            "286",
+            "287",
+            "288",
+            "289",
+            "290",
+            "292",
+            "293",
+            "340",
+            "341",
+            "342",
+            "343",
+            "344",
+            "345",
+            "346",
+            "347",
+            "348",
+            "349",
+            "350",
+            "351",
+            "352",
+            "353",
+            "354",
+            "355",
+            "356",
+            "451",
+            "452",
+            "453",
+            "454",
+            "455",
+            "456",
+            "457",
+            "458",
+            "459"
+          ],
+          "num": 46
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/optimization/linear/SimplexTableau.java b/src/main/java/org/apache/commons/math/optimization/linear/SimplexTableau.java\nindex c228ad6..b387767 100644\n--- a/src/main/java/org/apache/commons/math/optimization/linear/SimplexTableau.java\n+++ b/src/main/java/org/apache/commons/math/optimization/linear/SimplexTableau.java\n@@ -270,8 +270,27 @@\n      * @return the row that the variable is basic in.  null if the column is not basic\n      */\n     private Integer getBasicRow(final int col) {\n+        return getBasicRow(col, true);\n+    }\n+\n+    /**\n+     * Checks whether the given column is basic.\n+     * @param col index of the column to check\n+     * @return the row that the variable is basic in.  null if the column is not basic\n+     */\n+    private Integer getBasicRowForSolution(final int col) {\n+        return getBasicRow(col, false);\n+    }\n+    \n+    /**\n+     * Checks whether the given column is basic.\n+     * @param col index of the column to check\n+     * @return the row that the variable is basic in.  null if the column is not basic\n+     */\n+    private Integer getBasicRow(final int col, boolean ignoreObjectiveRows) {\n         Integer row \u003d null;\n-        for (int i \u003d getNumObjectiveFunctions(); i \u003c getHeight(); i++) {\n+        int start \u003d ignoreObjectiveRows ? getNumObjectiveFunctions() : 0;\n+        for (int i \u003d start; i \u003c getHeight(); i++) {\n             if (MathUtils.equals(getEntry(i, col), 1.0, epsilon) \u0026\u0026 (row \u003d\u003d null)) {\n                 row \u003d i;\n             } else if (!MathUtils.equals(getEntry(i, col), 0.0, epsilon)) {\n@@ -318,24 +337,23 @@\n      * @return current solution\n      */\n     protected RealPointValuePair getSolution() {\n-        double[] coefficients \u003d new double[getOriginalNumDecisionVariables()];\n-        Integer basicRow \u003d\n-            getBasicRow(getNumObjectiveFunctions() + getOriginalNumDecisionVariables());\n-        double mostNegative \u003d basicRow \u003d\u003d null ? 0 : getEntry(basicRow, getRhsOffset());\n-        Set\u003cInteger\u003e basicRows \u003d new HashSet\u003cInteger\u003e();\n-        for (int i \u003d 0; i \u003c coefficients.length; i++) {\n-            basicRow \u003d getBasicRow(getNumObjectiveFunctions() + i);\n-            if (basicRows.contains(basicRow)) {\n-                // if multiple variables can take a given value \n-                // then we choose the first and set the rest equal to 0\n-                coefficients[i] \u003d 0;\n-            } else {\n-                basicRows.add(basicRow);\n-                coefficients[i] \u003d\n-                    (basicRow \u003d\u003d null ? 0 : getEntry(basicRow, getRhsOffset())) -\n-                    (restrictToNonNegative ? 0 : mostNegative);\n-            }\n-        }\n+      double[] coefficients \u003d new double[getOriginalNumDecisionVariables()];\n+      Integer negativeVarBasicRow \u003d getBasicRowForSolution(getNegativeDecisionVariableOffset());\n+      double mostNegative \u003d negativeVarBasicRow \u003d\u003d null ? 0 : getEntry(negativeVarBasicRow, getRhsOffset());\n+      Set\u003cInteger\u003e basicRows \u003d new HashSet\u003cInteger\u003e();\n+      for (int i \u003d 0; i \u003c coefficients.length; i++) {\n+          Integer basicRow \u003d getBasicRowForSolution(getNumObjectiveFunctions() + i);\n+          if (basicRows.contains(basicRow)) {\n+              // if multiple variables can take a given value \n+              // then we choose the first and set the rest equal to 0\n+              coefficients[i] \u003d 0;\n+          } else {\n+              basicRows.add(basicRow);\n+              coefficients[i] \u003d\n+                  (basicRow \u003d\u003d null ? 0 : getEntry(basicRow, getRhsOffset())) -\n+                  (restrictToNonNegative ? 0 : mostNegative);\n+          }\n+      }\n         return new RealPointValuePair(coefficients, f.getValue(coefficients));\n     }\n \n@@ -430,6 +448,15 @@\n     protected final int getRhsOffset() {\n         return getWidth() - 1;\n     }\n+    \n+    /**\n+     * Returns the offset of the extra decision variable added when there is a\n+     * negative decision variable in the original problem.\n+     * @return the offset of x-\n+     */\n+    protected final int getNegativeDecisionVariableOffset() {\n+      return getNumObjectiveFunctions() + getOriginalNumDecisionVariables();\n+    }\n \n     /**\n      * Get the number of decision variables.\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodDeclaration [11068,11368]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodDeclaration [11378,12069]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodDeclaration [17192,17518]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [11068,11262]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: private [11267,11274]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [11275,11282]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: getBasicRowForSolution [11283,11305]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [11306,11319]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [11321,11368]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [11378,11572]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: private [11577,11584]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [11585,11592]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: getBasicRow [11593,11604]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [11605,11618]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [11620,11647]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [11649,12069]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [17192,17373]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: protected [17378,17387]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: final [17388,17393]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrimitiveType: int [17394,17397]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: getNegativeDecisionVariableOffset [17398,17431]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [17434,17518]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [11026,11056]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ReturnStatement [11331,11362]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [11687,11752]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [13364,13454]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [13461,13563]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ReturnStatement [17442,17512]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [11338,11361]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [11350,11360]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [13683,13757]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: start [11774,11779]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [13683,13690]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [13691,13756]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: basicRow [13691,13699]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [13702,13756]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: getBasicRowForSolution [13702,13724]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [13725,13755]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [11067,11093]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [12682,12689]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: basicRow [12690,12698]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: getBasicRow [12713,12724]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [12725,12787]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [12713,12788]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [12690,12788]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [12682,12789]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [12798,12878]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: basicRow [13004,13012]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ASSIGNMENT_OPERATOR: \u003d [13013,13014]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [13027,13057]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [13015,13058]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Assignment [13004,13058]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ExpressionStatement [13004,13059]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "getNegativeDecisionVariableOffset",
+        "getBasicRowForSolution"
+      ],
+      "num": 2
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "getRhsOffset"
+      ],
+      "num": 1
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math.ode.nonstiff.GraggBulirschStoerStepInterpolatorTest",
+      "test_function": "derivativesConsistency",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c-98.69895610335308\u003e but was:\u003c-98.69895609303683\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/optimization/linear/SimplexTableau.java",
+        "src/main/java/org/apache/commons/math/optimization/linear/SimplexTableau.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "getSolution"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "getSolution"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "346",
+            "347",
+            "348"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "346",
+            "348",
+            "349",
+            "350",
+            "351"
+          ],
+          "num": 5
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Math_42/properties/modified_classes/inducing/src/main/java/org/apache/commons/math/optimization/linear/SimplexTableau.java data/changesInfo//Math_42/cleaned/fixing/src/main/java/org/apache/commons/math/optimization/linear/SimplexTableau.java\n--- data/changesInfo//Math_42/properties/modified_classes/inducing/src/main/java/org/apache/commons/math/optimization/linear/SimplexTableau.java\t2023-08-25 13:55:30.335078986 +0800\n+++ data/changesInfo//Math_42/cleaned/fixing/src/main/java/org/apache/commons/math/optimization/linear/SimplexTableau.java\t2023-08-02 21:23:39.773682371 +0800\n@@ -343,10 +343,12 @@\n       Set\u003cInteger\u003e basicRows \u003d new HashSet\u003cInteger\u003e();\n       for (int i \u003d 0; i \u003c coefficients.length; i++) {\n           Integer basicRow \u003d getBasicRowForSolution(getNumObjectiveFunctions() + i);\n-          if (basicRows.contains(basicRow)) {\n-              // if multiple variables can take a given value \n-              // then we choose the first and set the rest equal to 0\n+          if (basicRow !\u003d null \u0026\u0026 basicRow \u003d\u003d 0) {\n               coefficients[i] \u003d 0;\n+          } else if (basicRows.contains(basicRow)) {\n+              // if multiple variables can take a given value\n+              // then we choose the first and set the rest equal to 0\n+              coefficients[i] \u003d 0 - (restrictToNonNegative ? 0 : mostNegative);\n           } else {\n               basicRows.add(basicRow);\n               coefficients[i] \u003d\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [13768,14352]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [13772,13805]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [13807,13855]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [14043,14108]"
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

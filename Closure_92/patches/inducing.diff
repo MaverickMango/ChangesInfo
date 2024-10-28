@@ -1,0 +1,520 @@
+diff --git a/build.xml b/build.xml
+index 7a31609..adec5c3 100644
+--- a/build.xml
++++ b/build.xml
+@@ -163,7 +163,7 @@
+         <pathelement location="${build.dir}/test" />
+       </classpath>
+       <formatter type="plain" usefile="false" />
+-      <batchtest haltonfailure="true">
++      <batchtest>
+         <fileset dir="${build.dir}/test">
+           <include name="**/*Test.class" />
+         </fileset>
+diff --git a/src/com/google/javascript/jscomp/FunctionTypeBuilder.java b/src/com/google/javascript/jscomp/FunctionTypeBuilder.java
+index 08f1a4e..28198bc 100644
+--- a/src/com/google/javascript/jscomp/FunctionTypeBuilder.java
++++ b/src/com/google/javascript/jscomp/FunctionTypeBuilder.java
+@@ -22,6 +22,7 @@
+ import static com.google.javascript.rhino.jstype.JSTypeNative.VOID_TYPE;
+ 
+ import com.google.common.base.Preconditions;
++import com.google.common.base.Predicate;
+ import com.google.common.collect.Iterables;
+ import com.google.common.collect.Lists;
+ import com.google.common.collect.Sets;
+@@ -89,6 +90,10 @@
+       "JSC_EXTENDS_NON_OBJECT",
+       "{0} @extends non-object type {1}");
+ 
++  static final DiagnosticType RESOLVED_TAG_EMPTY = DiagnosticType.warning(
++      "JSC_RESOLVED_TAG_EMPTY",
++      "Could not resolve type in {0} tag of {1}");
++
+   static final DiagnosticType IMPLEMENTS_WITHOUT_CONSTRUCTOR =
+       DiagnosticType.warning(
+           "JSC_IMPLEMENTS_WITHOUT_CONSTRUCTOR",
+@@ -120,6 +125,46 @@
+       "JSC_TEMPLATE_TYPE_EXPECTED",
+       "The template type must be a parameter type");
+ 
++  private class ExtendedTypeValidator implements Predicate<JSType> {
++    @Override
++    public boolean apply(JSType type) {
++      ObjectType objectType = ObjectType.cast(type);
++      if (objectType == null) {
++        reportWarning(EXTENDS_NON_OBJECT, fnName, type.toString());
++      } else if (objectType.isUnknownType() &&
++          // If this has a supertype that hasn't been resolved yet,
++          // then we can assume this type will be ok once the super
++          // type resolves.
++          (objectType.getImplicitPrototype() == null ||
++           objectType.getImplicitPrototype().isResolved())) {
++        reportWarning(RESOLVED_TAG_EMPTY, "@extends", fnName);
++      } else {
++        return true;
++      }
++      return false;
++    }
++  };
++
++  private class ImplementedTypeValidator implements Predicate<JSType> {
++    @Override
++    public boolean apply(JSType type) {
++      ObjectType objectType = ObjectType.cast(type);
++      if (objectType == null) {
++        reportError(BAD_IMPLEMENTED_TYPE, fnName);
++      } else if (objectType.isUnknownType() &&
++          // If this has a supertype that hasn't been resolved yet,
++          // then we can assume this type will be ok once the super
++          // type resolves.
++          (objectType.getImplicitPrototype() == null ||
++           objectType.getImplicitPrototype().isResolved())) {
++        reportWarning(RESOLVED_TAG_EMPTY, "@implements", fnName);
++      } else {
++        return true;
++      }
++      return false;
++    }
++  };
++
+   /**
+    * @param fnName The function name.
+    * @param compiler The compiler.
+@@ -278,9 +323,11 @@
+       // base type
+       if (info.hasBaseType()) {
+         if (isConstructor || isInterface) {
+-          baseType = ObjectType.cast(info.getBaseType().evaluate(scope, typeRegistry));
+-          if (baseType == null) {
+-            reportWarning(EXTENDS_NON_OBJECT, fnName, baseType.toString());
++          JSType maybeBaseType =
++              info.getBaseType().evaluate(scope, typeRegistry);
++          if (maybeBaseType != null &&
++              maybeBaseType.setValidator(new ExtendedTypeValidator())) {
++            baseType = (ObjectType) maybeBaseType;
+           }
+         } else {
+           reportWarning(EXTENDS_WITHOUT_TYPEDEF, fnName);
+@@ -291,11 +338,10 @@
+       if (isConstructor || isInterface) {
+         implementedInterfaces = Lists.newArrayList();
+         for (JSTypeExpression t : info.getImplementedInterfaces()) {
+-          ObjectType interType = ObjectType.cast(t.evaluate(scope, typeRegistry));
+-          if (interType != null) {
+-            implementedInterfaces.add(interType);
+-          } else {
+-            reportError(BAD_IMPLEMENTED_TYPE, fnName);
++          JSType maybeInterType = t.evaluate(scope, typeRegistry);
++          if (maybeInterType != null &&
++              maybeInterType.setValidator(new ImplementedTypeValidator())) {
++            implementedInterfaces.add((ObjectType) maybeInterType);
+           }
+         }
+         if (baseType != null) {
+diff --git a/src/com/google/javascript/jscomp/ProcessClosurePrimitives.java b/src/com/google/javascript/jscomp/ProcessClosurePrimitives.java
+index 1d738b5..c929a36 100644
+--- a/src/com/google/javascript/jscomp/ProcessClosurePrimitives.java
++++ b/src/com/google/javascript/jscomp/ProcessClosurePrimitives.java
+@@ -786,7 +786,7 @@
+         } else {
+           // In this case, the name was implicitly provided by two independent
+           // modules. We need to move this code up to a common module.
+-          int indexOfDot = namespace.lastIndexOf('.');
++          int indexOfDot = namespace.indexOf('.');
+           if (indexOfDot == -1) {
+             // Any old place is fine.
+             compiler.getNodeForCodeInsertion(minimumModule)
+diff --git a/src/com/google/javascript/jscomp/SourceFile.java b/src/com/google/javascript/jscomp/SourceFile.java
+index 891389c..0c40f03 100644
+--- a/src/com/google/javascript/jscomp/SourceFile.java
++++ b/src/com/google/javascript/jscomp/SourceFile.java
+@@ -232,11 +232,6 @@
+     }
+   }
+ 
+-  @Override
+-  public String toString() {
+-    return fileName;
+-  }
+-
+   public static SourceFile fromFile(String fileName, Charset c) {
+     return fromFile(new File(fileName), c);
+   }
+diff --git a/src/com/google/javascript/rhino/jstype/JSType.java b/src/com/google/javascript/rhino/jstype/JSType.java
+index ec47cd0..2ca901e 100644
+--- a/src/com/google/javascript/rhino/jstype/JSType.java
++++ b/src/com/google/javascript/rhino/jstype/JSType.java
+@@ -41,6 +41,7 @@
+ 
+ import static com.google.javascript.rhino.jstype.TernaryValue.UNKNOWN;
+ 
++import com.google.common.base.Predicate;
+ import com.google.javascript.rhino.ErrorReporter;
+ import com.google.javascript.rhino.JSDocInfo;
+ import com.google.javascript.rhino.jstype.JSTypeRegistry.ResolveMode;
+@@ -925,6 +926,16 @@
+     return type == null ? null : type.resolve(t, scope);
+   }
+ 
++  /**
++   * Certain types have constraints on them at resolution-time.
++   * For example, a type in an {@code @extends} annotation must be an
++   * object. Clients should inject a validator that emits a warning
++   * if the type does not validate, and return false.
++   */
++  public boolean setValidator(Predicate<JSType> validator) {
++    return validator.apply(this);
++  }
++
+   public static class TypePair {
+     public final JSType typeA;
+     public final JSType typeB;
+diff --git a/src/com/google/javascript/rhino/jstype/NamedType.java b/src/com/google/javascript/rhino/jstype/NamedType.java
+index cd4e2d0..fc5996b 100644
+--- a/src/com/google/javascript/rhino/jstype/NamedType.java
++++ b/src/com/google/javascript/rhino/jstype/NamedType.java
+@@ -40,6 +40,7 @@
+ package com.google.javascript.rhino.jstype;
+ 
+ import com.google.common.base.Preconditions;
++import com.google.common.base.Predicate;
+ import com.google.javascript.rhino.ErrorReporter;
+ 
+ /**
+@@ -83,6 +84,11 @@
+   private final int charno;
+ 
+   /**
++   * Validates the type resolution.
++   */
++  private Predicate<JSType> validator;
++
++  /**
+    * If true, don't warn about unresolveable type names.
+    *
+    * NOTE(nicksantos): A lot of third-party code doesn't use our type syntax.
+@@ -288,6 +294,9 @@
+ 
+   private void setReferencedAndResolvedType(JSType type, ErrorReporter t,
+       StaticScope<JSType> enclosing) {
++    if (validator != null) {
++      validator.apply(type);
++    }
+     setReferencedType(type);
+     checkEnumElementCycle(t);
+     setResolvedTypeInternal(getReferencedType());
+@@ -314,9 +323,10 @@
+   private void handleUnresolvedType(
+       ErrorReporter t, boolean ignoreForwardReferencedTypes) {
+     if (registry.isLastGeneration()) {
+-      boolean beForgiving = forgiving ||
+-          (ignoreForwardReferencedTypes &&
+-           registry.isForwardDeclaredType(reference));
++      boolean isForwardDeclared =
++          ignoreForwardReferencedTypes &&
++          registry.isForwardDeclaredType(reference);
++      boolean beForgiving = forgiving || isForwardDeclared;
+       if (!beForgiving && registry.isLastGeneration()) {
+         t.warning("Unknown type " + reference, sourceName, lineno, null,
+             charno);
+@@ -324,6 +334,10 @@
+         setReferencedType(
+             registry.getNativeObjectType(
+                 JSTypeNative.CHECKED_UNKNOWN_TYPE));
++
++        if (registry.isLastGeneration() && validator != null) {
++          validator.apply(getReferencedType());
++        }
+       }
+ 
+       setResolvedTypeInternal(getReferencedType());
+@@ -340,4 +354,17 @@
+     handleUnresolvedType(t, true);
+     return null;
+   }
++
++  @Override
++  public boolean setValidator(Predicate<JSType> validator) {
++    // If the type is already resolved, we can validate it now. If
++    // the type has not been resolved yet, we need to wait till its
++    // resolved before we can validate it.
++    if (this.isResolved()) {
++      return super.setValidator(validator);
++    } else {
++      this.validator = validator;
++      return true;
++    }
++  }
+ }
+diff --git a/test/com/google/javascript/jscomp/DisambiguatePropertiesTest.java b/test/com/google/javascript/jscomp/DisambiguatePropertiesTest.java
+index 041ed80..8245ec4 100644
+--- a/test/com/google/javascript/jscomp/DisambiguatePropertiesTest.java
++++ b/test/com/google/javascript/jscomp/DisambiguatePropertiesTest.java
+@@ -359,9 +359,13 @@
+         + "Foo.prototype.Foo_prototype$a=0;"
+         + "var Bar=function(){};"
+         + "Bar.prototype.Bar_prototype$a=0;";
+-    testSets(false, js, js, "{}");
++    testSets(false, BaseJSTypeTestCase.ALL_NATIVE_EXTERN_TYPES,
++        js, js, "{}", FunctionTypeBuilder.RESOLVED_TAG_EMPTY,
++        "Could not resolve type in @extends tag of Foo");
+     testSets(true, BaseJSTypeTestCase.ALL_NATIVE_EXTERN_TYPES,
+-        js, output, "{a=[[Bar.prototype], [Foo.prototype]]}");
++        js, output, "{a=[[Bar.prototype], [Foo.prototype]]}",
++        FunctionTypeBuilder.RESOLVED_TAG_EMPTY,
++        "Could not resolve type in @extends tag of Foo");
+   }
+ 
+   public void testNamedType() {
+diff --git a/test/com/google/javascript/jscomp/LooseTypeCheckTest.java b/test/com/google/javascript/jscomp/LooseTypeCheckTest.java
+index 144ce3b..3b9eb4d 100644
+--- a/test/com/google/javascript/jscomp/LooseTypeCheckTest.java
++++ b/test/com/google/javascript/jscomp/LooseTypeCheckTest.java
+@@ -29,6 +29,7 @@
+ import com.google.javascript.rhino.jstype.ObjectType;
+ 
+ import java.util.Arrays;
++import java.util.List;
+ 
+ /**
+  * Tests {@link TypeCheck}.
+@@ -5997,11 +5998,13 @@
+   }
+ 
+   public void testPrototypeLoop() throws Exception {
+-    testTypes(
++    testClosureTypesMultipleWarnings(
+         suppressMissingProperty("foo") +
+         "/** @constructor \n * @extends {T} */var T = function() {};" +
+         "alert((new T).foo);",
+-        "Parse error. Cycle detected in inheritance chain of type T");
++        Lists.newArrayList(
++            "Parse error. Cycle detected in inheritance chain of type T",
++            "Could not resolve type in @extends tag of T"));
+   }
+ 
+   public void testDirectPrototypeAssign() throws Exception {
+@@ -6313,7 +6316,7 @@
+ 
+         "goog.addDependency('zzz.js', ['MyType'], []);" +
+         "/** @param {MyType} x \n * @return {number} */" +
+-        "function f(x) { return x; }", null);
++        "function f(x) { return 3; }", null);
+   }
+ 
+   public void testForwardTypeDeclaration2() throws Exception {
+@@ -6908,6 +6911,12 @@
+ 
+   private void testClosureTypes(String js, String description)
+       throws Exception {
++    testClosureTypesMultipleWarnings(js,
++        description == null ? null : Lists.newArrayList(description));
++  }
++
++  private void testClosureTypesMultipleWarnings(
++      String js, List<String> descriptions) throws Exception {
+     Node n = compiler.parseTestCode(js);
+     Node externs = new Node(Token.BLOCK);
+     Node externAndJsRoot = new Node(Token.BLOCK, externs, n);
+@@ -6933,14 +6942,17 @@
+ 
+     assertEquals(0, compiler.getErrorCount());
+ 
+-    if (description == null) {
++    if (descriptions == null) {
+       assertEquals(
+           "unexpected warning(s) : " +
+           Joiner.on(", ").join(compiler.getWarnings()),
+           0, compiler.getWarningCount());
+     } else {
+-      assertEquals(1, compiler.getWarningCount());
+-      assertEquals(description, compiler.getWarnings()[0].description);
++      assertEquals(descriptions.size(), compiler.getWarningCount());
++      for (int i = 0; i < descriptions.size(); i++) {
++        assertEquals(descriptions.get(i),
++            compiler.getWarnings()[i].description);
++      }
+     }
+   }
+ 
+diff --git a/test/com/google/javascript/jscomp/ProcessClosurePrimitivesTest.java b/test/com/google/javascript/jscomp/ProcessClosurePrimitivesTest.java
+index f392a6c..5be0a1f 100644
+--- a/test/com/google/javascript/jscomp/ProcessClosurePrimitivesTest.java
++++ b/test/com/google/javascript/jscomp/ProcessClosurePrimitivesTest.java
+@@ -771,21 +771,6 @@
+         });
+   }
+ 
+-  public void testProvideInIndependentModules4() {
+-    // Regression test for bug 261:
+-    // http://code.google.com/p/closure-compiler/issues/detail?id=261
+-    test(
+-        createModuleStar(
+-            "goog.provide('apps');",
+-            "goog.provide('apps.foo.bar.B');",
+-            "goog.provide('apps.foo.bar.C');"),
+-        new String[] {
+-            "var apps = {};apps.foo = {};apps.foo.bar = {}",
+-            "apps.foo.bar.B = {};",
+-            "apps.foo.bar.C = {};",
+-        });
+-  }
+-
+   public void testRequireOfBaseGoog() {
+     test("goog.require('goog');",
+          "", MISSING_PROVIDE_ERROR);
+diff --git a/test/com/google/javascript/jscomp/TypeCheckTest.java b/test/com/google/javascript/jscomp/TypeCheckTest.java
+index 6771697..9f454b3 100644
+--- a/test/com/google/javascript/jscomp/TypeCheckTest.java
++++ b/test/com/google/javascript/jscomp/TypeCheckTest.java
+@@ -28,6 +28,7 @@
+ import com.google.javascript.rhino.jstype.ObjectType;
+ 
+ import java.util.Arrays;
++import java.util.List;
+ 
+ /**
+  * Tests {@link TypeCheck}.
+@@ -2735,6 +2736,15 @@
+         "required: boolean");
+   }
+ 
++  public void testGoodExtends12() throws Exception {
++    testTypes(
++        "/** @constructor \n * @extends {Super} */ function Sub() {}" +
++        "/** @constructor \n * @extends {Sub} */ function Sub2() {}" +
++        "/** @constructor */ function Super() {}" +
++        "/** @param {Super} x */ function foo(x) {}" +
++        "foo(new Sub2());");
++  }
++
+   public void testBadExtends1() throws Exception {
+     testTypes("/** @constructor */function base() {}\n" +
+         "/** @constructor\n * @extends {not_base} */function derived() {}\n",
+@@ -2762,6 +2772,17 @@
+         "@extends used without @constructor or @interface for base");
+   }
+ 
++  public void testBadExtends4() throws Exception {
++    // If there's a subclass of a class with a bad extends,
++    // we only want to warn about the first one.
++    testTypes(
++        "/** @constructor \n * @extends {bad} */ function Sub() {}" +
++        "/** @constructor \n * @extends {Sub} */ function Sub2() {}" +
++        "/** @param {Sub} x */ function foo(x) {}" +
++        "foo(new Sub2());",
++        "Parse error. Unknown type bad");
++  }
++
+   public void testLateExtends() throws Exception {
+     testTypes(
+         CLOSURE_DEFS +
+@@ -5963,7 +5984,7 @@
+   }
+ 
+   public void testInheritanceCheck14() throws Exception {
+-    testTypes(
++    testClosureTypes(
+         "var goog = {};\n" +
+         "/** @constructor\n @extends {goog.Missing} */\n" +
+         "goog.Super = function() {};\n" +
+@@ -6361,11 +6382,13 @@
+   }
+ 
+   public void testPrototypeLoop() throws Exception {
+-    testTypes(
++    testClosureTypesMultipleWarnings(
+         suppressMissingProperty("foo") +
+         "/** @constructor \n * @extends {T} */var T = function() {};" +
+         "alert((new T).foo);",
+-        "Parse error. Cycle detected in inheritance chain of type T");
++        Lists.newArrayList(
++            "Parse error. Cycle detected in inheritance chain of type T",
++            "Could not resolve type in @extends tag of T"));
+   }
+ 
+   public void testDirectPrototypeAssign() throws Exception {
+@@ -6677,7 +6700,7 @@
+ 
+         "goog.addDependency('zzz.js', ['MyType'], []);" +
+         "/** @param {MyType} x \n * @return {number} */" +
+-        "function f(x) { return x; }", null);
++        "function f(x) { return 3; }", null);
+   }
+ 
+   public void testForwardTypeDeclaration2() throws Exception {
+@@ -6698,6 +6721,39 @@
+         "required: (MyType|null)");
+   }
+ 
++  public void testForwardTypeDeclaration4() throws Exception {
++    testClosureTypes(
++        "goog.addDependency('zzz.js', ['MyType'], []);" +
++        "/** @param {MyType} x */ function f(x) { return x; }" +
++        "/** @constructor */ var MyType = function() {};" +
++        "f(new MyType());",
++        null);
++  }
++
++  public void testForwardTypeDeclaration5() throws Exception {
++    testClosureTypes(
++        "goog.addDependency('zzz.js', ['MyType'], []);" +
++        "/**\n" +
++        " * @constructor\n" +
++        " * @extends {MyType}\n" +
++        " */ var YourType = function() {};" +
++        "/** @override */ YourType.prototype.method = function() {};",
++        "Could not resolve type in @extends tag of YourType");
++  }
++
++  public void testForwardTypeDeclaration6() throws Exception {
++    testClosureTypesMultipleWarnings(
++        "goog.addDependency('zzz.js', ['MyType'], []);" +
++        "/**\n" +
++        " * @constructor\n" +
++        " * @implements {MyType}\n" +
++        " */ var YourType = function() {};" +
++        "/** @override */ YourType.prototype.method = function() {};",
++        Lists.newArrayList(
++            "Could not resolve type in @implements tag of YourType",
++            "property method not defined on any superclass of YourType"));
++  }
++
+   public void testMalformedOldTypeDef() throws Exception {
+     testTypes(
+         "var goog = {}; goog.typedef = true;" +
+@@ -7373,6 +7429,12 @@
+ 
+   private void testClosureTypes(String js, String description)
+       throws Exception {
++    testClosureTypesMultipleWarnings(js,
++        description == null ? null : Lists.newArrayList(description));
++  }
++
++  private void testClosureTypesMultipleWarnings(
++      String js, List<String> descriptions) throws Exception {
+     Node n = compiler.parseTestCode(js);
+     Node externs = new Node(Token.BLOCK);
+     Node externAndJsRoot = new Node(Token.BLOCK, externs, n);
+@@ -7398,14 +7460,17 @@
+ 
+     assertEquals(0, compiler.getErrorCount());
+ 
+-    if (description == null) {
++    if (descriptions == null) {
+       assertEquals(
+           "unexpected warning(s) : " +
+           Joiner.on(", ").join(compiler.getWarnings()),
+           0, compiler.getWarningCount());
+     } else {
+-      assertEquals(1, compiler.getWarningCount());
+-      assertEquals(description, compiler.getWarnings()[0].description);
++      assertEquals(descriptions.size(), compiler.getWarningCount());
++      for (int i = 0; i < descriptions.size(); i++) {
++        assertEquals(descriptions.get(i),
++            compiler.getWarnings()[i].description);
++      }
+     }
+   }
+ 

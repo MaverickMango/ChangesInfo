@@ -1,0 +1,134 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.rhino.IRTest::testIssue727_1,com.google.javascript.rhino.IRTest::testIssue727_2,com.google.javascript.rhino.IRTest::testIssue727_3",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.rhino.IR",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "27",
+  "workingDir": "../bugs/Closure_27_tmp",
+  "bug_name": "Closure_27",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.rhino.IRTest",
+      "test_function": "testIssue727_1",
+      "assertion_line": "48",
+      "exception": "java.lang.IllegalStateException",
+      "message": ""
+    },
+    {
+      "test_class": "com.google.javascript.rhino.IRTest",
+      "test_function": "testIssue727_2",
+      "assertion_line": "59",
+      "exception": "java.lang.IllegalStateException",
+      "message": ""
+    },
+    {
+      "test_class": "com.google.javascript.rhino.IRTest",
+      "test_function": "testIssue727_3",
+      "assertion_line": "74",
+      "exception": "java.lang.IllegalStateException",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/IR.java",
+        "src/com/google/javascript/rhino/IR.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.IR:tryCatch:[Node tryBody, Node catchNode]:Node",
+            "com.google.javascript.rhino.IR:blockUnchecked:[Node stmt]:Node",
+            "com.google.javascript.rhino.IR:tryFinally:[Node tryBody, Node finallyBody]:Node"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.IR:tryCatch:[Node tryBody, Node catchNode]:Node",
+            "com.google.javascript.rhino.IR:tryFinally:[Node tryBody, Node finallyBody]:Node"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "111",
+            "112",
+            "113",
+            "227",
+            "228",
+            "236"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "110",
+            "224",
+            "225",
+            "233"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/IR.java b/src/com/google/javascript/rhino/IR.java\nindex 002acd6..081f01f 100644\n--- a/src/com/google/javascript/rhino/IR.java\n+++ b/src/com/google/javascript/rhino/IR.java\n@@ -108,9 +108,6 @@\n     return block;\n   }\n \n-  private static Node blockUnchecked(Node stmt) {\n-    return new Node(Token.BLOCK, stmt);\n-  }\n \n   public static Node script(Node ... stmts) {\n     // TODO(johnlenz): finish setting up the SCRIPT node\n@@ -224,8 +221,8 @@\n   }\n \n   public static Node tryFinally(Node tryBody, Node finallyBody) {\n-    Preconditions.checkState(tryBody.isBlock());\n-    Preconditions.checkState(finallyBody.isBlock());\n+    Preconditions.checkState(tryBody.isLabelName());\n+    Preconditions.checkState(finallyBody.isLabelName());\n     Node catchBody \u003d block().copyInformationFrom(tryBody);\n     return new Node(Token.TRY, tryBody, catchBody, finallyBody);\n   }\n@@ -233,7 +230,7 @@\n   public static Node tryCatch(Node tryBody, Node catchNode) {\n     Preconditions.checkState(tryBody.isBlock());\n     Preconditions.checkState(catchNode.isCatch());\n-    Node catchBody \u003d blockUnchecked(catchNode).copyInformationFrom(catchNode);\n+    Node catchBody \u003d block(catchNode).copyInformationFrom(catchNode);\n     return new Node(Token.TRY, tryBody, catchBody);\n   }\n \n",
+      "operations": [
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [3324,3415]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.javascript.rhino.IR:blockUnchecked:[Node stmt]:Node"
+      ],
+      "num": 1
+    }
+  }
+}

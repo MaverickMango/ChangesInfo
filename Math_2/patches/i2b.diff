@@ -1,0 +1,236 @@
+diff -r -u inducing/src/main/java/org/apache/commons/math3/distribution/HypergeometricDistribution.java buggy/src/main/java/org/apache/commons/math3/distribution/HypergeometricDistribution.java
+--- inducing/src/main/java/org/apache/commons/math3/distribution/HypergeometricDistribution.java	2023-06-12 11:40:39.110140396 +0800
++++ buggy/src/main/java/org/apache/commons/math3/distribution/HypergeometricDistribution.java	2023-06-12 11:40:38.270178058 +0800
+@@ -15,14 +15,15 @@
+  * limitations under the License.
+  */
+ 
+-package org.apache.commons.math.distribution;
++package org.apache.commons.math3.distribution;
+ 
+-import org.apache.commons.math.exception.NotPositiveException;
+-import org.apache.commons.math.exception.NotStrictlyPositiveException;
+-import org.apache.commons.math.exception.NumberIsTooLargeException;
+-import org.apache.commons.math.exception.util.LocalizedFormats;
+-import org.apache.commons.math.util.ArithmeticUtils;
+-import org.apache.commons.math.util.FastMath;
++import org.apache.commons.math3.exception.NotPositiveException;
++import org.apache.commons.math3.exception.NotStrictlyPositiveException;
++import org.apache.commons.math3.exception.NumberIsTooLargeException;
++import org.apache.commons.math3.exception.util.LocalizedFormats;
++import org.apache.commons.math3.util.FastMath;
++import org.apache.commons.math3.random.RandomGenerator;
++import org.apache.commons.math3.random.Well19937c;
+ 
+ /**
+  * Implementation of the hypergeometric distribution.
+@@ -34,19 +35,14 @@
+ public class HypergeometricDistribution extends AbstractIntegerDistribution {
+     /** Serializable version identifier. */
+     private static final long serialVersionUID = -436928820673516179L;
+-
+     /** The number of successes in the population. */
+     private final int numberOfSuccesses;
+-
+     /** The population size. */
+     private final int populationSize;
+-
+     /** The sample size. */
+     private final int sampleSize;
+-
+     /** Cached numerical variance */
+     private double numericalVariance = Double.NaN;
+-
+     /** Whether or not the numerical variance has been calculated */
+     private boolean numericalVarianceIsCalculated = false;
+ 
+@@ -64,6 +60,29 @@
+      */
+     public HypergeometricDistribution(int populationSize, int numberOfSuccesses, int sampleSize)
+     throws NotPositiveException, NotStrictlyPositiveException, NumberIsTooLargeException {
++        this(new Well19937c(), populationSize, numberOfSuccesses, sampleSize);
++    }
++
++    /**
++     * Creates a new hypergeometric distribution.
++     *
++     * @param rng Random number generator.
++     * @param populationSize Population size.
++     * @param numberOfSuccesses Number of successes in the population.
++     * @param sampleSize Sample size.
++     * @throws NotPositiveException if {@code numberOfSuccesses < 0}.
++     * @throws NotStrictlyPositiveException if {@code populationSize <= 0}.
++     * @throws NumberIsTooLargeException if {@code numberOfSuccesses > populationSize},
++     * or {@code sampleSize > populationSize}.
++     * @since 3.1
++     */
++    public HypergeometricDistribution(RandomGenerator rng,
++                                      int populationSize,
++                                      int numberOfSuccesses,
++                                      int sampleSize)
++    throws NotPositiveException, NotStrictlyPositiveException, NumberIsTooLargeException {
++        super(rng);
++
+         if (populationSize <= 0) {
+             throw new NotStrictlyPositiveException(LocalizedFormats.POPULATION_SIZE,
+                                                    populationSize);
+@@ -101,8 +120,7 @@
+         } else if (x >= domain[1]) {
+             ret = 1.0;
+         } else {
+-            ret = innerCumulativeProbability(domain[0], x, 1, populationSize,
+-                                             numberOfSuccesses, sampleSize);
++            ret = innerCumulativeProbability(domain[0], x, 1);
+         }
+ 
+         return ret;
+@@ -197,22 +215,6 @@
+     }
+ 
+     /**
+-     * For this distribution, {@code X}, defined by the given hypergeometric
+-     * distribution parameters, this method returns {@code P(X = x)}.
+-     *
+-     * @param x Value at which the PMF is evaluated.
+-     * @param n the population size.
+-     * @param m number of successes in the population.
+-     * @param k the sample size.
+-     * @return PMF for the distribution.
+-     */
+-    private double probability(int n, int m, int k, int x) {
+-        return FastMath.exp(ArithmeticUtils.binomialCoefficientLog(m, x) +
+-               ArithmeticUtils.binomialCoefficientLog(n - m, k - x) -
+-               ArithmeticUtils.binomialCoefficientLog(n, k));
+-    }
+-
+-    /**
+      * For this distribution, {@code X}, this method returns {@code P(X >= x)}.
+      *
+      * @param x Value at which the CDF is evaluated.
+@@ -223,13 +225,12 @@
+         double ret;
+ 
+         final int[] domain = getDomain(populationSize, numberOfSuccesses, sampleSize);
+-        if (x < domain[0]) {
++        if (x <= domain[0]) {
+             ret = 1.0;
+         } else if (x > domain[1]) {
+             ret = 0.0;
+         } else {
+-            ret = innerCumulativeProbability(domain[1], x, -1, populationSize,
+-                                             numberOfSuccesses, sampleSize);
++            ret = innerCumulativeProbability(domain[1], x, -1);
+         }
+ 
+         return ret;
+@@ -246,17 +247,13 @@
+      * @param x1 Inclusive upper bound.
+      * @param dx Direction of summation (1 indicates summing from x0 to x1, and
+      * 0 indicates summing from x1 to x0).
+-     * @param n the population size.
+-     * @param m number of successes in the population.
+-     * @param k the sample size.
+      * @return {@code P(x0 <= X <= x1)}.
+      */
+-    private double innerCumulativeProbability(int x0, int x1, int dx,
+-                                              int n, int m, int k) {
+-        double ret = probability(n, m, k, x0);
++    private double innerCumulativeProbability(int x0, int x1, int dx) {
++        double ret = probability(x0);
+         while (x0 != x1) {
+             x0 += dx;
+-            ret += probability(n, m, k, x0);
++            ret += probability(x0);
+         }
+         return ret;
+     }
+@@ -295,7 +292,7 @@
+         final double N = getPopulationSize();
+         final double m = getNumberOfSuccesses();
+         final double n = getSampleSize();
+-        return ( n * m * (N - n) * (N - m) ) / ( (N * N * (N - 1)) );
++        return (n * m * (N - n) * (N - m)) / (N * N * (N - 1));
+     }
+ 
+     /**
+@@ -309,7 +306,7 @@
+      */
+     public int getSupportLowerBound() {
+         return FastMath.max(0,
+-                getSampleSize() + getNumberOfSuccesses() - getPopulationSize());
++                            getSampleSize() + getNumberOfSuccesses() - getPopulationSize());
+     }
+ 
+     /**
+diff -r -u inducing/src/test/java/org/apache/commons/math3/distribution/HypergeometricDistributionTest.java buggy/src/test/java/org/apache/commons/math3/distribution/HypergeometricDistributionTest.java
+--- inducing/src/test/java/org/apache/commons/math3/distribution/HypergeometricDistributionTest.java	2023-06-12 11:40:39.114140217 +0800
++++ buggy/src/test/java/org/apache/commons/math3/distribution/HypergeometricDistributionTest.java	2023-06-12 11:40:38.330175368 +0800
+@@ -15,12 +15,13 @@
+  * limitations under the License.
+  */
+ 
+-package org.apache.commons.math.distribution;
++package org.apache.commons.math3.distribution;
+ 
+-import org.apache.commons.math.TestUtils;
+-import org.apache.commons.math.exception.NotPositiveException;
+-import org.apache.commons.math.exception.NotStrictlyPositiveException;
+-import org.apache.commons.math.exception.NumberIsTooLargeException;
++import org.apache.commons.math3.TestUtils;
++import org.apache.commons.math3.exception.NotPositiveException;
++import org.apache.commons.math3.exception.NotStrictlyPositiveException;
++import org.apache.commons.math3.exception.NumberIsTooLargeException;
++import org.apache.commons.math3.util.Precision;
+ import org.junit.Assert;
+ import org.junit.Test;
+ 
+@@ -84,7 +85,7 @@
+ 
+     /** Verify that if there are no failures, mass is concentrated on sampleSize */
+     @Test
+-    public void testDegenerateNoFailures() throws Exception {
++    public void testDegenerateNoFailures() {
+         HypergeometricDistribution dist = new HypergeometricDistribution(5,5,3);
+         setDistribution(dist);
+         setCumulativeTestPoints(new int[] {-1, 0, 1, 3, 10 });
+@@ -102,7 +103,7 @@
+ 
+     /** Verify that if there are no successes, mass is concentrated on 0 */
+     @Test
+-    public void testDegenerateNoSuccesses() throws Exception {
++    public void testDegenerateNoSuccesses() {
+         HypergeometricDistribution dist = new HypergeometricDistribution(5,0,3);
+         setDistribution(dist);
+         setCumulativeTestPoints(new int[] {-1, 0, 1, 3, 10 });
+@@ -120,7 +121,7 @@
+ 
+     /** Verify that if sampleSize = populationSize, mass is concentrated on numberOfSuccesses */
+     @Test
+-    public void testDegenerateFullSample() throws Exception {
++    public void testDegenerateFullSample() {
+         HypergeometricDistribution dist = new HypergeometricDistribution(5,3,5);
+         setDistribution(dist);
+         setCumulativeTestPoints(new int[] {-1, 0, 1, 3, 10 });
+@@ -266,4 +267,21 @@
+         Assert.assertEquals(dist.getNumericalMean(), 55d * 200d / 3000d, tol);
+         Assert.assertEquals(dist.getNumericalVariance(), ( 200d * 55d * (3000d - 200d) * (3000d - 55d) ) / ( (3000d * 3000d * 2999d) ), tol);
+     }
++    
++    @Test
++    public void testMath644() {
++        int N = 14761461;  // population
++        int m = 1035;      // successes in population
++        int n = 1841;      // number of trials
++
++        int k = 0;
++        final HypergeometricDistribution dist = new HypergeometricDistribution(N, m, n);
++        
++        Assert.assertTrue(Precision.compareTo(1.0, dist.upperCumulativeProbability(k), 1) == 0);
++        Assert.assertTrue(Precision.compareTo(dist.cumulativeProbability(k), 0.0, 1) > 0);
++        
++        // another way to calculate the upper cumulative probability
++        double upper = 1.0 - dist.cumulativeProbability(k) + dist.probability(k);
++        Assert.assertTrue(Precision.compareTo(1.0, upper, 1) == 0);
++    }
+ }
+Only in buggy/src/test/java/org/apache/commons/math3: genetics

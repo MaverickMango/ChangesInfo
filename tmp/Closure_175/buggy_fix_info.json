@@ -1,0 +1,253 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.FunctionInjectorTest::testIssue1101a,com.google.javascript.jscomp.FunctionInjectorTest::testIssue1101b,com.google.javascript.jscomp.InlineFunctionsTest::testCostBasedInlining10,com.google.javascript.jscomp.InlineFunctionsTest::testIssue1101,com.google.javascript.jscomp.InlineFunctionsTest::testInlineMutableArgsReferencedOnce",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.FunctionInjector",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "175",
+  "workingDir": "../bugs/Closure_175_tmp",
+  "bug_name": "Closure_175",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.FunctionInjectorTest",
+      "test_function": "testIssue1101a",
+      "assertion_line": "1543",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003cNO\u003e but was:\u003cYES\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.FunctionInjectorTest",
+      "test_function": "testIssue1101b",
+      "assertion_line": "1543",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003cNO\u003e but was:\u003cYES\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.InlineFunctionsTest",
+      "test_function": "testCostBasedInlining10",
+      "assertion_line": "1023",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function f(a$$1){return a$$1+a$$1}var a\u003df(1+1)\nResult: var a\u003d1+1+(1+1)"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.InlineFunctionsTest",
+      "test_function": "testIssue1101",
+      "assertion_line": "2401",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: var x;var saved$$inline_0\u003dobj[\"prop\"];x\u003dmodifyObjProp(obj)+saved$$inline_0\nResult: var x\u003dmodifyObjProp(obj)+obj[\"prop\"]"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.InlineFunctionsTest",
+      "test_function": "testInlineMutableArgsReferencedOnce",
+      "assertion_line": "629",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: var x$$inline_0\u003d[];x$$inline_0\nResult: []"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/FunctionInjector.java",
+        "src/com/google/javascript/jscomp/FunctionInjector.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.FunctionInjector:canInlineReferenceToFunction:[NodeTraversal t, Node callNode, Node fnNode, Set\u003cString\u003e needAliases, InliningMode mode, boolean referencesThis, boolean containsFunctions]:CanInlineResult",
+            "com.google.javascript.jscomp.FunctionInjector:canInlineReferenceDirectly:[Node callNode, Node fnNode, Set\u003cString\u003e namesToAlias]:CanInlineResult"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.FunctionInjector:canInlineReferenceDirectly:[Node callNode, Node fnNode]:CanInlineResult",
+            "com.google.javascript.jscomp.FunctionInjector:canInlineReferenceToFunction:[NodeTraversal t, Node callNode, Node fnNode, Set\u003cString\u003e needAliases, InliningMode mode, boolean referencesThis, boolean containsFunctions]:CanInlineResult"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "46",
+            "47",
+            "48",
+            "49",
+            "50",
+            "51",
+            "52",
+            "53",
+            "216",
+            "698",
+            "722",
+            "723",
+            "724",
+            "725",
+            "726",
+            "728",
+            "729",
+            "730",
+            "731"
+          ],
+          "num": 19
+        },
+        {
+          "qualified_names": [
+            "45",
+            "208",
+            "690",
+            "695",
+            "715",
+            "716",
+            "717",
+            "718",
+            "719",
+            "720",
+            "721",
+            "722",
+            "723",
+            "724",
+            "725",
+            "726",
+            "728",
+            "729",
+            "731",
+            "732"
+          ],
+          "num": 20
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/FunctionInjector.java b/src/com/google/javascript/jscomp/FunctionInjector.java\nindex 659f39a..9d3fdd3 100644\n--- a/src/com/google/javascript/jscomp/FunctionInjector.java\n+++ b/src/com/google/javascript/jscomp/FunctionInjector.java\n@@ -43,14 +43,6 @@\n   private final boolean assumeStrictThis;\n   private final boolean assumeMinimumCapture;\n   private final Supplier\u003cString\u003e safeNameIdSupplier;\n-  private final Supplier\u003cString\u003e throwawayNameSupplier \u003d\n-      new Supplier\u003cString\u003e() {\n-    private int nextId \u003d 0;\n-    @Override\n-    public String get() {\n-      return String.valueOf(nextId++);\n-    }\n-  };\n \n   /**\n    * @param allowDecomposition Whether an effort should be made to break down\n@@ -213,7 +205,7 @@\n     }\n \n     if (mode \u003d\u003d InliningMode.DIRECT) {\n-      return canInlineReferenceDirectly(callNode, fnNode, needAliases);\n+      return canInlineReferenceDirectly(callNode, fnNode);\n     } else {\n       return canInlineReferenceAsStatementBlock(\n           t, callNode, fnNode, needAliases);\n@@ -695,11 +687,12 @@\n    * \u003c/pre\u003e\n    */\n   private CanInlineResult canInlineReferenceDirectly(\n-      Node callNode, Node fnNode, Set\u003cString\u003e namesToAlias) {\n+      Node callNode, Node fnNode) {\n     if (!isDirectCallNodeReplacementPossible(fnNode)) {\n       return CanInlineResult.NO;\n     }\n \n+    Node block \u003d fnNode.getLastChild();\n     // CALL NODE: [ NAME, ARG1, ARG2, ... ]\n     Node cArg \u003d callNode.getFirstChild().getNext();\n \n@@ -719,17 +712,24 @@\n       }\n     }\n \n-    Map\u003cString, Node\u003e args \u003d\n-        FunctionArgumentInjector.getFunctionCallParameterMap(\n-            fnNode, callNode, this.throwawayNameSupplier);\n-    boolean hasArgs \u003d !args.isEmpty();\n-    if (hasArgs) {\n+    Node fnParam \u003d NodeUtil.getFunctionParameters(fnNode).getFirstChild();\n+    while (cArg !\u003d null || fnParam !\u003d null) {\n+      if (fnParam !\u003d null) {\n+        if (cArg !\u003d null) {\n+          if (NodeUtil.mayEffectMutableState(cArg, compiler)\n+              \u0026\u0026 NodeUtil.getNameReferenceCount(\n+                  block, fnParam.getString()) \u003e 1) {\n+            return CanInlineResult.NO;\n+          }\n+        }\n+        fnParam \u003d fnParam.getNext();\n+      }\n       // Limit the inlining\n-      Set\u003cString\u003e allNamesToAlias \u003d Sets.newHashSet(namesToAlias);\n-      FunctionArgumentInjector.maybeAddTempsForCallArguments(\n-          fnNode, args, allNamesToAlias, compiler.getCodingConvention());\n-      if (!allNamesToAlias.isEmpty()) {\n+      if (cArg !\u003d null) {\n+        if (NodeUtil.mayHaveSideEffects(cArg, compiler)) {\n         return CanInlineResult.NO;\n+        }\n+        cArg \u003d cArg.getNext();\n       }\n     }\n \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [23659,23694]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [24411,24481]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [24493,24524]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [24534,24853]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [24888,25050]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [24892,24904]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [24906,25050]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [25020,25042]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [24920,24963]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [1605,1808]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: needAliases [7857,7868]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [23776,23800]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [24616,24761]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [24766,24800]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: hasArgs [24809,24816]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "PrefixExpression [25061,25087]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [24854,24914]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [24921,25050]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.FunctionInjector:canInlineReferenceDirectly:[Node callNode, Node fnNode]:CanInlineResult"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.FunctionInjector:canInlineReferenceDirectly:[Node callNode, Node fnNode, Set\u003cString\u003e namesToAlias]:CanInlineResult"
+      ],
+      "num": 1
+    }
+  }
+}

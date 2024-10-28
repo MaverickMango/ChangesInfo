@@ -1,0 +1,139 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.joda.time.format.TestDateTimeFormatter::testParseInto_monthOnly_baseStartYear,org.joda.time.format.TestDateTimeFormatter::testParseInto_monthOnly_parseStartYear,org.joda.time.format.TestDateTimeFormatter::testParseInto_monthOnly_baseEndYear,org.joda.time.format.TestDateTimeFormatter::testParseInto_monthOnly,org.joda.time.format.TestDateTimeFormatter::testParseInto_monthDay_withDefaultYear_feb29,org.joda.time.format.TestDateTimeFormatter::testParseInto_monthDay_feb29,org.joda.time.format.TestDateTimeFormatter::testParseInto_monthOnly_parseEndYear",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.joda.time.format.DateTimeFormatter",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Time",
+  "id": "16",
+  "workingDir": "../bugs/Time_16_tmp",
+  "bug_name": "Time_16",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.joda.time.format.TestDateTimeFormatter",
+      "test_function": "testParseInto_monthOnly_baseStartYear",
+      "assertion_line": "877",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c2004-05-01T12:20:30.000+09:00\u003e but was:\u003c2000-05-01T12:20:30.000+09:00\u003e"
+    },
+    {
+      "test_class": "org.joda.time.format.TestDateTimeFormatter",
+      "test_function": "testParseInto_monthOnly_parseStartYear",
+      "assertion_line": "884",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c2004-01-01T12:20:30.000+09:00\u003e but was:\u003c2000-01-01T12:20:30.000+09:00\u003e"
+    },
+    {
+      "test_class": "org.joda.time.format.TestDateTimeFormatter",
+      "test_function": "testParseInto_monthOnly_baseEndYear",
+      "assertion_line": "891",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c2004-05-31T12:20:30.000+09:00\u003e but was:\u003c2000-05-31T12:20:30.000+09:00\u003e"
+    },
+    {
+      "test_class": "org.joda.time.format.TestDateTimeFormatter",
+      "test_function": "testParseInto_monthOnly",
+      "assertion_line": "870",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c2004-05-09T12:20:30.000+01:00\u003e but was:\u003c2000-05-09T12:20:30.000+01:00\u003e"
+    },
+    {
+      "test_class": "org.joda.time.format.TestDateTimeFormatter",
+      "test_function": "testParseInto_monthDay_withDefaultYear_feb29",
+      "assertion_line": "912",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c2004-02-29T12:20:30.000Z\u003e but was:\u003c2012-02-29T12:20:30.000Z\u003e"
+    },
+    {
+      "test_class": "org.joda.time.format.TestDateTimeFormatter",
+      "test_function": "testParseInto_monthDay_feb29",
+      "assertion_line": "905",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c2004-02-29T12:20:30.000Z\u003e but was:\u003c2000-02-29T12:20:30.000Z\u003e"
+    },
+    {
+      "test_class": "org.joda.time.format.TestDateTimeFormatter",
+      "test_function": "testParseInto_monthOnly_parseEndYear",
+      "assertion_line": "898",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c2004-12-31T12:20:30.000+09:00\u003e but was:\u003c2000-12-31T12:20:30.000+09:00\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/joda/time/format/DateTimeFormatter.java",
+        "src/main/java/org/joda/time/format/DateTimeFormatter.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.joda.time.format.DateTimeFormatter:parseInto:[ReadWritableInstant instant, String text, int position]:int"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.joda.time.format.DateTimeFormatter:parseInto:[ReadWritableInstant instant, String text, int position]:int"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "709"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "709"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/joda/time/format/DateTimeFormatter.java b/src/main/java/org/joda/time/format/DateTimeFormatter.java\nindex baa276a..a4b1612 100644\n--- a/src/main/java/org/joda/time/format/DateTimeFormatter.java\n+++ b/src/main/java/org/joda/time/format/DateTimeFormatter.java\n@@ -706,7 +706,7 @@\n         chrono \u003d selectChronology(chrono);\n         \n         DateTimeParserBucket bucket \u003d new DateTimeParserBucket(\n-            instantLocal, chrono, iLocale, iPivotYear, chrono.year().get(instantLocal));\n+            instantLocal, chrono, iLocale, iPivotYear, iDefaultYear);\n         int newPos \u003d parser.parseInto(bucket, text, position);\n         instant.setMillis(bucket.computeMillis(false, text));\n         if (iOffsetParsed \u0026\u0026 bucket.getOffsetInteger() !\u003d null) {\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: iDefaultYear [26885,26897]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [26885,26916]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

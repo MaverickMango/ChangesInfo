@@ -1,0 +1,157 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.jsoup.helper.W3CDomTest::namespacePreservation",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.jsoup.helper.W3CDom",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Jsoup",
+  "id": "73",
+  "workingDir": "../bugs/Jsoup_73_tmp",
+  "bug_name": "Jsoup_73",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.jsoup.helper.W3CDomTest",
+      "test_function": "namespacePreservation",
+      "assertion_line": "116",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003chttp://[www.w3.org/1999/xhtml]\u003e but was:\u003chttp://[example.com/clip]\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/helper/W3CDom.java",
+        "src/main/java/org/jsoup/helper/W3CDom.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.helper.W3CDom\\$W3CBuilder:tail:[org.jsoup.nodes.Node source, int depth]:void",
+            "org.jsoup.helper.W3CDom\\$W3CBuilder:head:[org.jsoup.nodes.Node source, int depth]:void",
+            "org.jsoup.helper.W3CDom\\$W3CBuilder:updateNamespaces:[org.jsoup.nodes.Element el]:String",
+            "org.jsoup.helper.W3CDom\\$W3CBuilder:W3CBuilder:[Document doc]:null"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "org.jsoup.helper.W3CDom\\$W3CBuilder:copyAttributes:[org.jsoup.nodes.Node source, Element el]:void",
+            "org.jsoup.helper.W3CDom\\$W3CBuilder:updateNamespaces:[org.jsoup.nodes.Element el]:String",
+            "org.jsoup.helper.W3CDom\\$W3CBuilder:head:[org.jsoup.nodes.Node source, int depth]:void"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "22",
+            "74",
+            "79",
+            "83",
+            "88",
+            "119",
+            "148"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "21",
+            "73",
+            "85",
+            "121",
+            "144"
+          ],
+          "num": 5
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/helper/W3CDom.java b/src/main/java/org/jsoup/helper/W3CDom.java\nindex 81ac932..f58a925 100644\n--- a/src/main/java/org/jsoup/helper/W3CDom.java\n+++ b/src/main/java/org/jsoup/helper/W3CDom.java\n@@ -19,7 +19,6 @@\n import javax.xml.transform.stream.StreamResult;\n import java.io.StringWriter;\n import java.util.HashMap;\n-import java.util.Stack;\n \n /**\n  * Helper class to transform a {@link org.jsoup.nodes.Document} to a {@link org.w3c.dom.Document org.w3c.dom.Document},\n@@ -71,21 +70,19 @@\n         private static final String xmlnsPrefix \u003d \"xmlns:\";\n \n         private final Document doc;\n-        private final Stack\u003cHashMap\u003cString, String\u003e\u003e namespacesStack \u003d new Stack\u003c\u003e(); // stack of namespaces, prefix \u003d\u003e urn\n+        private final HashMap\u003cString, String\u003e namespaces \u003d new HashMap\u003c\u003e();\n         private Element dest;\n \n         public W3CBuilder(Document doc) {\n             this.doc \u003d doc;\n-            this.namespacesStack.push(new HashMap\u003cString, String\u003e());\n         }\n \n         public void head(org.jsoup.nodes.Node source, int depth) {\n-            namespacesStack.push(new HashMap\u003c\u003e(namespacesStack.peek())); // inherit from above on the stack\n             if (source instanceof org.jsoup.nodes.Element) {\n                 org.jsoup.nodes.Element sourceEl \u003d (org.jsoup.nodes.Element) source;\n \n                 String prefix \u003d updateNamespaces(sourceEl);\n-                String namespace \u003d namespacesStack.peek().get(prefix);\n+                String namespace \u003d namespaces.get(prefix);\n \n                 Element el \u003d doc.createElementNS(namespace, sourceEl.tagName());\n                 copyAttributes(sourceEl, el);\n@@ -116,7 +113,6 @@\n             if (source instanceof org.jsoup.nodes.Element \u0026\u0026 dest.getParentNode() instanceof Element) {\n                 dest \u003d (Element) dest.getParentNode(); // undescend. cromulent.\n             }\n-            namespacesStack.pop();\n         }\n \n         private void copyAttributes(org.jsoup.nodes.Node source, Element el) {\n@@ -145,7 +141,7 @@\n                 } else {\n                     continue;\n                 }\n-                namespacesStack.peek().put(prefix, attr.getValue());\n+                namespaces.put(prefix, attr.getValue());\n             }\n \n             // get the element prefix if any\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [2513,2580]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: namespaces [5761,5771]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: namespaces [3002,3012]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [710,733]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [2537,2614]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [2766,2823]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [2914,2974]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [3252,3274]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [4813,4835]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [6058,6080]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.jsoup.helper.W3CDom\\$W3CBuilder:copyAttributes:[org.jsoup.nodes.Node source, Element el]:void"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.jsoup.helper.W3CDom\\$W3CBuilder:W3CBuilder:[Document doc]:null",
+        "org.jsoup.helper.W3CDom\\$W3CBuilder:tail:[org.jsoup.nodes.Node source, int depth]:void"
+      ],
+      "num": 2
+    }
+  }
+}

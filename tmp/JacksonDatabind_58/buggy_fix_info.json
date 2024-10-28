@@ -1,0 +1,116 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.misc.AccessFixTest::testCauseOfThrowableIgnoral",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.deser.BeanDeserializerFactory",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "58",
+  "workingDir": "../bugs/JacksonDatabind_58_tmp",
+  "bug_name": "JacksonDatabind_58",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.misc.AccessFixTest",
+      "test_function": "testCauseOfThrowableIgnoral",
+      "assertion_line": "29",
+      "exception": "com.fasterxml.jackson.databind.JsonMappingException",
+      "message": "Can not access private java.lang.Throwable java.lang.Throwable.cause (from class java.lang.Throwable; failed to set access: Can not force permission: (\"java.lang.reflect.ReflectPermission\" \"suppressAccessChecks\")"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java",
+        "src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.BeanDeserializerFactory:constructSettableProperty:[DeserializationContext ctxt, BeanDescription beanDesc, BeanPropertyDefinition propDef, JavaType propType0]:SettableBeanProperty"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.BeanDeserializerFactory:constructSettableProperty:[DeserializationContext ctxt, BeanDescription beanDesc, BeanPropertyDefinition propDef, JavaType propType0]:SettableBeanProperty"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "715",
+            "716",
+            "717",
+            "718",
+            "720"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "714"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java\nindex 128e462..df86121 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java\n@@ -712,12 +712,7 @@\n             // [databind#877]: explicitly prevent forced access to `cause` of `Throwable`;\n             // never needed and attempts may cause problems on some platforms.\n             // !!! NOTE: should be handled better for 2.8 and later\n-            if ((mutator instanceof AnnotatedField)\n-                    \u0026\u0026 \"cause\".equals(mutator.getName())) {\n-                ;\n-            } else {\n                 mutator.fixAccess(ctxt.isEnabled(MapperFeature.OVERRIDE_PUBLIC_ACCESS_MODIFIERS));\n-            }\n         }\n         // note: this works since we know there\u0027s exactly one argument for methods\n         BeanProperty.Std property \u003d new BeanProperty.Std(propDef.getFullName(),\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [33095,33187]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [33189,33222]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [33228,33342]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [33091,33342]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

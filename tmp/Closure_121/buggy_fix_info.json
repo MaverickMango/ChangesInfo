@@ -1,0 +1,94 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.InlineVariablesTest::testExternalIssue1053",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.InlineVariables",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "121",
+  "workingDir": "../bugs/Closure_121_tmp",
+  "bug_name": "Closure_121",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.InlineVariablesTest",
+      "test_function": "testExternalIssue1053",
+      "assertion_line": "1069",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: var u;function f(){u\u003dRandom();var x\u003du;f();alert(x\u003d\u003d\u003du)}\nResult: var u;function f(){u\u003dRandom();f();alert(u\u003d\u003d\u003du)}"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/InlineVariables.java",
+        "src/com/google/javascript/jscomp/InlineVariables.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.InlineVariables\\$InliningBehavior:inlineNonConstants:[Var v, ReferenceCollection referenceInfo, boolean maybeModifiedArguments]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.InlineVariables\\$InliningBehavior:inlineNonConstants:[Var v, ReferenceCollection referenceInfo, boolean maybeModifiedArguments]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "304",
+            "308",
+            "309"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "304"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/InlineVariables.java b/src/com/google/javascript/jscomp/InlineVariables.java\nindex 5c9df61..376abd4 100644\n--- a/src/com/google/javascript/jscomp/InlineVariables.java\n+++ b/src/com/google/javascript/jscomp/InlineVariables.java\n@@ -301,12 +301,10 @@\n       if (!maybeModifiedArguments \u0026\u0026\n           !staleVars.contains(v) \u0026\u0026\n           referenceInfo.isWellDefined() \u0026\u0026\n-          referenceInfo.isAssignedOnceInLifetime() \u0026\u0026\n+          referenceInfo.isAssignedOnceInLifetime()) {\n           // Inlining the variable based solely on well-defined and assigned\n           // once is *NOT* correct. We relax the correctness requirement if\n           // the variable is declared constant.\n-          (isInlineableDeclaredConstant(v, referenceInfo) ||\n-           referenceInfo.isOnlyAssignmentSameScopeAsDeclaration())) {\n         List\u003cReference\u003e refs \u003d referenceInfo.references;\n         for (int i \u003d 1 /* start from a read */; i \u003c refs.size(); i++) {\n           Node nameNode \u003d refs.get(i).getNode();\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ParenthesizedExpression [11422,11539]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

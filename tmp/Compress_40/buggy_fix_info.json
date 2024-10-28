@@ -1,0 +1,233 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.compress.utils.BitInputStreamTest::littleEndianWithOverflow,org.apache.commons.compress.utils.BitInputStreamTest::bigEndianWithOverflow",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.compress.utils.BitInputStream",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Compress",
+  "id": "40",
+  "workingDir": "../bugs/Compress_40_tmp",
+  "bug_name": "Compress_40",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.compress.utils.BitInputStreamTest",
+      "test_function": "littleEndianWithOverflow",
+      "assertion_line": "143",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c1186\u003e but was:\u003c1184\u003e"
+    },
+    {
+      "test_class": "org.apache.commons.compress.utils.BitInputStreamTest",
+      "test_function": "bigEndianWithOverflow",
+      "assertion_line": "165",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c8274274654740644818\u003e but was:\u003c203824122492715986\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/compress/utils/BitInputStream.java",
+        "src/main/java/org/apache/commons/compress/utils/BitInputStream.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.utils.BitInputStream:readBits:[final int count]:long"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.utils.BitInputStream:readBits:[final int count]:long"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "85",
+            "98",
+            "99",
+            "100",
+            "102",
+            "103",
+            "104",
+            "105",
+            "106",
+            "107",
+            "108",
+            "109",
+            "110",
+            "111",
+            "112",
+            "113",
+            "114",
+            "115",
+            "116",
+            "117",
+            "118",
+            "119",
+            "122",
+            "130",
+            "131",
+            "132",
+            "133",
+            "134"
+          ],
+          "num": 28
+        },
+        {
+          "qualified_names": [
+            "85",
+            "97",
+            "151"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/compress/utils/BitInputStream.java b/src/main/java/org/apache/commons/compress/utils/BitInputStream.java\nindex 35773b7..86dda14 100644\n--- a/src/main/java/org/apache/commons/compress/utils/BitInputStream.java\n+++ b/src/main/java/org/apache/commons/compress/utils/BitInputStream.java\n@@ -82,7 +82,7 @@\n         if (count \u003c 0 || count \u003e MAXIMUM_CACHE_SIZE) {\n             throw new IllegalArgumentException(\"count must not be negative or greater than \" + MAXIMUM_CACHE_SIZE);\n         }\n-        while (bitsCachedSize \u003c count \u0026\u0026 bitsCachedSize \u003c 57) {\n+        while (bitsCachedSize \u003c count) {\n             final long nextByte \u003d in.read();\n             if (nextByte \u003c 0) {\n                 return nextByte;\n@@ -95,31 +95,9 @@\n             }\n             bitsCachedSize +\u003d 8;\n         }\n-        int overflowBits \u003d 0;\n-        long overflow \u003d 0l;\n-        if (bitsCachedSize \u003c count) {\n             // bitsCachedSize \u003e\u003d 57 and left-shifting it 8 bits would cause an overflow\n-            int bitsToAddCount \u003d count - bitsCachedSize;\n-            overflowBits \u003d 8 - bitsToAddCount;\n-            final long nextByte \u003d in.read();\n-            if (nextByte \u003c 0) {\n-                return nextByte;\n-            }\n-            if (byteOrder \u003d\u003d ByteOrder.LITTLE_ENDIAN) {\n-                long bitsToAdd \u003d nextByte \u0026 MASKS[bitsToAddCount];\n-                bitsCached |\u003d (bitsToAdd \u003c\u003c bitsCachedSize);\n-                overflow \u003d (nextByte \u003e\u003e\u003e bitsToAddCount) \u0026 MASKS[overflowBits];\n-            } else {\n-                bitsCached \u003c\u003c\u003d bitsToAddCount;\n-                long bitsToAdd \u003d (nextByte \u003e\u003e\u003e (overflowBits)) \u0026 MASKS[bitsToAddCount];\n-                bitsCached |\u003d bitsToAdd;\n-                overflow \u003d nextByte \u0026 MASKS[overflowBits];\n-            }\n-            bitsCachedSize \u003d count;\n-        }\n         \n         final long bitsOut;\n-        if (overflowBits \u003d\u003d 0) {\n             if (byteOrder \u003d\u003d ByteOrder.LITTLE_ENDIAN) {\n                 bitsOut \u003d (bitsCached \u0026 MASKS[count]);\n                 bitsCached \u003e\u003e\u003e\u003d count;\n@@ -127,11 +105,6 @@\n                 bitsOut \u003d (bitsCached \u003e\u003e (bitsCachedSize - count)) \u0026 MASKS[count];\n             }\n             bitsCachedSize -\u003d count;\n-        } else {\n-            bitsOut \u003d bitsCached \u0026 MASKS[count];\n-            bitsCached \u003d overflow;\n-            bitsCachedSize \u003d overflowBits;\n-        }\n         return bitsOut;\n     }\n }\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [2988,2990]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [2991,3010]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [2965,3010]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [3026,3058]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [3414,3435]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [3444,3463]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [3476,3498]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [3602,3646]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [3659,3693]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [3751,3817]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [3830,4351]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [4364,4387]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [3500,4397]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [3472,4397]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [4447,4464]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [4466,4782]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [4788,4926]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [4443,4926]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,394 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Closure",
+  "id": "104",
+  "workingDir": "../bugs/Closure_104_buggy",
+  "inducingCommit": "1be1c2636ef14071afa7da5cb8988972bd90149f",
+  "originalCommit": "0f655dc72070acbdcc5fe3a1aecf91c11955c37b",
+  "bug_name": "Closure_104",
+  "derive": "defects4j",
+  "original_fixing_commit": "67289ae4cbaba3ae70cd2e8fb92f3f2898039dfb",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/JSType.java",
+        "src/com/google/javascript/rhino/jstype/JSType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "getGreatestSubtype"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "getGreatestSubtype"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "590"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "591",
+            "592",
+            "593",
+            "594"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/JSType.java b/src/com/google/javascript/rhino/jstype/JSType.java\nindex 3e7896c..d841f2c 100644\n--- a/src/com/google/javascript/rhino/jstype/JSType.java\n+++ b/src/com/google/javascript/rhino/jstype/JSType.java\n@@ -588,6 +588,10 @@\n       return thisType;\n     } else if (thatType.isSubtype(thisType)) {\n       return thatType;\n+    } else if (thisType.isUnionType()) {\n+      return ((UnionType) thisType).meet(thatType);\n+    } else if (thatType.isUnionType()) {\n+      return ((UnionType) thatType).meet(thisType);\n     } else if (thisType.isObject() \u0026\u0026 thatType.isObject()) {\n       return thisType.getNativeType(JSTypeNative.NO_OBJECT_TYPE);\n     }\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [17140,17447]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [17144,17166]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Block [17168,17227]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [17233,17447]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [17237,17259]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Block [17261,17320]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/UnionType.java",
+        "src/com/google/javascript/rhino/jstype/UnionType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "meet",
+            "getGreatestSubtype"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "meet"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "274",
+            "275",
+            "276",
+            "277",
+            "278",
+            "279",
+            "280",
+            "281",
+            "282",
+            "289",
+            "290",
+            "291",
+            "295"
+          ],
+          "num": 13
+        },
+        {
+          "qualified_names": [
+            "274",
+            "281",
+            "282",
+            "283",
+            "284",
+            "285",
+            "286",
+            "288",
+            "289",
+            "292",
+            "293",
+            "294",
+            "295",
+            "296",
+            "297",
+            "298"
+          ],
+          "num": 16
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/UnionType.java b/src/com/google/javascript/rhino/jstype/UnionType.java\nindex d0bda12..c200b64 100644\n--- a/src/com/google/javascript/rhino/jstype/UnionType.java\n+++ b/src/com/google/javascript/rhino/jstype/UnionType.java\n@@ -271,28 +271,31 @@\n     return getLeastSupertype(this, that);\n   }\n \n-  @Override\n-  public JSType getGreatestSubtype(JSType that) {\n-    if (that instanceof UnionType) {\n-      return meet((UnionType) that);\n-    }\n-    return getGreatestSubtype(this, that);\n-  }\n-\n-  private JSType meet(UnionType that) {\n+  JSType meet(JSType that) {\n     UnionTypeBuilder builder \u003d new UnionTypeBuilder(registry);\n     for (JSType alternate : alternates) {\n       if (alternate.isSubtype(that)) {\n         builder.addAlternate(alternate);\n       }\n     }\n-    for (JSType otherAlternate : that.alternates) {\n-      if (otherAlternate.isSubtype(this)) {\n-        builder.addAlternate(otherAlternate);\n+\n+    if (that instanceof UnionType) {\n+      for (JSType otherAlternate : ((UnionType) that).alternates) {\n+        if (otherAlternate.isSubtype(this)) {\n+          builder.addAlternate(otherAlternate);\n+        }\n       }\n+    } else if (that.isSubtype(this)) {\n+      builder.addAlternate(that);\n     }\n     JSType result \u003d builder.build();\n-    return result \u003d\u003d null ? getNativeType(JSTypeNative.NO_TYPE) : result;\n+    if (result !\u003d null) {\n+      return result;\n+    } else if (this.isObject() \u0026\u0026 that.isObject()) {\n+      return getNativeType(JSTypeNative.NO_OBJECT_TYPE);\n+    } else {\n+      return getNativeType(JSTypeNative.NO_TYPE);\n+    }\n   }\n \n   /**\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [8174,8465]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [8507,8728]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InstanceofExpression [8178,8203]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [8205,8392]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [8398,8465]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [8511,8525]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Block [8527,8555]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [8561,8728]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [8565,8599]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Block [8601,8665]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [8671,8728]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldAccess [8242,8271]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [7943,8129]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: private [8133,8140]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "QualifiedName: that.alternates [8403,8418]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [8574,8588]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: result [8629,8635]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ConditionalExpression [8574,8635]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/UnionType.java",
+        "src/com/google/javascript/rhino/jstype/UnionType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "meet"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "meet"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "292"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "292"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Closure_104/properties/modified_classes/inducing/src/com/google/javascript/rhino/jstype/UnionType.java data/changesInfo//Closure_104/cleaned/fixing/src/com/google/javascript/rhino/jstype/UnionType.java\n--- data/changesInfo//Closure_104/properties/modified_classes/inducing/src/com/google/javascript/rhino/jstype/UnionType.java\t2023-08-25 13:26:51.748312565 +0800\n+++ data/changesInfo//Closure_104/cleaned/fixing/src/com/google/javascript/rhino/jstype/UnionType.java\t2023-06-20 20:56:30.737742770 +0800\n@@ -289,7 +289,7 @@\n       builder.addAlternate(that);\n     }\n     JSType result \u003d builder.build();\n-    if (result !\u003d null) {\n+    if (!result.isNoType()) {\n       return result;\n     } else if (this.isObject() \u0026\u0026 that.isObject()) {\n       return getNativeType(JSTypeNative.NO_OBJECT_TYPE);\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrefixExpression [8511,8529]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PREFIX_EXPRESSION_OPERATOR: ! [8511,8512]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [8512,8529]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [8512,8518]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: isNoType [8519,8527]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: !\u003d [8518,8520]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NullLiteral [8521,8525]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [8511,8525]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

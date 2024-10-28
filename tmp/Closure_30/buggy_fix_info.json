@@ -1,0 +1,217 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.FlowSensitiveInlineVariablesTest::testInlineAcrossSideEffect1,com.google.javascript.jscomp.FlowSensitiveInlineVariablesTest::testCanInlineAcrossNoSideEffect,com.google.javascript.jscomp.FlowSensitiveInlineVariablesTest::testIssue698",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.FlowSensitiveInlineVariables,com.google.javascript.jscomp.MustBeReachingVariableDef",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "30",
+  "workingDir": "../bugs/Closure_30_tmp",
+  "bug_name": "Closure_30",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.FlowSensitiveInlineVariablesTest",
+      "test_function": "testInlineAcrossSideEffect1",
+      "assertion_line": "329",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function _func(){var y;var x\u003dnoSFX(y);print(x)}\nResult: function _func(){var y;var x;print(noSFX(y))}"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.FlowSensitiveInlineVariablesTest",
+      "test_function": "testCanInlineAcrossNoSideEffect",
+      "assertion_line": "443",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function _func(){var y;var x\u003dnoSFX(y),z\u003dnoSFX();noSFX();noSFX(),print(x)}\nResult: function _func(){var y;var x,z\u003dnoSFX();noSFX();noSFX(),print(noSFX(y))}"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.FlowSensitiveInlineVariablesTest",
+      "test_function": "testIssue698",
+      "assertion_line": "443",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function _func(){var x;unknown.length\u003c2\u0026\u0026(unknown\u003d\"0\"+unknown);x\u003d\"\"+unknown;unknown.length\u003c3\u0026\u0026(unknown\u003d\"0\"+unknown);x\u003dx+unknown;return x}\nResult: function _func(){var x;unknown.length\u003c2\u0026\u0026(unknown\u003d\"0\"+unknown);unknown.length\u003c3\u0026\u0026(unknown\u003d\"0\"+unknown);return\"\"+unknown+unknown}"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java",
+        "src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.FlowSensitiveInlineVariables:process:[Node externs, Node root]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.FlowSensitiveInlineVariables:process:[Node externs, Node root]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "157"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "157"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java b/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java\nindex 3f39c07..d53a8f8 100644\n--- a/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java\n+++ b/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java\n@@ -154,7 +154,7 @@\n \n   @Override\n   public void process(Node externs, Node root) {\n-    (new NodeTraversal(compiler, this)).traverseRoots(externs, root);\n+    (new NodeTraversal(compiler, this)).traverse(root);\n   }\n \n   @Override\n",
+      "operations": [
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: externs [5608,5615]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/MustBeReachingVariableDef.java",
+        "src/com/google/javascript/jscomp/MustBeReachingVariableDef.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.MustBeReachingVariableDef:dependsOnOuterScopeVars:[String name, Node useNode]:boolean",
+            "com.google.javascript.jscomp.MustBeReachingVariableDef:computeDependence:[final Definition def, Node rValue]:void"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.MustBeReachingVariableDef:computeDependence:[final Definition def, Node rValue]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "71",
+            "397",
+            "399",
+            "400",
+            "401",
+            "403",
+            "435",
+            "436",
+            "437"
+          ],
+          "num": 9
+        },
+        {
+          "qualified_names": [
+            "70",
+            "396",
+            "439"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/MustBeReachingVariableDef.java b/src/com/google/javascript/jscomp/MustBeReachingVariableDef.java\nindex 589f673..1487af3 100644\n--- a/src/com/google/javascript/jscomp/MustBeReachingVariableDef.java\n+++ b/src/com/google/javascript/jscomp/MustBeReachingVariableDef.java\n@@ -68,7 +68,6 @@\n   private static class Definition {\n     final Node node;\n     final Set\u003cVar\u003e depends \u003d Sets.newHashSet();\n-    private boolean unknownDependencies \u003d false;\n \n     Definition(Node node) {\n       this.node \u003d node;\n@@ -394,13 +393,9 @@\n         new AbstractCfgNodeTraversalCallback() {\n       @Override\n       public void visit(NodeTraversal t, Node n, Node parent) {\n-        if (n.isName()) {\n+        if (n.isName() \u0026\u0026 jsScope.isDeclared(n.getString(), true)) {\n           Var dep \u003d jsScope.getVar(n.getString());\n-          if (dep \u003d\u003d null) {\n-            def.unknownDependencies \u003d true;\n-          } else {\n             def.depends.add(dep);\n-          }\n         }\n       }\n     });\n@@ -432,9 +427,6 @@\n     GraphNode\u003cNode, Branch\u003e n \u003d getCfg().getNode(useNode);\n     FlowState\u003cMustDef\u003e state \u003d n.getAnnotation();\n     Definition def \u003d state.getIn().reachingDef.get(jsScope.getVar(name));\n-    if (def.unknownDependencies) {\n-      return true;\n-    }\n \n     for (Var s : def.depends) {\n       if (s.scope !\u003d jsScope) {\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [12770,12823]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [12781,12783]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [12784,12823]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [2589,2633]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [12898,12909]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [12911,12968]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [12974,13021]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [12894,13021]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [14124,14179]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.MustBeReachingVariableDef:dependsOnOuterScopeVars:[String name, Node useNode]:boolean"
+      ],
+      "num": 1
+    }
+  }
+}

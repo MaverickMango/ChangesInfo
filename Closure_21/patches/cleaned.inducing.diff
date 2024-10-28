@@ -1,0 +1,24 @@
+Only in data/changesInfo//Closure_21/properties/modified_classes/inducing/: src
+diff -u -r data/changesInfo//Closure_21/properties/modified_classes/inducing/test/com/google/javascript/jscomp/CheckSideEffectsTest.java data/changesInfo//Closure_21/cleaned/inducing/test/com/google/javascript/jscomp/CheckSideEffectsTest.java
+--- data/changesInfo//Closure_21/properties/modified_classes/inducing/test/com/google/javascript/jscomp/CheckSideEffectsTest.java	2023-12-27 22:36:55.147749351 -0800
++++ data/changesInfo//Closure_21/cleaned/inducing/test/com/google/javascript/jscomp/CheckSideEffectsTest.java	2023-06-13 00:31:38.407000000 -0700
+@@ -68,6 +68,10 @@
+          "var a, b; a = 5, JSCOMPILER_PRESERVE(b == 6)", e);
+     test("var a, b; a = (5, 6)",
+          "var a, b; a = (JSCOMPILER_PRESERVE(5), 6)", e);
++    test("var a, b; a = (bar(), 6, 7)",
++         "var a, b; a = (bar(), JSCOMPILER_PRESERVE(6), 7)", e);
++    test("var a, b; a = (bar(), bar(), 7, 8)",
++         "var a, b; a = (bar(), bar(), JSCOMPILER_PRESERVE(7), 8)", e);
+     test("var a, b; a = (b = 7, 6)", ok);
+     test("function x(){}\nfunction f(a, b){}\nf(1,(x(), 2));", ok);
+     test("function x(){}\nfunction f(a, b){}\nf(1,(2, 3));",
+@@ -83,6 +87,8 @@
+          "for(JSCOMPILER_PRESERVE(void 0); true; foo()) { bar() }", e);
+     test("for(foo(); true; void 0) { bar() }",
+          "for(foo(); true; JSCOMPILER_PRESERVE(void 0)) { bar() }", e);
++    test("for(foo(); true; (1, bar())) { bar() }",
++         "for(foo(); true; (JSCOMPILER_PRESERVE(1), bar())) { bar() }", e);
+ 
+     test("for(foo in bar) { foo() }", ok);
+     test("for (i = 0; el = el.previousSibling; i++) {}", ok);

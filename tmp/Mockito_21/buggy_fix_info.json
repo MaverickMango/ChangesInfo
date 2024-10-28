@@ -1,0 +1,143 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.mockito.internal.creation.instance.ConstructorInstantiatorTest::creates_instances_of_inner_classes",
+    "test.dir": "test",
+    "clz.modified": "org.mockito.internal.creation.instance.ConstructorInstantiator",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Mockito",
+  "id": "21",
+  "workingDir": "../bugs/Mockito_21_tmp",
+  "bug_name": "Mockito_21",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.mockito.internal.creation.instance.ConstructorInstantiatorTest",
+      "test_function": "creates_instances_of_inner_classes",
+      "assertion_line": "21",
+      "exception": "org.mockito.internal.creation.instance.InstantationException",
+      "message": "Unable to create mock instance of \u0027SomeInnerClass\u0027."
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/org/mockito/internal/creation/instance/ConstructorInstantiator.java",
+        "src/org/mockito/internal/creation/instance/ConstructorInstantiator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.mockito.internal.creation.instance.ConstructorInstantiator:paramsMatch:[Class\u003c?\u003e[] types, Object[] params]:boolean",
+            "org.mockito.internal.creation.instance.ConstructorInstantiator:newInstance:[Class\u003cT\u003e cls]:T",
+            "org.mockito.internal.creation.instance.ConstructorInstantiator:withParams:[Class\u003cT\u003e cls, Object... params]:T"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "org.mockito.internal.creation.instance.ConstructorInstantiator:withOuterClass:[Class\u003cT\u003e cls]:T",
+            "org.mockito.internal.creation.instance.ConstructorInstantiator:newInstance:[Class\u003cT\u003e cls]:T"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "17",
+            "20",
+            "24",
+            "25",
+            "26",
+            "27",
+            "28",
+            "29",
+            "33",
+            "41",
+            "42",
+            "43",
+            "44",
+            "45",
+            "46",
+            "47",
+            "48",
+            "49",
+            "50",
+            "51"
+          ],
+          "num": 20
+        },
+        {
+          "qualified_names": [
+            "17",
+            "20",
+            "24",
+            "25",
+            "45"
+          ],
+          "num": 5
+        }
+      ],
+      "diff": "diff --git a/src/org/mockito/internal/creation/instance/ConstructorInstantiator.java b/src/org/mockito/internal/creation/instance/ConstructorInstantiator.java\nindex 9f0201a..0cc8226 100644\n--- a/src/org/mockito/internal/creation/instance/ConstructorInstantiator.java\n+++ b/src/org/mockito/internal/creation/instance/ConstructorInstantiator.java\n@@ -14,23 +14,18 @@\n         if (outerClassInstance \u003d\u003d null) {\n             return noArgConstructor(cls);\n         }\n-        return withParams(cls, outerClassInstance);\n+        return withOuterClass(cls);\n     }\n \n-    private static \u003cT\u003e T withParams(Class\u003cT\u003e cls, Object... params) {\n+    private \u003cT\u003e T withOuterClass(Class\u003cT\u003e cls) {\n         try {\n             //this is kind of overengineered because we don\u0027t need to support more params\n             //however, I know we will be needing it :)\n-            for (Constructor\u003c?\u003e constructor : cls.getDeclaredConstructors()) {\n-                Class\u003c?\u003e[] types \u003d constructor.getParameterTypes();\n-                if (paramsMatch(types, params)) {\n-                    return (T) constructor.newInstance(params);\n-                }\n-            }\n+            Constructor\u003cT\u003e c \u003d cls.getDeclaredConstructor(outerClassInstance.getClass());\n+            return c.newInstance(outerClassInstance);\n         } catch (Exception e) {\n             throw paramsException(cls, e);\n         }\n-        throw paramsException(cls, null);\n     }\n \n     private static \u003cT\u003e InstantationException paramsException(Class\u003cT\u003e cls, Exception e) {\n@@ -38,17 +33,6 @@\n                 + cls.getSimpleName() + \"\u0027.\\nPlease ensure that the outer instance has correct type and that the target class has parameter-less constructor.\", e);\n     }\n \n-    private static boolean paramsMatch(Class\u003c?\u003e[] types, Object[] params) {\n-        if (params.length !\u003d types.length) {\n-            return false;\n-        }\n-        for (int i \u003d 0; i \u003c params.length; i++) {\n-            if (!types[i].isInstance(params[i])) {\n-                return false;\n-            }\n-        }\n-        return true;\n-    }\n \n     private static \u003cT\u003e T noArgConstructor(Class\u003cT\u003e cls) {\n         try {\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [509,947]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [470,497]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [470,513]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [525,1175]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [1521,1855]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.mockito.internal.creation.instance.ConstructorInstantiator:withOuterClass:[Class\u003cT\u003e cls]:T"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.mockito.internal.creation.instance.ConstructorInstantiator:withParams:[Class\u003cT\u003e cls, Object... params]:T",
+        "org.mockito.internal.creation.instance.ConstructorInstantiator:paramsMatch:[Class\u003c?\u003e[] types, Object[] params]:boolean"
+      ],
+      "num": 2
+    }
+  }
+}

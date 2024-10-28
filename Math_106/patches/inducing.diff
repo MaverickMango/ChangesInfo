@@ -1,0 +1,1614 @@
+diff --git a/project.properties b/project.properties
+index b298217..03b0479 100644
+--- a/project.properties
++++ b/project.properties
+@@ -36,10 +36,7 @@
+ 
+ maven.javadoc.links = http://java.sun.com/j2se/1.4.2/docs/api/,\
+                       http://jakarta.apache.org/commons/collections/api/,\
+-                      http://jakarta.apache.org/commons/beanutils/api/,\
+-                      http://jakarta.apache.org/commons/lang/api/,\
+-                      http://jakarta.apache.org/commons/discovery/api/,\
+-                      http://jakarta.apache.org/commons/logging/api/
++                      http://jakarta.apache.org/commons/discovery/api/
+ 
+ maven.changes.issue.template=http://issues.apache.org/bugzilla/show_bug.cgi?id=%ISSUE%
+ 
+diff --git a/src/java/org/apache/commons/math/fraction/Fraction.java b/src/java/org/apache/commons/math/fraction/Fraction.java
+new file mode 100644
+index 0000000..e5b1174
+--- /dev/null
++++ b/src/java/org/apache/commons/math/fraction/Fraction.java
+@@ -0,0 +1,338 @@
++/*
++ * Copyright 2005 The Apache Software Foundation.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.math.fraction;
++
++import org.apache.commons.math.ConvergenceException;
++import org.apache.commons.math.util.MathUtils;
++
++/**
++ * Representation of a rational number.
++ *
++ * @author Apache Software Foundation
++ * @version $Revision: $ $Date: $
++ */
++public class Fraction extends Number implements Comparable {
++
++    /** A fraction representing "1 / 1". */
++    public static final Fraction ONE = new Fraction(1, 1);
++
++    /** A fraction representing "0 / 1". */
++    public static final Fraction ZERO = new Fraction(0, 1);
++    
++    /** Serializable version identifier */
++    static final long serialVersionUID = 65382027393090L;
++    
++    /** The denominator. */
++    private int denominator;
++    
++    /** The numerator. */
++    private int numerator;
++
++    /**
++     * Create a fraction given the double value.
++     * @param value the double value to convert to a fraction.
++     * @throws ConvergenceException if the continued fraction failed to
++     *         converge.
++     */
++    public Fraction(double value) throws ConvergenceException {
++        this(value, 1.0e-5, 100);
++    }
++
++    /**
++     * Create a fraction given the double value.
++     * <p>
++     * References:
++     * <ul>
++     * <li><a href="http://mathworld.wolfram.com/ContinuedFraction.html">
++     * Continued Fraction</a> equations (11) and (22)-(26)</li>
++     * </ul>
++     * </p>
++     * @param value the double value to convert to a fraction.
++     * @param epsilon maximum error allowed.  The resulting fraction is within
++     *        <code>epsilon</code> of <code>value</code>, in absolute terms.
++     * @param maxIterations maximum number of convergents
++     * @throws ConvergenceException if the continued fraction failed to
++     *         converge.
++     */
++    public Fraction(double value, double epsilon, int maxIterations)
++        throws ConvergenceException
++    {
++        double r0 = value;
++        int a0 = (int)Math.floor(r0);
++        
++        int p0 = 1;
++        int q0 = 0;
++        int p1 = a0;
++        int q1 = 1;
++
++        int p2 = 0;
++        int q2 = 1;
++
++        int n = 0;
++        boolean stop = false;
++        do {
++            ++n;
++            double r1 = 1.0 / (r0 - a0);
++            int a1 = (int)Math.floor(r1);
++            p2 = (a1 * p1) + p0;
++            q2 = (a1 * q1) + q0;
++            
++            double convergent = (double)p2 / (double)q2;
++            if (n < maxIterations && Math.abs(convergent - value) > epsilon) {
++                p0 = p1;
++                p1 = p2;
++                q0 = q1;
++                q1 = q2;
++                a0 = a1;
++                r0 = r1;
++            } else {
++                stop = true;
++            }
++        } while (!stop);
++
++        if (n >= maxIterations) {
++            throw new ConvergenceException(
++                    "Unable to convert double to fraction");
++        }
++        
++        this.numerator = p2;
++        this.denominator = q2;
++        reduce();
++    }
++    
++    /**
++     * Create a fraction given the numerator and denominator.  The fraction is
++     * reduced to lowest terms.
++     * @param num the numerator.
++     * @param den the denominator.
++     */
++    public Fraction(int num, int den) {
++        super();
++        this.numerator = num;
++        this.denominator = den;
++        reduce();
++    }
++    
++    /**
++     * Returns the absolute value of this fraction.
++     * @return the absolute value.
++     */
++    public Fraction abs() {
++        Fraction ret;
++        if (numerator >= 0) {
++            ret = this;
++        } else {
++            ret = negate();
++        }
++        return ret;        
++    }
++    
++    /**
++     * Return the sum of this fraction and the given fraction.  The returned
++     * fraction is reduced to lowest terms.
++     *
++     * @param rhs the other fraction.
++     * @return the fraction sum in lowest terms.
++     */
++    public Fraction add(Fraction rhs) {
++        int den = MathUtils.lcm(denominator, rhs.denominator);
++        int num = (numerator * (den / denominator)) +
++            (rhs.numerator * (den / rhs.denominator));
++        return new Fraction(num, den);
++    }
++    
++    /**
++     * Compares this object to another based on size.
++     * @param object the object to compare to
++     * @return -1 if this is less than <tt>object</tt>, +1 if this is greater
++     *         than <tt>object</tt>, 0 if they are equal.
++     */
++    public int compareTo(Object object) {
++        int ret = 0;
++        
++        if (this != object) { 
++            Fraction other = (Fraction)object;
++            double first = doubleValue();
++            double second = other.doubleValue();
++            
++            if (first < second) {
++                ret = -1;
++            } else if (first > second) {
++                ret = 1;
++            }
++        }
++        
++        return ret;
++    }
++
++    /**
++     * Return the quotient of this fraction and the given fraction.  The
++     * returned fraction is reduced to lowest terms.
++     * @param rhs the other fraction.
++     * @return the fraction quotient in lowest terms.
++     */
++    public Fraction divide(Fraction rhs) {
++        return multiply(rhs.reciprocal());
++    }
++    
++    /**
++     * Gets the fraction as a <tt>double</tt>. This calculates the fraction as
++     * the numerator divided by denominator.
++     * @return the fraction as a <tt>double</tt>
++     */
++    public double doubleValue() {
++        return (double)numerator / (double)denominator;
++    }
++    
++    /**
++     * Test for the equality of two fractions.  If the lowest term
++     * numerator and denominators are the same for both fractions, the two
++     * fractions are considered to be equal.
++     * @param other fraction to test for equality to this fraction
++     * @return true if two fractions are equal, false if object is
++     *         <tt>null</tt>, not an instance of {@link Fraction}, or not equal
++     *         to this fraction instance.
++     */
++    public boolean equals(Object other) {
++        boolean ret;
++        
++        if (this == other) { 
++            ret = true;
++        } else if (other == null) {
++            ret = false;
++        } else {
++            try {
++                // since fractions are always in lowest terms, numerators and
++                // denominators can be compared directly for equality.
++                Fraction rhs = (Fraction)other;
++                ret = (numerator == rhs.numerator) &&
++                    (denominator == rhs.denominator);
++            } catch (ClassCastException ex) {
++                // ignore exception
++                ret = false;
++            }
++        }
++        
++        return ret;
++    }
++    
++    /**
++     * Gets the fraction as a <tt>float</tt>. This calculates the fraction as
++     * the numerator divided by denominator.
++     * @return the fraction as a <tt>float</tt>
++     */
++    public float floatValue() {
++        return (float)doubleValue();
++    }
++    
++    /**
++     * Access the denominator.
++     * @return the denominator.
++     */
++    public int getDenominator() {
++        return denominator;
++    }
++    
++    /**
++     * Access the numerator.
++     * @return the numerator.
++     */
++    public int getNumerator() {
++        return numerator;
++    }
++    
++    /**
++     * Gets a hashCode for the fraction.
++     * @return a hash code value for this object
++     */
++    public int hashCode() {
++        return 37 * (37 * 17 + getNumerator()) + getDenominator();
++    }
++    
++    /**
++     * Gets the fraction as an <tt>int</tt>. This returns the whole number part
++     * of the fraction.
++     * @return the whole number fraction part
++     */
++    public int intValue() {
++        return (int)doubleValue();
++    }
++    
++    /**
++     * Gets the fraction as a <tt>long</tt>. This returns the whole number part
++     * of the fraction.
++     * @return the whole number fraction part
++     */
++    public long longValue() {
++        return (long)doubleValue();
++    }
++    
++    /**
++     * Return the product of this fraction and the given fraction.  The returned
++     * fraction is reduced to lowest terms.
++     * @param rhs the other fraction.
++     * @return the fraction product in lowest terms.
++     */
++    public Fraction multiply(Fraction rhs) {
++        return new Fraction(numerator * rhs.numerator, 
++                denominator * rhs.denominator);
++    }
++    
++    /**
++     * Return the additive inverse of this fraction.
++     * @return the negation of this fraction.
++     */
++    public Fraction negate() {
++        return new Fraction(-numerator, denominator);
++    }
++
++    /**
++     * Return the multiplicative inverse of this fraction.
++     * @return the reciprocal fraction
++     */
++    public Fraction reciprocal() {
++        return new Fraction(denominator, numerator);
++    }
++    
++    /**
++     * Return the difference between this fraction and the given fraction.  The
++     * returned fraction is reduced to lowest terms.
++     * @param rhs the other fraction.
++     * @return the fraction difference in lowest terms.
++     */
++    public Fraction subtract(Fraction rhs) {
++        return add(rhs.negate());
++    }
++    
++    /**
++     * Reduce this fraction to lowest terms.  This is accomplished by dividing
++     * both numerator and denominator by their greatest common divisor.
++     */
++    private void reduce() {
++        // reduce numerator and denominator by greatest common denominator.
++        int d = MathUtils.gcd(numerator, denominator);
++        if (d > 1) {
++            numerator /= d;
++            denominator /= d;
++        }
++
++        // move sign to numerator.
++        if (denominator < 0) {
++            numerator *= -1;
++            denominator *= -1;
++        }
++    }
++}
+diff --git a/src/java/org/apache/commons/math/fraction/FractionFormat.java b/src/java/org/apache/commons/math/fraction/FractionFormat.java
+new file mode 100644
+index 0000000..fd97c14
+--- /dev/null
++++ b/src/java/org/apache/commons/math/fraction/FractionFormat.java
+@@ -0,0 +1,386 @@
++/*
++ * Copyright 2005 The Apache Software Foundation.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package org.apache.commons.math.fraction;
++
++import java.io.Serializable;
++import java.text.FieldPosition;
++import java.text.Format;
++import java.text.NumberFormat;
++import java.text.ParseException;
++import java.text.ParsePosition;
++import java.util.Locale;
++
++import org.apache.commons.math.ConvergenceException;
++
++/**
++ * Formats a Fraction number in proper format or improper format.  The number
++ * format for each of the whole number, numerator and, denominator can be
++ * configured.
++ *
++ * @author Apache Software Foundation
++ * @version $Revision: 1.10 $ $Date: 2004-09-20 23:45:55 -0500 (Mon, 20 Sep 2004) $
++ */
++public class FractionFormat extends Format implements Serializable {
++    
++    /** Serializable version identifier */
++    static final long serialVersionUID = -6337346779577272306L;
++
++    /** The format used for the denominator. */
++    private NumberFormat denominatorFormat;
++
++    /** The format used for the numerator. */
++    private NumberFormat numeratorFormat;
++    
++    /**
++     * Create an improper formatting instance with the default number format
++     * for the numerator and denominator.  
++     */
++    public FractionFormat() {
++        this(getDefaultNumberFormat());
++    }
++
++    /**
++     * Create an improper formatting instance with a custom number format for
++     * both the numerator and denominator.
++     * @param format the custom format for both the numerator and denominator.
++     */
++    public FractionFormat(NumberFormat format) {
++        this(format, (NumberFormat)format.clone());
++    }
++
++    /**
++     * Create an improper formatting instance with a custom number format for
++     * the numerator and a custom number format for the denominator.
++     * @param numeratorFormat the custom format for the numerator.
++     * @param denominatorFormat the custom format for the denominator.
++     */
++    public FractionFormat(NumberFormat numeratorFormat,
++            NumberFormat denominatorFormat)
++    {
++        super();
++        this.numeratorFormat = numeratorFormat;
++        this.denominatorFormat = denominatorFormat;
++    }
++
++    /**
++     * This static method calls formatFraction() on a default instance of
++     * FractionFormat.
++     *
++     * @param f Fraction object to format
++     * @return A formatted fraction in proper form.
++     */
++    public static String formatFraction(Fraction f) {
++    	return getImproperInstance().format(f);
++    }
++    
++    /**
++     * Get the set of locales for which complex formats are available.  This
++     * is the same set as the {@link NumberFormat} set. 
++     * @return available complex format locales.
++     */
++    public static Locale[] getAvailableLocales() {
++        return NumberFormat.getAvailableLocales();
++    }
++    
++    /**
++     * Returns the default complex format for the current locale.
++     * @return the default complex format.
++     */
++    public static FractionFormat getImproperInstance() {
++        return getImproperInstance(Locale.getDefault());
++    }
++    
++    /**
++     * Returns the default complex format for the given locale.
++     * @param locale the specific locale used by the format.
++     * @return the complex format specific to the given locale.
++     */
++    public static FractionFormat getImproperInstance(Locale locale) {
++        NumberFormat f = getDefaultNumberFormat(locale);
++        return new FractionFormat(f);
++    }
++    
++    /**
++     * Returns the default complex format for the current locale.
++     * @return the default complex format.
++     */
++    public static FractionFormat getProperInstance() {
++        return getProperInstance(Locale.getDefault());
++    }
++    
++    /**
++     * Returns the default complex format for the given locale.
++     * @param locale the specific locale used by the format.
++     * @return the complex format specific to the given locale.
++     */
++    public static FractionFormat getProperInstance(Locale locale) {
++        NumberFormat f = getDefaultNumberFormat(locale);
++        return new ProperFractionFormat(f);
++    }
++    
++    /**
++     * Create a default number format.  The default number format is based on
++     * {@link NumberFormat#getInstance()} with the only customizing is the
++     * maximum number of fraction digits, which is set to 2.  
++     * @return the default number format.
++     */
++    protected static NumberFormat getDefaultNumberFormat() {
++        return getDefaultNumberFormat(Locale.getDefault());
++    }
++    
++    /**
++     * Create a default number format.  The default number format is based on
++     * {@link NumberFormat#getInstance(java.util.Locale)} with the only
++     * customizing is the maximum number of fraction digits, which is set to 2.  
++     * @param locale the specific locale used by the format.
++     * @return the default number format specific to the given locale.
++     */
++    private static NumberFormat getDefaultNumberFormat(Locale locale) {
++        NumberFormat nf = NumberFormat.getIntegerInstance(locale);
++        return nf;
++    }
++    
++    /**
++     * Formats a {@link Fraction} object to produce a string.  The fraction is
++     * output in improper format.
++     *
++     * @param fraction the object to format.
++     * @param toAppendTo where the text is to be appended
++     * @param pos On input: an alignment field, if desired. On output: the
++     *            offsets of the alignment field
++     * @return the value passed in as toAppendTo.
++     */
++    public StringBuffer format(Fraction fraction, StringBuffer toAppendTo,
++            FieldPosition pos) {
++        
++        pos.setBeginIndex(0);
++        pos.setEndIndex(0);
++
++        getNumeratorFormat().format(fraction.getNumerator(), toAppendTo, pos);
++        toAppendTo.append(" / ");
++        getDenominatorFormat().format(fraction.getDenominator(), toAppendTo,
++            pos);
++        
++        return toAppendTo;
++    }
++    
++    /**
++     * Formats a object to produce a string.  <code>obj</code> must be either a 
++     * {@link Fraction} object or a {@link Number} object.  Any other type of
++     * object will result in an {@link IllegalArgumentException} being thrown.
++     *
++     * @param obj the object to format.
++     * @param toAppendTo where the text is to be appended
++     * @param pos On input: an alignment field, if desired. On output: the
++     *            offsets of the alignment field
++     * @return the value passed in as toAppendTo.
++     * @see java.text.Format#format(java.lang.Object, java.lang.StringBuffer, java.text.FieldPosition)
++     * @throws IllegalArgumentException is <code>obj</code> is not a valid type.
++     */
++    public StringBuffer format(Object obj, StringBuffer toAppendTo,
++            FieldPosition pos)
++    {
++        StringBuffer ret = null;
++        
++        if (obj instanceof Fraction) {
++            ret = format( (Fraction)obj, toAppendTo, pos);
++        } else if (obj instanceof Number) {
++            try {
++                ret = format( new Fraction(((Number)obj).doubleValue()),
++                    toAppendTo, pos);
++            } catch (ConvergenceException ex) {
++                throw new IllegalArgumentException(
++                    "Cannot convert given object to a fraction.");
++            }
++        } else { 
++            throw new IllegalArgumentException(
++                "Cannot format given object as a fraction");
++        }
++        
++        return ret;
++    }
++
++    /**
++     * Access the denominator format.
++     * @return the denominator format.
++     */
++    public NumberFormat getDenominatorFormat() {
++        return denominatorFormat;
++    }
++    
++    /**
++     * Access the numerator format.
++     * @return the numerator format.
++     */
++    public NumberFormat getNumeratorFormat() {
++        return numeratorFormat;
++    }
++
++    /**
++     * Parses a string to produce a {@link Fraction} object.
++     * @param source the string to parse
++     * @return the parsed {@link Fraction} object.
++     * @exception ParseException if the beginning of the specified string
++     *            cannot be parsed.
++     */
++    public Fraction parse(String source) throws ParseException {
++        ParsePosition parsePosition = new ParsePosition(0);
++        Fraction result = parse(source, parsePosition);
++        if (parsePosition.getIndex() == 0) {
++            throw new ParseException("Unparseable fraction number: \"" +
++                source + "\"", parsePosition.getErrorIndex());
++        }
++        return result;
++    }
++    
++    /**
++     * Parses a string to produce a {@link Fraction} object.  This method
++     * expects the string to be formatted as an improper fraction.  
++     * @param source the string to parse
++     * @param pos input/ouput parsing parameter.
++     * @return the parsed {@link Fraction} object.
++     */
++    public Fraction parse(String source, ParsePosition pos) {
++        int initialIndex = pos.getIndex();
++
++        // parse whitespace
++        parseAndIgnoreWhitespace(source, pos);
++
++        // parse numerator
++        Number num = getNumeratorFormat().parse(source, pos);
++        if (num == null) {
++            // invalid integer number
++            // set index back to initial, error index should already be set
++            // character examined.
++            pos.setIndex(initialIndex);
++            return null;
++        }
++
++        // parse '/'
++        int startIndex = pos.getIndex();
++        char c = parseNextCharacter(source, pos);
++        switch (c) {
++        case 0 :
++            // no '/'
++            // return num as a fraction
++            return new Fraction(num.intValue(), 1);
++        case '/' :
++            // found '/', continue parsing denominator
++            break;
++        default :
++            // invalid '/'
++            // set index back to initial, error index should be the last
++            // character examined.
++            pos.setIndex(initialIndex);
++            pos.setErrorIndex(startIndex);
++            return null;
++        }
++
++        // parse whitespace
++        parseAndIgnoreWhitespace(source, pos);
++
++        // parse denominator
++        Number den = getDenominatorFormat().parse(source, pos);
++        if (den == null) {
++            // invalid integer number
++            // set index back to initial, error index should already be set
++            // character examined.
++            pos.setIndex(initialIndex);
++            return null;
++        }
++
++        return new Fraction(num.intValue(), den.intValue());
++    }
++
++    /**
++     * Parses a string to produce a object.
++     * @param source the string to parse
++     * @param pos input/ouput parsing parameter.
++     * @return the parsed object.
++     * @see java.text.Format#parseObject(java.lang.String, java.text.ParsePosition)
++     */
++    public Object parseObject(String source, ParsePosition pos) {
++        return parse(source, pos);
++    }
++    
++    /**
++     * Modify the denominator format.
++     * @param format the new denominator format value.
++     * @throws IllegalArgumentException if <code>format</code> is
++     *         <code>null</code>.
++     */
++    public void setDenominatorFormat(NumberFormat format) {
++        if (format == null) {
++            throw new IllegalArgumentException(
++                "denominator format can not be null.");
++        }
++        this.denominatorFormat = format;
++    }
++    
++    /**
++     * Modify the numerator format.
++     * @param format the new numerator format value.
++     * @throws IllegalArgumentException if <code>format</code> is
++     *         <code>null</code>.
++     */
++    public void setNumeratorFormat(NumberFormat format) {
++        if (format == null) {
++            throw new IllegalArgumentException(
++                "numerator format can not be null.");
++        }
++        this.numeratorFormat = format;
++    }
++     
++    /**
++     * Parses <code>source</code> until a non-whitespace character is found.
++     * @param source the string to parse
++     * @param pos input/ouput parsing parameter.  On output, <code>pos</code>
++     *        holds the index of the next non-whitespace character.
++     */
++    protected static void parseAndIgnoreWhitespace(
++        String source, ParsePosition pos)
++    {
++        parseNextCharacter(source, pos);
++        pos.setIndex(pos.getIndex() - 1);
++    }
++
++    /**
++     * Parses <code>source</code> until a non-whitespace character is found.
++     * @param source the string to parse
++     * @param pos input/ouput parsing parameter.
++     * @return the first non-whitespace character.
++     */
++    protected static char parseNextCharacter(String source, ParsePosition pos) {
++         int index = pos.getIndex();
++         int n = source.length();
++         char ret = 0;
++
++         if (index < n) {
++             char c;
++             do {
++                 c = source.charAt(index++);
++             } while (Character.isWhitespace(c) && index < n);
++             pos.setIndex(index);
++         
++             if (index < n) {
++                 ret = c;
++             }
++         }
++         
++         return ret;
++    }
++}
+diff --git a/src/java/org/apache/commons/math/fraction/ProperFractionFormat.java b/src/java/org/apache/commons/math/fraction/ProperFractionFormat.java
+new file mode 100644
+index 0000000..5587ca3
+--- /dev/null
++++ b/src/java/org/apache/commons/math/fraction/ProperFractionFormat.java
+@@ -0,0 +1,208 @@
++/*
++ * Copyright 2005 The Apache Software Foundation.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.math.fraction;
++
++import java.text.FieldPosition;
++import java.text.NumberFormat;
++import java.text.ParsePosition;
++
++import org.apache.commons.math.util.MathUtils;
++
++/**
++ * Formats a Fraction number in proper format.  The number format for each of
++ * the whole number, numerator and, denominator can be configured.
++ * 
++ * @author Apache Software Foundation
++ * @version $Revision: $ $Date: $
++ */
++public class ProperFractionFormat extends FractionFormat {
++    
++    /** Serializable version identifier */
++    static final long serialVersionUID = -6337346779577272307L;
++    
++    /** The format used for the whole number. */
++    private NumberFormat wholeFormat;
++
++    /**
++     * Create a proper formatting instance with the default number format for
++     * the whole, numerator, and denominator.  
++     */
++    public ProperFractionFormat() {
++        this(getDefaultNumberFormat());
++    }
++    
++    /**
++     * Create a proper formatting instance with a custom number format for the
++     * whole, numerator, and denominator.
++     * @param format the custom format for the whole, numerator, and
++     *        denominator.
++     */
++    public ProperFractionFormat(NumberFormat format) {
++        this(format, (NumberFormat)format.clone(), (NumberFormat)format.clone());
++    }
++    
++    /**
++     * Create a proper formatting instance with a custom number format for each
++     * of the whole, numerator, and denominator.
++     * @param wholeFormat the custom format for the whole.
++     * @param numeratorFormat the custom format for the numerator.
++     * @param denominatorFormat the custom format for the denominator.
++     */
++    public ProperFractionFormat(NumberFormat wholeFormat,
++            NumberFormat numeratorFormat,
++            NumberFormat denominatorFormat)
++    {
++        super(numeratorFormat, denominatorFormat);
++        setWholeFormat(wholeFormat);
++    }
++    
++    /**
++     * Formats a {@link Fraction} object to produce a string.  The fraction
++     * is output in proper format.
++     *
++     * @param fraction the object to format.
++     * @param toAppendTo where the text is to be appended
++     * @param pos On input: an alignment field, if desired. On output: the
++     *            offsets of the alignment field
++     * @return the value passed in as toAppendTo.
++     */
++    public StringBuffer format(Fraction fraction, StringBuffer toAppendTo,
++            FieldPosition pos) {
++        
++        pos.setBeginIndex(0);
++        pos.setEndIndex(0);
++
++        int num = fraction.getNumerator();
++        int den = fraction.getDenominator();
++        int whole = num / den;
++        num = num % den;
++        
++        if (whole != 0) {
++            getWholeFormat().format(whole, toAppendTo, pos);
++            toAppendTo.append(' ');
++            num = Math.abs(num);
++        }
++        getNumeratorFormat().format(num, toAppendTo, pos);
++        toAppendTo.append(" / ");
++        getDenominatorFormat().format(den, toAppendTo,
++            pos);
++        
++        return toAppendTo;
++    }
++
++    /**
++     * Access the whole format.
++     * @return the whole format.
++     */
++    public NumberFormat getWholeFormat() {
++        return wholeFormat;
++    }
++    
++    /**
++     * Parses a string to produce a {@link Fraction} object.  This method
++     * expects the string to be formatted as a proper fraction.
++     * @param source the string to parse
++     * @param pos input/ouput parsing parameter.
++     * @return the parsed {@link Fraction} object.
++     */
++    public Fraction parse(String source, ParsePosition pos) {
++        // try to parse improper fraction
++        Fraction ret = super.parse(source, pos);
++        if (ret != null) {
++            return ret;
++        }
++        
++        int initialIndex = pos.getIndex();
++
++        // parse whitespace
++        parseAndIgnoreWhitespace(source, pos);
++
++        // parse whole
++        Number whole = getWholeFormat().parse(source, pos);
++        if (whole == null) {
++            // invalid integer number
++            // set index back to initial, error index should already be set
++            // character examined.
++            pos.setIndex(initialIndex);
++            return null;
++        }
++
++        // parse whitespace
++        parseAndIgnoreWhitespace(source, pos);
++        
++        // parse numerator
++        Number num = getNumeratorFormat().parse(source, pos);
++        if (num == null) {
++            // invalid integer number
++            // set index back to initial, error index should already be set
++            // character examined.
++            pos.setIndex(initialIndex);
++            return null;
++        }
++
++        // parse '/'
++        int startIndex = pos.getIndex();
++        char c = parseNextCharacter(source, pos);
++        switch (c) {
++        case 0 :
++            // no '/'
++            // return num as a fraction
++            return new Fraction(num.intValue(), 1);
++        case '/' :
++            // found '/', continue parsing denominator
++            break;
++        default :
++            // invalid '/'
++            // set index back to initial, error index should be the last
++            // character examined.
++            pos.setIndex(initialIndex);
++            pos.setErrorIndex(startIndex);
++            return null;
++        }
++
++        // parse whitespace
++        parseAndIgnoreWhitespace(source, pos);
++
++        // parse denominator
++        Number den = getDenominatorFormat().parse(source, pos);
++        if (den == null) {
++            // invalid integer number
++            // set index back to initial, error index should already be set
++            // character examined.
++            pos.setIndex(initialIndex);
++            return null;
++        }
++
++        int w = whole.intValue();
++        int n = num.intValue();
++        int d = den.intValue();
++        return new Fraction(((Math.abs(w) * d) + n) * MathUtils.sign(w), d);
++    }
++    
++    /**
++     * Modify the whole format.
++     * @param format The new whole format value.
++     * @throws IllegalArgumentException if <code>format</code> is
++     *         <code>null</code>.
++     */
++    public void setWholeFormat(NumberFormat format) {
++        if (format == null) {
++            throw new IllegalArgumentException(
++                "whole format can not be null.");
++        }
++        this.wholeFormat = format;
++    }
++}
+diff --git a/src/java/org/apache/commons/math/fraction/package.html b/src/java/org/apache/commons/math/fraction/package.html
+new file mode 100644
+index 0000000..b0257b9
+--- /dev/null
++++ b/src/java/org/apache/commons/math/fraction/package.html
+@@ -0,0 +1,21 @@
++<html>
++<!--
++   Copyright 2005 The Apache Software Foundation
++
++   Licensed under the Apache License, Version 2.0 (the "License");
++   you may not use this file except in compliance with the License.
++   You may obtain a copy of the License at
++
++       http://www.apache.org/licenses/LICENSE-2.0
++
++   Unless required by applicable law or agreed to in writing, software
++   distributed under the License is distributed on an "AS IS" BASIS,
++   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++   See the License for the specific language governing permissions and
++   limitations under the License.
++  -->
++	<!-- $Revision: 1.1 $ $Date: 2004/04/26 18:28:16 $ -->
++  <body>
++    Fraction number type and fraction number formatting.
++  </body>
++</html>
+\ No newline at end of file
+diff --git a/src/java/org/apache/commons/math/util/MathUtils.java b/src/java/org/apache/commons/math/util/MathUtils.java
+index 4c0e5b7..7d56edc 100644
+--- a/src/java/org/apache/commons/math/util/MathUtils.java
++++ b/src/java/org/apache/commons/math/util/MathUtils.java
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright 2003-2004 The Apache Software Foundation.
++ * Copyright 2003-2005 The Apache Software Foundation.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -19,7 +19,7 @@
+ /**
+  * Some useful additions to the built-in functions in {@link Math}.
+  *
+- * @version $Revision: 1.20 $ $Date: 2004/10/14 04:01:04 $
++ * @version $Revision: 1.20 $ $Date$
+  */
+ public final class MathUtils {
+     
+@@ -468,4 +468,43 @@
+     public static boolean equals(double x, double y) {
+         return ((Double.isNaN(x) && Double.isNaN(y)) || x == y);
+     }
++
++    /**
++     * Returns the least common multiple between two integer values.
++     * @param a the first integer value.
++     * @param b the second integer value.
++     * @return the least common multiple between a and b.
++     */
++    public static int lcm(int a, int b) {
++        return Math.abs(a / gcd(a, b) * b);
++    }
++
++    /**
++     * Returns the greatest common divisor between two integer values.
++     * @param a the first integer value.
++     * @param b the second integer value.
++     * @return the greatest common divisor between a and b.
++     */
++    public static int gcd(int a, int b) {
++        int ret;
++        
++        if (a == 0) {
++            ret = Math.abs(b);
++        } else if (b == 0) {
++            ret = Math.abs(a);
++        } else if (a < 0) {
++            ret = gcd(-a, b);
++        } else if (b < 0) {
++            ret = gcd(a, -b);
++        } else {
++            int r = 0;
++            while(b > 0){
++                r = a % b;
++                a = b;
++                b = r;
++            }
++            ret = a;
++        }
++        return ret;
++    }
+ }
+diff --git a/src/test/org/apache/commons/math/fraction/FractionFormatTest.java b/src/test/org/apache/commons/math/fraction/FractionFormatTest.java
+new file mode 100644
+index 0000000..df6f15b
+--- /dev/null
++++ b/src/test/org/apache/commons/math/fraction/FractionFormatTest.java
+@@ -0,0 +1,176 @@
++/*
++ * Copyright 2004 The Apache Software Foundation.
++ * 
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package org.apache.commons.math.fraction;
++
++import java.text.ParseException;
++import java.util.Locale;
++
++import junit.framework.TestCase;
++
++public class FractionFormatTest extends TestCase {
++ 
++	FractionFormat properFormat = null;
++	FractionFormat improperFormat = null;
++
++    protected Locale getLocale() {
++        return Locale.getDefault();
++    }
++
++	protected void setUp() throws Exception {
++		properFormat = FractionFormat.getProperInstance(getLocale());
++		improperFormat = FractionFormat.getImproperInstance(getLocale());
++	}
++   
++    public void testFormat() {
++        Fraction c = new Fraction(1, 2);
++        String expected = "1 / 2";
++        
++        String actual = properFormat.format(c); 
++        assertEquals(expected, actual);
++
++        actual = improperFormat.format(c);
++        assertEquals(expected, actual);
++    }
++
++	public void testFormatNegative() {
++        Fraction c = new Fraction(-1, 2);
++        String expected = "-1 / 2";
++
++        String actual = properFormat.format(c); 
++        assertEquals(expected, actual);
++
++        actual = improperFormat.format(c); 
++        assertEquals(expected, actual);
++	}
++
++	public void testFormatZero() {
++        Fraction c = new Fraction(0, 1);
++        String expected = "0 / 1";
++
++        String actual = properFormat.format(c); 
++        assertEquals(expected, actual);
++
++        actual = improperFormat.format(c); 
++        assertEquals(expected, actual);
++	}
++    
++    public void testFormatImproper() {
++        Fraction c = new Fraction(5, 3);
++
++        String actual = properFormat.format(c); 
++        assertEquals("1 2 / 3", actual);
++
++        actual = improperFormat.format(c); 
++        assertEquals("5 / 3", actual);
++    }
++    
++    public void testFormatImproperNegative() {
++        Fraction c = new Fraction(-5, 3);
++
++        String actual = properFormat.format(c); 
++        assertEquals("-1 2 / 3", actual);
++
++        actual = improperFormat.format(c); 
++        assertEquals("-5 / 3", actual);
++    }
++    
++    public void testParse() {
++        String source = "1 / 2";
++
++        try {
++            Fraction c = properFormat.parse(source);
++            assertNotNull(c);
++            assertEquals(1, c.getNumerator());
++            assertEquals(2, c.getDenominator());
++            
++            c = improperFormat.parse(source);
++            assertNotNull(c);
++            assertEquals(1, c.getNumerator());
++            assertEquals(2, c.getDenominator());
++        } catch (ParseException ex) {
++            fail(ex.getMessage());
++        }
++    }
++    
++    public void testParseNegative() {
++
++        try {
++            String source = "-1 / 2";
++            Fraction c = properFormat.parse(source);
++            assertNotNull(c);
++            assertEquals(-1, c.getNumerator());
++            assertEquals(2, c.getDenominator());
++            
++            c = improperFormat.parse(source);
++            assertNotNull(c);
++            assertEquals(-1, c.getNumerator());
++            assertEquals(2, c.getDenominator());
++
++            source = "1 / -2";
++            c = properFormat.parse(source);
++            assertNotNull(c);
++            assertEquals(-1, c.getNumerator());
++            assertEquals(2, c.getDenominator());
++            
++            c = improperFormat.parse(source);
++            assertNotNull(c);
++            assertEquals(-1, c.getNumerator());
++            assertEquals(2, c.getDenominator());
++        } catch (ParseException ex) {
++            fail(ex.getMessage());
++        }
++    }
++    
++    public void testParseProper() {
++        String source = "1 2 / 3";
++
++        try {
++            Fraction c = properFormat.parse(source);
++            assertNotNull(c);
++            assertEquals(5, c.getNumerator());
++            assertEquals(3, c.getDenominator());
++        } catch (ParseException ex) {
++            fail(ex.getMessage());
++        }
++        
++        try {
++            improperFormat.parse(source);
++            fail("invalid improper fraction.");
++        } catch (ParseException ex) {
++            // success
++        }
++    }
++    
++    public void testParseProperNegative() {
++        String source = "-1 2 / 3";
++        try {
++            Fraction c = properFormat.parse(source);
++            assertNotNull(c);
++            assertEquals(-5, c.getNumerator());
++            assertEquals(3, c.getDenominator());
++        } catch (ParseException ex) {
++            fail(ex.getMessage());
++        }
++        
++        try {
++            improperFormat.parse(source);
++            fail("invalid improper fraction.");
++        } catch (ParseException ex) {
++            // success
++        }
++    }
++}
+diff --git a/src/test/org/apache/commons/math/fraction/FractionTest.java b/src/test/org/apache/commons/math/fraction/FractionTest.java
+new file mode 100644
+index 0000000..288d5aa
+--- /dev/null
++++ b/src/test/org/apache/commons/math/fraction/FractionTest.java
+@@ -0,0 +1,108 @@
++/*
++ * Copyright 2005 The Apache Software Foundation.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.math.fraction;
++
++import org.apache.commons.math.ConvergenceException;
++
++import junit.framework.TestCase;
++
++/**
++ * @version $Revision: $ $Date: $
++ */
++public class FractionTest extends TestCase {
++
++    private void assertFraction(int expectedNumerator, int expectedDenominator, Fraction actual) {
++        assertEquals(expectedNumerator, actual.getNumerator());
++        assertEquals(expectedDenominator, actual.getDenominator());
++    }
++    
++    public void testConstructor() {
++        assertFraction(0, 1, new Fraction(0, 1));
++        assertFraction(0, 1, new Fraction(0, 2));
++        assertFraction(0, 1, new Fraction(0, -1));
++        assertFraction(1, 2, new Fraction(1, 2));
++        assertFraction(1, 2, new Fraction(2, 4));
++        assertFraction(-1, 2, new Fraction(-1, 2));
++        assertFraction(-1, 2, new Fraction(1, -2));
++        assertFraction(-1, 2, new Fraction(-2, 4));
++        assertFraction(-1, 2, new Fraction(2, -4));
++    }
++    
++    public void testConstructorDouble() {
++        try {
++            assertFraction(1, 2, new Fraction(0.5));
++            assertFraction(1, 3, new Fraction(1.0 / 3.0));
++            assertFraction(17, 100, new Fraction(17.0 / 100.0));
++            assertFraction(317, 100, new Fraction(317.0 / 100.0));
++            assertFraction(-1, 2, new Fraction(-0.5));
++            assertFraction(-1, 3, new Fraction(-1.0 / 3.0));
++            assertFraction(-17, 100, new Fraction(17.0 / -100.0));
++            assertFraction(-317, 100, new Fraction(-317.0 / 100.0));
++        } catch (ConvergenceException ex) {
++            fail(ex.getMessage());
++        }
++    }
++    
++    public void testAbs() {
++        Fraction a = new Fraction(10, 21);
++        Fraction b = new Fraction(-10, 21);
++        Fraction c = new Fraction(10, -21);
++        
++        assertFraction(10, 21, a.abs());
++        assertFraction(10, 21, b.abs());
++        assertFraction(10, 21, c.abs());
++    }
++    
++    public void testAdd() {
++        Fraction a = new Fraction(1, 2);
++        Fraction b = new Fraction(2, 3);
++        
++        assertFraction(1, 1, a.add(a));
++        assertFraction(7, 6, a.add(b));
++        assertFraction(7, 6, b.add(a));
++        assertFraction(4, 3, b.add(b));
++    }
++    
++    public void testDivide() {
++        Fraction a = new Fraction(1, 2);
++        Fraction b = new Fraction(2, 3);
++        
++        assertFraction(1, 1, a.divide(a));
++        assertFraction(3, 4, a.divide(b));
++        assertFraction(4, 3, b.divide(a));
++        assertFraction(1, 1, b.divide(b));
++    }
++    
++    public void testMultiply() {
++        Fraction a = new Fraction(1, 2);
++        Fraction b = new Fraction(2, 3);
++        
++        assertFraction(1, 4, a.multiply(a));
++        assertFraction(1, 3, a.multiply(b));
++        assertFraction(1, 3, b.multiply(a));
++        assertFraction(4, 9, b.multiply(b));
++    }
++    
++    public void testSubtract() {
++        Fraction a = new Fraction(1, 2);
++        Fraction b = new Fraction(2, 3);
++        
++        assertFraction(0, 1, a.subtract(a));
++        assertFraction(-1, 6, a.subtract(b));
++        assertFraction(1, 6, b.subtract(a));
++        assertFraction(0, 1, b.subtract(b));
++    }
++}
+diff --git a/src/test/org/apache/commons/math/util/MathUtilsTest.java b/src/test/org/apache/commons/math/util/MathUtilsTest.java
+index ca0b296..7de4a7b 100644
+--- a/src/test/org/apache/commons/math/util/MathUtilsTest.java
++++ b/src/test/org/apache/commons/math/util/MathUtilsTest.java
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright 2003-2004 The Apache Software Foundation.
++ * Copyright 2003-2005 The Apache Software Foundation.
+  * 
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -22,9 +22,8 @@
+ /**
+  * Test cases for the MathUtils class.
+  *
+- * @version $Revision: 1.15 $ $Date: 2004/10/14 04:01:04 $
++ * @version $Revision: 1.15 $ $Date$
+  */
+-
+ public final class MathUtilsTest extends TestCase {
+ 
+     public MathUtilsTest(String name) {
+@@ -389,4 +388,42 @@
+             }
+         } 
+     }
++    
++    public void testGcd() {
++        int a = 30;
++        int b = 50;
++        int c = 77;
++
++        assertEquals(0, MathUtils.gcd(0, 0));
++        
++        assertEquals(b, MathUtils.gcd( 0,  b));
++        assertEquals(a, MathUtils.gcd( a,  0));
++        assertEquals(b, MathUtils.gcd( 0, -b));
++        assertEquals(a, MathUtils.gcd(-a,  0));
++        
++        assertEquals(10, MathUtils.gcd( a,  b));
++        assertEquals(10, MathUtils.gcd(-a,  b));
++        assertEquals(10, MathUtils.gcd( a, -b));
++        assertEquals(10, MathUtils.gcd(-a, -b));
++        
++        assertEquals(1, MathUtils.gcd( a,  c));
++        assertEquals(1, MathUtils.gcd(-a,  c));
++        assertEquals(1, MathUtils.gcd( a, -c));
++        assertEquals(1, MathUtils.gcd(-a, -c));
++    }
++    
++    public void testLcm() {
++        int a = 30;
++        int b = 50;
++        int c = 77;
++        
++        assertEquals(0, MathUtils.lcm(0, b));
++        assertEquals(0, MathUtils.lcm(a, 0));
++        assertEquals(b, MathUtils.lcm(1, b));
++        assertEquals(a, MathUtils.lcm(a, 1));
++        assertEquals(150, MathUtils.lcm(a, b));
++        assertEquals(150, MathUtils.lcm(-a, b));
++        assertEquals(150, MathUtils.lcm(a, -b));
++        assertEquals(2310, MathUtils.lcm(a, c));
++    }
+ }
+\ No newline at end of file
+diff --git a/xdocs/changes.xml b/xdocs/changes.xml
+index 6faf3c5..5e7888c 100644
+--- a/xdocs/changes.xml
++++ b/xdocs/changes.xml
+@@ -37,6 +37,14 @@
+     <title>Commons Math Release Notes</title>
+   </properties>
+   <body>
++    <release version="1.1" date="In Development"  
++       description="Jakarta Commons Math 1.1 - Development">
++      <action dev="brentworden" type="add" due-to="C. Scott Ananian">
++        Added Fraction class based on commons-lang implementation.  With the
++        fraction class, FractionFormat and ProperFractionFormat classes were
++        added to provide fraction formatting and parsing.
++      </action>
++    </release>  
+     <release version="1.0" date="2004-12-06"  
+        description="Jakarta Commons Math 1.0 - General Availability Release">
+       <action dev="psteitz" type="fix" due-to="Hans van der Heijden" issue="32531">
+diff --git a/xdocs/navigation.xml b/xdocs/navigation.xml
+index 1e658d0..e901f8e 100644
+--- a/xdocs/navigation.xml
++++ b/xdocs/navigation.xml
+@@ -50,6 +50,7 @@
+       <item name="Utilities"               href="/userguide/utilities.html"/>
+       <item name="Complex Numbers"         href="/userguide/complex.html"/>
+       <item name="Distributions"           href="/userguide/distribution.html"/>
++      <item name="Fractions"           href="/userguide/fraction.html"/>
+     </menu>
+     
+     &common-menus;
+diff --git a/xdocs/tasks.xml b/xdocs/tasks.xml
+index 1df60cc..f9c7495 100644
+--- a/xdocs/tasks.xml
++++ b/xdocs/tasks.xml
+@@ -17,7 +17,7 @@
+   -->
+   
+ <?xml-stylesheet type="text/xsl" href="xdoc.xsl"?>
+-<!-- $Revision: 1.24 $ $Date: 2004/07/25 15:13:47 $ -->
++<!-- $Revision: 1.24 $ $Date$ -->
+ <document>
+   <properties>
+     <title>Tasks: To Do</title>
+@@ -79,12 +79,6 @@
+               <li>Sparse matrices</li>
+             </ul>
+           </dd> 
+-          <dt>Math</dt>
+-          <dd>
+-            <ul>
+-              <li>Rational Number (or Fraction) class</li>
+-            </ul>
+-          </dd> 
+         </dl> 
+       </subsection>
+     </section>
+diff --git a/xdocs/userguide/fraction.xml b/xdocs/userguide/fraction.xml
+new file mode 100644
+index 0000000..23847c9
+--- /dev/null
++++ b/xdocs/userguide/fraction.xml
+@@ -0,0 +1,105 @@
++<?xml version="1.0"?>
++
++<!--
++   Copyright 2005 The Apache Software Foundation
++
++   Licensed under the Apache License, Version 2.0 (the "License");
++   you may not use this file except in compliance with the License.
++   You may obtain a copy of the License at
++
++       http://www.apache.org/licenses/LICENSE-2.0
++
++   Unless required by applicable law or agreed to in writing, software
++   distributed under the License is distributed on an "AS IS" BASIS,
++   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++   See the License for the specific language governing permissions and
++   limitations under the License.
++  -->
++  
++<?xml-stylesheet type="text/xsl" href="./xdoc.xsl"?>
++<!-- $Revision: 1.4 $ $Date: 2004-11-07 19:03:43 -0600 (Sun, 07 Nov 2004) $ -->
++<document url="stat.html">
++  <properties>
++    <title>The Commons Math User Guide - Fractions</title>
++  </properties>
++  <body>
++    <section name="9 Fractions">
++      <subsection name="9.1 Overview" href="overview">
++        <p>
++          The fraction packages provides a fraction number type as well as
++          fraction number formatting.
++        </p>
++      </subsection>
++      <subsection name="9.2 Fraction Numbers" href="fraction">
++        <p>
++		  <a href="../apidocs/org/apache/commons/math/fraction/Fraction.html">
++		  org.apache.commons.math.fraction.Fraction</a> provides a fraction number
++		  type that forms the basis for the fraction functionality found in 
++		  commons-math.
++        </p>
++        <p>
++          To create a fraction number, simply call the constructor passing in two
++          integer arguments, the first being the numerator of the fraction and the second being the denominator:
++          <source>Fraction f = new Fraction(1, 3); // 1 / 3</source>
++        </p>
++        <p>
++          Of special note with fraction construction, when a fraction is created it is always reduced to lowest terms.
++        </p>
++        <p>
++          The <code>Fraction</code> class provides many unary and binary
++          fraction operations.  These operations provide the means to add,
++          subtract, multiple and, divide fractions along with other functions similar to the real number functions found in
++          <code>java.math.BigDecimal</code>:
++          <source>Fraction lhs = new Fraction(1, 3);
++Fraction rhs = new Fraction(2, 5);
++
++Fraction answer = lhs.add(rhs);     // add two fractions
++        answer = lhs.subtract(rhs); // subtract two fractions
++        answer = lhs.abs();         // absolute value
++        answer = lhs.reciprocal();  // reciprocal of lhs</source>
++        </p>
++        <p>
++          Like fraction construction, for each of the fraction functions, the resulting fraction is reduced to lowest terms.
++        </p>
++      </subsection>
++      <subsection name="9.3 Fraction Formatting and Parsing" href="formatting">
++        <p>
++          <code>Fraction</code> instances can be converted to and from strings
++          using the<a href="../apidocs/org/apache/commons/math/fraction/FractionFormat.html">
++		  org.apache.commons.math.fraction.FractionFormat</a> class.
++		  <code>FractionFormat</code> is a <code>java.text.Format</code>
++		  extension and, as such, is used like other formatting objects (e.g.
++		  <code>java.text.SimpleDateFormat</code>):
++		  <source>FractionFormat format = new FractionFormat(); // default format
++Fraction f = new Fraction(2, 4);
++String s = format.format(f); // s contains "1 / 2", note the reduced fraction</source>
++        </p>
++        <p>
++          To customize the formatting output, one or two
++          <code>java.text.NumberFormat</code> instances can be used to construct
++          a <code>FractionFormat</code>.  These number formats control the
++          formatting of the numerator and denominator of the fraction:
++          <source>NumberFormat nf = NumberFormat.getInstance(Locale.FRANCE);
++// create fraction format with custom number format
++// when one number format is used, both numerator and
++// denominator are formatted the same
++FractionFormat format = new FractionFormat(nf);
++Fraction f = new Fraction(2000, 3333);
++String s = format.format(c); // s contains "2.000 / 3.333"
++
++NumberFormat nf2 = NumberFormat.getInstance(Locale.US);
++// create fraction format with custom number formats
++format = new FractionFormat(nf, nf2);
++s = format.format(f); // s contains "2.000 / 3,333"</source>
++		</p>
++		<p>
++		  Formatting's inverse operation, parsing, can also be performed by
++		  <code>FractionFormat</code>.  To parse a fraction from a string,
++		  simply call the <code>parse</code> method:
++		  <source>FractionFormat ff = new FractionFormat();
++Fraction f = ff.parse("-10 / 21");</source>
++		</p>
++      </subsection>
++    </section>
++  </body>
++</document>
+diff --git a/xdocs/userguide/index.xml b/xdocs/userguide/index.xml
+index be2f42b..0b662d7 100644
+--- a/xdocs/userguide/index.xml
++++ b/xdocs/userguide/index.xml
+@@ -17,7 +17,7 @@
+   -->
+   
+ <?xml-stylesheet type="text/xsl" href="./xdoc.xsl"?>
+-<!-- $Revision: 1.13 $ $Date: 2004/11/09 02:26:55 $ -->
++<!-- $Revision: 1.13 $ $Date$ -->
+ <document url="index.html">
+   <properties>
+     <title>The Commons Math User Guide - Table of Contents</title>
+@@ -92,6 +92,12 @@
+                 <li><a href="distribution.html#distributions">8.2 Distribution Framework</a></li>
+                 <li><a href="distribution.html#userdefined">8.3 User Defined Distributions</a></li>
+                 </ul></li>                                 
++        <li><a href="fraction.html">9. Fractions</a>
++                <ul>
++                <li><a href="fraction.html#overview">9.1 Overview</a></li>
++                <li><a href="fraction.html#fraction">9.2 Fraction Numbers</a></li>
++                <li><a href="fraction.html#formatting">9.3 Fraction Formatting and Parsing</a></li>
++                </ul></li>                                 
+         </ul>
+       </section>
+     

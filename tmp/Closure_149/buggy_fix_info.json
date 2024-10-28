@@ -1,0 +1,280 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.CommandLineRunnerTest::testCharSetExpansion",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.AbstractCommandLineRunner,com.google.javascript.jscomp.CommandLineRunner,com.google.javascript.jscomp.Compiler,com.google.javascript.jscomp.CompilerOptions",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "149",
+  "workingDir": "../bugs/Closure_149_tmp",
+  "bug_name": "Closure_149",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.CommandLineRunnerTest",
+      "test_function": "testCharSetExpansion",
+      "assertion_line": "385",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003cUS-ASCII\u003e but was:\u003cnull\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/AbstractCommandLineRunner.java",
+        "src/com/google/javascript/jscomp/AbstractCommandLineRunner.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.AbstractCommandLineRunner:doRun:[]:int",
+            "com.google.javascript.jscomp.AbstractCommandLineRunner:getOutputCharset:[]:String",
+            "com.google.javascript.jscomp.AbstractCommandLineRunner:setRunOptions:[CompilerOptions options]:void"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.AbstractCommandLineRunner:doRun:[]:int",
+            "com.google.javascript.jscomp.AbstractCommandLineRunner:createExterns:[]:List\u003cJSSourceFile\u003e",
+            "com.google.javascript.jscomp.AbstractCommandLineRunner:setRunOptions:[CompilerOptions options]:void"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "159",
+            "518",
+            "689",
+            "690",
+            "691",
+            "692",
+            "693",
+            "694",
+            "695",
+            "696",
+            "697",
+            "698"
+          ],
+          "num": 12
+        },
+        {
+          "qualified_names": [
+            "158",
+            "518",
+            "519",
+            "520",
+            "521",
+            "522",
+            "684"
+          ],
+          "num": 7
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/AbstractCommandLineRunner.java b/src/com/google/javascript/jscomp/AbstractCommandLineRunner.java\nindex 8e2b263..8cb4472 100644\n--- a/src/com/google/javascript/jscomp/AbstractCommandLineRunner.java\n+++ b/src/com/google/javascript/jscomp/AbstractCommandLineRunner.java\n@@ -156,7 +156,6 @@\n     options.setCodingConvention(config.codingConvention);\n     options.setSummaryDetailLevel(config.summaryDetailLevel);\n \n-    options.outputCharset \u003d getOutputCharset();\n     inputCharset \u003d getInputCharset();\n \n     if (config.jsOutputFile.length() \u003e 0) {\n@@ -516,6 +515,11 @@\n     Result result;\n \n     setRunOptions(options);\n+    if (inputCharset \u003d\u003d Charsets.UTF_8) {\n+      options.outputCharset \u003d Charsets.US_ASCII;\n+    } else {\n+      options.outputCharset \u003d inputCharset;\n+    }\n \n     boolean writeOutputToFile \u003d !options.jsOutputFile.isEmpty();\n     if (writeOutputToFile) {\n@@ -686,16 +690,6 @@\n    *    be a supported charset.\n    * @throws FlagUsageException if flag is not a valid Charset name.\n    */\n-  private String getOutputCharset() throws FlagUsageException {\n-    if (!config.charset.isEmpty()) {\n-      if (!Charset.isSupported(config.charset)) {\n-        throw new FlagUsageException(config.charset +\n-            \" is not a valid charset name.\");\n-      }\n-      return config.charset;\n-    }\n-    return \"US-ASCII\";\n-  }\n \n   protected List\u003cJSSourceFile\u003e createExterns() throws FlagUsageException,\n       IOException {\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [21094,21571]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [16221,16370]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [4949,4992]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [20988,21786]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CommandLineRunner.java",
+        "src/com/google/javascript/jscomp/CommandLineRunner.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CommandLineRunner:createOptions:[]:CompilerOptions"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CommandLineRunner:createOptions:[]:CompilerOptions"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "470"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "471"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/CommandLineRunner.java b/src/com/google/javascript/jscomp/CommandLineRunner.java\nindex bd2de60..e3334a3 100644\n--- a/src/com/google/javascript/jscomp/CommandLineRunner.java\n+++ b/src/com/google/javascript/jscomp/CommandLineRunner.java\n@@ -468,6 +468,7 @@\n     }\n \n     options.closurePass \u003d flags.process_closure_primitives;\n+    initOptionsFromFlags(options);\n     return options;\n   }\n \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [18502,18532]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/Compiler.java",
+        "src/com/google/javascript/jscomp/Compiler.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.Compiler:toSource:[Node n, SourceMap sourceMap]:String"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.Compiler:toSource:[Node n, SourceMap sourceMap]:String"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1362",
+            "1363"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "1362"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/Compiler.java b/src/com/google/javascript/jscomp/Compiler.java\nindex 56bc4eb..7a12c4f 100644\n--- a/src/com/google/javascript/jscomp/Compiler.java\n+++ b/src/com/google/javascript/jscomp/Compiler.java\n@@ -1359,8 +1359,7 @@\n     builder.setSourceMap(sourceMap);\n     builder.setSourceMapDetailLevel(options.sourceMapDetailLevel);\n \n-    Charset charset \u003d options.outputCharset !\u003d null ?\n-        Charset.forName(options.outputCharset) : null;\n+    Charset charset \u003d options.outputCharset;\n     builder.setOutputCharset(charset);\n \n     return builder.build();\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [40050,40090]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [40050,40154]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CompilerOptions.java",
+        "src/com/google/javascript/jscomp/CompilerOptions.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CompilerOptions:setOutputCharset:[String charsetName]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "588",
+            "960",
+            "961",
+            "962"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "588",
+            "959"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/CompilerOptions.java b/src/com/google/javascript/jscomp/CompilerOptions.java\nindex f1c9535..f4c7836 100644\n--- a/src/com/google/javascript/jscomp/CompilerOptions.java\n+++ b/src/com/google/javascript/jscomp/CompilerOptions.java\n@@ -585,7 +585,7 @@\n    * Charset to use when generating code.  If null, then output ASCII.\n    * This needs to be a string because CompilerOptions is serializable.\n    */\n-  String outputCharset;\n+  public Charset outputCharset;\n \n   /**\n    * Whether the named objects types included \u0027undefined\u0027 by default.\n@@ -957,9 +957,6 @@\n   /**\n    * Sets the output charset by name.\n    */\n-  public void setOutputCharset(String charsetName) {\n-    this.outputCharset \u003d charsetName;\n-  }\n \n   /**\n    * Whether to include \"undefined\" in the default types.\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: public [17592,17598]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [28887,29029]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.AbstractCommandLineRunner:createExterns:[]:List\u003cJSSourceFile\u003e"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.AbstractCommandLineRunner:getOutputCharset:[]:String",
+        "com.google.javascript.jscomp.CompilerOptions:setOutputCharset:[String charsetName]:void"
+      ],
+      "num": 2
+    }
+  }
+}

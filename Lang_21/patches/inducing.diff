@@ -1,0 +1,218 @@
+diff --git a/RELEASE-NOTES.txt b/RELEASE-NOTES.txt
+index 34c3d6a..087926f 100644
+--- a/RELEASE-NOTES.txt
++++ b/RELEASE-NOTES.txt
+@@ -1,4 +1,4 @@
+-$Id: RELEASE-NOTES.txt,v 1.28 2004/10/16 16:45:59 scolebourne Exp $
++$Id: RELEASE-NOTES.txt,v 1.29 2004/10/16 17:08:42 scolebourne Exp $
+ 
+                         Commons Lang Package
+                             Version 2.1
+@@ -74,7 +74,7 @@
+ 
+ - NumberUtils - various string to number parsing methods added
+ 
+-- DateUtils - isSameDay method added to compare day ignoring time
++- DateUtils - methods added to compare dates in various ways
+ - FastDateFormat - extra formatting methods that take in a millisecond long value
+                 -- additional static factory methods
+ - StopWatch - new methods for split behaviour
+@@ -114,4 +114,4 @@
+ 30815  ArrayUtils.isEquals() throws ClassCastException when array1
+ 31478  Compile error with JDK 5 "enum" is a keyword
+ 31572  o.a.c.lang.enum.ValuedEnum: 'enum'is a keyword in JDK1.5.0
+-
++26922  public static boolean DateUtils.equals(Date dt1, Date dt2)
+diff --git a/src/java/org/apache/commons/lang/time/DateUtils.java b/src/java/org/apache/commons/lang/time/DateUtils.java
+index dfbe70a..9cfd761 100644
+--- a/src/java/org/apache/commons/lang/time/DateUtils.java
++++ b/src/java/org/apache/commons/lang/time/DateUtils.java
+@@ -31,7 +31,7 @@
+  * @author <a href="mailto:ggregory@seagullsw.com">Gary Gregory</a>
+  * @author Phil Steitz
+  * @since 2.0
+- * @version $Id: DateUtils.java,v 1.32 2004/10/13 21:48:00 scolebourne Exp $
++ * @version $Id: DateUtils.java,v 1.33 2004/10/16 17:08:42 scolebourne Exp $
+  */
+ public class DateUtils {
+     
+@@ -125,8 +125,8 @@
+      * 28 Mar 2002 13:45 and 12 Mar 2002 13:45 would return false.
+      * </p>
+      * 
+-     * @param date1  the first date, not null
+-     * @param date2  the second date, not null
++     * @param date1  the first date, not altered, not null
++     * @param date2  the second date, not altered, not null
+      * @return true if they represent the same day
+      * @throws IllegalArgumentException if either date is <code>null</code>
+      * @since 2.1
+@@ -142,7 +142,6 @@
+         return isSameDay(cal1, cal2);
+     }
+ 
+-    //-----------------------------------------------------------------------
+     /**
+      * <p>Checks if two calendar objects are on the same day ignoring time.</p>
+      *
+@@ -150,8 +149,8 @@
+      * 28 Mar 2002 13:45 and 12 Mar 2002 13:45 would return false.
+      * </p>
+      * 
+-     * @param cal1  the first calendar, not null
+-     * @param cal2  the second calendar, not null
++     * @param cal1  the first calendar, not altered, not null
++     * @param cal2  the second calendar, not altered, not null
+      * @return true if they represent the same day
+      * @throws IllegalArgumentException if either calendar is <code>null</code>
+      * @since 2.1
+@@ -167,6 +166,70 @@
+ 
+     //-----------------------------------------------------------------------
+     /**
++     * <p>Checks if two date objects represent the same instant in time.</p>
++     *
++     * <p>This method compares the long millisecond time of the two objects.</p>
++     * 
++     * @param date1  the first date, not altered, not null
++     * @param date2  the second date, not altered, not null
++     * @return true if they represent the same millisecond instant
++     * @throws IllegalArgumentException if either date is <code>null</code>
++     * @since 2.1
++     */
++    public static boolean isSameInstant(Date date1, Date date2) {
++        if (date1 == null || date2 == null) {
++            throw new IllegalArgumentException("The date must not be null");
++        }
++        return (date1.getTime() == date2.getTime());
++    }
++
++    /**
++     * <p>Checks if two calendar objects represent the same instant in time.</p>
++     *
++     * <p>This method compares the long millisecond time of the two objects.</p>
++     * 
++     * @param cal1  the first calendar, not altered, not null
++     * @param cal2  the second calendar, not altered, not null
++     * @return true if they represent the same millisecond instant
++     * @throws IllegalArgumentException if either date is <code>null</code>
++     * @since 2.1
++     */
++    public static boolean isSameInstant(Calendar cal1, Calendar cal2) {
++        if (cal1 == null || cal2 == null) {
++            throw new IllegalArgumentException("The date must not be null");
++        }
++        return (cal1.getTime().getTime() == cal2.getTime().getTime());
++    }
++
++    //-----------------------------------------------------------------------
++    /**
++     * <p>Checks if two calendar objects represent the same local time.</p>
++     *
++     * <p>This method compares the values of the fields of the two objects.
++     * In addition, both calendars must be the same of the same type.</p>
++     * 
++     * @param cal1  the first calendar, not altered, not null
++     * @param cal2  the second calendar, not altered, not null
++     * @return true if they represent the same millisecond instant
++     * @throws IllegalArgumentException if either date is <code>null</code>
++     * @since 2.1
++     */
++    public static boolean isSameLocalTime(Calendar cal1, Calendar cal2) {
++        if (cal1 == null || cal2 == null) {
++            throw new IllegalArgumentException("The date must not be null");
++        }
++        return (cal1.get(Calendar.MILLISECOND) == cal2.get(Calendar.MILLISECOND) &&
++                cal1.get(Calendar.SECOND) == cal2.get(Calendar.SECOND) &&
++                cal1.get(Calendar.MINUTE) == cal2.get(Calendar.MINUTE) &&
++                cal1.get(Calendar.HOUR) == cal2.get(Calendar.HOUR) &&
++                cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR) &&
++                cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
++                cal1.get(Calendar.ERA) == cal2.get(Calendar.ERA) &&
++                cal1.getClass() == cal2.getClass());
++    }
++
++    //-----------------------------------------------------------------------
++    /**
+      * <p>Round this date, leaving the field specified as the most
+      * significant field.</p>
+      *
+diff --git a/src/test/org/apache/commons/lang/time/DateUtilsTest.java b/src/test/org/apache/commons/lang/time/DateUtilsTest.java
+index 71fd85d..af1f24e 100644
+--- a/src/test/org/apache/commons/lang/time/DateUtilsTest.java
++++ b/src/test/org/apache/commons/lang/time/DateUtilsTest.java
+@@ -163,6 +163,10 @@
+         assertEquals(true, DateUtils.isSameDay(date1, date2));
+         date2 = new GregorianCalendar(2005, 6, 10, 13, 45).getTime();
+         assertEquals(false, DateUtils.isSameDay(date1, date2));
++        try {
++            DateUtils.isSameDay((Date) null, (Date) null);
++            fail();
++        } catch (IllegalArgumentException ex) {}
+     }
+     
+     //-----------------------------------------------------------------------
+@@ -176,6 +180,63 @@
+         assertEquals(true, DateUtils.isSameDay(cal1, cal2));
+         cal2.add(Calendar.YEAR, 1);
+         assertEquals(false, DateUtils.isSameDay(cal1, cal2));
++        try {
++            DateUtils.isSameDay((Calendar) null, (Calendar) null);
++            fail();
++        } catch (IllegalArgumentException ex) {}
++    }
++    
++    //-----------------------------------------------------------------------
++    public void testIsSameInstant_Date() {
++        Date date1 = new GregorianCalendar(2004, 6, 9, 13, 45).getTime();
++        Date date2 = new GregorianCalendar(2004, 6, 9, 13, 45).getTime();
++        assertEquals(true, DateUtils.isSameInstant(date1, date2));
++        date2 = new GregorianCalendar(2004, 6, 10, 13, 45).getTime();
++        assertEquals(false, DateUtils.isSameInstant(date1, date2));
++        date1 = new GregorianCalendar(2004, 6, 10, 13, 45).getTime();
++        assertEquals(true, DateUtils.isSameInstant(date1, date2));
++        date2 = new GregorianCalendar(2005, 6, 10, 13, 45).getTime();
++        assertEquals(false, DateUtils.isSameInstant(date1, date2));
++        try {
++            DateUtils.isSameInstant((Date) null, (Date) null);
++            fail();
++        } catch (IllegalArgumentException ex) {}
++    }
++    
++    //-----------------------------------------------------------------------
++    public void testIsSameInstant_Cal() {
++        GregorianCalendar cal1 = new GregorianCalendar(TimeZone.getTimeZone("GMT+1"));
++        GregorianCalendar cal2 = new GregorianCalendar(TimeZone.getTimeZone("GMT-1"));
++        cal1.set(2004, 6, 9, 13, 45, 0);
++        cal1.set(Calendar.MILLISECOND, 0);
++        cal2.set(2004, 6, 9, 13, 45, 0);
++        cal2.set(Calendar.MILLISECOND, 0);
++        assertEquals(false, DateUtils.isSameInstant(cal1, cal2));
++        
++        cal2.set(2004, 6, 9, 11, 45, 0);
++        assertEquals(true, DateUtils.isSameInstant(cal1, cal2));
++        try {
++            DateUtils.isSameInstant((Calendar) null, (Calendar) null);
++            fail();
++        } catch (IllegalArgumentException ex) {}
++    }
++    
++    //-----------------------------------------------------------------------
++    public void testIsSameLocalTime_Cal() {
++        GregorianCalendar cal1 = new GregorianCalendar(TimeZone.getTimeZone("GMT+1"));
++        GregorianCalendar cal2 = new GregorianCalendar(TimeZone.getTimeZone("GMT-1"));
++        cal1.set(2004, 6, 9, 13, 45, 0);
++        cal1.set(Calendar.MILLISECOND, 0);
++        cal2.set(2004, 6, 9, 13, 45, 0);
++        cal2.set(Calendar.MILLISECOND, 0);
++        assertEquals(true, DateUtils.isSameLocalTime(cal1, cal2));
++        
++        cal2.set(2004, 6, 9, 11, 45, 0);
++        assertEquals(false, DateUtils.isSameLocalTime(cal1, cal2));
++        try {
++            DateUtils.isSameLocalTime((Calendar) null, (Calendar) null);
++            fail();
++        } catch (IllegalArgumentException ex) {}
+     }
+     
+     //-----------------------------------------------------------------------

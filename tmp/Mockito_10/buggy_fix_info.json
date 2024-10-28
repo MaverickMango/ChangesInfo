@@ -1,0 +1,218 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.mockitousage.bugs.DeepStubsWronglyReportsSerializationProblemsTest::should_not_raise_a_mockito_exception_about_serialization_when_accessing_deep_stub",
+    "test.dir": "test",
+    "clz.modified": "org.mockito.internal.stubbing.defaultanswers.ReturnsDeepStubs",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Mockito",
+  "id": "10",
+  "workingDir": "../bugs/Mockito_10_tmp",
+  "bug_name": "Mockito_10",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.mockitousage.bugs.DeepStubsWronglyReportsSerializationProblemsTest",
+      "test_function": "should_not_raise_a_mockito_exception_about_serialization_when_accessing_deep_stub",
+      "assertion_line": "16",
+      "exception": "org.mockito.exceptions.base.MockitoException",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/org/mockito/internal/stubbing/defaultanswers/ReturnsDeepStubs.java",
+        "src/org/mockito/internal/stubbing/defaultanswers/ReturnsDeepStubs.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.mockito.internal.stubbing.defaultanswers.ReturnsDeepStubs:propagateSerializationSettings:[MockSettings mockSettings, MockCreationSettings parentMockSettings]:MockSettings",
+            "org.mockito.internal.stubbing.defaultanswers.ReturnsDeepStubs:deepStub:[InvocationOnMock invocation, GenericMetadataSupport returnTypeGenericMetadata]:Object",
+            "org.mockito.internal.stubbing.defaultanswers.ReturnsDeepStubs:newDeepStubMock:[GenericMetadataSupport returnTypeGenericMetadata, Object parentMock]:Object",
+            "org.mockito.internal.stubbing.defaultanswers.ReturnsDeepStubs:withSettingsUsing:[GenericMetadataSupport returnTypeGenericMetadata, MockCreationSettings parentMockSettings]:MockSettings"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "org.mockito.internal.stubbing.defaultanswers.ReturnsDeepStubs:deepStub:[InvocationOnMock invocation, GenericMetadataSupport returnTypeGenericMetadata]:Object",
+            "org.mockito.internal.stubbing.defaultanswers.ReturnsDeepStubs:withSettingsUsing:[GenericMetadataSupport returnTypeGenericMetadata]:MockSettings",
+            "org.mockito.internal.stubbing.defaultanswers.ReturnsDeepStubs:newDeepStubMock:[GenericMetadataSupport returnTypeGenericMetadata]:Object"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "17",
+            "72",
+            "88",
+            "89",
+            "92",
+            "96",
+            "101",
+            "105",
+            "106",
+            "107"
+          ],
+          "num": 10
+        },
+        {
+          "qualified_names": [
+            "16",
+            "71",
+            "87",
+            "90",
+            "94",
+            "99"
+          ],
+          "num": 6
+        }
+      ],
+      "diff": "diff --git a/src/org/mockito/internal/stubbing/defaultanswers/ReturnsDeepStubs.java b/src/org/mockito/internal/stubbing/defaultanswers/ReturnsDeepStubs.java\nindex 3bb7636..e2ded55 100644\n--- a/src/org/mockito/internal/stubbing/defaultanswers/ReturnsDeepStubs.java\n+++ b/src/org/mockito/internal/stubbing/defaultanswers/ReturnsDeepStubs.java\n@@ -14,7 +14,6 @@\n import org.mockito.internal.util.MockUtil;\r\n import org.mockito.internal.util.reflection.GenericMetadataSupport;\r\n import org.mockito.invocation.InvocationOnMock;\r\n-import org.mockito.mock.MockCreationSettings;\r\n import org.mockito.stubbing.Answer;\r\n \r\n import java.io.IOException;\r\n@@ -69,7 +68,7 @@\n \r\n         // record deep stub answer\r\n         return recordDeepStubAnswer(\r\n-                newDeepStubMock(returnTypeGenericMetadata, invocation.getMock()),\r\n+                newDeepStubMock(returnTypeGenericMetadata),\r\n                 container\r\n         );\r\n     }\r\n@@ -85,26 +84,22 @@\n      * @param parentMock The parent of the current deep stub mock.\r\n      * @return The mock\r\n      */\r\n-    private Object newDeepStubMock(GenericMetadataSupport returnTypeGenericMetadata, Object parentMock) {\r\n-        MockCreationSettings parentMockSettings \u003d new MockUtil().getMockSettings(parentMock);\r\n+    private Object newDeepStubMock(GenericMetadataSupport returnTypeGenericMetadata) {\r\n         return mockitoCore().mock(\r\n                 returnTypeGenericMetadata.rawType(),\r\n-                withSettingsUsing(returnTypeGenericMetadata, parentMockSettings)\r\n+                withSettingsUsing(returnTypeGenericMetadata)\r\n         );\r\n     }\r\n \r\n-    private MockSettings withSettingsUsing(GenericMetadataSupport returnTypeGenericMetadata, MockCreationSettings parentMockSettings) {\r\n+    private MockSettings withSettingsUsing(GenericMetadataSupport returnTypeGenericMetadata) {\r\n         MockSettings mockSettings \u003d returnTypeGenericMetadata.hasRawExtraInterfaces() ?\r\n                 withSettings().extraInterfaces(returnTypeGenericMetadata.rawExtraInterfaces())\r\n                 : withSettings();\r\n \r\n-        return propagateSerializationSettings(mockSettings, parentMockSettings)\r\n+        return mockSettings.serializable()\r\n                 .defaultAnswer(returnsDeepStubsAnswerUsing(returnTypeGenericMetadata));\r\n     }\r\n \r\n-    private MockSettings propagateSerializationSettings(MockSettings mockSettings, MockCreationSettings parentMockSettings) {\r\n-        return mockSettings.serializable(parentMockSettings.getSerializableMode());\r\n-    }\r\n \r\n     private ReturnsDeepStubs returnsDeepStubsAnswerUsing(final GenericMetadataSupport returnTypeGenericMetadata) {\r\n         return new ReturnsDeepStubsSerializationFallback(returnTypeGenericMetadata);\r\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [2997,3022]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [4265,4277]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [690,735]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_RECEIVER [3071,3081]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: getMock [3082,3089]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [3028,3120]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [2989,3131]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [3825,3842]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [3855,3940]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: parentMockSettings [4093,4111]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [4228,4267]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: parentMockSettings [4554,4572]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [4540,4572]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [4677,4890]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.mockito.internal.stubbing.defaultanswers.ReturnsDeepStubs:withSettingsUsing:[GenericMetadataSupport returnTypeGenericMetadata]:MockSettings",
+        "org.mockito.internal.stubbing.defaultanswers.ReturnsDeepStubs:newDeepStubMock:[GenericMetadataSupport returnTypeGenericMetadata]:Object"
+      ],
+      "num": 2
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.mockito.internal.stubbing.defaultanswers.ReturnsDeepStubs:newDeepStubMock:[GenericMetadataSupport returnTypeGenericMetadata, Object parentMock]:Object",
+        "org.mockito.internal.stubbing.defaultanswers.ReturnsDeepStubs:propagateSerializationSettings:[MockSettings mockSettings, MockCreationSettings parentMockSettings]:MockSettings",
+        "org.mockito.internal.stubbing.defaultanswers.ReturnsDeepStubs:withSettingsUsing:[GenericMetadataSupport returnTypeGenericMetadata, MockCreationSettings parentMockSettings]:MockSettings"
+      ],
+      "num": 3
+    }
+  }
+}

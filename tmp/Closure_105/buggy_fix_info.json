@@ -1,0 +1,217 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.FoldConstantsTest::testStringJoinAdd",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.FoldConstants",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "105",
+  "workingDir": "../bugs/Closure_105_tmp",
+  "bug_name": "Closure_105",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.FoldConstantsTest",
+      "test_function": "testStringJoinAdd",
+      "assertion_line": "646",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: x\u003d[\"\",foo].join(\",\")\nResult: x\u003d\"\"+foo"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/FoldConstants.java",
+        "src/com/google/javascript/jscomp/FoldConstants.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.FoldConstants:tryFoldStringJoin:[NodeTraversal t, Node n, Node left, Node right, Node parent]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.FoldConstants:tryFoldStringJoin:[NodeTraversal t, Node n, Node left, Node right, Node parent]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1477",
+            "1483",
+            "1484",
+            "1485",
+            "1490",
+            "1494",
+            "1502"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "1477",
+            "1483",
+            "1488",
+            "1492",
+            "1500"
+          ],
+          "num": 5
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/FoldConstants.java b/src/com/google/javascript/jscomp/FoldConstants.java\nindex 657ee0a..f6d6a27 100644\n--- a/src/com/google/javascript/jscomp/FoldConstants.java\n+++ b/src/com/google/javascript/jscomp/FoldConstants.java\n@@ -1474,24 +1474,22 @@\n \n     String joinString \u003d NodeUtil.getStringValue(right);\n     List\u003cNode\u003e arrayFoldedChildren \u003d Lists.newLinkedList();\n-    StringBuilder sb \u003d null;\n+    StringBuilder sb \u003d new StringBuilder();\n     int foldedSize \u003d 0;\n     Node elem \u003d arrayNode.getFirstChild();\n     // Merges adjacent String nodes.\n     while (elem !\u003d null) {\n       if (NodeUtil.isImmutableValue(elem)) {\n-        if (sb \u003d\u003d null) {\n-          sb \u003d new StringBuilder();\n-        } else {\n+        if (sb.length() \u003e 0) {\n           sb.append(joinString);\n         }\n         sb.append(NodeUtil.getStringValue(elem));\n       } else {\n-        if (sb !\u003d null) {\n+        if (sb.length() \u003e 0) {\n           // + 2 for the quotes.\n           foldedSize +\u003d sb.length() + 2;\n           arrayFoldedChildren.add(Node.newString(sb.toString()));\n-          sb \u003d null;\n+          sb \u003d new StringBuilder();\n         }\n         foldedSize +\u003d InlineCostEstimator.getCost(elem);\n         arrayFoldedChildren.add(elem);\n@@ -1499,7 +1497,7 @@\n       elem \u003d elem.getNext();\n     }\n \n-    if (sb !\u003d null) {\n+    if (sb.length() \u003e 0) {\n       // + 2 for the quotes.\n       foldedSize +\u003d sb.length() + 2;\n       arrayFoldedChildren.add(Node.newString(sb.toString()));\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [46041,46080]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [46761,46772]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NumberLiteral: 0 [46775,46776]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [46761,46763]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: length [46764,46770]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [46265,46330]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [46269,46284]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [46408,46419]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NumberLiteral: 0 [46422,46423]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [46408,46410]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: length [46411,46417]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [46041,46065]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [46254,46264]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [46266,46313]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [46250,46363]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NullLiteral [46447,46451]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [46605,46615]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NullLiteral [46780,46784]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

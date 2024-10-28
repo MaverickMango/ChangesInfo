@@ -1,0 +1,175 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.csv.CSVPrinterTest::testMySqlNullOutput,org.apache.commons.csv.CSVPrinterTest::testMySqlNullStringDefault",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.csv.CSVFormat,org.apache.commons.csv.CSVPrinter",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Csv",
+  "id": "13",
+  "workingDir": "../bugs/Csv_13_tmp",
+  "bug_name": "Csv_13",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.csv.CSVPrinterTest",
+      "test_function": "testMySqlNullOutput",
+      "assertion_line": "331",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c\"NULL\"\t[NULL]"
+    },
+    {
+      "test_class": "org.apache.commons.csv.CSVPrinterTest",
+      "test_function": "testMySqlNullStringDefault",
+      "assertion_line": "319",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c\\N\u003e but was:\u003cnull\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/csv/CSVFormat.java",
+        "src/main/java/org/apache/commons/csv/CSVFormat.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "319"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "319"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/csv/CSVFormat.java b/src/main/java/org/apache/commons/csv/CSVFormat.java\nindex 8c71f3a..847f30a 100644\n--- a/src/main/java/org/apache/commons/csv/CSVFormat.java\n+++ b/src/main/java/org/apache/commons/csv/CSVFormat.java\n@@ -316,7 +316,7 @@\n      *      http://dev.mysql.com/doc/refman/5.1/en/load-data.html\u003c/a\u003e\n      */\n     public static final CSVFormat MYSQL \u003d DEFAULT.withDelimiter(TAB).withEscape(BACKSLASH).withIgnoreEmptyLines(false)\n-            .withQuote(null).withRecordSeparator(LF).withNullString(\"\\\\N\");\n+            .withQuote(null).withRecordSeparator(LF);\n \n     /**\n      * Returns true if the given character is a line break character.\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_RECEIVER [9637,9766]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: withNullString [9767,9781]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_ARGUMENTS [9782,9787]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [9637,9788]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/csv/CSVPrinter.java",
+        "src/main/java/org/apache/commons/csv/CSVPrinter.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.csv.CSVPrinter:print:[final Object object, final CharSequence value, final int offset, final int len]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.csv.CSVPrinter:print:[final Object object, final CharSequence value, final int offset, final int len]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "139",
+            "140",
+            "141"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "139"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/csv/CSVPrinter.java b/src/main/java/org/apache/commons/csv/CSVPrinter.java\nindex 0e9a2de..ac4234b 100644\n--- a/src/main/java/org/apache/commons/csv/CSVPrinter.java\n+++ b/src/main/java/org/apache/commons/csv/CSVPrinter.java\n@@ -136,9 +136,7 @@\n         if (!newRecord) {\n             out.append(format.getDelimiter());\n         }\n-        if (object \u003d\u003d null) {\n-            out.append(value);\n-        } else if (format.isQuoteCharacterSet()) {\n+        if (format.isQuoteCharacterSet()) {\n             // the original object is needed so can check for Number\n             printAndQuote(object, value, offset, len);\n         } else if (format.isEscapeCharacterSet()) {\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [4742,4756]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [4758,4800]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [4738,5145]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

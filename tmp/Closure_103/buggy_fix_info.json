@@ -1,0 +1,155 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.CheckUnreachableCodeTest::testInstanceOfThrowsException,com.google.javascript.jscomp.ControlFlowAnalysisTest::testInstanceOf,com.google.javascript.jscomp.DisambiguatePropertiesTest::testSupertypeReferenceOfSubtypeProperty",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.ControlFlowAnalysis,com.google.javascript.jscomp.DisambiguateProperties",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "103",
+  "workingDir": "../bugs/Closure_103_tmp",
+  "bug_name": "Closure_103",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.CheckUnreachableCodeTest",
+      "test_function": "testInstanceOfThrowsException",
+      "assertion_line": "140",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Unexpected error(s): JSC_UNREACHABLE_CODE. unreachable code at testcode line 1 expected:\u003c0\u003e but was:\u003c1\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.ControlFlowAnalysisTest",
+      "test_function": "testInstanceOf",
+      "assertion_line": "178",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "No cross edges found"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.DisambiguatePropertiesTest",
+      "test_function": "testSupertypeReferenceOfSubtypeProperty",
+      "assertion_line": "964",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function Foo(){}function Bar(){}Bar.prototype.Bar_prototype$a;function foo(foo){var x\u003dfoo.Bar_prototype$a}\nResult: function Foo(){}function Bar(){}Bar.prototype.a;function foo(foo){var x\u003dfoo.a}"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/ControlFlowAnalysis.java",
+        "src/com/google/javascript/jscomp/ControlFlowAnalysis.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.ControlFlowAnalysis:mayThrowException:[Node n]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.ControlFlowAnalysis:mayThrowException:[Node n]:boolean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "894"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "893"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/ControlFlowAnalysis.java b/src/com/google/javascript/jscomp/ControlFlowAnalysis.java\nindex 6ef2548..3b67af3 100644\n--- a/src/com/google/javascript/jscomp/ControlFlowAnalysis.java\n+++ b/src/com/google/javascript/jscomp/ControlFlowAnalysis.java\n@@ -891,7 +891,6 @@\n       case Token.ASSIGN:\n       case Token.INC:\n       case Token.DEC:\n-      case Token.INSTANCEOF:\n         return true;\n       case Token.FUNCTION:\n         return false;\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [30135,30157]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/DisambiguateProperties.java",
+        "src/com/google/javascript/jscomp/DisambiguateProperties.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.DisambiguateProperties\\$JSTypeSystem:getTypeWithProperty:[String field, JSType type]:ObjectType"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.DisambiguateProperties\\$JSTypeSystem:getTypeWithProperty:[String field, JSType type]:ObjectType"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "763",
+            "764",
+            "765",
+            "769",
+            "770",
+            "771",
+            "772"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "762"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/DisambiguateProperties.java b/src/com/google/javascript/jscomp/DisambiguateProperties.java\nindex ca5edbd..4937879 100644\n--- a/src/com/google/javascript/jscomp/DisambiguateProperties.java\n+++ b/src/com/google/javascript/jscomp/DisambiguateProperties.java\n@@ -760,16 +760,9 @@\n       }\n       // If the property does not exist on the referenced type but the original\n       // type is an object type, see if any subtype has the property.\n-      if (foundType \u003d\u003d null) {\n-        ObjectType maybeType \u003d ObjectType.cast(\n-            registry.getGreatestSubtypeWithProperty(type, field));\n         // getGreatestSubtypeWithProperty does not guarantee that the property\n         // is defined on the returned type, it just indicates that it might be,\n         // so we have to double check.\n-        if (maybeType !\u003d null \u0026\u0026 maybeType.hasOwnProperty(field)) {\n-          foundType \u003d maybeType;\n-        }\n-      }\n       return foundType;\n     }\n \n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [26162,26618]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

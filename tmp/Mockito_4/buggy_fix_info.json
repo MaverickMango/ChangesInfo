@@ -1,0 +1,163 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.mockito.exceptions.ReporterTest::can_use_print_mock_name_even_when_mock_bogus_default_answer_and_when_reporting_no_more_interaction_wanted_in_order,org.mockito.exceptions.ReporterTest::can_use_print_mock_name_even_when_mock_bogus_default_answer_and_when_reporting_injection_failure,org.mockito.exceptions.ReporterTest::can_use_mock_name_even_when_mock_bogus_default_answer_and_when_reporting_no_more_interaction_wanted,org.mockitousage.bugs.ClassCastExOnVerifyZeroInteractionsTest::should_not_throw_a_ClassCastException",
+    "test.dir": "test",
+    "clz.modified": "org.mockito.exceptions.Reporter",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Mockito",
+  "id": "4",
+  "workingDir": "../bugs/Mockito_4_tmp",
+  "bug_name": "Mockito_4",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.mockito.exceptions.ReporterTest",
+      "test_function": "can_use_print_mock_name_even_when_mock_bogus_default_answer_and_when_reporting_no_more_interaction_wanted_in_order",
+      "assertion_line": "47",
+      "exception": "java.lang.Exception",
+      "message": "Unexpected exception, expected\u003corg.mockito.exceptions.verification.VerificationInOrderFailure\u003e but was\u003cjava.lang.ClassCastException\u003e"
+    },
+    {
+      "test_class": "org.mockito.exceptions.ReporterTest",
+      "test_function": "can_use_print_mock_name_even_when_mock_bogus_default_answer_and_when_reporting_injection_failure",
+      "assertion_line": "79",
+      "exception": "java.lang.Exception",
+      "message": "Unexpected exception, expected\u003corg.mockito.exceptions.base.MockitoException\u003e but was\u003cjava.lang.NullPointerException\u003e"
+    },
+    {
+      "test_class": "org.mockito.exceptions.ReporterTest",
+      "test_function": "can_use_mock_name_even_when_mock_bogus_default_answer_and_when_reporting_no_more_interaction_wanted",
+      "assertion_line": "41",
+      "exception": "java.lang.Exception",
+      "message": "Unexpected exception, expected\u003corg.mockito.exceptions.verification.NoInteractionsWanted\u003e but was\u003cjava.lang.ClassCastException\u003e"
+    },
+    {
+      "test_class": "org.mockitousage.bugs.ClassCastExOnVerifyZeroInteractionsTest",
+      "test_function": "should_not_throw_a_ClassCastException",
+      "assertion_line": "24",
+      "exception": "java.lang.Exception",
+      "message": "Unexpected exception, expected\u003corg.mockito.exceptions.verification.NoInteractionsWanted\u003e but was\u003cjava.lang.ClassCastException\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/org/mockito/exceptions/Reporter.java",
+        "src/org/mockito/exceptions/Reporter.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.mockito.exceptions.Reporter:exceptionCauseMessageIfAvailable:[Exception details]:String",
+            "org.mockito.exceptions.Reporter:noMoreInteractionsWanted:[Invocation undesired, List\u003cVerificationAwareInvocation\u003e invocations]:void",
+            "org.mockito.exceptions.Reporter:noMoreInteractionsWantedInOrder:[Invocation undesired]:void"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "org.mockito.exceptions.Reporter:exceptionCauseMessageIfAvailable:[Exception details]:String",
+            "org.mockito.exceptions.Reporter:noMoreInteractionsWanted:[Invocation undesired, List\u003cVerificationAwareInvocation\u003e invocations]:void",
+            "org.mockito.exceptions.Reporter:noMoreInteractionsWantedInOrder:[Invocation undesired]:void"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "424",
+            "434",
+            "677",
+            "678",
+            "679"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "424",
+            "434",
+            "676"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/org/mockito/exceptions/Reporter.java b/src/org/mockito/exceptions/Reporter.java\nindex d57e33d..9581a54 100644\n--- a/src/org/mockito/exceptions/Reporter.java\n+++ b/src/org/mockito/exceptions/Reporter.java\n@@ -421,7 +421,7 @@\n         throw new NoInteractionsWanted(join(\n                 \"No interactions wanted here:\",\n                 new LocationImpl(),\n-                \"But found this interaction on mock \u0027\" + safelyGetMockName(undesired.getMock()) + \"\u0027:\",\n+                \"But found this interaction on mock \u0027\" + undesired.getMock() + \"\u0027:\",\n                 undesired.getLocation(),\n                 scenario\n         ));\n@@ -431,7 +431,7 @@\n         throw new VerificationInOrderFailure(join(\n                 \"No interactions wanted here:\",\n                 new LocationImpl(),\n-                \"But found this interaction on mock \u0027\" + safelyGetMockName(undesired.getMock()) + \"\u0027:\",\n+                \"But found this interaction on mock \u0027\" + undesired.getMock() + \"\u0027:\",\n                 undesired.getLocation()\n         ));\n     }\n@@ -674,9 +674,6 @@\n     }\n \n     private String exceptionCauseMessageIfAvailable(Exception details) {\n-        if (details.getCause() \u003d\u003d null) {\n-            return details.getMessage();\n-        }\n         return details.getCause().getMessage();\n     }\n \n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: safelyGetMockName [17744,17761]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [17762,17781]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [17744,17782]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: safelyGetMockName [18140,18157]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [18158,18177]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [18140,18178]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [30955,31039]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

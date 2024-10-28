@@ -1,0 +1,245 @@
+diff --git a/src/main/java/org/jsoup/nodes/Attribute.java b/src/main/java/org/jsoup/nodes/Attribute.java
+new file mode 100644
+index 0000000..8126fed
+--- /dev/null
++++ b/src/main/java/org/jsoup/nodes/Attribute.java
+@@ -0,0 +1,37 @@
++package org.jsoup.nodes;
++
++import org.apache.commons.lang.Validate;
++
++/**
++ A single key + value attribute.
++
++ @author Jonathan Hedley, jonathan@hedley.net */
++public class Attribute {
++    private String key;
++    private String value;
++
++    public Attribute(String key, String value) {
++        Validate.notEmpty(key);
++        Validate.notNull(value);
++        this.key = key;
++        this.value = value;
++    }
++
++    public String getKey() {
++        return key;
++    }
++
++    public void setKey(String key) {
++        Validate.notEmpty(key);
++        this.key = key;
++    }
++
++    public String getValue() {
++        return value;
++    }
++
++    public void setValue(String value) {
++        Validate.notNull(value);
++        this.value = value;
++    }
++}
+diff --git a/src/main/java/org/jsoup/nodes/Attributes.java b/src/main/java/org/jsoup/nodes/Attributes.java
+index cf95f98..f4cf759 100644
+--- a/src/main/java/org/jsoup/nodes/Attributes.java
++++ b/src/main/java/org/jsoup/nodes/Attributes.java
+@@ -1,8 +1,42 @@
+ package org.jsoup.nodes;
+ 
++import org.apache.commons.lang.Validate;
++
++import java.util.LinkedHashMap;
++
+ /**
+  Element attribute list.
+ 
+  @author Jonathan Hedley, jonathan@hedley.net */
+ public class Attributes {
++    private LinkedHashMap<String, String> attributes = new LinkedHashMap<String, String>(); // linked hash map to preserve insertion order.
++
++    public String get(String key) {
++        Validate.notEmpty(key);
++        return attributes.get(key.toLowerCase());
++    }
++
++    public void put(String key, String value) {
++        Validate.notEmpty(key);
++        Validate.notNull(value);
++        attributes.put(key.toLowerCase(), value);
++    }
++
++    public void put(Attribute attribute) {
++        Validate.notNull(attribute);
++        put(attribute.getKey(), attribute.getValue());
++    }
++
++    public void remove(String key) {
++        Validate.notEmpty(key);
++        attributes.remove(key.toLowerCase());
++    }
++
++    public int size() {
++        return attributes.size();
++    }
++
++    // todo: toString, list (as List<Attribute>)
++
++
+ }
+diff --git a/src/main/java/org/jsoup/parser/AttributeParser.java b/src/main/java/org/jsoup/parser/AttributeParser.java
+index 6135aca..f5a7bb2 100644
+--- a/src/main/java/org/jsoup/parser/AttributeParser.java
++++ b/src/main/java/org/jsoup/parser/AttributeParser.java
+@@ -1,15 +1,90 @@
+ package org.jsoup.parser;
+ 
++import org.jsoup.nodes.Attribute;
+ import org.jsoup.nodes.Attributes;
+ 
++import java.util.LinkedList;
++import java.util.Queue;
++import java.util.regex.Pattern;
++
+ /**
+  Parse attribute strings into attributes.
+ 
+  @author Jonathan Hedley, jonathan@hedley.net */
+ public class AttributeParser {
++    private static final char SQ = '\'';
++    private static final char DQ = '"';
++    private static final char EQ = '=';
++    private static final Pattern keyOk = Pattern.compile("[^\\s'\"=]");
++    private static final Pattern space = Pattern.compile("[\\s]");
+ 
+     public Attributes parse(String attributeString) {
+-        return null;
+-        // TODO: implement
++        Attributes attributes = new Attributes();
++        if (attributeString == null || attributeString.trim().isEmpty())
++            return attributes;
++
++        char[] charArray = attributeString.trim().toCharArray();
++        Queue<Character> chars = new LinkedList<Character>();
++        for (char c : charArray) {
++            chars.add(c);
++        }
++
++        while (chars.size() > 0) {
++            Attribute attribute = nextAttribute(chars);
++            if (attribute != null)
++                attributes.put(attribute);
++        }
++        return attributes;
++    }
++
++    private Attribute nextAttribute(Queue<Character> chars) {
++        StringBuilder key = new StringBuilder();
++        StringBuilder value = new StringBuilder();
++        boolean seenEquals = false;
++        Character quoteChar = null;
++
++        // From: foo="bar" foo = 'bar "qux" zap' foo = bar foo foo foo="data = something"
++        // To: <foo=bar>, <foo=bar "qux" zap>, <foo=bar>, <foo=>, <foo=>, <foo=data = something>
++        while (chars.size() > 0) {
++            Character c = chars.remove();
++            String s = c.toString();
++
++            // this is a bit gnarly. ideas on rewrite with expect + consume. Doesn't seem like a regular expression though.
++
++            if (!seenEquals && keyOk.matcher(s).matches()) {
++                // accum the key
++                key.append(s);
++            } else if (!seenEquals && key.length() > 0 && space.matcher(s).matches()) {
++                // if we have a key, then a run of space, then a key-like char: that's a new key and we need to break before
++                Character nextC = chars.peek();
++                if (nextC != null && keyOk.matcher(nextC.toString()).matches())
++                    break;
++            } else if (!seenEquals && c == EQ) { //
++                seenEquals = true;
++            } else if (seenEquals) {
++                // working on the value
++                if (quoteChar == null && (c == SQ || c == DQ)) {
++                    // match until closing quote
++                    quoteChar = c;
++                } else if (c == quoteChar) {
++                    // closing quote
++                    break;
++                } else if (quoteChar == null && value.length() > 0 && space.matcher(s).matches()) {
++                    // we have found a space in a naked value (foo=bar): end of the line
++                    break;
++                } else {
++                    // accum the value
++                    value.append(s);
++                }
++            }
++        }
++
++        // TODO[must] de-entify / unescape attribute values (and keys too I guess)
++
++        // return an attribute if we have a key (val can be empty)
++        if (key.length() > 0)
++            return new Attribute(key.toString().trim(), value.toString().trim());
++        else
++            return null;
+     }
+ }
+diff --git a/src/test/java/org/jsoup/parser/AttributeParserTest.java b/src/test/java/org/jsoup/parser/AttributeParserTest.java
+new file mode 100644
+index 0000000..18aabe7
+--- /dev/null
++++ b/src/test/java/org/jsoup/parser/AttributeParserTest.java
+@@ -0,0 +1,52 @@
++package org.jsoup.parser;
++
++import org.jsoup.nodes.Attributes;
++import org.junit.Test;
++
++import static org.junit.Assert.*;
++
++/**
++ Test suite for attribute parser.
++
++ @author Jonathan Hedley, jonathan@hedley.net */
++public class AttributeParserTest {
++
++    @Test public void parsesRoughAttributeString() {
++        String a = "id=\"123\" class=\"baz = 'bar'\" style = 'border: 2px'qux zim foo = 12 mux.=18 ";
++        // should be: <id=123>, <class=baz = 'bar'>, <qux=>, <zim=>, <foo=12>, <mux.=18>
++
++        AttributeParser ap = new AttributeParser();
++        Attributes attr = ap.parse(a);
++        assertEquals(7, attr.size());
++        assertEquals("123", attr.get("id"));
++        assertEquals("baz = 'bar'", attr.get("class"));
++        assertEquals("border: 2px", attr.get("style"));
++        assertEquals("", attr.get("qux"));
++        assertEquals("", attr.get("zim"));
++        assertEquals("12", attr.get("foo"));
++        assertEquals("18", attr.get("mux."));
++    }
++
++    @Test public void parsesEmptyString() {
++        AttributeParser ap = new AttributeParser();
++        Attributes attr = ap.parse("");
++        assertEquals(0, attr.size());
++    }
++
++    @Test public void emptyOnNoKey() {
++        AttributeParser ap = new AttributeParser();
++        Attributes attr = ap.parse("=empty");
++        assertEquals(0, attr.size());
++    }
++
++    @Test public void parserIsReusable() {
++        AttributeParser ap = new AttributeParser();
++        Attributes attr = ap.parse("id=bar");
++        assertEquals(1, attr.size());
++        assertEquals("bar", attr.get("id"));
++
++        attr = ap.parse("id=qux");
++        assertEquals(1, attr.size());
++        assertEquals("qux", attr.get("id"));
++    }
++}

@@ -1,0 +1,108 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.jsontype.TestCustomTypeIdResolver::testPolymorphicTypeViaCustom",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.jsontype.impl.TypeDeserializerBase",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "51",
+  "workingDir": "../bugs/JacksonDatabind_51_tmp",
+  "bug_name": "JacksonDatabind_51",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.jsontype.TestCustomTypeIdResolver",
+      "test_function": "testPolymorphicTypeViaCustom",
+      "assertion_line": "226",
+      "exception": "com.fasterxml.jackson.databind.JsonMappingException",
+      "message": "Problem deserializing property \u0027options\u0027 (expected type: [simple type, class java.lang.Object]; actual type: java.util.LinkedHashMap), problem: Can not set com.fasterxml.jackson.databind.jsontype.TestCustomTypeIdResolver$Poly1Base field com.fasterxml.jackson.databind.jsontype.TestCustomTypeIdResolver$Base1270.options to java.util.LinkedHashMap"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/jsontype/impl/TypeDeserializerBase.java",
+        "src/main/java/com/fasterxml/jackson/databind/jsontype/impl/TypeDeserializerBase.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.jsontype.impl.TypeDeserializerBase:_findDeserializer:[DeserializationContext ctxt, String typeId]:JsonDeserializer\u003cObject\u003e"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.jsontype.impl.TypeDeserializerBase:_findDeserializer:[DeserializationContext ctxt, String typeId]:JsonDeserializer\u003cObject\u003e"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "184",
+            "186"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "183"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/TypeDeserializerBase.java b/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/TypeDeserializerBase.java\nindex cd9b155..23380f0 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/TypeDeserializerBase.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/TypeDeserializerBase.java\n@@ -181,9 +181,7 @@\n                     //   generic type with custom type resolvers. If so, should try to retain them.\n                     //  Whether this is sufficient to avoid problems remains to be seen, but for\n                     //  now it should improve things.\n-                    if (!type.hasGenericTypes()) {\n                         type \u003d ctxt.getTypeFactory().constructSpecializedType(_baseType, type.getRawClass());\n-                    }\n                 }\n                 deser \u003d ctxt.findContextualValueDeserializer(type, _property);\n             }\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "PrefixExpression [7472,7495]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [7497,7630]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [7468,7630]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

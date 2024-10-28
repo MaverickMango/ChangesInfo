@@ -1,0 +1,183 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.jsoup.helper.DataUtilTest::supportsBOMinFiles",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.jsoup.helper.DataUtil",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Jsoup",
+  "id": "50",
+  "workingDir": "../bugs/Jsoup_50_tmp",
+  "bug_name": "Jsoup_50",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.jsoup.helper.DataUtilTest",
+      "test_function": "supportsBOMinFiles",
+      "assertion_line": "109",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/helper/DataUtil.java",
+        "src/main/java/org/jsoup/helper/DataUtil.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.helper.DataUtil:parseByteData:[ByteBuffer byteData, String charsetName, String baseUri, Parser parser]:Document"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.jsoup.helper.DataUtil:parseByteData:[ByteBuffer byteData, String charsetName, String baseUri, Parser parser]:Document"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "93",
+            "94",
+            "95",
+            "96",
+            "97",
+            "98",
+            "99",
+            "100",
+            "101",
+            "102",
+            "103",
+            "104",
+            "105",
+            "106",
+            "139"
+          ],
+          "num": 15
+        },
+        {
+          "qualified_names": [
+            "92",
+            "126",
+            "127",
+            "128",
+            "129",
+            "130",
+            "131",
+            "132"
+          ],
+          "num": 8
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/helper/DataUtil.java b/src/main/java/org/jsoup/helper/DataUtil.java\nindex 57d0e4c..34880d8 100644\n--- a/src/main/java/org/jsoup/helper/DataUtil.java\n+++ b/src/main/java/org/jsoup/helper/DataUtil.java\n@@ -90,20 +90,6 @@\n         Document doc \u003d null;\n \n         // look for BOM - overrides any other header or input\n-        byteData.mark();\n-        byte[] bom \u003d new byte[4];\n-        byteData.get(bom);\n-        byteData.rewind();\n-        if (bom[0] \u003d\u003d 0x00 \u0026\u0026 bom[1] \u003d\u003d 0x00 \u0026\u0026 bom[2] \u003d\u003d (byte) 0xFE \u0026\u0026 bom[3] \u003d\u003d (byte) 0xFF || // BE\n-                bom[0] \u003d\u003d (byte) 0xFF \u0026\u0026 bom[1] \u003d\u003d (byte) 0xFE \u0026\u0026 bom[2] \u003d\u003d 0x00 \u0026\u0026 bom[3] \u003d\u003d 0x00) { // LE\n-            charsetName \u003d \"UTF-32\"; // and I hope it\u0027s on your system\n-        } else if (bom[0] \u003d\u003d (byte) 0xFE \u0026\u0026 bom[1] \u003d\u003d (byte) 0xFF || // BE\n-                bom[0] \u003d\u003d (byte) 0xFF \u0026\u0026 bom[1] \u003d\u003d (byte) 0xFE) {\n-            charsetName \u003d \"UTF-16\"; // in all Javas\n-        } else if (bom[0] \u003d\u003d (byte) 0xEF \u0026\u0026 bom[1] \u003d\u003d (byte) 0xBB \u0026\u0026 bom[2] \u003d\u003d (byte) 0xBF) {\n-            charsetName \u003d \"UTF-8\"; // in all Javas\n-            byteData.position(3); // 16 and 32 decoders consume the BOM to determine be/le; utf-8 should be consumed\n-        }\n \n         if (charsetName \u003d\u003d null) { // determine from meta. safe parse as UTF-8\n             // look for \u003cmeta http-equiv\u003d\"Content-Type\" content\u003d\"text/html;charset\u003dgb2312\"\u003e or HTML5 \u003cmeta charset\u003d\"gb2312\"\u003e\n@@ -137,6 +123,13 @@\n             Validate.notEmpty(charsetName, \"Must set charset arg to character set of file to parse. Set to null to attempt to detect from HTML\");\n             docData \u003d Charset.forName(charsetName).decode(byteData).toString();\n         }\n+        if (docData.length() \u003e 0 \u0026\u0026 docData.charAt(0) \u003d\u003d UNICODE_BOM) {\n+            byteData.rewind();\n+            docData \u003d Charset.forName(defaultCharset).decode(byteData).toString();\n+            docData \u003d docData.substring(1);\n+            charsetName \u003d defaultCharset;\n+            doc \u003d null;\n+        }\n         if (doc \u003d\u003d null) {\n             doc \u003d parser.parseInput(docData, baseUri);\n             doc.outputSettings().charset(charsetName);\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [5609,5906]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [5613,5669]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [5716,5786]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [5799,5830]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [5885,5896]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: defaultCharset [5857,5871]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [3715,3731]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [3740,3765]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [3774,3792]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [3832,4022]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [4117,4566]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [3828,4566]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "StringLiteral: \"UTF-32\" [4058,4066]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

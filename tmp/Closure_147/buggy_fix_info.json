@@ -1,0 +1,169 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.CheckGlobalThisTest::testIssue182a,com.google.javascript.jscomp.CheckGlobalThisTest::testIssue182b,com.google.javascript.jscomp.RuntimeTypeCheckTest::testValueWithInnerFn",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.CheckGlobalThis,com.google.javascript.jscomp.RuntimeTypeCheck",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "147",
+  "workingDir": "../bugs/Closure_147_tmp",
+  "bug_name": "Closure_147",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.CheckGlobalThisTest",
+      "test_function": "testIssue182a",
+      "assertion_line": "208",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "There should be one error.  expected:\u003c1\u003e but was:\u003c0\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.CheckGlobalThisTest",
+      "test_function": "testIssue182b",
+      "assertion_line": "212",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "There should be one error.  expected:\u003c1\u003e but was:\u003c0\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.RuntimeTypeCheckTest",
+      "test_function": "testValueWithInnerFn",
+      "assertion_line": "252",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: var jscomp\u003djscomp||{};jscomp.typecheck\u003djscomp.typecheck||{};jscomp.typecheck.suspendChecking\u003dfalse;jscomp.typecheck.log\u003dfunction(warning$$jscomp_runtimeTypeCheck_0,expr$$jscomp_runtimeTypeCheck_1){};\nResult: var jscomp\u003djscomp||{};jscomp.typecheck\u003djscomp.typecheck||{};jscomp.typecheck.suspendChecking\u003dfalse;jscomp.typecheck.log\u003dfunction(warning$$jscomp_runtimeTypeCheck_0,expr$$jscomp_runtimeTypeCheck_1){};"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CheckGlobalThis.java",
+        "src/com/google/javascript/jscomp/CheckGlobalThis.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CheckGlobalThis:shouldTraverse:[NodeTraversal t, Node n, Node parent]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CheckGlobalThis:shouldTraverse:[NodeTraversal t, Node n, Node parent]:boolean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "108",
+            "109"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "108"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/CheckGlobalThis.java b/src/com/google/javascript/jscomp/CheckGlobalThis.java\nindex 604526e..d63c72b 100644\n--- a/src/com/google/javascript/jscomp/CheckGlobalThis.java\n+++ b/src/com/google/javascript/jscomp/CheckGlobalThis.java\n@@ -105,8 +105,7 @@\n       if (!(pType \u003d\u003d Token.BLOCK ||\n             pType \u003d\u003d Token.SCRIPT ||\n             pType \u003d\u003d Token.NAME ||\n-            pType \u003d\u003d Token.ASSIGN ||\n-            pType \u003d\u003d Token.OBJECTLIT)) {\n+            pType \u003d\u003d Token.ASSIGN)) {\n         return false;\n       }\n     }\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: || [3542,3544]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [3557,3581]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [3412,3581]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/RuntimeTypeCheck.java",
+        "src/com/google/javascript/jscomp/RuntimeTypeCheck.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.RuntimeTypeCheck\\$AddChecks:visitFunction:[NodeTraversal t, Node n]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.RuntimeTypeCheck\\$AddChecks:visitFunction:[NodeTraversal t, Node n]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "247",
+            "248",
+            "249",
+            "250",
+            "251"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "246"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/RuntimeTypeCheck.java b/src/com/google/javascript/jscomp/RuntimeTypeCheck.java\nindex 5cedf1e..ed4a6b9 100644\n--- a/src/com/google/javascript/jscomp/RuntimeTypeCheck.java\n+++ b/src/com/google/javascript/jscomp/RuntimeTypeCheck.java\n@@ -244,11 +244,6 @@\n \n       // To satisfy normalization constraints, the type checking must be\n       // added after any inner function declarations.\n-      for (Node next \u003d block.getFirstChild();\n-           next !\u003d null \u0026\u0026 NodeUtil.isFunctionDeclaration(next);\n-           next \u003d next.getNext()) {\n-        insertionPoint \u003d next;\n-      }\n \n       for (Node paramType : funType.getParameters()) {\n         // Can this ever happen?\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ForStatement [8087,8266]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

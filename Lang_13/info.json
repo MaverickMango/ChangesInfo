@@ -1,0 +1,444 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Lang",
+  "id": "13",
+  "workingDir": "../bugs/Lang_13_buggy",
+  "inducingCommit": "01ab63a0f1d4b8d17d86dc4be56cbc7b92154a48",
+  "originalCommit": "b7f8443d5246d92b66f1d300cd461e6df41e03ac",
+  "bug_name": "Lang_13",
+  "derive": "defects4j",
+  "original_fixing_commit": "bd59a1908a1df3364918be7b07782500616b15ac",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/lang3/SerializationUtils.java",
+        "src/main/java/org/apache/commons/lang3/SerializationUtils.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "clone"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "ClassLoaderAwareObjectInputStream",
+            "resolveClass",
+            "clone"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "24",
+            "76",
+            "77",
+            "78",
+            "79",
+            "80",
+            "81",
+            "82",
+            "83",
+            "197"
+          ],
+          "num": 10
+        },
+        {
+          "qualified_names": [
+            "25",
+            "77",
+            "78",
+            "79",
+            "80",
+            "81",
+            "82",
+            "83",
+            "84",
+            "85",
+            "86",
+            "87",
+            "88",
+            "89",
+            "90",
+            "91",
+            "92",
+            "93",
+            "94",
+            "95",
+            "96",
+            "97",
+            "98",
+            "99",
+            "100",
+            "101",
+            "102",
+            "103",
+            "104",
+            "105",
+            "106",
+            "221",
+            "222",
+            "223",
+            "224",
+            "225",
+            "226",
+            "227",
+            "228",
+            "229",
+            "230",
+            "231",
+            "232",
+            "233",
+            "234",
+            "235",
+            "236",
+            "237",
+            "238",
+            "239",
+            "240",
+            "241",
+            "242",
+            "243",
+            "244",
+            "245",
+            "246",
+            "247",
+            "248",
+            "249",
+            "250",
+            "251",
+            "252",
+            "253",
+            "254",
+            "255",
+            "256",
+            "257",
+            "258",
+            "259",
+            "260",
+            "261",
+            "262",
+            "263",
+            "264",
+            "265",
+            "266",
+            "267",
+            "268"
+          ],
+          "num": 79
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/lang3/SerializationUtils.java b/src/main/java/org/apache/commons/lang3/SerializationUtils.java\nindex bd8238a..9cf3891 100644\n--- a/src/main/java/org/apache/commons/lang3/SerializationUtils.java\n+++ b/src/main/java/org/apache/commons/lang3/SerializationUtils.java\n@@ -22,6 +22,7 @@\n import java.io.InputStream;\n import java.io.ObjectInputStream;\n import java.io.ObjectOutputStream;\n+import java.io.ObjectStreamClass;\n import java.io.OutputStream;\n import java.io.Serializable;\n \n@@ -73,14 +74,36 @@\n      * @throws SerializationException (runtime) if the serialization fails\n      */\n     public static \u003cT extends Serializable\u003e T clone(T object) {\n-        /*\n-         * when we serialize and deserialize an object,\n-         * it is reasonable to assume the deserialized object\n-         * is of the same type as the original serialized object\n-         */\n-        @SuppressWarnings(\"unchecked\")\n-        final T result \u003d (T) deserialize(serialize(object));\n-        return result;\n+        if (object \u003d\u003d null) {\n+            return null;\n+        }\n+        byte[] objectData \u003d serialize(object);\n+        ByteArrayInputStream bais \u003d new ByteArrayInputStream(objectData);\n+\n+        ClassLoaderAwareObjectInputStream in \u003d null;\n+        try {\n+            // stream closed in the finally\n+            in \u003d new ClassLoaderAwareObjectInputStream(bais, object.getClass().getClassLoader());\n+            /*\n+             * when we serialize and deserialize an object,\n+             * it is reasonable to assume the deserialized object\n+             * is of the same type as the original serialized object\n+             */\n+            return (T) in.readObject();\n+\n+        } catch (ClassNotFoundException ex) {\n+            throw new SerializationException(\"ClassNotFoundException while reading cloned object data\", ex);\n+        } catch (IOException ex) {\n+            throw new SerializationException(\"IOException while reading cloned object data\", ex);\n+        } finally {\n+            try {\n+                if (in !\u003d null) {\n+                    in.close();\n+                }\n+            } catch (IOException ex) {\n+                throw new SerializationException(\"IOException on closing cloned object data InputStream.\", ex);\n+            }\n+        }\n     }\n \n     // Serialize\n@@ -195,4 +218,52 @@\n         return deserialize(bais);\n     }\n \n+    /**\n+     * \u003cp\u003eCustom specialization of the standard JDK {@link java.io.ObjectInputStream}\n+     * that uses a custom  \u003ccode\u003eClassLoader\u003c/code\u003e to resolve a class.\n+     * If the specified \u003ccode\u003eClassLoader\u003c/code\u003e is not able to resolve the class,\n+     * the context classloader of the current thread will be used.\n+     * This way, the standard deserialization work also in web-application\n+     * containers and application servers, no matter in which of the\n+     * \u003ccode\u003eClassLoader\u003c/code\u003e the particular class that encapsulates\n+     * serialization/deserialization lives. \u003c/p\u003e\n+     * \n+     * \u003cp\u003eFor more in-depth information about the problem for which this\n+     * class here is a workaround, see the JIRA issue LANG-626. \u003c/p\u003e\n+     */\n+     static class ClassLoaderAwareObjectInputStream extends ObjectInputStream {\n+        private ClassLoader classLoader;\n+\n+        /**\n+         * Constructor.\n+         * @param in The \u003ccode\u003eInputStream\u003c/code\u003e.\n+         * @param classLoader classloader to use\n+         * @throws IOException if an I/O error occurs while reading stream header.\n+         * @see java.io.ObjectInputStream\n+         */\n+        public ClassLoaderAwareObjectInputStream(InputStream in, ClassLoader classLoader) throws IOException {\n+            super(in);\n+            this.classLoader \u003d classLoader;\n+        }\n+\n+        /**\n+         * Overriden version that uses the parametrized \u003ccode\u003eClassLoader\u003c/code\u003e or the \u003ccode\u003eClassLoader\u003c/code\u003e\n+         * of the current \u003ccode\u003eThread\u003c/code\u003e to resolve the class.\n+         * @param desc An instance of class \u003ccode\u003eObjectStreamClass\u003c/code\u003e.\n+         * @return A \u003ccode\u003eClass\u003c/code\u003e object corresponding to \u003ccode\u003edesc\u003c/code\u003e.\n+         * @throws IOException Any of the usual Input/Output exceptions.\n+         * @throws ClassNotFoundException If class of a serialized object cannot be found.\n+         */\n+        @Override\n+        protected Class\u003c?\u003e resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {\n+            String name \u003d desc.getName();\n+            try {\n+                return Class.forName(name, false, classLoader);\n+            } catch (ClassNotFoundException ex) {\n+                return Class.forName(name, false, Thread.currentThread().getContextClassLoader());\n+            }\n+        }\n+\n+    }\n+\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [1038,1071]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TypeDeclaration [8393,10669]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [2830,2886]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [2942,3007]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [3017,3061]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TryStatement [3070,4069]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [2834,2848]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [2850,2886]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ArrayType [2895,2901]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NullLiteral [2871,2875]"
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: result [3109,3115]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleMemberAnnotation [3002,3032]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: final [3041,3046]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [3047,3048]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [3059,3060]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: deserialize [3062,3073]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [3074,3091]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [3062,3092]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "CastExpression [3058,3092]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "ClassLoaderAwareObjectInputStream",
+        "resolveClass"
+      ],
+      "num": 2
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/lang3/SerializationUtils.java",
+        "src/main/java/org/apache/commons/lang3/SerializationUtils.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "ClassLoaderAwareObjectInputStream",
+            "resolveClass"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "resolveClass",
+            "ClassLoaderAwareObjectInputStream"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "27",
+            "234",
+            "246",
+            "263"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "28",
+            "29",
+            "237",
+            "238",
+            "251",
+            "252",
+            "253",
+            "254",
+            "255",
+            "256",
+            "257",
+            "258",
+            "259",
+            "260",
+            "277",
+            "278",
+            "279",
+            "280",
+            "281",
+            "282",
+            "283",
+            "284",
+            "285"
+          ],
+          "num": 23
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Lang_13/properties/modified_classes/inducing/src/main/java/org/apache/commons/lang3/SerializationUtils.java data/changesInfo//Lang_13/cleaned/fixing/src/main/java/org/apache/commons/lang3/SerializationUtils.java\n--- data/changesInfo//Lang_13/properties/modified_classes/inducing/src/main/java/org/apache/commons/lang3/SerializationUtils.java\t2023-08-25 13:39:32.356410159 +0800\n+++ data/changesInfo//Lang_13/cleaned/fixing/src/main/java/org/apache/commons/lang3/SerializationUtils.java\t2023-06-20 21:48:37.303596867 +0800\n@@ -25,6 +25,8 @@\n import java.io.ObjectStreamClass;\n import java.io.OutputStream;\n import java.io.Serializable;\n+import java.util.HashMap;\n+import java.util.Map;\n \n /**\n  * \u003cp\u003eAssists with the serialization process and performs additional functionality based\n@@ -232,6 +234,8 @@\n      * class here is a workaround, see the JIRA issue LANG-626. \u003c/p\u003e\n      */\n      static class ClassLoaderAwareObjectInputStream extends ObjectInputStream {\n+        private static final Map\u003cString, Class\u003c?\u003e\u003e primitiveTypes \u003d\n+                new HashMap\u003cString, Class\u003c?\u003e\u003e();\n         private ClassLoader classLoader;\n \n         /**\n@@ -244,6 +248,16 @@\n         public ClassLoaderAwareObjectInputStream(InputStream in, ClassLoader classLoader) throws IOException {\n             super(in);\n             this.classLoader \u003d classLoader;\n+\n+            primitiveTypes.put(\"byte\", byte.class);\n+            primitiveTypes.put(\"short\", short.class);\n+            primitiveTypes.put(\"int\", int.class);\n+            primitiveTypes.put(\"long\", long.class);\n+            primitiveTypes.put(\"float\", float.class);\n+            primitiveTypes.put(\"double\", double.class);\n+            primitiveTypes.put(\"boolean\", boolean.class);\n+            primitiveTypes.put(\"char\", char.class);\n+            primitiveTypes.put(\"void\", void.class);\n         }\n \n         /**\n@@ -260,7 +274,15 @@\n             try {\n                 return Class.forName(name, false, classLoader);\n             } catch (ClassNotFoundException ex) {\n-                return Class.forName(name, false, Thread.currentThread().getContextClassLoader());\n+                try {\n+                    return Class.forName(name, false, Thread.currentThread().getContextClassLoader());\n+                } catch (ClassNotFoundException cnfe) {\n+                    Class\u003c?\u003e cls \u003d primitiveTypes.get(name);\n+                    if (cls !\u003d null)\n+                        return cls;\n+                    else\n+                        throw cnfe;\n+                }\n             }\n         }\n \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [1130,1155]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [1156,1177]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [9263,9371]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [9878,9917]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [9930,9971]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [9984,10021]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [10034,10073]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [10086,10127]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [10140,10183]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [10196,10241]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [10254,10293]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [10306,10345]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TryStatement [11202,11579]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [11206,11328]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "CatchClause [11329,11579]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

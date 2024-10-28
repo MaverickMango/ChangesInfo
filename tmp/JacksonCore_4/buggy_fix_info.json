@@ -1,0 +1,140 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.core.util.TestTextBuffer::testExpand",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.core.util.TextBuffer",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonCore",
+  "id": "4",
+  "workingDir": "../bugs/JacksonCore_4_tmp",
+  "bug_name": "JacksonCore_4",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.core.util.TestTextBuffer",
+      "test_function": "testExpand",
+      "assertion_line": "76",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected buffer of 262145 to expand, did not, length now 262144"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java",
+        "src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.util.TextBuffer:expandCurrentSegment:[]:char[]"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.util.TextBuffer:expandCurrentSegment:[]:char[]"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "585",
+            "587",
+            "588",
+            "589"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "586"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java b/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java\nindex a677376..f97a083 100644\n--- a/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java\n+++ b/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java\n@@ -582,11 +582,8 @@\n         final char[] curr \u003d _currentSegment;\n         // Let\u0027s grow by 50% by default\n         final int len \u003d curr.length;\n-        int newLen \u003d len + (len \u003e\u003e 1);\n         // but above intended maximum, slow to increase by 25%\n-        if (newLen \u003e MAX_SEGMENT_LEN) {\n-            newLen \u003d len + (len \u003e\u003e 2);\n-        }\n+        int newLen \u003d (len \u003d\u003d MAX_SEGMENT_LEN) ? (MAX_SEGMENT_LEN+1) : Math.min(MAX_SEGMENT_LEN, len + (len \u003e\u003e 1));\n         return (_currentSegment \u003d Arrays.copyOf(curr, newLen));\n     }\n \n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ConditionalExpression [18412,18504]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ParenthesizedExpression [18412,18436]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ParenthesizedExpression [18439,18458]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [18461,18504]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [18461,18465]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: min [18466,18469]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [18470,18503]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: MAX_SEGMENT_LEN [18470,18485]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [18438,18518]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

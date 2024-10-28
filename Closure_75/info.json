@@ -1,0 +1,768 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Closure",
+  "id": "75",
+  "workingDir": "../bugs/Closure_75_buggy",
+  "inducingCommit": "bb877849306e221202b283f9b8eb3873d7bdc9ae",
+  "originalCommit": "6e920f1a065c4bdc0762505028d57bb6ad223640",
+  "bug_name": "Closure_75",
+  "derive": "defects4j",
+  "original_fixing_commit": "c6cc58a9bc617483366141386e047b085b4e83ff",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/PeepholeFoldConstants.java",
+        "src/com/google/javascript/jscomp/PeepholeFoldConstants.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "performArithmeticOp",
+            "isValidInt",
+            "optimizeSubtree",
+            "tryFoldUnaryOperator",
+            "areValidInts",
+            "tryFoldArithmeticOp",
+            "tryFoldLeftChildOp"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "tryReduceOperandsForOp",
+            "tryConvertToNumber",
+            "tryFoldAndOr",
+            "performArithmeticOp",
+            "tryFoldLeftChildOp",
+            "optimizeSubtree",
+            "tryConvertOperandsToNumber",
+            "tryFoldArithmeticOp",
+            "tryFoldUnaryOperator"
+          ],
+          "num": 9
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "20",
+            "79",
+            "157",
+            "236",
+            "508",
+            "529",
+            "544",
+            "545",
+            "546",
+            "547",
+            "550",
+            "551",
+            "552",
+            "553",
+            "556",
+            "557",
+            "558",
+            "559",
+            "610",
+            "611",
+            "612",
+            "613",
+            "614",
+            "615",
+            "616",
+            "617",
+            "618",
+            "619",
+            "620",
+            "621",
+            "622",
+            "623",
+            "624",
+            "625",
+            "636",
+            "639",
+            "640",
+            "646",
+            "647",
+            "648",
+            "649",
+            "650",
+            "651",
+            "652",
+            "653",
+            "654",
+            "655"
+          ],
+          "num": 47
+        },
+        {
+          "qualified_names": [
+            "21",
+            "81",
+            "84",
+            "88",
+            "162",
+            "163",
+            "164",
+            "165",
+            "166",
+            "167",
+            "168",
+            "169",
+            "170",
+            "171",
+            "172",
+            "173",
+            "174",
+            "175",
+            "176",
+            "177",
+            "178",
+            "179",
+            "180",
+            "181",
+            "182",
+            "183",
+            "184",
+            "185",
+            "186",
+            "187",
+            "188",
+            "189",
+            "190",
+            "191",
+            "192",
+            "193",
+            "194",
+            "195",
+            "196",
+            "197",
+            "198",
+            "199",
+            "200",
+            "201",
+            "202",
+            "203",
+            "204",
+            "205",
+            "206",
+            "207",
+            "208",
+            "209",
+            "210",
+            "211",
+            "212",
+            "213",
+            "214",
+            "215",
+            "216",
+            "217",
+            "218",
+            "219",
+            "220",
+            "221",
+            "222",
+            "223",
+            "224",
+            "225",
+            "226",
+            "227",
+            "228",
+            "229",
+            "230",
+            "231",
+            "232",
+            "233",
+            "234",
+            "235",
+            "236",
+            "237",
+            "238",
+            "239",
+            "240",
+            "241",
+            "242",
+            "243",
+            "244",
+            "245",
+            "246",
+            "247",
+            "248",
+            "249",
+            "250",
+            "251",
+            "252",
+            "253",
+            "333",
+            "334",
+            "335",
+            "336",
+            "337",
+            "338",
+            "339",
+            "340",
+            "510",
+            "613",
+            "635",
+            "636",
+            "637",
+            "652",
+            "655",
+            "658",
+            "719",
+            "722",
+            "723",
+            "724",
+            "725",
+            "726",
+            "732",
+            "734",
+            "735",
+            "736",
+            "737",
+            "739",
+            "741",
+            "743",
+            "744",
+            "745"
+          ],
+          "num": 128
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/PeepholeFoldConstants.java b/src/com/google/javascript/jscomp/PeepholeFoldConstants.java\nindex fce4f17..de6b020 100644\n--- a/src/com/google/javascript/jscomp/PeepholeFoldConstants.java\n+++ b/src/com/google/javascript/jscomp/PeepholeFoldConstants.java\n@@ -18,6 +18,7 @@\n \n import com.google.common.base.Preconditions;\n import com.google.common.collect.Lists;\n+import com.google.javascript.jscomp.mozilla.rhino.ScriptRuntime;\n import com.google.javascript.rhino.Node;\n import com.google.javascript.rhino.Token;\n import com.google.javascript.rhino.jstype.TernaryValue;\n@@ -77,11 +78,14 @@\n         return tryFoldTypeof(subtree);\n \n       case Token.NOT:\n+      case Token.POS:\n       case Token.NEG:\n       case Token.BITNOT:\n+        tryReduceOperandsForOp(subtree);\n         return tryFoldUnaryOperator(subtree);\n \n       default:\n+        tryReduceOperandsForOp(subtree);\n         return tryFoldBinaryOperator(subtree);\n     }\n   }\n@@ -155,6 +159,98 @@\n     }\n   }\n \n+  private void tryReduceOperandsForOp(Node n) {\n+    switch (n.getType()) {\n+      case Token.ADD:\n+        Node left \u003d n.getFirstChild();\n+        Node right \u003d n.getLastChild();\n+        if (!NodeUtil.mayBeString(left) \u0026\u0026 !NodeUtil.mayBeString(right)) {\n+          tryConvertOperandsToNumber(n);\n+        }\n+        break;\n+      case Token.ASSIGN_BITOR:\n+      case Token.ASSIGN_BITXOR:\n+      case Token.ASSIGN_BITAND:\n+        // TODO(johnlenz): convert these to integers.\n+      case Token.ASSIGN_LSH:\n+      case Token.ASSIGN_RSH:\n+      case Token.ASSIGN_URSH:\n+      case Token.ASSIGN_SUB:\n+      case Token.ASSIGN_MUL:\n+      case Token.ASSIGN_MOD:\n+      case Token.ASSIGN_DIV:\n+        tryConvertToNumber(n.getLastChild());\n+        break;\n+      case Token.BITNOT:\n+      case Token.BITOR:\n+      case Token.BITXOR:\n+      case Token.BITAND:\n+      case Token.LSH:\n+      case Token.RSH:\n+      case Token.URSH:\n+      case Token.SUB:\n+      case Token.MUL:\n+      case Token.MOD:\n+      case Token.DIV:\n+      case Token.POS:\n+      case Token.NEG:\n+        tryConvertOperandsToNumber(n);\n+        break;\n+    }\n+  }\n+\n+  private void tryConvertOperandsToNumber(Node n) {\n+    Node next;\n+    for (Node c \u003d n.getFirstChild(); c !\u003d null; c \u003d next) {\n+      next \u003d c.getNext();\n+      tryConvertToNumber(c);\n+    }\n+  }\n+\n+  private void tryConvertToNumber(Node n) {\n+    switch (n.getType()) {\n+      case Token.NUMBER:\n+        // Nothing to do\n+        return;\n+      case Token.AND:\n+      case Token.OR:\n+      case Token.COMMA:\n+        tryConvertToNumber(n.getLastChild());\n+        return;\n+      case Token.HOOK:\n+        tryConvertToNumber(n.getChildAtIndex(1));\n+        tryConvertToNumber(n.getLastChild());\n+        return;\n+      case Token.NAME:\n+        if (!NodeUtil.isUndefined(n)) {\n+          return;\n+        }\n+        break;\n+    }\n+\n+    Double result \u003d NodeUtil.getNumberValue(n);\n+    if (result \u003d\u003d null) {\n+      return;\n+    }\n+\n+    double value \u003d result;\n+\n+    Node replacement;\n+    if (Double.isNaN(value)) {\n+      replacement \u003d Node.newString(Token.NAME, \"NaN\");\n+    } else if (value \u003d\u003d Double.POSITIVE_INFINITY) {\n+      replacement \u003d Node.newString(Token.NAME, \"Infinity\");\n+    } else if (value \u003d\u003d Double.NEGATIVE_INFINITY) {\n+      replacement \u003d new Node(Token.NEG, Node.newString(Token.NAME, \"Infinity\"));\n+      replacement.copyInformationFromForTree(n);\n+    } else {\n+      replacement \u003d Node.newNumber(value);\n+    }\n+\n+    n.getParent().replaceChild(n, replacement);\n+    reportCodeChange();\n+  }\n+\n   /**\n    * Folds \u0027typeof(foo)\u0027 if foo is a literal, e.g.\n    * typeof(\"bar\") --\u003e \"string\"\n@@ -234,6 +330,14 @@\n         parent.replaceChild(n, replacementNode);\n         reportCodeChange();\n         return replacementNode;\n+      case Token.POS:\n+        if (NodeUtil.isNumericResult(left)) {\n+          // POS does nothing to numeric values.\n+          parent.replaceChild(n, left.detachFromParent());\n+          reportCodeChange();\n+          return left;\n+        }\n+        return n;\n       case Token.NEG:\n         try {\n           if (left.getType() \u003d\u003d Token.NAME) {\n@@ -506,6 +610,7 @@\n   private Node tryFoldArithmeticOp(Node n, Node left, Node right) {\n     Node result \u003d performArithmeticOp(n.getType(), left, right);\n     if (result !\u003d null) {\n+      result.copyInformationFromForTree(n);\n       n.getParent().replaceChild(n, result);\n       reportCodeChange();\n       return result;\n@@ -527,6 +632,9 @@\n \n     double result;\n \n+    // TODO(johnlenz): Handle NaN with unknown value. BIT ops convert NaN\n+    // to zero so this is a little akward here.\n+\n     Double lValObj \u003d NodeUtil.getNumberValue(left);\n     if (lValObj \u003d\u003d null) {\n       return null;\n@@ -541,22 +649,13 @@\n \n     switch (opType) {\n       case Token.BITAND:\n-        if (!areValidInts(lval, rval)) {\n-          return null;\n-        }\n-        result \u003d (int)lval \u0026 (int)rval;\n+        result \u003d ScriptRuntime.toInt32(lval) \u0026 ScriptRuntime.toInt32(rval);\n         break;\n       case Token.BITOR:\n-        if (!areValidInts(lval, rval)) {\n-          return null;\n-        }\n-        result \u003d (int)lval | (int)rval;\n+        result \u003d ScriptRuntime.toInt32(lval) | ScriptRuntime.toInt32(rval);\n         break;\n       case Token.BITXOR:\n-        if (!areValidInts(lval, rval)) {\n-          return null;\n-        }\n-        result \u003d (int)lval ^ (int)rval;\n+        result \u003d ScriptRuntime.toInt32(lval) ^ ScriptRuntime.toInt32(rval);\n         break;\n       case Token.ADD:\n         result \u003d lval + rval;\n@@ -607,22 +706,6 @@\n   }\n \n   /**\n-   * @return Whether the double can be precisely represented as a int.\n-   */\n-  private boolean isValidInt(double val) {\n-    return !(val \u003c Integer.MIN_VALUE || val \u003e Integer.MAX_VALUE)\n-        \u0026\u0026 val \u003d\u003d (int)val;\n-  }\n-\n-  /**\n-   * @return Whether the parameters are doubles can be precisely represented\n-   * as a int.\n-   */\n-  private boolean areValidInts(double val1, double val2) {\n-    return isValidInt(val1) \u0026\u0026 isValidInt(val2);\n-  }\n-\n-  /**\n    * Expressions such as [foo() * 10 * 20] generate parse trees\n    * where no node has two const children ((foo() * 10) * 20), so\n    * performArithmeticOp() won\u0027t fold it -- tryFoldLeftChildOp() will.\n@@ -633,30 +716,33 @@\n    */\n   private Node tryFoldLeftChildOp(Node n, Node left, Node right) {\n     int opType \u003d n.getType();\n-    // Note: ADD is not associative when used as a string concat operator.\n+    // TODO(johnlenz): Add support for ADD in numberic contexts.\n     Preconditions.checkState(\n       NodeUtil.isAssociative(opType) \u0026\u0026 NodeUtil.isCommutative(opType));\n-    // TODO(johnlenz): create and use a getNumberValue.\n-    if (right.getType() \u003d\u003d Token.NUMBER \u0026\u0026 left.getType() \u003d\u003d opType) {\n+\n+    // Use getNumberValue to handle constants like \"NaN\" and \"Infinity\"\n+    // other values are converted to numbers elsewhere.\n+    Double rightValObj \u003d NodeUtil.getNumberValue(right);\n+    if (rightValObj !\u003d null \u0026\u0026 left.getType() \u003d\u003d opType) {\n       Preconditions.checkState(left.getChildCount() \u003d\u003d 2);\n \n       Node ll \u003d left.getFirstChild();\n       Node lr \u003d ll.getNext();\n \n-      Node valueToCombine;\n-      if (ll.getType() \u003d\u003d Token.NUMBER) {\n-        valueToCombine \u003d ll;\n-      } else if (lr.getType() \u003d\u003d Token.NUMBER) {\n-        valueToCombine \u003d lr;\n-      } else {\n-        // Nothing to do.\n-        return n;\n-      }\n-\n+      Node valueToCombine \u003d ll;\n       Node replacement \u003d performArithmeticOp(opType, valueToCombine, right);\n+      if (replacement \u003d\u003d null) {\n+        valueToCombine \u003d lr;\n+        replacement \u003d performArithmeticOp(opType, valueToCombine, right);\n+      }\n       if (replacement !\u003d null) {\n+        // Remove the child that has been combined\n         left.removeChild(valueToCombine);\n+        // Replace the left op with the remaining child.\n         n.replaceChild(left, left.removeFirstChild());\n+        // New \"-Infinity\" node need location info explicitly\n+        // added.\n+        replacement.copyInformationFromForTree(right);\n         n.replaceChild(right, replacement);\n         reportCodeChange();\n       }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [738,802]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [4598,5687]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [5691,5880]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [5884,7059]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [21100,21152]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SwitchCase [2699,2714]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [2770,2802]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [2873,2905]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SwitchCase [9283,9298]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [9307,9515]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [9524,9533]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [17450,17487]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [21347,21372]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: rightValObj [21161,21172]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NullLiteral [21176,21180]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [21347,21351]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [21352,21371]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [18442,18469]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [18472,18499]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [18557,18584]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [18587,18614]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [18673,18700]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [18703,18730]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: replacement [21460,21471]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NullLiteral [21475,21479]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [21520,21585]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [21920,21966]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [18442,18455]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: toInt32 [18456,18463]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [18464,18468]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [18472,18485]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: toInt32 [18486,18493]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [18494,18498]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [18557,18570]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: toInt32 [18571,18578]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [18579,18583]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [18587,18600]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: toInt32 [18601,18608]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [18609,18613]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [18673,18686]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: toInt32 [18687,18694]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [18695,18699]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [18703,18716]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: toInt32 [18717,18724]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [18725,18729]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [15375,15440]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PrimitiveType: int [15459,15462]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "CastExpression [15458,15467]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PrimitiveType: int [15471,15474]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "CastExpression [15470,15479]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [15528,15593]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PrimitiveType: int [15612,15615]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "CastExpression [15611,15620]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PrimitiveType: int [15624,15627]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "CastExpression [15623,15632]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [15682,15747]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PrimitiveType: int [15766,15769]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "CastExpression [15765,15774]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PrimitiveType: int [15778,15781]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "CastExpression [15777,15786]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [17300,17520]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [17524,17737]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [18538,18553]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "QualifiedName: Token.NUMBER [18557,18569]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [18736,18756]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [18767,18795]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ASSIGNMENT_OPERATOR: \u003d [18822,18823]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Assignment [18807,18826]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ExpressionStatement [18807,18827]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [18797,18835]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [18763,18972]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [18845,18857]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "QualifiedName: Token.NUMBER [18861,18873]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [18919,18972]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [19272,19281]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "tryConvertToNumber",
+        "tryReduceOperandsForOp",
+        "tryFoldAndOr",
+        "tryConvertOperandsToNumber"
+      ],
+      "num": 4
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "isValidInt",
+        "areValidInts"
+      ],
+      "num": 2
+    }
+  },
+  "trigger_tests": [],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/NodeUtil.java",
+        "src/com/google/javascript/jscomp/NodeUtil.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "getNumberValue"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "getNumberValue"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "231"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "232",
+            "233",
+            "234",
+            "235"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Closure_75/properties/modified_classes/inducing/src/com/google/javascript/jscomp/NodeUtil.java data/changesInfo//Closure_75/cleaned/fixing/src/com/google/javascript/jscomp/NodeUtil.java\n--- data/changesInfo//Closure_75/properties/modified_classes/inducing/src/com/google/javascript/jscomp/NodeUtil.java\t2023-08-02 17:22:01.601932618 +0800\n+++ data/changesInfo//Closure_75/cleaned/fixing/src/com/google/javascript/jscomp/NodeUtil.java\t2023-06-27 15:36:32.111790390 +0800\n@@ -229,6 +229,10 @@\n         return null;\n \n       case Token.STRING:\n+        if (n.getString().contains(\"\\u000b\")) {\n+          // vertical tab is not always whitespace\n+          return null;\n+        }\n         String s \u003d trimJsWhiteSpace(n.getString());\n         // return ScriptRuntime.toNumber(s);\n         if (s.length() \u003d\u003d 0) {\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [7021,7144]"
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,83 @@
+Only in data/changesInfo//Closure_114/properties/modified_classes/inducing/: src
+diff -u -r data/changesInfo//Closure_114/properties/modified_classes/inducing/test/com/google/javascript/jscomp/NameAnalyzerTest.java data/changesInfo//Closure_114/cleaned/inducing/test/com/google/javascript/jscomp/NameAnalyzerTest.java
+--- data/changesInfo//Closure_114/properties/modified_classes/inducing/test/com/google/javascript/jscomp/NameAnalyzerTest.java	2023-12-27 22:43:35.693669926 -0800
++++ data/changesInfo//Closure_114/cleaned/inducing/test/com/google/javascript/jscomp/NameAnalyzerTest.java	2023-07-25 00:48:00.296000000 -0700
+@@ -27,9 +27,7 @@
+   private static String kExterns =
+       "var window, top;" +
+       "var document;" +
+-      "var Function;" +
+-      "var Array;" +
+-      "var externfoo; methods.externfoo;";
++      "var Function; var externfoo; methods.externfoo;";
+ 
+   public NameAnalyzerTest() {
+     super(kExterns);
+@@ -752,8 +750,8 @@
+   }
+ 
+   public void testNestedAssigns() {
+-    test("var x = 0; var y = x = 3; window.alert(y);",
+-         "var y = 3; window.alert(y);");
++    // TODO(nicksantos): Make NameAnalyzer smarter, so that we can eliminate x.
++    testSame("var x = 0; var y = x = 3; window.alert(y);");
+   }
+ 
+   public void testComplexNestedAssigns1() {
+@@ -1099,23 +1097,25 @@
+         "");
+   }
+ 
++  public void testAssignWithCall() {
++    test("var fun, x; (fun = function(){ x; })();",
++            "var x; (function(){ x; })();");
++  }
++
+   public void testNestedAssign1() {
+     test("var a, b = a = 1, c = 2", "");
+   }
+ 
+   public void testNestedAssign2() {
+-    test("var a, b = a = 1; foo(b)",
+-         "var b = 1; foo(b)");
++    testSame("var a, b = a = 1; foo(b)");
+   }
+ 
+   public void testNestedAssign3() {
+-    test("var a, b = a = 1; a = b = 2; foo(b)",
+-         "var b = 1; b = 2; foo(b)");
++    testSame("var a, b = a = 1; a = b = 2; foo(b)");
+   }
+ 
+   public void testNestedAssign4() {
+-    test("var a, b = a = 1; b = a = 2; foo(b)",
+-         "var b = 1; b = 2; foo(b)");
++    testSame("var a, b = a = 1; b = a = 2; foo(b)");
+   }
+ 
+   public void testNestedAssign5() {
+@@ -1569,24 +1569,6 @@
+       "window.Bar = data.Bar;");
+   }
+ 
+-  public void testArrayExt() {
+-    testSame(
+-      "Array.prototype.foo = function() { return 1 };" +
+-      "var y = [];" +
+-      "switch (y.foo()) {" +
+-      "}");
+-  }
+-
+-  public void testArrayAliasExt() {
+-    testSame(
+-      "Array$X = Array;" +
+-      "Array$X.prototype.foo = function() { return 1 };" +
+-      "function Array$X() {}" +
+-      "var y = [];" +
+-      "switch (y.foo()) {" +
+-      "}");
+-  }
+-
+   @Override
+   protected CompilerPass getProcessor(Compiler compiler) {
+     return new MarkNoSideEffectCallsAndNameAnalyzerRunner(compiler);

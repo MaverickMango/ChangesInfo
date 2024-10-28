@@ -1,0 +1,75 @@
+diff --git a/src/com/google/javascript/jscomp/Normalize.java b/src/com/google/javascript/jscomp/Normalize.java
+index ef59237..d93860d 100644
+--- a/src/com/google/javascript/jscomp/Normalize.java
++++ b/src/com/google/javascript/jscomp/Normalize.java
+@@ -124,7 +124,7 @@
+     //   }
+     // otherwise 'var e = 1' would be rewritten as 'e = 1'.
+     // TODO(johnlenz): Introduce a seperate scope for catch nodes.
+-    removeDuplicateDeclarations(root);
++    removeDuplicateDeclarations(externs, root);
+     new PropogateConstantAnnotations(compiler, assertOnChange)
+         .process(externs, root);
+ 
+@@ -548,12 +548,12 @@
+   /**
+    * Remove duplicate VAR declarations.
+    */
+-  private void removeDuplicateDeclarations(Node root) {
++  private void removeDuplicateDeclarations(Node externs, Node root) {
+     Callback tickler = new ScopeTicklingCallback();
+     ScopeCreator scopeCreator =  new SyntacticScopeCreator(
+         compiler, new DuplicateDeclarationHandler());
+     NodeTraversal t = new NodeTraversal(compiler, tickler, scopeCreator);
+-    t.traverse(root);
++    t.traverseRoots(externs, root);
+   }
+ 
+   /**
+diff --git a/src/com/google/javascript/jscomp/VarCheck.java b/src/com/google/javascript/jscomp/VarCheck.java
+index 1595e43..2c98ec7 100644
+--- a/src/com/google/javascript/jscomp/VarCheck.java
++++ b/src/com/google/javascript/jscomp/VarCheck.java
+@@ -97,7 +97,13 @@
+ 
+   @Override
+   public void process(Node externs, Node root) {
+-    NodeTraversal.traverse(compiler, externs, new NameRefInExternsCheck());
++    // Don't run externs-checking in sanity check mode. Normalization will
++    // remove duplicate VAR declarations, which will make
++    // externs look like they have assigns.
++    if (!sanityCheck) {
++      NodeTraversal.traverse(compiler, externs, new NameRefInExternsCheck());
++    }
++
+     NodeTraversal.traverseRoots(
+         compiler, Lists.newArrayList(externs, root), this);
+     for (String varName : varsToDeclareInExterns) {
+diff --git a/test/com/google/javascript/jscomp/NormalizeTest.java b/test/com/google/javascript/jscomp/NormalizeTest.java
+index 14d14d4..57292c2 100644
+--- a/test/com/google/javascript/jscomp/NormalizeTest.java
++++ b/test/com/google/javascript/jscomp/NormalizeTest.java
+@@ -87,6 +87,12 @@
+          "if (true)a:{ var a; var b; }");
+   }
+ 
++  public void testDuplicateVarInExterns() {
++    test("var extern;",
++         "/** @suppress {duplicate} */ var extern = 3;", "extern = 3;",
++         null, null);
++  }
++
+   public void testUnhandled() {
+     testSame("var x = y = 1");
+   }
+@@ -225,8 +231,8 @@
+     test("try { } catch(e) {e; try { } catch(e) {e;}};",
+          "try { } catch(e) {e; try { } catch(e$$1) {e$$1;} }; ");
+ 
+-    // Verify global redefinition of extern definition is left alone.
+-    testSame("/** @suppress {duplicate} */\nvar window;");
++    // Verify global redefinition of extern definition is removed.
++    test("/** @suppress {duplicate} */\nvar window;", "");
+ 
+     // Verify local masking extern made unique.
+     test("function f() {var window}",

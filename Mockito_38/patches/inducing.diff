@@ -1,0 +1,305 @@
+diff --git a/src/org/mockito/internal/matchers/MatchersPrinter.java b/src/org/mockito/internal/matchers/MatchersPrinter.java
+index cca4561..62f21a8 100644
+--- a/src/org/mockito/internal/matchers/MatchersPrinter.java
++++ b/src/org/mockito/internal/matchers/MatchersPrinter.java
+@@ -26,12 +26,14 @@
+ 
+     private List<SelfDescribing> applyPrintSettings(List<Matcher> matchers, PrintSettings printSettings) {
+         List<SelfDescribing> withPrintSettings = new LinkedList<SelfDescribing>();
++        int i = 0;
+         for (final Matcher matcher : matchers) {
+-            if (matcher instanceof CanPrintArgumentVerbosely && printSettings.printsVerbosely(matcher)) {
++            if (matcher instanceof CanPrintArgumentVerbosely && printSettings.printsVerbosely(i)) {
+                 withPrintSettings.add(((CanPrintArgumentVerbosely) matcher).getVerboseSelfDescribing());
+             } else {
+                 withPrintSettings.add(matcher);
+             }
++            i++;
+         }
+         return withPrintSettings;
+     }
+diff --git a/src/org/mockito/internal/reporting/PrintSettings.java b/src/org/mockito/internal/reporting/PrintSettings.java
+index ae8326d..9d9ccb7 100644
+--- a/src/org/mockito/internal/reporting/PrintSettings.java
++++ b/src/org/mockito/internal/reporting/PrintSettings.java
+@@ -4,13 +4,11 @@
+ import java.util.LinkedList;
+ import java.util.List;
+ 
+-import org.hamcrest.Matcher;
+-
+ @SuppressWarnings("unchecked")
+ public class PrintSettings {
+ 
+     private boolean multiline;
+-    private List<Matcher> verboseMatchers = new LinkedList<Matcher>();
++    private List<Integer> verboseMatchers = new LinkedList<Integer>();
+ 
+     public void setMultiline(boolean multiline) {
+         this.multiline = multiline;
+@@ -20,22 +18,17 @@
+         return multiline;
+     }
+ 
+-    public static PrintSettings verboseMatchers(Matcher ... verboselyPrinted) {
++    public static PrintSettings verboseMatchers(Integer ... verboselyPrinted) {
+         PrintSettings settings = new PrintSettings();
+         settings.setMatchersToBePrintedVerbosely(verboselyPrinted);
+         return settings;
+     }
+ 
+-    public boolean printsVerbosely(Matcher matcher) {
+-        for (Matcher m : verboseMatchers) {
+-            if (m == matcher) {
+-                return true;
+-            }
+-        }
+-        return false;
++    public boolean printsVerbosely(int argumentIndex) {
++        return verboseMatchers.contains(argumentIndex);
+     }
+ 
+-    public void setMatchersToBePrintedVerbosely(Matcher[] toBePrintedVerbosely) {
++    public void setMatchersToBePrintedVerbosely(Integer[] toBePrintedVerbosely) {
+         this.verboseMatchers = Arrays.asList(toBePrintedVerbosely);
+     }
+ }
+\ No newline at end of file
+diff --git a/src/org/mockito/internal/reporting/SmartPrinter.java b/src/org/mockito/internal/reporting/SmartPrinter.java
+index 10724e7..76f9ca5 100644
+--- a/src/org/mockito/internal/reporting/SmartPrinter.java
++++ b/src/org/mockito/internal/reporting/SmartPrinter.java
+@@ -4,7 +4,6 @@
+  */
+ package org.mockito.internal.reporting;
+ 
+-import org.hamcrest.Matcher;
+ 
+ /**
+  * Makes sure both wanted and actual are printed consistently (single line or multiline)
+@@ -17,7 +16,7 @@
+     private final String wanted;
+     private final String actual;
+ 
+-    public SmartPrinter(PrintingFriendlyInocation wanted, PrintingFriendlyInocation actual, Matcher ... toBePrintedVerbosely) {
++    public SmartPrinter(PrintingFriendlyInocation wanted, PrintingFriendlyInocation actual, Integer ... toBePrintedVerbosely) {
+         PrintSettings printSettings = new PrintSettings();
+         printSettings.setMultiline(wanted.toString().contains("\n") || actual.toString().contains("\n"));
+         printSettings.setMatchersToBePrintedVerbosely(toBePrintedVerbosely);
+diff --git a/src/org/mockito/internal/verification/argumentmatching/ArgumentMatchingTool.java b/src/org/mockito/internal/verification/argumentmatching/ArgumentMatchingTool.java
+index 3e4bf91..f2161b4 100644
+--- a/src/org/mockito/internal/verification/argumentmatching/ArgumentMatchingTool.java
++++ b/src/org/mockito/internal/verification/argumentmatching/ArgumentMatchingTool.java
+@@ -16,20 +16,20 @@
+      * @param arguments
+      * @return
+      */
+-    public Matcher[] getSuspiciouslyNotMatchingArgs(List<Matcher> matchers, Object[] arguments) {
++    public Integer[] getSuspiciouslyNotMatchingArgsIndexes(List<Matcher> matchers, Object[] arguments) {
+         if (matchers.size() != arguments.length) {
+-            return new Matcher[0];
++            return new Integer[0];
+         }
+         
+-        List<Matcher> suspicious = new LinkedList<Matcher>();
++        List<Integer> suspicious = new LinkedList<Integer>();
+         int i = 0;
+         for (Matcher m : matchers) {
+             if (!safelyMatches(m, arguments[i]) && toStringEquals(m, arguments[i])) {
+-                suspicious.add(m);
++                suspicious.add(i);
+             }
+             i++;
+         }
+-        return suspicious.toArray(new Matcher[0]);
++        return suspicious.toArray(new Integer[0]);
+     }
+ 
+     private boolean safelyMatches(Matcher m, Object arg) {
+diff --git a/src/org/mockito/internal/verification/checkers/MissingInvocationChecker.java b/src/org/mockito/internal/verification/checkers/MissingInvocationChecker.java
+index fa882f9..5c0d52c 100644
+--- a/src/org/mockito/internal/verification/checkers/MissingInvocationChecker.java
++++ b/src/org/mockito/internal/verification/checkers/MissingInvocationChecker.java
+@@ -36,7 +36,7 @@
+             Invocation similar = finder.findSimilarInvocation(invocations, wanted);
+             if (similar != null) {
+                 ArgumentMatchingTool argumentMatchingTool = new ArgumentMatchingTool();
+-                Matcher[] toBePrintedVerbosely = argumentMatchingTool.getSuspiciouslyNotMatchingArgs(wanted.getMatchers(), similar.getArguments());
++                Integer[] toBePrintedVerbosely = argumentMatchingTool.getSuspiciouslyNotMatchingArgsIndexes(wanted.getMatchers(), similar.getArguments());
+                 SmartPrinter smartPrinter = new SmartPrinter(wanted, similar, toBePrintedVerbosely);
+                 reporter.argumentsAreDifferent(smartPrinter.getWanted(), smartPrinter.getActual(), similar.getLocation());
+             } else {
+diff --git a/test/org/mockito/internal/invocation/PrintSettingsTest.java b/test/org/mockito/internal/invocation/PrintSettingsTest.java
+deleted file mode 100644
+index 4557760..0000000
+--- a/test/org/mockito/internal/invocation/PrintSettingsTest.java
++++ /dev/null
+@@ -1,31 +0,0 @@
+-package org.mockito.internal.invocation;
+-
+-import static org.junit.Assert.*;
+-
+-import org.junit.Test;
+-import org.mockito.internal.matchers.Equals;
+-import org.mockito.internal.reporting.PrintSettings;
+-
+-public class PrintSettingsTest {
+-    
+-    @Test
+-    public void shouldConfigureToPrintVerboselyASpecificMatcher() {
+-        //given
+-        Equals toPrintVerbosely = new Equals(1);
+-        PrintSettings settings = PrintSettings.verboseMatchers(toPrintVerbosely);
+-        //when
+-        boolean printsVerbosely = settings.printsVerbosely(toPrintVerbosely);
+-        //then
+-        assertTrue(printsVerbosely);
+-    }
+-
+-    @Test
+-    public void shouldNotConfigureToPrintVerboselyMatcherThatIsNotTheSame() {
+-        //given
+-        PrintSettings settings = PrintSettings.verboseMatchers(new Equals(1));
+-        //when
+-        boolean printsVerbosely = settings.printsVerbosely(new Equals(1));
+-        //then
+-        assertFalse(printsVerbosely);
+-    }
+-}
+\ No newline at end of file
+diff --git a/test/org/mockito/internal/matchers/MatchersPrinterTest.java b/test/org/mockito/internal/matchers/MatchersPrinterTest.java
+index 8aef236..677fccb 100644
+--- a/test/org/mockito/internal/matchers/MatchersPrinterTest.java
++++ b/test/org/mockito/internal/matchers/MatchersPrinterTest.java
+@@ -26,31 +26,24 @@
+ 
+     @Test
+     public void shouldPrintVerboselyOnlyMarkedMatchers() {
+-        //given
+-        Equals verboselyPrinted = new Equals(2);
+         //when
+-        String line = printer.getArgumentsLine((List) Arrays.asList(new Equals(1L), verboselyPrinted), PrintSettings.verboseMatchers(verboselyPrinted));
++        String line = printer.getArgumentsLine((List) Arrays.asList(new Equals(1L), new Equals(2)), PrintSettings.verboseMatchers(1));
+         //then
+         assertEquals("(1, (Integer) 2);", line);
+     }
+ 
+     @Test
+     public void shouldGetVerboseArgumentsInBlock() {
+-        //given
+-        Equals verboselyPrinted = new Equals(1L);
+-        Equals verboselyPrintedTwo = new Equals(2);
+         //when
+-        String line = printer.getArgumentsBlock((List) Arrays.asList(verboselyPrinted, verboselyPrintedTwo), PrintSettings.verboseMatchers(verboselyPrinted, verboselyPrintedTwo));
++        String line = printer.getArgumentsBlock((List) Arrays.asList(new Equals(1L), new Equals(2)), PrintSettings.verboseMatchers(0, 1));
+         //then
+         assertEquals("(\n    (Long) 1,\n    (Integer) 2\n);", line);
+     }
+ 
+     @Test
+     public void shouldGetVerboseArgumentsEvenIfSomeMatchersAreNotVerbose() {
+-        //given
+-        Equals verboselyPrinted = new Equals(1L);
+         //when
+-        String line = printer.getArgumentsLine((List) Arrays.asList(verboselyPrinted, NotNull.NOT_NULL), PrintSettings.verboseMatchers(verboselyPrinted));
++        String line = printer.getArgumentsLine((List) Arrays.asList(new Equals(1L), NotNull.NOT_NULL), PrintSettings.verboseMatchers(0));
+         //then
+         assertEquals("((Long) 1, notNull());", line);
+     }
+diff --git a/test/org/mockito/internal/verification/argumentmatching/ArgumentMatchingToolTest.java b/test/org/mockito/internal/verification/argumentmatching/ArgumentMatchingToolTest.java
+index aa09b0d..2d72518 100644
+--- a/test/org/mockito/internal/verification/argumentmatching/ArgumentMatchingToolTest.java
++++ b/test/org/mockito/internal/verification/argumentmatching/ArgumentMatchingToolTest.java
+@@ -10,9 +10,10 @@
+ import org.hamcrest.Matcher;
+ import org.junit.Test;
+ import org.mockito.internal.matchers.Equals;
++import org.mockitoutil.TestBase;
+ 
+ @SuppressWarnings("unchecked")
+-public class ArgumentMatchingToolTest {
++public class ArgumentMatchingToolTest extends TestBase {
+ 
+     private ArgumentMatchingTool tool = new ArgumentMatchingTool();
+ 
+@@ -22,7 +23,7 @@
+         List<Matcher> matchers = (List) Arrays.asList(new Equals(1));
+ 
+         //when
+-        Matcher[] suspicious = tool.getSuspiciouslyNotMatchingArgs(matchers, new Object[] {10, 20});
++        Integer[] suspicious = tool.getSuspiciouslyNotMatchingArgsIndexes(matchers, new Object[] {10, 20});
+         
+         //then
+         assertEquals(0, suspicious.length);
+@@ -34,7 +35,7 @@
+         List<Matcher> matchers = (List) Arrays.asList(new Equals(10), new Equals(20));
+         
+         //when
+-        Matcher[] suspicious = tool.getSuspiciouslyNotMatchingArgs(matchers, new Object[] {10, 20});
++        Integer[] suspicious = tool.getSuspiciouslyNotMatchingArgsIndexes(matchers, new Object[] {10, 20});
+         
+         //then
+         assertEquals(0, suspicious.length);
+@@ -48,11 +49,11 @@
+         
+         //when
+         List<Matcher> matchers = (List) Arrays.asList(new Equals(10), matcherInt20);
+-        Matcher[] suspicious = tool.getSuspiciouslyNotMatchingArgs(matchers, new Object[] {10, longPretendingAnInt});
++        Integer[] suspicious = tool.getSuspiciouslyNotMatchingArgsIndexes(matchers, new Object[] {10, longPretendingAnInt});
+         
+         //then
+         assertEquals(1, suspicious.length);
+-        assertEquals(matcherInt20, suspicious[0]);
++        assertEquals(new Integer(1), suspicious[0]);
+     }
+     
+     @Test
+@@ -67,7 +68,7 @@
+             }});
+         
+         //when
+-        Matcher[] suspicious = tool.getSuspiciouslyNotMatchingArgs(matchers, new Object[] {10});
++        Integer[] suspicious = tool.getSuspiciouslyNotMatchingArgsIndexes(matchers, new Object[] {10});
+         
+         //then
+         assertEquals(0, suspicious.length);
+diff --git a/test/org/mockitousage/bugs/EqWithIntsDoesntCopeWithLongsTest.java b/test/org/mockitousage/bugs/EqWithIntsDoesntCopeWithLongsTest.java
+index ab89c53..df1edc5 100644
+--- a/test/org/mockitousage/bugs/EqWithIntsDoesntCopeWithLongsTest.java
++++ b/test/org/mockitousage/bugs/EqWithIntsDoesntCopeWithLongsTest.java
+@@ -7,12 +7,10 @@
+ import static org.mockito.Matchers.*;
+ import static org.mockito.Mockito.*;
+ 
+-import org.junit.Ignore;
+ import org.junit.Test;
+ import org.mockito.exceptions.verification.junit.ArgumentsAreDifferent;
+ import org.mockitoutil.TestBase;
+ 
+-@Ignore
+ public class EqWithIntsDoesntCopeWithLongsTest extends TestBase {
+ 
+     class Boo {
+@@ -52,8 +50,8 @@
+             fail();
+         } catch (ArgumentsAreDifferent e) {
+             //then
+-            assertContains("withLongAndInt((Integer) 100,  200)", e.getMessage());
+-            assertContains("withLongAndInt((Long) 100,  200)", e.getMessage());
++            assertContains("withLongAndInt((Integer) 100, 200)", e.getMessage());
++            assertContains("withLongAndInt((Long) 100, 200)", e.getMessage());
+         }
+     }
+     
+@@ -69,8 +67,8 @@
+             fail();
+         } catch (ArgumentsAreDifferent e) {
+             //then
+-            assertContains("withLongAndInt((Integer) 100,  200)", e.getMessage());
+-            assertContains("withLongAndInt((Long) 100,  <any>)", e.getMessage());
++            assertContains("withLongAndInt((Long) 100, 200)", e.getMessage());
++            assertContains("withLongAndInt((Integer) 100, <any>)", e.getMessage());
+         }
+     }
+ }
+\ No newline at end of file

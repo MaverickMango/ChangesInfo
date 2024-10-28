@@ -1,0 +1,175 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.lang.time.DurationFormatUtilsTest::testJiraLang281",
+    "test.dir": "src/test",
+    "clz.modified": "org.apache.commons.lang.time.DurationFormatUtils",
+    "src.dir": "src/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Lang",
+  "id": "63",
+  "workingDir": "../bugs/Lang_63_tmp",
+  "bug_name": "Lang_63",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.lang.time.DurationFormatUtilsTest",
+      "test_function": "testJiraLang281",
+      "assertion_line": "436",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c[09]\u003e but was:\u003c[-2]\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/lang/time/DurationFormatUtils.java",
+        "src/java/org/apache/commons/lang/time/DurationFormatUtils.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.lang.time.DurationFormatUtils:formatPeriod:[long startMillis, long endMillis, String format, boolean padWithZeros, TimeZone timezone]:String",
+            "org.apache.commons.lang.time.DurationFormatUtils:format:[Token[] tokens, int years, int months, int days, int hours, int minutes, int seconds, int milliseconds, boolean padWithZeros]:String"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.lang.time.DurationFormatUtils:reduceAndCorrect:[Calendar start, Calendar end, int field, int difference]:int",
+            "org.apache.commons.lang.time.DurationFormatUtils:formatPeriod:[long startMillis, long endMillis, String format, boolean padWithZeros, TimeZone timezone]:String"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "306",
+            "307",
+            "314",
+            "426"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "306",
+            "318",
+            "319",
+            "320",
+            "321",
+            "322",
+            "323",
+            "324",
+            "432",
+            "433",
+            "434",
+            "435",
+            "436",
+            "437",
+            "438",
+            "439",
+            "440",
+            "441",
+            "442",
+            "443"
+          ],
+          "num": 20
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/lang/time/DurationFormatUtils.java b/src/java/org/apache/commons/lang/time/DurationFormatUtils.java\nindex 3a9d9f6..127b927 100644\n--- a/src/java/org/apache/commons/lang/time/DurationFormatUtils.java\n+++ b/src/java/org/apache/commons/lang/time/DurationFormatUtils.java\n@@ -303,20 +303,25 @@\n             days -\u003d 1;\n         }\n         while (days \u003c 0) {\n-            end.add(Calendar.MONTH, -1);\n-            days +\u003d end.getActualMaximum(Calendar.DAY_OF_MONTH);\n+            days +\u003d 31;\n //days +\u003d 31; // TODO: Need tests to show this is bad and the new code is good.\n // HEN: It\u0027s a tricky subject. Jan 15th to March 10th. If I count days-first it is \n // 1 month and 26 days, but if I count month-first then it is 1 month and 23 days.\n // Also it\u0027s contextual - if asked for no M in the format then I should probably \n // be doing no calculating here.\n             months -\u003d 1;\n-            end.add(Calendar.MONTH, 1);\n         }\n         while (months \u003c 0) {\n             months +\u003d 12;\n             years -\u003d 1;\n         }\n+        milliseconds -\u003d reduceAndCorrect(start, end, Calendar.MILLISECOND, milliseconds);\n+        seconds -\u003d reduceAndCorrect(start, end, Calendar.SECOND, seconds);\n+        minutes -\u003d reduceAndCorrect(start, end, Calendar.MINUTE, minutes);\n+        hours -\u003d reduceAndCorrect(start, end, Calendar.HOUR_OF_DAY, hours);\n+        days -\u003d reduceAndCorrect(start, end, Calendar.DAY_OF_MONTH, days);\n+        months -\u003d reduceAndCorrect(start, end, Calendar.MONTH, months);\n+        years -\u003d reduceAndCorrect(start, end, Calendar.YEAR, years);\n \n         // This next block of code adds in values that \n         // aren\u0027t requested. This allows the user to ask for the \n@@ -424,6 +429,18 @@\n         }\n         return buffer.toString();\n     }\n+    static int reduceAndCorrect(Calendar start, Calendar end, int field, int difference) {\n+        end.add( field, -1 * difference );\n+        int endValue \u003d end.get(field);\n+        int startValue \u003d start.get(field);\n+        if (endValue \u003c startValue) {\n+            int newdiff \u003d startValue - endValue;\n+            end.add( field, newdiff );\n+            return newdiff;\n+        } else {\n+            return 0;\n+        }\n+    }\n \n     static final Object y \u003d \"y\";\n     static final Object M \u003d \"M\";\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [18388,18807]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [13051,13132]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [13141,13207]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [13216,13282]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [13291,13358]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [13367,13433]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [13442,13505]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [13514,13574]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [12545,12556]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [12545,12573]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [12586,12638]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [13038,13065]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.apache.commons.lang.time.DurationFormatUtils:reduceAndCorrect:[Calendar start, Calendar end, int field, int difference]:int"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.apache.commons.lang.time.DurationFormatUtils:format:[Token[] tokens, int years, int months, int days, int hours, int minutes, int seconds, int milliseconds, boolean padWithZeros]:String"
+      ],
+      "num": 1
+    }
+  }
+}

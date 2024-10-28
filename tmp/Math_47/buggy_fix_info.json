@@ -1,0 +1,167 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math.complex.ComplexTest::testAtanI,org.apache.commons.math.complex.ComplexTest::testDivideZero",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math.complex.Complex",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "47",
+  "workingDir": "../bugs/Math_47_tmp",
+  "bug_name": "Math_47",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math.complex.ComplexTest",
+      "test_function": "testAtanI",
+      "assertion_line": "579",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    },
+    {
+      "test_class": "org.apache.commons.math.complex.ComplexTest",
+      "test_function": "testDivideZero",
+      "assertion_line": "232",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c(NaN, NaN)\u003e but was:\u003c(Infinity, Infinity)\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/complex/Complex.java",
+        "src/main/java/org/apache/commons/math/complex/Complex.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.complex.Complex:divide:[double divisor]:Complex",
+            "org.apache.commons.math.complex.Complex:Complex:[double real, double imaginary]:null",
+            "org.apache.commons.math.complex.Complex:divide:[Complex divisor]:Complex"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.complex.Complex:divide:[Complex divisor]:Complex",
+            "org.apache.commons.math.complex.Complex:divide:[double divisor]:Complex"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "82",
+            "106",
+            "258",
+            "259",
+            "295"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "81",
+            "106",
+            "256",
+            "257",
+            "293"
+          ],
+          "num": 5
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/complex/Complex.java b/src/main/java/org/apache/commons/math/complex/Complex.java\nindex 137765c..bebfead 100644\n--- a/src/main/java/org/apache/commons/math/complex/Complex.java\n+++ b/src/main/java/org/apache/commons/math/complex/Complex.java\n@@ -79,7 +79,6 @@\n     /** Record whether this complex number is infinite. */\n     private final transient boolean isInfinite;\n     /** Record whether this complex number is zero. */\n-    private final transient boolean isZero;\n \n     /**\n      * Create a complex number given only the real part.\n@@ -103,7 +102,6 @@\n         isNaN \u003d Double.isNaN(real) || Double.isNaN(imaginary);\n         isInfinite \u003d !isNaN \u0026\u0026\n             (Double.isInfinite(real) || Double.isInfinite(imaginary));\n-        isZero \u003d real \u003d\u003d 0 \u0026\u0026 imaginary \u003d\u003d 0;\n     }\n \n     /**\n@@ -255,8 +253,8 @@\n             return NaN;\n         }\n \n-        if (divisor.isZero) {\n-            return isZero ? NaN : INF;\n+        if (divisor.getReal() \u003d\u003d 0.0 \u0026\u0026 divisor.getImaginary() \u003d\u003d 0.0) {\n+            return NaN;\n         }\n \n         if (divisor.isInfinite() \u0026\u0026 !isInfinite()) {\n@@ -292,7 +290,7 @@\n             return NaN;\n         }\n         if (divisor \u003d\u003d 0d) {\n-            return isZero ? NaN : INF;\n+            return NaN;\n         }\n         if (Double.isInfinite(divisor)) {\n             return !isInfinite() ? ZERO : NaN;\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [9460,9517]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [3504,3598]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [4224,4261]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "QualifiedName: divisor.isZero [9550,9564]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: isZero [9587,9593]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: INF [9602,9605]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ConditionalExpression [9587,9605]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: isZero [10756,10762]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: INF [10771,10774]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ConditionalExpression [10756,10774]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.apache.commons.math.complex.Complex:Complex:[double real, double imaginary]:null"
+      ],
+      "num": 1
+    }
+  }
+}

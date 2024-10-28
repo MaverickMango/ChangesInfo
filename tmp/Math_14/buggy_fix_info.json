@@ -1,0 +1,181 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math3.fitting.PolynomialFitterTest::testLargeSample",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math3.optim.nonlinear.vector.jacobian.AbstractLeastSquaresOptimizer,org.apache.commons.math3.optim.nonlinear.vector.Weight",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "14",
+  "workingDir": "../bugs/Math_14_tmp",
+  "bug_name": "Math_14",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math3.fitting.PolynomialFitterTest",
+      "test_function": "testLargeSample",
+      "assertion_line": "238",
+      "exception": "java.lang.OutOfMemoryError",
+      "message": "Java heap space"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math3/optim/nonlinear/vector/Weight.java",
+        "src/main/java/org/apache/commons/math3/optim/nonlinear/vector/Weight.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.optim.nonlinear.vector.Weight:Weight:[double[] weight]:null"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.optim.nonlinear.vector.Weight:Weight:[double[] weight]:null"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "43"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "43",
+            "44",
+            "45",
+            "46"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/Weight.java b/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/Weight.java\nindex aa3299a..b8225ad 100644\n--- a/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/Weight.java\n+++ b/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/Weight.java\n@@ -40,7 +40,10 @@\n      */\n     public Weight(double[] weight) {\n         final int dim \u003d weight.length;\n-        weightMatrix \u003d new DiagonalMatrix(weight);\n+        weightMatrix \u003d org.apache.commons.math3.linear.MatrixUtils.createRealMatrix(dim, dim);\n+        for (int i \u003d 0; i \u003c dim; i++) {\n+            weightMatrix.setEntry(i, i, weight[i]);\n+        }\n     }\n \n     /**\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [1597,1683]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ForStatement [1692,1785]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [1597,1639]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/AbstractLeastSquaresOptimizer.java",
+        "src/main/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/AbstractLeastSquaresOptimizer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.optim.nonlinear.vector.jacobian.AbstractLeastSquaresOptimizer:squareRoot:[RealMatrix m]:RealMatrix"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.optim.nonlinear.vector.jacobian.AbstractLeastSquaresOptimizer:squareRoot:[RealMatrix m]:RealMatrix"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "267",
+            "268",
+            "269",
+            "270",
+            "271",
+            "272",
+            "273",
+            "274",
+            "277"
+          ],
+          "num": 9
+        },
+        {
+          "qualified_names": [
+            "266"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/AbstractLeastSquaresOptimizer.java b/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/AbstractLeastSquaresOptimizer.java\nindex ef52943..d12ebea 100644\n--- a/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/AbstractLeastSquaresOptimizer.java\n+++ b/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/AbstractLeastSquaresOptimizer.java\n@@ -264,16 +264,7 @@\n      * @return the square-root of the weight matrix.\n      */\n     private RealMatrix squareRoot(RealMatrix m) {\n-        if (m instanceof DiagonalMatrix) {\n-            final int dim \u003d m.getRowDimension();\n-            final RealMatrix sqrtM \u003d new DiagonalMatrix(dim);\n-            for (int i \u003d 0; i \u003c dim; i++) {\n-                sqrtM.setEntry(i, i, FastMath.sqrt(m.getEntry(i, i)));\n-            }\n-            return sqrtM;\n-        } else {\n             final EigenDecomposition dec \u003d new EigenDecomposition(m);\n             return dec.getSquareRoot();\n-        }\n     }\n }\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InstanceofExpression [10335,10362]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [10364,10641]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [10647,10768]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [10331,10768]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

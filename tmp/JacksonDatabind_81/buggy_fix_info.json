@@ -1,0 +1,256 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.introspect.TypeCoercion1592Test::testTypeCoercion1592",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "81",
+  "workingDir": "../bugs/JacksonDatabind_81_tmp",
+  "bug_name": "JacksonDatabind_81",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.introspect.TypeCoercion1592Test",
+      "test_function": "testTypeCoercion1592",
+      "assertion_line": "31",
+      "exception": "com.fasterxml.jackson.databind.exc.InvalidDefinitionException",
+      "message": "Invalid definition for property \"i\" (of type com.fasterxml.jackson.databind.introspect.TypeCoercion1592Test$Bean1592): Can not refine serialization type [simple type, class int] into java.lang.Integer; types not related"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/introspect/JacksonAnnotationIntrospector.java",
+        "src/main/java/com/fasterxml/jackson/databind/introspect/JacksonAnnotationIntrospector.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector:_primitiveAndWrapper:[JavaType baseType, Class\u003c?\u003e refinement]:boolean",
+            "com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector:_primitiveAndWrapper:[Class\u003c?\u003e baseType, Class\u003c?\u003e refinement]:boolean",
+            "com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector:refineDeserializationType:[final MapperConfig\u003c?\u003e config, final Annotated a, final JavaType baseType]:JavaType",
+            "com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector:refineSerializationType:[final MapperConfig\u003c?\u003e config, final Annotated a, final JavaType baseType]:JavaType"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector:refineSerializationType:[final MapperConfig\u003c?\u003e config, final Annotated a, final JavaType baseType]:JavaType",
+            "com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector:refineDeserializationType:[final MapperConfig\u003c?\u003e config, final Annotated a, final JavaType baseType]:JavaType"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "764",
+            "766",
+            "799",
+            "801",
+            "835",
+            "837",
+            "1125",
+            "1126",
+            "1142",
+            "1143",
+            "1159",
+            "1160",
+            "1466",
+            "1467",
+            "1468",
+            "1469",
+            "1470",
+            "1471",
+            "1472",
+            "1473",
+            "1474",
+            "1475",
+            "1477",
+            "1478",
+            "1479",
+            "1480",
+            "1481",
+            "1482",
+            "1483",
+            "1484",
+            "1485",
+            "1486"
+          ],
+          "num": 32
+        },
+        {
+          "qualified_names": [
+            "763",
+            "800",
+            "838",
+            "1119",
+            "1135",
+            "1151",
+            "1474"
+          ],
+          "num": 7
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/introspect/JacksonAnnotationIntrospector.java b/src/main/java/com/fasterxml/jackson/databind/introspect/JacksonAnnotationIntrospector.java\nindex 19f52c6..df4c2a7 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/introspect/JacksonAnnotationIntrospector.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/introspect/JacksonAnnotationIntrospector.java\n@@ -761,9 +761,7 @@\n                         type \u003d tf.constructGeneralizedType(type, serClass);\n                     } else if (currRaw.isAssignableFrom(serClass)) { // specialization, ok as well\n                         type \u003d tf.constructSpecializedType(type, serClass);\n-                    } else if (_primitiveAndWrapper(currRaw, serClass)) {\n                         // 27-Apr-2017, tatu: [databind#1592] ignore primitive\u003c-\u003ewrapper refinements\n-                        type \u003d type.withStaticTyping();\n                     } else {\n                         throw new JsonMappingException(null,\n                                 String.format(\"Can not refine serialization type %s into %s; types not related\",\n@@ -796,9 +794,7 @@\n                             keyType \u003d tf.constructGeneralizedType(keyType, keyClass);\n                         } else if (currRaw.isAssignableFrom(keyClass)) { // specialization, ok as well\n                             keyType \u003d tf.constructSpecializedType(keyType, keyClass);\n-                        } else if (_primitiveAndWrapper(currRaw, keyClass)) {\n                             // 27-Apr-2017, tatu: [databind#1592] ignore primitive\u003c-\u003ewrapper refinements\n-                            keyType \u003d keyType.withStaticTyping();\n                         } else {\n                             throw new JsonMappingException(null,\n                                     String.format(\"Can not refine serialization key type %s into %s; types not related\",\n@@ -832,9 +828,7 @@\n                            contentType \u003d tf.constructGeneralizedType(contentType, contentClass);\n                        } else if (currRaw.isAssignableFrom(contentClass)) { // specialization, ok as well\n                            contentType \u003d tf.constructSpecializedType(contentType, contentClass);\n-                       } else if (_primitiveAndWrapper(currRaw, contentClass)) {\n                            // 27-Apr-2017, tatu: [databind#1592] ignore primitive\u003c-\u003ewrapper refinements\n-                           contentType \u003d contentType.withStaticTyping();\n                        } else {\n                            throw new JsonMappingException(null,\n                                    String.format(\"Can not refine serialization content type %s into %s; types not related\",\n@@ -1122,8 +1116,7 @@\n         \n         // Ok: start by refining the main type itself; common to all types\n         final Class\u003c?\u003e valueClass \u003d (jsonDeser \u003d\u003d null) ? null : _classIfExplicit(jsonDeser.as());\n-        if ((valueClass !\u003d null) \u0026\u0026 !type.hasRawClass(valueClass)\n-                \u0026\u0026 !_primitiveAndWrapper(type, valueClass)) {\n+        if ((valueClass !\u003d null) \u0026\u0026 !type.hasRawClass(valueClass)) {\n             try {\n                 type \u003d tf.constructSpecializedType(type, valueClass);\n             } catch (IllegalArgumentException iae) {\n@@ -1139,8 +1132,7 @@\n         if (type.isMapLikeType()) {\n             JavaType keyType \u003d type.getKeyType();\n             final Class\u003c?\u003e keyClass \u003d (jsonDeser \u003d\u003d null) ? null : _classIfExplicit(jsonDeser.keyAs());\n-            if ((keyClass !\u003d null)\n-                    \u0026\u0026 !_primitiveAndWrapper(keyType, keyClass)) {\n+            if (keyClass !\u003d null) {\n                 try {\n                     keyType \u003d tf.constructSpecializedType(keyType, keyClass);\n                     type \u003d ((MapLikeType) type).withKeyType(keyType);\n@@ -1156,8 +1148,7 @@\n         if (contentType !\u003d null) { // collection[like], map[like], array, reference\n             // And then value types for all containers:\n             final Class\u003c?\u003e contentClass \u003d (jsonDeser \u003d\u003d null) ? null : _classIfExplicit(jsonDeser.contentAs());\n-            if ((contentClass !\u003d null)\n-                    \u0026\u0026 !_primitiveAndWrapper(contentType, contentClass)) {\n+            if (contentClass !\u003d null) {\n                 try {\n                     contentType \u003d tf.constructSpecializedType(contentType, contentClass);\n                     type \u003d type.withContentType(contentType);\n@@ -1463,25 +1454,5 @@\n         return StdTypeResolverBuilder.noTypeInfoBuilder();\n     }\n \n-    private boolean _primitiveAndWrapper(Class\u003c?\u003e baseType, Class\u003c?\u003e refinement)\n-    {\n-        if (baseType.isPrimitive()) {\n-            return baseType \u003d\u003d ClassUtil.primitiveType(refinement);\n-        }\n-        if (refinement.isPrimitive()) {\n-            return refinement \u003d\u003d ClassUtil.primitiveType(baseType);\n-        }\n-        return false;\n-    }\n \n-    private boolean _primitiveAndWrapper(JavaType baseType, Class\u003c?\u003e refinement)\n-    {\n-        if (baseType.isPrimitive()) {\n-            return baseType.hasRawClass(ClassUtil.primitiveType(refinement));\n-        }\n-        if (refinement.isPrimitive()) {\n-            return refinement \u003d\u003d ClassUtil.primitiveType(baseType.getRawClass());\n-        }\n-        return false;\n-    }\n }\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [26859,26898]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [26900,27080]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [26855,27351]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [28946,28985]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [28987,29185]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [28942,29479]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [31222,31265]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [31267,31470]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [31218,31772]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "PrefixExpression [42175,42214]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ParenthesizedExpression [42991,43009]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [43030,43032]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "PrefixExpression [43033,43073]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [42991,43073]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ParenthesizedExpression [43994,44016]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [44037,44039]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "PrefixExpression [44040,44088]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [43994,44088]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [55127,55471]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [55477,55845]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector:_primitiveAndWrapper:[JavaType baseType, Class\u003c?\u003e refinement]:boolean",
+        "com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector:_primitiveAndWrapper:[Class\u003c?\u003e baseType, Class\u003c?\u003e refinement]:boolean"
+      ],
+      "num": 2
+    }
+  }
+}

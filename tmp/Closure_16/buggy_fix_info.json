@@ -1,0 +1,222 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.IntegrationTest::testIssue772,com.google.javascript.jscomp.ScopedAliasesTest::testIssue772",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.ScopedAliases",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "16",
+  "workingDir": "../bugs/Closure_16_tmp",
+  "bug_name": "Closure_16",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.IntegrationTest",
+      "test_function": "testIssue772",
+      "assertion_line": "1868",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected no warnings or errors"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.ScopedAliasesTest",
+      "test_function": "testIssue772",
+      "assertion_line": "654",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: \u003cnull\u003e but was: Node tree inequality:"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/ScopedAliases.java",
+        "src/com/google/javascript/jscomp/ScopedAliases.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.ScopedAliases\\$AliasedTypeNode:applyAlias:[]:void",
+            "com.google.javascript.jscomp.ScopedAliases\\$AliasedTypeNode:AliasedTypeNode:[Node typeReference, Node aliasDefinition, String aliasName]:null",
+            "com.google.javascript.jscomp.ScopedAliases\\$Traversal:fixTypeNode:[Node typeNode]:void"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.ScopedAliases\\$AliasedTypeNode:AliasedTypeNode:[Node typeReference, String aliasName]:null",
+            "com.google.javascript.jscomp.ScopedAliases\\$Traversal:fixTypeNode:[Node typeNode]:void",
+            "com.google.javascript.jscomp.ScopedAliases\\$AliasedTypeNode:applyAlias:[]:void"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "170",
+            "173",
+            "176",
+            "182",
+            "183",
+            "184",
+            "185",
+            "186",
+            "474"
+          ],
+          "num": 9
+        },
+        {
+          "qualified_names": [
+            "172",
+            "180",
+            "468"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/ScopedAliases.java b/src/com/google/javascript/jscomp/ScopedAliases.java\nindex e2f0538..26fb230 100644\n--- a/src/com/google/javascript/jscomp/ScopedAliases.java\n+++ b/src/com/google/javascript/jscomp/ScopedAliases.java\n@@ -167,23 +167,17 @@\n \n   private class AliasedTypeNode implements AliasUsage {\n     private final Node typeReference;\n-    private final Node aliasDefinition;\n     private final String aliasName;\n \n-    AliasedTypeNode(Node typeReference, Node aliasDefinition,\n+    AliasedTypeNode(Node typeReference,\n         String aliasName) {\n       this.typeReference \u003d typeReference;\n-      this.aliasDefinition \u003d aliasDefinition;\n       this.aliasName \u003d aliasName;\n     }\n \n     @Override\n     public void applyAlias() {\n-      String typeName \u003d typeReference.getString();\n-      String aliasExpanded \u003d\n-          Preconditions.checkNotNull(aliasDefinition.getQualifiedName());\n-      Preconditions.checkState(typeName.startsWith(aliasName));\n-      typeReference.setString(typeName.replaceFirst(aliasName, aliasExpanded));\n+      typeReference.setString(aliasName);\n     }\n   }\n \n@@ -471,7 +465,7 @@\n         Var aliasVar \u003d aliases.get(baseName);\n         if (aliasVar !\u003d null) {\n           Node aliasedNode \u003d aliasVar.getInitialValue();\n-          aliasUsages.add(new AliasedTypeNode(typeNode, aliasedNode, baseName));\n+          aliasUsages.add(new AliasedTypeNode(typeNode, aliasedNode.getQualifiedName() + name.substring(endIndex)));\n         }\n       }\n \n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [15802,15859]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [15802,15832]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: + [15833,15834]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [15835,15859]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [15802,15813]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: getQualifiedName [15814,15830]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [5816,5851]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [5929,5949]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [6027,6066]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [6159,6203]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [6210,6306]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [6313,6370]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_RECEIVER [6401,6409]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: replaceFirst [6410,6422]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: aliasExpanded [6434,6447]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [6401,6448]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [6377,6449]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: baseName [16179,16187]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.ScopedAliases\\$AliasedTypeNode:AliasedTypeNode:[Node typeReference, String aliasName]:null"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.ScopedAliases\\$AliasedTypeNode:AliasedTypeNode:[Node typeReference, Node aliasDefinition, String aliasName]:null"
+      ],
+      "num": 1
+    }
+  }
+}

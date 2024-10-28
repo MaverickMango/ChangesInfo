@@ -1,0 +1,237 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Math",
+  "id": "10",
+  "workingDir": "../bugs/Math_10_buggy",
+  "inducingCommit": "67dffec4e7adc482215df440e716525ffce5c1c5",
+  "originalCommit": "dbbf5b27a5a4ef5d1feeefec332d114fb7e91f1b",
+  "bug_name": "Math_10",
+  "derive": "defects4j",
+  "original_fixing_commit": "7e2ffcc9034de41d7787f0b33b5670474f7a10de",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math3/analysis/differentiation/DSCompiler.java",
+        "src/main/java/org/apache/commons/math3/analysis/differentiation/DSCompiler.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "atan2"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "atan2"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1289",
+            "1290",
+            "1291",
+            "1292",
+            "1293",
+            "1294",
+            "1295"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "1289",
+            "1290",
+            "1291",
+            "1292",
+            "1293",
+            "1294",
+            "1295",
+            "1296",
+            "1297",
+            "1298",
+            "1299",
+            "1300",
+            "1301",
+            "1302",
+            "1303",
+            "1304",
+            "1306",
+            "1307",
+            "1308",
+            "1309",
+            "1310",
+            "1311",
+            "1312",
+            "1313",
+            "1314",
+            "1315",
+            "1316",
+            "1317",
+            "1318"
+          ],
+          "num": 29
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math3/analysis/differentiation/DSCompiler.java b/src/main/java/org/apache/commons/math3/analysis/differentiation/DSCompiler.java\nindex 110036a..91a5377 100644\n--- a/src/main/java/org/apache/commons/math3/analysis/differentiation/DSCompiler.java\n+++ b/src/main/java/org/apache/commons/math3/analysis/differentiation/DSCompiler.java\n@@ -1286,14 +1286,36 @@\n                       final double[] x, final int xOffset,\n                       final double[] result, final int resultOffset) {\n \n-        final double y0 \u003d y[yOffset];\n-        final double x0 \u003d x[xOffset];\n-        result[resultOffset] \u003d FastMath.atan2(y0, x0);\n-        if (order \u003e 0) {\n-            for (int i \u003d 1; i \u003c\u003d order; ++i) {\n-                // TODO compute higher order derivatives\n-                result[resultOffset + i] \u003d Double.NaN;\n+        // compute r \u003d sqrt(x^2+y^2)\n+        double[] tmp1 \u003d new double[getSize()];\n+        multiply(x, xOffset, x, xOffset, tmp1, 0);      // x^2\n+        double[] tmp2 \u003d new double[getSize()];\n+        multiply(y, yOffset, y, yOffset, tmp2, 0);      // y^2\n+        add(tmp1, 0, tmp2, 0, tmp2, 0);                 // x^2 + y^2\n+        rootN(tmp2, 0, 2, tmp1, 0);                     // r \u003d sqrt(x^2 + y^2)\n+\n+        if (x[xOffset] \u003e\u003d 0) {\n+\n+            // compute atan2(y, x) \u003d 2 atan(y / (r + x))\n+            add(tmp1, 0, x, xOffset, tmp2, 0);          // r + x\n+            divide(y, yOffset, tmp2, 0, tmp1, 0);       // y /(r + x)\n+            atan(tmp1, 0, tmp2, 0);                     // atan(y / (r + x))\n+            for (int i \u003d 0; i \u003c tmp2.length; ++i) {\n+                result[resultOffset + i] \u003d 2 * tmp2[i]; // 2 * atan(y / (r + x))\n             }\n+\n+        } else {\n+\n+            // compute atan2(y, x) \u003d +/- pi - 2 atan(y / (r - x))\n+            subtract(tmp1, 0, x, xOffset, tmp2, 0);     // r - x\n+            divide(y, yOffset, tmp2, 0, tmp1, 0);       // y /(r - x)\n+            atan(tmp1, 0, tmp2, 0);                     // atan(y / (r - x))\n+            result[resultOffset] \u003d\n+                    ((tmp2[0] \u003c\u003d 0) ? -FastMath.PI : FastMath.PI) - 2 * tmp2[0]; // +/-pi - 2 * atan(y / (r - x))\n+            for (int i \u003d 1; i \u003c tmp2.length; ++i) {\n+                result[resultOffset + i] \u003d -2 * tmp2[i]; // +/-pi - 2 * atan(y / (r - x))\n+            }\n+\n         }\n \n     }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [56568,56606]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [56615,56657]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [56678,56716]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [56725,56767]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [56788,56819]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [56857,56884]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [56937,57989]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [56531,56560]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [56569,56598]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [56607,56653]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [56662,56861]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math3.analysis.differentiation.DerivativeStructureTest",
+      "test_function": "testAtan2",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c0.0\u003e but was:\u003c2.1316282072803006E-14\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math3/analysis/differentiation/DSCompiler.java",
+        "src/main/java/org/apache/commons/math3/analysis/differentiation/DSCompiler.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "atan2"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "atan2"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1320"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "1320",
+            "1321"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Math_10/properties/modified_classes/inducing/src/main/java/org/apache/commons/math3/analysis/differentiation/DSCompiler.java data/changesInfo//Math_10/cleaned/fixing/src/main/java/org/apache/commons/math3/analysis/differentiation/DSCompiler.java\n--- data/changesInfo//Math_10/properties/modified_classes/inducing/src/main/java/org/apache/commons/math3/analysis/differentiation/DSCompiler.java\t2023-08-25 13:41:04.642613117 +0800\n+++ data/changesInfo//Math_10/cleaned/fixing/src/main/java/org/apache/commons/math3/analysis/differentiation/DSCompiler.java\t2023-06-20 22:12:52.998069643 +0800\n@@ -1317,7 +1317,8 @@\n             }\n \n         }\n-\n+        // fix value to take special cases (+0/+0, +0/-0, -0/+0, -0/-0, +/-infinity) correctly\n+        result[resultOffset] \u003d FastMath.atan2(y[yOffset], x[xOffset]);\n     }\n \n     /** Compute composition of a derivative structure by a function.\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [58093,58155]"
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

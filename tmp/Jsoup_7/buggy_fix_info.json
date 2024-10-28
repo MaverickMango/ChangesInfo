@@ -1,0 +1,136 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.jsoup.nodes.DocumentTest::testNormalisesStructure",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.jsoup.nodes.Document",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Jsoup",
+  "id": "7",
+  "workingDir": "../bugs/Jsoup_7_tmp",
+  "bug_name": "Jsoup_7",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.jsoup.nodes.DocumentTest",
+      "test_function": "testNormalisesStructure",
+      "assertion_line": "59",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c...\u003c/script\u003e\u003cnoscript\u003e\u003c[/noscript\u003e\u003c/head\u003e\u003cbody\u003e\u003cp\u003etwo\u003c/p\u003e\u003cp\u003ethree\u003c/p\u003e\u003c/body]\u003e\u003c/html\u003e\u003e but was:\u003c...\u003c/script\u003e\u003cnoscript\u003e\u003c[body\u003e\u003cp\u003etwo\u003c/p\u003e\u003cbody\u003e\u003cp\u003ethree\u003c/p\u003e\u003c/body\u003e\u003c/body\u003e\u003c/noscript\u003e\u003c/head]\u003e\u003c/html\u003e\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/nodes/Document.java",
+        "src/main/java/org/jsoup/nodes/Document.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.nodes.Document:normaliseStructure:[String tag, Element htmlEl]:void",
+            "org.jsoup.nodes.Document:normalise:[]:Document"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.jsoup.nodes.Document:findFirstElementByTagName:[String tag, Node node]:Element",
+            "org.jsoup.nodes.Document:normalise:[]:Document"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "5",
+            "114",
+            "115",
+            "140",
+            "141",
+            "142",
+            "143",
+            "144",
+            "145",
+            "146",
+            "147",
+            "148",
+            "149",
+            "150",
+            "151",
+            "152",
+            "153",
+            "154",
+            "156",
+            "157",
+            "158",
+            "159"
+          ],
+          "num": 22
+        },
+        {
+          "qualified_names": [
+            "4",
+            "114",
+            "142"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/nodes/Document.java b/src/main/java/org/jsoup/nodes/Document.java\nindex 47632fc..2f37b29 100644\n--- a/src/main/java/org/jsoup/nodes/Document.java\n+++ b/src/main/java/org/jsoup/nodes/Document.java\n@@ -2,7 +2,6 @@\n \n import org.jsoup.helper.Validate;\n import org.jsoup.parser.Tag;\n-import org.jsoup.select.Elements;\n \n import java.nio.charset.Charset;\n import java.nio.charset.CharsetEncoder;\n@@ -111,8 +110,6 @@\n         normaliseTextNodes(htmlEl);\n         normaliseTextNodes(this);\n \n-        normaliseStructure(\"head\", htmlEl);\n-        normaliseStructure(\"body\", htmlEl);\n         \n         return this;\n     }\n@@ -137,26 +134,7 @@\n     }\n \n     // merge multiple \u003chead\u003e or \u003cbody\u003e contents into one, delete the remainder, and ensure they are owned by \u003chtml\u003e\n-    private void normaliseStructure(String tag, Element htmlEl) {\n-        Elements elements \u003d this.getElementsByTag(tag);\n-        Element master \u003d elements.first(); // will always be available as created above if not existent\n-        if (elements.size() \u003e 1) { // dupes, move contents to master\n-            List\u003cNode\u003e toMove \u003d new ArrayList\u003cNode\u003e();\n-            for (int i \u003d 1; i \u003c elements.size(); i++) {\n-                Node dupe \u003d elements.get(i);\n-                for (Node node : dupe.childNodes)\n-                    toMove.add(node);\n-                dupe.remove();\n-            }\n-\n-            for (Node dupe : toMove)\n-                master.appendChild(dupe);\n-        }\n         // ensure parented by \u003chtml\u003e\n-        if (!master.parent().equals(htmlEl)) {\n-            htmlEl.appendChild(master); // includes remove()            \n-        }\n-    }\n \n     // fast method to get first by tag name, used for html, head, body finders\n     private Element findFirstElementByTagName(String tag, Node node) {\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [89,122]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [3502,3537]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [3546,3581]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [4346,5188]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.jsoup.nodes.Document:findFirstElementByTagName:[String tag, Node node]:Element"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.jsoup.nodes.Document:normaliseStructure:[String tag, Element htmlEl]:void"
+      ],
+      "num": 1
+    }
+  }
+}

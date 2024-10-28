@@ -1,0 +1,141 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.LooseTypeCheckTest::testMethodInference7,com.google.javascript.jscomp.TypeCheckTest::testMethodInference7,com.google.javascript.rhino.jstype.FunctionTypeTest::testSupAndInfOfReturnTypesWithNumOfParams",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.rhino.jstype.ArrowType",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "164",
+  "workingDir": "../bugs/Closure_164_tmp",
+  "bug_name": "Closure_164",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.LooseTypeCheckTest",
+      "test_function": "testMethodInference7",
+      "assertion_line": "1782",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected a warning"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testMethodInference7",
+      "assertion_line": "9537",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected a warning"
+    },
+    {
+      "test_class": "com.google.javascript.rhino.jstype.FunctionTypeTest",
+      "test_function": "testSupAndInfOfReturnTypesWithNumOfParams",
+      "assertion_line": "230",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c[function (number, number): boolea]n\u003e but was:\u003c[Functio]n\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/ArrowType.java",
+        "src/com/google/javascript/rhino/jstype/ArrowType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.jstype.ArrowType:isSubtype:[JSType other]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.jstype.ArrowType:hasEqualParameters:[ArrowType that]:boolean",
+            "com.google.javascript.rhino.jstype.ArrowType:isSubtype:[JSType other]:boolean"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "128",
+            "129",
+            "132",
+            "138",
+            "139",
+            "140",
+            "141",
+            "142",
+            "143",
+            "144",
+            "145",
+            "146",
+            "164",
+            "165",
+            "166",
+            "167",
+            "168"
+          ],
+          "num": 17
+        },
+        {
+          "qualified_names": [
+            "127",
+            "175"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/ArrowType.java b/src/com/google/javascript/rhino/jstype/ArrowType.java\nindex 4b95837..1c900ac 100644\n--- a/src/com/google/javascript/rhino/jstype/ArrowType.java\n+++ b/src/com/google/javascript/rhino/jstype/ArrowType.java\n@@ -125,25 +125,13 @@\n \n       boolean thisIsVarArgs \u003d thisParam.isVarArgs();\n       boolean thatIsVarArgs \u003d thatParam.isVarArgs();\n-      boolean thisIsOptional \u003d thisIsVarArgs || thisParam.isOptionalArg();\n-      boolean thatIsOptional \u003d thatIsVarArgs || thatParam.isOptionalArg();\n \n       // \"that\" can\u0027t be a supertype, because it\u0027s missing a required argument.\n-      if (!thisIsOptional \u0026\u0026 thatIsOptional) {\n         // NOTE(nicksantos): In our type system, we use {function(...?)} and\n         // {function(...NoType)} to to indicate that arity should not be\n         // checked. Strictly speaking, this is not a correct formulation,\n         // because now a sub-function can required arguments that are var_args\n         // in the super-function. So we special-case this.\n-        boolean isTopFunction \u003d\n-            thatIsVarArgs \u0026\u0026\n-            (thatParamType \u003d\u003d null ||\n-             thatParamType.isUnknownType() ||\n-             thatParamType.isNoType());\n-        if (!isTopFunction) {\n-          return false;\n-        }\n-      }\n \n       // don\u0027t advance if we have variable arguments\n       if (!thisIsVarArgs) {\n@@ -161,11 +149,6 @@\n     }\n \n     // \"that\" can\u0027t be a supertype, because it\u0027s missing a required arguement.\n-    if (thisParam !\u003d null\n-        \u0026\u0026 !thisParam.isOptionalArg() \u0026\u0026 !thisParam.isVarArgs()\n-        \u0026\u0026 thatParam \u003d\u003d null) {\n-      return false;\n-    }\n \n     return true;\n   }\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [4638,4706]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [4713,4781]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [4869,5528]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [5973,6116]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.google.javascript.rhino.jstype.ArrowType:hasEqualParameters:[ArrowType that]:boolean"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

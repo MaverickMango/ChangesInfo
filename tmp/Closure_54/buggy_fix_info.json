@@ -1,0 +1,203 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.TypeCheckTest::testIssue537a,com.google.javascript.jscomp.TypeCheckTest::testIssue537b,com.google.javascript.jscomp.TypedScopeCreatorTest::testPropertyOnUnknownSuperClass2",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.TypedScopeCreator,com.google.javascript.rhino.jstype.FunctionType",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "54",
+  "workingDir": "../bugs/Closure_54_tmp",
+  "bug_name": "Closure_54",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testIssue537a",
+      "assertion_line": "5264",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c[Function Foo.prototype.method: called with 1 argument(s). Function requires at least 0 argument(s) and no more than 0 argument(s).]\u003e but was:\u003c[Property baz never defined on Bar]\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testIssue537b",
+      "assertion_line": "5287",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c[Function Bar.prototype.baz: called with 1 argument(s). Function requires at least 0 argument(s) and no more than 0 argument(s).]\u003e but was:\u003c[Property baz never defined on Bar]\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypedScopeCreatorTest",
+      "test_function": "testPropertyOnUnknownSuperClass2",
+      "assertion_line": "377",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c[?]\u003e but was:\u003c[number]\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/TypedScopeCreator.java",
+        "src/com/google/javascript/jscomp/TypedScopeCreator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypedScopeCreator\\$AbstractScopeBuilder:maybeDeclareQualifiedName:[NodeTraversal t, JSDocInfo info, Node n, Node parent, Node rhsValue]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypedScopeCreator\\$AbstractScopeBuilder:maybeDeclareQualifiedName:[NodeTraversal t, JSDocInfo info, Node n, Node parent, Node rhsValue]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1413",
+            "1414",
+            "1415",
+            "1416",
+            "1417",
+            "1418",
+            "1419"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "1413"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/TypedScopeCreator.java b/src/com/google/javascript/jscomp/TypedScopeCreator.java\nindex 5bccc06..8654ae6 100644\n--- a/src/com/google/javascript/jscomp/TypedScopeCreator.java\n+++ b/src/com/google/javascript/jscomp/TypedScopeCreator.java\n@@ -1410,13 +1410,7 @@\n           // then they are responsible for making sure that the object literal\u0027s\n           // implicit prototype is set up appropriately. We just obey\n           // the @extends tag.\n-          ObjectType qVarType \u003d ObjectType.cast(qVar.getType());\n-          if (qVarType !\u003d null \u0026\u0026\n-              rhsValue !\u003d null \u0026\u0026\n-              rhsValue.getType() \u003d\u003d Token.OBJECTLIT) {\n-            typeRegistry.resetImplicitPrototype(\n-                rhsValue.getJSType(), qVarType.getImplicitPrototype());\n-          } else if (!qVar.isTypeInferred()) {\n+          if (!qVar.isTypeInferred()) {\n             // If the programmer has declared that F inherits from Super,\n             // and they assign F.prototype to some arbitrary expression,\n             // there\u0027s not much we can do. We just ignore the expression,\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [54216,54270]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [54285,54390]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [54392,54526]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [54281,54948]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/FunctionType.java",
+        "src/com/google/javascript/rhino/jstype/FunctionType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.jstype.FunctionType:setPrototype:[PrototypeObjectType prototype]:boolean",
+            "com.google.javascript.rhino.jstype.FunctionType:setPrototypeBasedOn:[ObjectType baseType]:void"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.jstype.FunctionType:setPrototypeBasedOn:[ObjectType baseType]:void",
+            "com.google.javascript.rhino.jstype.FunctionType:setPrototype:[PrototypeObjectType prototype]:boolean"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "340",
+            "365",
+            "366",
+            "372",
+            "375",
+            "376"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "341",
+            "366"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/FunctionType.java b/src/com/google/javascript/rhino/jstype/FunctionType.java\nindex a87be07..b65d8b1 100644\n--- a/src/com/google/javascript/rhino/jstype/FunctionType.java\n+++ b/src/com/google/javascript/rhino/jstype/FunctionType.java\n@@ -338,6 +338,7 @@\n     //\n     // In the second case, we just use the anonymous object as the prototype.\n     if (baseType.hasReferenceName() ||\n+        baseType.isUnknownType() ||\n         isNativeObjectType() ||\n         baseType.isFunctionPrototypeType() ||\n         !(baseType instanceof PrototypeObjectType)) {\n@@ -362,18 +363,14 @@\n       return false;\n     }\n \n-    PrototypeObjectType oldPrototype \u003d this.prototype;\n-    boolean replacedPrototype \u003d oldPrototype !\u003d null;\n+    boolean replacedPrototype \u003d prototype !\u003d null;\n \n     this.prototype \u003d prototype;\n     this.prototypeSlot \u003d new SimpleSlot(\"prototype\", prototype, true);\n     this.prototype.setOwnerFunction(this);\n \n-    if (oldPrototype !\u003d null) {\n       // Disassociating the old prototype makes this easier to debug--\n       // we don\u0027t have to worry about two prototypes running around.\n-      oldPrototype.setOwnerFunction(null);\n-    }\n \n     if (isConstructor() || isInterface()) {\n       FunctionType superClass \u003d getSuperClassConstructor();\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [11477,11523]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [10719,10743]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [11441,11491]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [11496,11545]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [11698,11914]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

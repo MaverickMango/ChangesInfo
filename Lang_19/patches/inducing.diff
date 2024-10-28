@@ -1,0 +1,3301 @@
+diff --git a/pom.xml b/pom.xml
+index 93eaf0a..65d4dd2 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -428,7 +428,6 @@
+           </includes>
+           <excludes>
+             <exclude>**/*TestSuite.java</exclude>
+-            <exclude>**/*PerformanceTest.java</exclude>
+             <exclude>**/AllLangTestSuite.java</exclude>
+           </excludes>
+         </configuration>
+diff --git a/src/java/org/apache/commons/lang/Entities.java b/src/java/org/apache/commons/lang/Entities.java
+deleted file mode 100644
+index b05f383..0000000
+--- a/src/java/org/apache/commons/lang/Entities.java
++++ /dev/null
+@@ -1,1010 +0,0 @@
+-/*
+- * Licensed to the Apache Software Foundation (ASF) under one or more
+- * contributor license agreements.  See the NOTICE file distributed with
+- * this work for additional information regarding copyright ownership.
+- * The ASF licenses this file to You under the Apache License, Version 2.0
+- * (the "License"); you may not use this file except in compliance with
+- * the License.  You may obtain a copy of the License at
+- * 
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- * 
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-package org.apache.commons.lang;
+-
+-import java.io.IOException;
+-import java.io.StringWriter;
+-import java.io.Writer;
+-import java.util.HashMap;
+-import java.util.Map;
+-import java.util.TreeMap;
+-
+-/**
+- * <p>
+- * Provides HTML and XML entity utilities.
+- * </p>
+- * 
+- * @see <a href="http://hotwired.lycos.com/webmonkey/reference/special_characters/">ISO Entities</a>
+- * @see <a href="http://www.w3.org/TR/REC-html32#latin1">HTML 3.2 Character Entities for ISO Latin-1</a>
+- * @see <a href="http://www.w3.org/TR/REC-html40/sgml/entities.html">HTML 4.0 Character entity references</a>
+- * @see <a href="http://www.w3.org/TR/html401/charset.html#h-5.3">HTML 4.01 Character References</a>
+- * @see <a href="http://www.w3.org/TR/html401/charset.html#code-position">HTML 4.01 Code positions</a>
+- * 
+- * @author <a href="mailto:alex@purpletech.com">Alexander Day Chaffee</a>
+- * @author <a href="mailto:ggregory@seagullsw.com">Gary Gregory</a>
+- * @since 2.0
+- * @version $Id$
+- */
+-class Entities {
+-
+-    private static final String[][] BASIC_ARRAY = {{"quot", "34"}, // " - double-quote
+-        {"amp", "38"}, // & - ampersand
+-        {"lt", "60"}, // < - less-than
+-        {"gt", "62"}, // > - greater-than
+-    };
+-
+-    private static final String[][] APOS_ARRAY = {{"apos", "39"}, // XML apostrophe
+-    };
+-
+-    private static final String[][] ISO8859_1_ARRAY = {{"nbsp", "160"}, // non-breaking space
+-        {"iexcl", "161"}, // inverted exclamation mark
+-        {"cent", "162"}, // cent sign
+-        {"pound", "163"}, // pound sign
+-        {"curren", "164"}, // currency sign
+-        {"yen", "165"}, // yen sign = yuan sign
+-        {"brvbar", "166"}, // broken bar = broken vertical bar
+-        {"sect", "167"}, // section sign
+-        {"uml", "168"}, // diaeresis = spacing diaeresis
+-        {"copy", "169"}, // � - copyright sign
+-        {"ordf", "170"}, // feminine ordinal indicator
+-        {"laquo", "171"}, // left-pointing double angle quotation mark = left pointing guillemet
+-        {"not", "172"}, // not sign
+-        {"shy", "173"}, // soft hyphen = discretionary hyphen
+-        {"reg", "174"}, // � - registered trademark sign
+-        {"macr", "175"}, // macron = spacing macron = overline = APL overbar
+-        {"deg", "176"}, // degree sign
+-        {"plusmn", "177"}, // plus-minus sign = plus-or-minus sign
+-        {"sup2", "178"}, // superscript two = superscript digit two = squared
+-        {"sup3", "179"}, // superscript three = superscript digit three = cubed
+-        {"acute", "180"}, // acute accent = spacing acute
+-        {"micro", "181"}, // micro sign
+-        {"para", "182"}, // pilcrow sign = paragraph sign
+-        {"middot", "183"}, // middle dot = Georgian comma = Greek middle dot
+-        {"cedil", "184"}, // cedilla = spacing cedilla
+-        {"sup1", "185"}, // superscript one = superscript digit one
+-        {"ordm", "186"}, // masculine ordinal indicator
+-        {"raquo", "187"}, // right-pointing double angle quotation mark = right pointing guillemet
+-        {"frac14", "188"}, // vulgar fraction one quarter = fraction one quarter
+-        {"frac12", "189"}, // vulgar fraction one half = fraction one half
+-        {"frac34", "190"}, // vulgar fraction three quarters = fraction three quarters
+-        {"iquest", "191"}, // inverted question mark = turned question mark
+-        {"Agrave", "192"}, // � - uppercase A, grave accent
+-        {"Aacute", "193"}, // � - uppercase A, acute accent
+-        {"Acirc", "194"}, // � - uppercase A, circumflex accent
+-        {"Atilde", "195"}, // � - uppercase A, tilde
+-        {"Auml", "196"}, // � - uppercase A, umlaut
+-        {"Aring", "197"}, // � - uppercase A, ring
+-        {"AElig", "198"}, // � - uppercase AE
+-        {"Ccedil", "199"}, // � - uppercase C, cedilla
+-        {"Egrave", "200"}, // � - uppercase E, grave accent
+-        {"Eacute", "201"}, // � - uppercase E, acute accent
+-        {"Ecirc", "202"}, // � - uppercase E, circumflex accent
+-        {"Euml", "203"}, // � - uppercase E, umlaut
+-        {"Igrave", "204"}, // � - uppercase I, grave accent
+-        {"Iacute", "205"}, // � - uppercase I, acute accent
+-        {"Icirc", "206"}, // � - uppercase I, circumflex accent
+-        {"Iuml", "207"}, // � - uppercase I, umlaut
+-        {"ETH", "208"}, // � - uppercase Eth, Icelandic
+-        {"Ntilde", "209"}, // � - uppercase N, tilde
+-        {"Ograve", "210"}, // � - uppercase O, grave accent
+-        {"Oacute", "211"}, // � - uppercase O, acute accent
+-        {"Ocirc", "212"}, // � - uppercase O, circumflex accent
+-        {"Otilde", "213"}, // � - uppercase O, tilde
+-        {"Ouml", "214"}, // � - uppercase O, umlaut
+-        {"times", "215"}, // multiplication sign
+-        {"Oslash", "216"}, // � - uppercase O, slash
+-        {"Ugrave", "217"}, // � - uppercase U, grave accent
+-        {"Uacute", "218"}, // � - uppercase U, acute accent
+-        {"Ucirc", "219"}, // � - uppercase U, circumflex accent
+-        {"Uuml", "220"}, // � - uppercase U, umlaut
+-        {"Yacute", "221"}, // � - uppercase Y, acute accent
+-        {"THORN", "222"}, // � - uppercase THORN, Icelandic
+-        {"szlig", "223"}, // � - lowercase sharps, German
+-        {"agrave", "224"}, // � - lowercase a, grave accent
+-        {"aacute", "225"}, // � - lowercase a, acute accent
+-        {"acirc", "226"}, // � - lowercase a, circumflex accent
+-        {"atilde", "227"}, // � - lowercase a, tilde
+-        {"auml", "228"}, // � - lowercase a, umlaut
+-        {"aring", "229"}, // � - lowercase a, ring
+-        {"aelig", "230"}, // � - lowercase ae
+-        {"ccedil", "231"}, // � - lowercase c, cedilla
+-        {"egrave", "232"}, // � - lowercase e, grave accent
+-        {"eacute", "233"}, // � - lowercase e, acute accent
+-        {"ecirc", "234"}, // � - lowercase e, circumflex accent
+-        {"euml", "235"}, // � - lowercase e, umlaut
+-        {"igrave", "236"}, // � - lowercase i, grave accent
+-        {"iacute", "237"}, // � - lowercase i, acute accent
+-        {"icirc", "238"}, // � - lowercase i, circumflex accent
+-        {"iuml", "239"}, // � - lowercase i, umlaut
+-        {"eth", "240"}, // � - lowercase eth, Icelandic
+-        {"ntilde", "241"}, // � - lowercase n, tilde
+-        {"ograve", "242"}, // � - lowercase o, grave accent
+-        {"oacute", "243"}, // � - lowercase o, acute accent
+-        {"ocirc", "244"}, // � - lowercase o, circumflex accent
+-        {"otilde", "245"}, // � - lowercase o, tilde
+-        {"ouml", "246"}, // � - lowercase o, umlaut
+-        {"divide", "247"}, // division sign
+-        {"oslash", "248"}, // � - lowercase o, slash
+-        {"ugrave", "249"}, // � - lowercase u, grave accent
+-        {"uacute", "250"}, // � - lowercase u, acute accent
+-        {"ucirc", "251"}, // � - lowercase u, circumflex accent
+-        {"uuml", "252"}, // � - lowercase u, umlaut
+-        {"yacute", "253"}, // � - lowercase y, acute accent
+-        {"thorn", "254"}, // � - lowercase thorn, Icelandic
+-        {"yuml", "255"}, // � - lowercase y, umlaut
+-    };
+-
+-    // package scoped for testing
+-    static int ISO8859_1_ARRAY_LENGTH = ISO8859_1_ARRAY.length;
+-    
+-    static String getISO8859_1(int i, int j) {
+-        return ISO8859_1_ARRAY[i][j];
+-    }
+-
+-    // http://www.w3.org/TR/REC-html40/sgml/entities.html
+-    private static final String[][] HTML40_ARRAY = {
+-    // <!-- Latin Extended-B -->
+-        {"fnof", "402"}, // latin small f with hook = function= florin, U+0192 ISOtech -->
+-        // <!-- Greek -->
+-        {"Alpha", "913"}, // greek capital letter alpha, U+0391 -->
+-        {"Beta", "914"}, // greek capital letter beta, U+0392 -->
+-        {"Gamma", "915"}, // greek capital letter gamma,U+0393 ISOgrk3 -->
+-        {"Delta", "916"}, // greek capital letter delta,U+0394 ISOgrk3 -->
+-        {"Epsilon", "917"}, // greek capital letter epsilon, U+0395 -->
+-        {"Zeta", "918"}, // greek capital letter zeta, U+0396 -->
+-        {"Eta", "919"}, // greek capital letter eta, U+0397 -->
+-        {"Theta", "920"}, // greek capital letter theta,U+0398 ISOgrk3 -->
+-        {"Iota", "921"}, // greek capital letter iota, U+0399 -->
+-        {"Kappa", "922"}, // greek capital letter kappa, U+039A -->
+-        {"Lambda", "923"}, // greek capital letter lambda,U+039B ISOgrk3 -->
+-        {"Mu", "924"}, // greek capital letter mu, U+039C -->
+-        {"Nu", "925"}, // greek capital letter nu, U+039D -->
+-        {"Xi", "926"}, // greek capital letter xi, U+039E ISOgrk3 -->
+-        {"Omicron", "927"}, // greek capital letter omicron, U+039F -->
+-        {"Pi", "928"}, // greek capital letter pi, U+03A0 ISOgrk3 -->
+-        {"Rho", "929"}, // greek capital letter rho, U+03A1 -->
+-        // <!-- there is no Sigmaf, and no U+03A2 character either -->
+-        {"Sigma", "931"}, // greek capital letter sigma,U+03A3 ISOgrk3 -->
+-        {"Tau", "932"}, // greek capital letter tau, U+03A4 -->
+-        {"Upsilon", "933"}, // greek capital letter upsilon,U+03A5 ISOgrk3 -->
+-        {"Phi", "934"}, // greek capital letter phi,U+03A6 ISOgrk3 -->
+-        {"Chi", "935"}, // greek capital letter chi, U+03A7 -->
+-        {"Psi", "936"}, // greek capital letter psi,U+03A8 ISOgrk3 -->
+-        {"Omega", "937"}, // greek capital letter omega,U+03A9 ISOgrk3 -->
+-        {"alpha", "945"}, // greek small letter alpha,U+03B1 ISOgrk3 -->
+-        {"beta", "946"}, // greek small letter beta, U+03B2 ISOgrk3 -->
+-        {"gamma", "947"}, // greek small letter gamma,U+03B3 ISOgrk3 -->
+-        {"delta", "948"}, // greek small letter delta,U+03B4 ISOgrk3 -->
+-        {"epsilon", "949"}, // greek small letter epsilon,U+03B5 ISOgrk3 -->
+-        {"zeta", "950"}, // greek small letter zeta, U+03B6 ISOgrk3 -->
+-        {"eta", "951"}, // greek small letter eta, U+03B7 ISOgrk3 -->
+-        {"theta", "952"}, // greek small letter theta,U+03B8 ISOgrk3 -->
+-        {"iota", "953"}, // greek small letter iota, U+03B9 ISOgrk3 -->
+-        {"kappa", "954"}, // greek small letter kappa,U+03BA ISOgrk3 -->
+-        {"lambda", "955"}, // greek small letter lambda,U+03BB ISOgrk3 -->
+-        {"mu", "956"}, // greek small letter mu, U+03BC ISOgrk3 -->
+-        {"nu", "957"}, // greek small letter nu, U+03BD ISOgrk3 -->
+-        {"xi", "958"}, // greek small letter xi, U+03BE ISOgrk3 -->
+-        {"omicron", "959"}, // greek small letter omicron, U+03BF NEW -->
+-        {"pi", "960"}, // greek small letter pi, U+03C0 ISOgrk3 -->
+-        {"rho", "961"}, // greek small letter rho, U+03C1 ISOgrk3 -->
+-        {"sigmaf", "962"}, // greek small letter final sigma,U+03C2 ISOgrk3 -->
+-        {"sigma", "963"}, // greek small letter sigma,U+03C3 ISOgrk3 -->
+-        {"tau", "964"}, // greek small letter tau, U+03C4 ISOgrk3 -->
+-        {"upsilon", "965"}, // greek small letter upsilon,U+03C5 ISOgrk3 -->
+-        {"phi", "966"}, // greek small letter phi, U+03C6 ISOgrk3 -->
+-        {"chi", "967"}, // greek small letter chi, U+03C7 ISOgrk3 -->
+-        {"psi", "968"}, // greek small letter psi, U+03C8 ISOgrk3 -->
+-        {"omega", "969"}, // greek small letter omega,U+03C9 ISOgrk3 -->
+-        {"thetasym", "977"}, // greek small letter theta symbol,U+03D1 NEW -->
+-        {"upsih", "978"}, // greek upsilon with hook symbol,U+03D2 NEW -->
+-        {"piv", "982"}, // greek pi symbol, U+03D6 ISOgrk3 -->
+-        // <!-- General Punctuation -->
+-        {"bull", "8226"}, // bullet = black small circle,U+2022 ISOpub -->
+-        // <!-- bullet is NOT the same as bullet operator, U+2219 -->
+-        {"hellip", "8230"}, // horizontal ellipsis = three dot leader,U+2026 ISOpub -->
+-        {"prime", "8242"}, // prime = minutes = feet, U+2032 ISOtech -->
+-        {"Prime", "8243"}, // double prime = seconds = inches,U+2033 ISOtech -->
+-        {"oline", "8254"}, // overline = spacing overscore,U+203E NEW -->
+-        {"frasl", "8260"}, // fraction slash, U+2044 NEW -->
+-        // <!-- Letterlike Symbols -->
+-        {"weierp", "8472"}, // script capital P = power set= Weierstrass p, U+2118 ISOamso -->
+-        {"image", "8465"}, // blackletter capital I = imaginary part,U+2111 ISOamso -->
+-        {"real", "8476"}, // blackletter capital R = real part symbol,U+211C ISOamso -->
+-        {"trade", "8482"}, // trade mark sign, U+2122 ISOnum -->
+-        {"alefsym", "8501"}, // alef symbol = first transfinite cardinal,U+2135 NEW -->
+-        // <!-- alef symbol is NOT the same as hebrew letter alef,U+05D0 although the
+-        // same glyph could be used to depict both characters -->
+-        // <!-- Arrows -->
+-        {"larr", "8592"}, // leftwards arrow, U+2190 ISOnum -->
+-        {"uarr", "8593"}, // upwards arrow, U+2191 ISOnum-->
+-        {"rarr", "8594"}, // rightwards arrow, U+2192 ISOnum -->
+-        {"darr", "8595"}, // downwards arrow, U+2193 ISOnum -->
+-        {"harr", "8596"}, // left right arrow, U+2194 ISOamsa -->
+-        {"crarr", "8629"}, // downwards arrow with corner leftwards= carriage return, U+21B5 NEW -->
+-        {"lArr", "8656"}, // leftwards double arrow, U+21D0 ISOtech -->
+-        // <!-- ISO 10646 does not say that lArr is the same as the 'is implied by'
+-        // arrow but also does not have any other character for that function.
+-        // So ? lArr canbe used for 'is implied by' as ISOtech suggests -->
+-        {"uArr", "8657"}, // upwards double arrow, U+21D1 ISOamsa -->
+-        {"rArr", "8658"}, // rightwards double arrow,U+21D2 ISOtech -->
+-        // <!-- ISO 10646 does not say this is the 'implies' character but does not
+-        // have another character with this function so ?rArr can be used for
+-        // 'implies' as ISOtech suggests -->
+-        {"dArr", "8659"}, // downwards double arrow, U+21D3 ISOamsa -->
+-        {"hArr", "8660"}, // left right double arrow,U+21D4 ISOamsa -->
+-        // <!-- Mathematical Operators -->
+-        {"forall", "8704"}, // for all, U+2200 ISOtech -->
+-        {"part", "8706"}, // partial differential, U+2202 ISOtech -->
+-        {"exist", "8707"}, // there exists, U+2203 ISOtech -->
+-        {"empty", "8709"}, // empty set = null set = diameter,U+2205 ISOamso -->
+-        {"nabla", "8711"}, // nabla = backward difference,U+2207 ISOtech -->
+-        {"isin", "8712"}, // element of, U+2208 ISOtech -->
+-        {"notin", "8713"}, // not an element of, U+2209 ISOtech -->
+-        {"ni", "8715"}, // contains as member, U+220B ISOtech -->
+-        // <!-- should there be a more memorable name than 'ni'? -->
+-        {"prod", "8719"}, // n-ary product = product sign,U+220F ISOamsb -->
+-        // <!-- prod is NOT the same character as U+03A0 'greek capital letter pi'
+-        // though the same glyph might be used for both -->
+-        {"sum", "8721"}, // n-ary summation, U+2211 ISOamsb -->
+-        // <!-- sum is NOT the same character as U+03A3 'greek capital letter sigma'
+-        // though the same glyph might be used for both -->
+-        {"minus", "8722"}, // minus sign, U+2212 ISOtech -->
+-        {"lowast", "8727"}, // asterisk operator, U+2217 ISOtech -->
+-        {"radic", "8730"}, // square root = radical sign,U+221A ISOtech -->
+-        {"prop", "8733"}, // proportional to, U+221D ISOtech -->
+-        {"infin", "8734"}, // infinity, U+221E ISOtech -->
+-        {"ang", "8736"}, // angle, U+2220 ISOamso -->
+-        {"and", "8743"}, // logical and = wedge, U+2227 ISOtech -->
+-        {"or", "8744"}, // logical or = vee, U+2228 ISOtech -->
+-        {"cap", "8745"}, // intersection = cap, U+2229 ISOtech -->
+-        {"cup", "8746"}, // union = cup, U+222A ISOtech -->
+-        {"int", "8747"}, // integral, U+222B ISOtech -->
+-        {"there4", "8756"}, // therefore, U+2234 ISOtech -->
+-        {"sim", "8764"}, // tilde operator = varies with = similar to,U+223C ISOtech -->
+-        // <!-- tilde operator is NOT the same character as the tilde, U+007E,although
+-        // the same glyph might be used to represent both -->
+-        {"cong", "8773"}, // approximately equal to, U+2245 ISOtech -->
+-        {"asymp", "8776"}, // almost equal to = asymptotic to,U+2248 ISOamsr -->
+-        {"ne", "8800"}, // not equal to, U+2260 ISOtech -->
+-        {"equiv", "8801"}, // identical to, U+2261 ISOtech -->
+-        {"le", "8804"}, // less-than or equal to, U+2264 ISOtech -->
+-        {"ge", "8805"}, // greater-than or equal to,U+2265 ISOtech -->
+-        {"sub", "8834"}, // subset of, U+2282 ISOtech -->
+-        {"sup", "8835"}, // superset of, U+2283 ISOtech -->
+-        // <!-- note that nsup, 'not a superset of, U+2283' is not covered by the
+-        // Symbol font encoding and is not included. Should it be, for symmetry?
+-        // It is in ISOamsn --> <!ENTITY nsub", "8836"},
+-        // not a subset of, U+2284 ISOamsn -->
+-        {"sube", "8838"}, // subset of or equal to, U+2286 ISOtech -->
+-        {"supe", "8839"}, // superset of or equal to,U+2287 ISOtech -->
+-        {"oplus", "8853"}, // circled plus = direct sum,U+2295 ISOamsb -->
+-        {"otimes", "8855"}, // circled times = vector product,U+2297 ISOamsb -->
+-        {"perp", "8869"}, // up tack = orthogonal to = perpendicular,U+22A5 ISOtech -->
+-        {"sdot", "8901"}, // dot operator, U+22C5 ISOamsb -->
+-        // <!-- dot operator is NOT the same character as U+00B7 middle dot -->
+-        // <!-- Miscellaneous Technical -->
+-        {"lceil", "8968"}, // left ceiling = apl upstile,U+2308 ISOamsc -->
+-        {"rceil", "8969"}, // right ceiling, U+2309 ISOamsc -->
+-        {"lfloor", "8970"}, // left floor = apl downstile,U+230A ISOamsc -->
+-        {"rfloor", "8971"}, // right floor, U+230B ISOamsc -->
+-        {"lang", "9001"}, // left-pointing angle bracket = bra,U+2329 ISOtech -->
+-        // <!-- lang is NOT the same character as U+003C 'less than' or U+2039 'single left-pointing angle quotation
+-        // mark' -->
+-        {"rang", "9002"}, // right-pointing angle bracket = ket,U+232A ISOtech -->
+-        // <!-- rang is NOT the same character as U+003E 'greater than' or U+203A
+-        // 'single right-pointing angle quotation mark' -->
+-        // <!-- Geometric Shapes -->
+-        {"loz", "9674"}, // lozenge, U+25CA ISOpub -->
+-        // <!-- Miscellaneous Symbols -->
+-        {"spades", "9824"}, // black spade suit, U+2660 ISOpub -->
+-        // <!-- black here seems to mean filled as opposed to hollow -->
+-        {"clubs", "9827"}, // black club suit = shamrock,U+2663 ISOpub -->
+-        {"hearts", "9829"}, // black heart suit = valentine,U+2665 ISOpub -->
+-        {"diams", "9830"}, // black diamond suit, U+2666 ISOpub -->
+-
+-        // <!-- Latin Extended-A -->
+-        {"OElig", "338"}, // -- latin capital ligature OE,U+0152 ISOlat2 -->
+-        {"oelig", "339"}, // -- latin small ligature oe, U+0153 ISOlat2 -->
+-        // <!-- ligature is a misnomer, this is a separate character in some languages -->
+-        {"Scaron", "352"}, // -- latin capital letter S with caron,U+0160 ISOlat2 -->
+-        {"scaron", "353"}, // -- latin small letter s with caron,U+0161 ISOlat2 -->
+-        {"Yuml", "376"}, // -- latin capital letter Y with diaeresis,U+0178 ISOlat2 -->
+-        // <!-- Spacing Modifier Letters -->
+-        {"circ", "710"}, // -- modifier letter circumflex accent,U+02C6 ISOpub -->
+-        {"tilde", "732"}, // small tilde, U+02DC ISOdia -->
+-        // <!-- General Punctuation -->
+-        {"ensp", "8194"}, // en space, U+2002 ISOpub -->
+-        {"emsp", "8195"}, // em space, U+2003 ISOpub -->
+-        {"thinsp", "8201"}, // thin space, U+2009 ISOpub -->
+-        {"zwnj", "8204"}, // zero width non-joiner,U+200C NEW RFC 2070 -->
+-        {"zwj", "8205"}, // zero width joiner, U+200D NEW RFC 2070 -->
+-        {"lrm", "8206"}, // left-to-right mark, U+200E NEW RFC 2070 -->
+-        {"rlm", "8207"}, // right-to-left mark, U+200F NEW RFC 2070 -->
+-        {"ndash", "8211"}, // en dash, U+2013 ISOpub -->
+-        {"mdash", "8212"}, // em dash, U+2014 ISOpub -->
+-        {"lsquo", "8216"}, // left single quotation mark,U+2018 ISOnum -->
+-        {"rsquo", "8217"}, // right single quotation mark,U+2019 ISOnum -->
+-        {"sbquo", "8218"}, // single low-9 quotation mark, U+201A NEW -->
+-        {"ldquo", "8220"}, // left double quotation mark,U+201C ISOnum -->
+-        {"rdquo", "8221"}, // right double quotation mark,U+201D ISOnum -->
+-        {"bdquo", "8222"}, // double low-9 quotation mark, U+201E NEW -->
+-        {"dagger", "8224"}, // dagger, U+2020 ISOpub -->
+-        {"Dagger", "8225"}, // double dagger, U+2021 ISOpub -->
+-        {"permil", "8240"}, // per mille sign, U+2030 ISOtech -->
+-        {"lsaquo", "8249"}, // single left-pointing angle quotation mark,U+2039 ISO proposed -->
+-        // <!-- lsaquo is proposed but not yet ISO standardized -->
+-        {"rsaquo", "8250"}, // single right-pointing angle quotation mark,U+203A ISO proposed -->
+-        // <!-- rsaquo is proposed but not yet ISO standardized -->
+-        {"euro", "8364"}, // -- euro sign, U+20AC NEW -->
+-    };
+-    
+-    // package scoped for testing
+-    static int HTML40_ARRAY_LENGTH = HTML40_ARRAY.length;
+-    
+-    static String getHTML40(int i, int j) {
+-        return HTML40_ARRAY[i][j];
+-    }
+-
+-    /**
+-     * <p>
+-     * The set of entities supported by standard XML.
+-     * </p>
+-     */
+-    public static final Entities XML;
+-
+-    /**
+-     * <p>
+-     * The set of entities supported by HTML 3.2.
+-     * </p>
+-     */
+-    public static final Entities HTML32;
+-
+-    /**
+-     * <p>
+-     * The set of entities supported by HTML 4.0.
+-     * </p>
+-     */
+-    public static final Entities HTML40;
+-
+-    static {
+-        XML = new Entities();
+-        XML.addEntities(BASIC_ARRAY);
+-        XML.addEntities(APOS_ARRAY);
+-    }
+-
+-    static {
+-        HTML32 = new Entities();
+-        HTML32.addEntities(BASIC_ARRAY);
+-        HTML32.addEntities(ISO8859_1_ARRAY);
+-    }
+-
+-    static {
+-        HTML40 = new Entities();
+-        fillWithHtml40Entities(HTML40);
+-    }
+-
+-    /**
+-     * <p>
+-     * Fills the specified entities instance with HTML 40 entities.
+-     * </p>
+-     * 
+-     * @param entities
+-     *            the instance to be filled.
+-     */
+-    static void fillWithHtml40Entities(Entities entities) {
+-        entities.addEntities(BASIC_ARRAY);
+-        entities.addEntities(ISO8859_1_ARRAY);
+-        entities.addEntities(HTML40_ARRAY);
+-    }
+-
+-    static interface EntityMap {
+-        /**
+-         * <p>
+-         * Add an entry to this entity map.
+-         * </p>
+-         * 
+-         * @param name
+-         *            the entity name
+-         * @param value
+-         *            the entity value
+-         */
+-        void add(String name, int value);
+-
+-        /**
+-         * <p>
+-         * Returns the name of the entity identified by the specified value.
+-         * </p>
+-         * 
+-         * @param value
+-         *            the value to locate
+-         * @return entity name associated with the specified value
+-         */
+-        String name(int value);
+-
+-        /**
+-         * <p>
+-         * Returns the value of the entity identified by the specified name.
+-         * </p>
+-         * 
+-         * @param name
+-         *            the name to locate
+-         * @return entity value associated with the specified name
+-         */
+-        int value(String name);
+-    }
+-
+-    static class PrimitiveEntityMap implements EntityMap {
+-        private final Map<String, Integer> mapNameToValue = new HashMap<String, Integer>();
+-
+-        private final IntHashMap mapValueToName = new IntHashMap();
+-
+-        /**
+-         * {@inheritDoc}
+-         */
+-        public void add(String name, int value) {
+-            mapNameToValue.put(name, new Integer(value));
+-            mapValueToName.put(value, name);
+-        }
+-
+-        /**
+-         * {@inheritDoc}
+-         */
+-        public String name(int value) {
+-            return (String) mapValueToName.get(value);
+-        }
+-
+-        /**
+-         * {@inheritDoc}
+-         */
+-        public int value(String name) {
+-            Object value = mapNameToValue.get(name);
+-            if (value == null) {
+-                return -1;
+-            }
+-            return ((Integer) value).intValue();
+-        }
+-    }
+-
+-    static abstract class MapIntMap implements Entities.EntityMap {
+-        protected Map<String, Integer> mapNameToValue;
+-
+-        protected Map<Integer, String> mapValueToName;
+-
+-        /**
+-         * {@inheritDoc}
+-         */
+-        public void add(String name, int value) {
+-            mapNameToValue.put(name, new Integer(value));
+-            mapValueToName.put(new Integer(value), name);
+-        }
+-
+-        /**
+-         * {@inheritDoc}
+-         */
+-        public String name(int value) {
+-            return mapValueToName.get(new Integer(value));
+-        }
+-
+-        /**
+-         * {@inheritDoc}
+-         */
+-        public int value(String name) {
+-            Object value = mapNameToValue.get(name);
+-            if (value == null) {
+-                return -1;
+-            }
+-            return ((Integer) value).intValue();
+-        }
+-    }
+-
+-    static class HashEntityMap extends MapIntMap {
+-        /**
+-         * Constructs a new instance of <code>HashEntityMap</code>.
+-         */
+-        public HashEntityMap() {
+-            mapNameToValue = new HashMap<String, Integer>();
+-            mapValueToName = new HashMap<Integer, String>();
+-        }
+-    }
+-
+-    static class TreeEntityMap extends MapIntMap {
+-        /**
+-         * Constructs a new instance of <code>TreeEntityMap</code>.
+-         */
+-        public TreeEntityMap() {
+-            mapNameToValue = new TreeMap<String, Integer>();
+-            mapValueToName = new TreeMap<Integer, String>();
+-        }
+-    }
+-
+-    static class LookupEntityMap extends PrimitiveEntityMap {
+-        private String[] lookupTable;
+-
+-        private int LOOKUP_TABLE_SIZE = 256;
+-
+-        /**
+-         * {@inheritDoc}
+-         */
+-        @Override
+-        public String name(int value) {
+-            if (value < LOOKUP_TABLE_SIZE) {
+-                return lookupTable()[value];
+-            }
+-            return super.name(value);
+-        }
+-
+-        /**
+-         * <p>
+-         * Returns the lookup table for this entity map. The lookup table is created if it has not been previously.
+-         * </p>
+-         * 
+-         * @return the lookup table
+-         */
+-        private String[] lookupTable() {
+-            if (lookupTable == null) {
+-                createLookupTable();
+-            }
+-            return lookupTable;
+-        }
+-
+-        /**
+-         * <p>
+-         * Creates an entity lookup table of LOOKUP_TABLE_SIZE elements, initialized with entity names.
+-         * </p>
+-         */
+-        private void createLookupTable() {
+-            lookupTable = new String[LOOKUP_TABLE_SIZE];
+-            for (int i = 0; i < LOOKUP_TABLE_SIZE; ++i) {
+-                lookupTable[i] = super.name(i);
+-            }
+-        }
+-    }
+-
+-    static class ArrayEntityMap implements EntityMap {
+-        protected int growBy = 100;
+-
+-        protected int size = 0;
+-
+-        protected String[] names;
+-
+-        protected int[] values;
+-
+-        /**
+-         * Constructs a new instance of <code>ArrayEntityMap</code>.
+-         */
+-        public ArrayEntityMap() {
+-            names = new String[growBy];
+-            values = new int[growBy];
+-        }
+-
+-        /**
+-         * Constructs a new instance of <code>ArrayEntityMap</code> specifying the size by which the array should
+-         * grow.
+-         * 
+-         * @param growBy
+-         *            array will be initialized to and will grow by this amount
+-         */
+-        public ArrayEntityMap(int growBy) {
+-            this.growBy = growBy;
+-            names = new String[growBy];
+-            values = new int[growBy];
+-        }
+-
+-        /**
+-         * {@inheritDoc}
+-         */
+-        public void add(String name, int value) {
+-            ensureCapacity(size + 1);
+-            names[size] = name;
+-            values[size] = value;
+-            size++;
+-        }
+-
+-        /**
+-         * Verifies the capacity of the entity array, adjusting the size if necessary.
+-         * 
+-         * @param capacity
+-         *            size the array should be
+-         */
+-        protected void ensureCapacity(int capacity) {
+-            if (capacity > names.length) {
+-                int newSize = Math.max(capacity, size + growBy);
+-                String[] newNames = new String[newSize];
+-                System.arraycopy(names, 0, newNames, 0, size);
+-                names = newNames;
+-                int[] newValues = new int[newSize];
+-                System.arraycopy(values, 0, newValues, 0, size);
+-                values = newValues;
+-            }
+-        }
+-
+-        /**
+-         * {@inheritDoc}
+-         */
+-        public String name(int value) {
+-            for (int i = 0; i < size; ++i) {
+-                if (values[i] == value) {
+-                    return names[i];
+-                }
+-            }
+-            return null;
+-        }
+-
+-        /**
+-         * {@inheritDoc}
+-         */
+-        public int value(String name) {
+-            for (int i = 0; i < size; ++i) {
+-                if (names[i].equals(name)) {
+-                    return values[i];
+-                }
+-            }
+-            return -1;
+-        }
+-    }
+-
+-    static class BinaryEntityMap extends ArrayEntityMap {
+-
+-        /**
+-         * Constructs a new instance of <code>BinaryEntityMap</code>.
+-         */
+-        public BinaryEntityMap() {
+-            super();
+-        }
+-
+-        /**
+-         * Constructs a new instance of <code>ArrayEntityMap</code> specifying the size by which the underlying array
+-         * should grow.
+-         * 
+-         * @param growBy
+-         *            array will be initialized to and will grow by this amount
+-         */
+-        public BinaryEntityMap(int growBy) {
+-            super(growBy);
+-        }
+-
+-        /**
+-         * Performs a binary search of the entity array for the specified key. This method is based on code in
+-         * {@link java.util.Arrays}.
+-         * 
+-         * @param key
+-         *            the key to be found
+-         * @return the index of the entity array matching the specified key
+-         */
+-        private int binarySearch(int key) {
+-            int low = 0;
+-            int high = size - 1;
+-
+-            while (low <= high) {
+-                int mid = (low + high) >>> 1;
+-                int midVal = values[mid];
+-
+-                if (midVal < key) {
+-                    low = mid + 1;
+-                } else if (midVal > key) {
+-                    high = mid - 1;
+-                } else {
+-                    return mid; // key found
+-                }
+-            }
+-            return -(low + 1); // key not found.
+-        }
+-
+-        /**
+-         * {@inheritDoc}
+-         */
+-        @Override
+-        public void add(String name, int value) {
+-            ensureCapacity(size + 1);
+-            int insertAt = binarySearch(value);
+-            if (insertAt > 0) {
+-                return; // note: this means you can't insert the same value twice
+-            }
+-            insertAt = -(insertAt + 1); // binarySearch returns it negative and off-by-one
+-            System.arraycopy(values, insertAt, values, insertAt + 1, size - insertAt);
+-            values[insertAt] = value;
+-            System.arraycopy(names, insertAt, names, insertAt + 1, size - insertAt);
+-            names[insertAt] = name;
+-            size++;
+-        }
+-
+-        /**
+-         * {@inheritDoc}
+-         */
+-        @Override
+-        public String name(int value) {
+-            int index = binarySearch(value);
+-            if (index < 0) {
+-                return null;
+-            }
+-            return names[index];
+-        }
+-    }
+-
+-    // package scoped for testing
+-    EntityMap map = new Entities.LookupEntityMap();
+-
+-    /**
+-     * <p>
+-     * Adds entities to this entity.
+-     * </p>
+-     * 
+-     * @param entityArray
+-     *            array of entities to be added
+-     */
+-    public void addEntities(String[][] entityArray) {
+-        for (String[] element : entityArray) {
+-            addEntity(element[0], Integer.parseInt(element[1]));
+-        }
+-    }
+-
+-    /**
+-     * <p>
+-     * Add an entity to this entity.
+-     * </p>
+-     * 
+-     * @param name
+-     *            name of the entity
+-     * @param value
+-     *            vale of the entity
+-     */
+-    public void addEntity(String name, int value) {
+-        map.add(name, value);
+-    }
+-
+-    /**
+-     * <p>
+-     * Returns the name of the entity identified by the specified value.
+-     * </p>
+-     * 
+-     * @param value
+-     *            the value to locate
+-     * @return entity name associated with the specified value
+-     */
+-    public String entityName(int value) {
+-        return map.name(value);
+-    }
+-
+-    /**
+-     * <p>
+-     * Returns the value of the entity identified by the specified name.
+-     * </p>
+-     * 
+-     * @param name
+-     *            the name to locate
+-     * @return entity value associated with the specified name
+-     */
+-    public int entityValue(String name) {
+-        return map.value(name);
+-    }
+-
+-    /**
+-     * <p>
+-     * Escapes the characters in a <code>String</code>.
+-     * </p>
+-     * 
+-     * <p>
+-     * For example, if you have called addEntity(&quot;foo&quot;, 0xA1), escape(&quot;\u00A1&quot;) will return
+-     * &quot;&amp;foo;&quot;
+-     * </p>
+-     * 
+-     * @param str
+-     *            The <code>String</code> to escape.
+-     * @return A new escaped <code>String</code>.
+-     */
+-    public String escape(String str) {
+-        StringWriter stringWriter = createStringWriter(str);
+-        try {
+-            this.escape(stringWriter, str);
+-        } catch (IOException e) {
+-            // This should never happen because ALL the StringWriter methods called by #escape(Writer, String) do not
+-            // throw IOExceptions.
+-            throw new UnhandledException(e);
+-        }
+-        return stringWriter.toString();
+-    }
+-
+-    /**
+-     * <p>
+-     * Escapes the characters in the <code>String</code> passed and writes the result to the <code>Writer</code>
+-     * passed.
+-     * </p>
+-     * 
+-     * @param writer
+-     *            The <code>Writer</code> to write the results of the escaping to. Assumed to be a non-null value.
+-     * @param str
+-     *            The <code>String</code> to escape. Assumed to be a non-null value.
+-     * @throws IOException
+-     *             when <code>Writer</code> passed throws the exception from calls to the {@link Writer#write(int)}
+-     *             methods.
+-     * 
+-     * @see #escape(String)
+-     * @see Writer
+-     */
+-    public void escape(Writer writer, String str) throws IOException {
+-        int len = str.length();
+-        for (int i = 0; i < len; i++) {
+-            int c = Character.codePointAt(str, i); 
+-            String entityName = this.entityName(c);
+-            if (entityName == null) {
+-                if (c >= 0x010000 && i < len - 1) {
+-                    writer.write("&#");
+-                    writer.write(Integer.toString(c, 10));
+-                    writer.write(';');
+-                    i++;
+-                } else if (c > 0x7F) { 
+-                    writer.write("&#");
+-                    writer.write(Integer.toString(c, 10));
+-                    writer.write(';');
+-                } else {
+-                    writer.write(c);
+-                }
+-            } else {
+-                writer.write('&');
+-                writer.write(entityName);
+-                writer.write(';');
+-            }
+-        }
+-    }
+-
+-    /**
+-     * <p>
+-     * Unescapes the entities in a <code>String</code>.
+-     * </p>
+-     * 
+-     * <p>
+-     * For example, if you have called addEntity(&quot;foo&quot;, 0xA1), unescape(&quot;&amp;foo;&quot;) will return
+-     * &quot;\u00A1&quot;
+-     * </p>
+-     * 
+-     * @param str
+-     *            The <code>String</code> to escape.
+-     * @return A new escaped <code>String</code>.
+-     */
+-    public String unescape(String str) {
+-        int firstAmp = str.indexOf('&');
+-        if (firstAmp < 0) {
+-            return str;
+-        } else {
+-            StringWriter stringWriter = createStringWriter(str);
+-            try {
+-                this.doUnescape(stringWriter, str, firstAmp);
+-            } catch (IOException e) {
+-                // This should never happen because ALL the StringWriter methods called by #escape(Writer, String) 
+-                // do not throw IOExceptions.
+-                throw new UnhandledException(e);
+-            }
+-            return stringWriter.toString();
+-        }
+-    }
+-
+-    /**
+-     * Make the StringWriter 10% larger than the source String to avoid growing the writer
+-     *
+-     * @param str The source string
+-     * @return A newly created StringWriter
+-     */
+-    private StringWriter createStringWriter(String str) {
+-        return new StringWriter((int) (str.length() + (str.length() * 0.1)));
+-    }
+-
+-    /**
+-     * <p>
+-     * Unescapes the escaped entities in the <code>String</code> passed and writes the result to the
+-     * <code>Writer</code> passed.
+-     * </p>
+-     * 
+-     * @param writer
+-     *            The <code>Writer</code> to write the results to; assumed to be non-null.
+-     * @param str
+-     *            The source <code>String</code> to unescape; assumed to be non-null.
+-     * @throws IOException
+-     *             when <code>Writer</code> passed throws the exception from calls to the {@link Writer#write(int)}
+-     *             methods.
+-     * 
+-     * @see #escape(String)
+-     * @see Writer
+-     */
+-    public void unescape(Writer writer, String str) throws IOException {
+-        int firstAmp = str.indexOf('&');
+-        if (firstAmp < 0) {
+-            writer.write(str);
+-            return;
+-        } else {
+-            doUnescape(writer, str, firstAmp);
+-        }
+-    }
+-
+-    /**
+-     * Underlying unescape method that allows the optimisation of not starting from the 0 index again.
+-     *
+-     * @param writer
+-     *            The <code>Writer</code> to write the results to; assumed to be non-null.
+-     * @param str
+-     *            The source <code>String</code> to unescape; assumed to be non-null.
+-     * @param firstAmp
+-     *            The <code>int</code> index of the first ampersand in the source String.
+-     * @throws IOException
+-     *             when <code>Writer</code> passed throws the exception from calls to the {@link Writer#write(int)}
+-     *             methods.
+-     */
+-    private void doUnescape(Writer writer, String str, int firstAmp) throws IOException {
+-        writer.write(str, 0, firstAmp);
+-        int len = str.length();
+-        for (int i = firstAmp; i < len; i++) {
+-            char c = str.charAt(i);
+-            if (c == '&') {
+-                int nextIdx = i + 1;
+-                int semiColonIdx = str.indexOf(';', nextIdx);
+-                if (semiColonIdx == -1) {
+-                    writer.write(c);
+-                    continue;
+-                }
+-                int amphersandIdx = str.indexOf('&', i + 1);
+-                if (amphersandIdx != -1 && amphersandIdx < semiColonIdx) {
+-                    // Then the text looks like &...&...;
+-                    writer.write(c);
+-                    continue;
+-                }
+-                String entityContent = str.substring(nextIdx, semiColonIdx);
+-                int entityValue = -1;
+-                int entityContentLen = entityContent.length();
+-                if (entityContentLen > 0) {
+-                    if (entityContent.charAt(0) == '#') { // escaped value content is an integer (decimal or
+-                        // hexidecimal)
+-                        if (entityContentLen > 1) {
+-                            char isHexChar = entityContent.charAt(1);
+-                            try {
+-                                switch (isHexChar) {
+-                                    case 'X' :
+-                                    case 'x' : {
+-                                        entityValue = Integer.parseInt(entityContent.substring(2), 16);
+-                                        break;
+-                                    }
+-                                    default : {
+-                                        entityValue = Integer.parseInt(entityContent.substring(1), 10);
+-                                    }
+-                                }
+-                                if (entityValue > 0xFFFF) {
+-                                    entityValue = -1;
+-                                }
+-                            } catch (NumberFormatException e) {
+-                                entityValue = -1;
+-                            }
+-                        }
+-                    } else { // escaped value content is an entity name
+-                        entityValue = this.entityValue(entityContent);
+-                    }
+-                }
+-
+-                if (entityValue == -1) {
+-                    writer.write('&');
+-                    writer.write(entityContent);
+-                    writer.write(';');
+-                } else {
+-                    writer.write(entityValue);
+-                }
+-                i = semiColonIdx; // move index up to the semi-colon
+-            } else {
+-                writer.write(c);
+-            }
+-        }
+-    }
+-
+-}
+diff --git a/src/java/org/apache/commons/lang/StringEscapeUtils.java b/src/java/org/apache/commons/lang/StringEscapeUtils.java
+index 92d613f..328a39a 100644
+--- a/src/java/org/apache/commons/lang/StringEscapeUtils.java
++++ b/src/java/org/apache/commons/lang/StringEscapeUtils.java
+@@ -17,9 +17,10 @@
+ package org.apache.commons.lang;
+ 
+ import java.io.IOException;
+-import java.io.StringWriter;
+ import java.io.Writer;
+-import java.util.Locale;
++
++import org.apache.commons.lang.text.translate.EscapeUtils;
++import org.apache.commons.lang.text.translate.UnescapeUtils;
+ 
+ /**
+  * <p>Escapes and unescapes <code>String</code>s for
+@@ -39,11 +40,6 @@
+  */
+ public class StringEscapeUtils {
+ 
+-    private static final char CSV_DELIMITER = ',';
+-    private static final char CSV_QUOTE = '"';
+-    private static final String CSV_QUOTE_STR = String.valueOf(CSV_QUOTE);
+-    private static final char[] CSV_SEARCH_CHARS = new char[] {CSV_DELIMITER, CSV_QUOTE, CharUtils.CR, CharUtils.LF};
+-
+     /**
+      * <p><code>StringEscapeUtils</code> instances should NOT be constructed in
+      * standard programming.</p>
+@@ -82,7 +78,7 @@
+      * @return String with escaped values, <code>null</code> if null string input
+      */
+     public static String escapeJava(String str) {
+-        return escapeJavaStyleString(str, false, false);
++        return EscapeUtils.ESCAPE_JAVA.translate(str);
+     }
+ 
+     /**
+@@ -98,7 +94,7 @@
+      * @throws IOException if error occurs on underlying Writer
+      */
+     public static void escapeJava(Writer out, String str) throws IOException {
+-        escapeJavaStyleString(out, str, false, false);
++        EscapeUtils.ESCAPE_JAVA.translate(str, out);
+     }
+ 
+     /**
+@@ -123,7 +119,7 @@
+      * @return String with escaped values, <code>null</code> if null string input
+      */
+     public static String escapeJavaScript(String str) {
+-        return escapeJavaStyleString(str, true, true);
++        return EscapeUtils.ESCAPE_ECMASCRIPT.translate(str);
+     }
+ 
+     /**
+@@ -139,129 +135,7 @@
+      * @throws IOException if error occurs on underlying Writer
+      **/
+     public static void escapeJavaScript(Writer out, String str) throws IOException {
+-        escapeJavaStyleString(out, str, true, true);
+-    }
+-
+-    /**
+-     * <p>Worker method for the {@link #escapeJavaScript(String)} method.</p>
+-     * 
+-     * @param str String to escape values in, may be null
+-     * @param escapeSingleQuotes escapes single quotes if <code>true</code>
+-     * @param escapeForwardSlash TODO
+-     * @return the escaped string
+-     */
+-    private static String escapeJavaStyleString(String str, boolean escapeSingleQuotes, boolean escapeForwardSlash) {
+-        if (str == null) {
+-            return null;
+-        }
+-        try {
+-            StringWriter writer = new StringWriter(str.length() * 2);
+-            escapeJavaStyleString(writer, str, escapeSingleQuotes, escapeForwardSlash);
+-            return writer.toString();
+-        } catch (IOException ioe) {
+-            // this should never ever happen while writing to a StringWriter
+-            throw new UnhandledException(ioe);
+-        }
+-    }
+-
+-    /**
+-     * <p>Worker method for the {@link #escapeJavaScript(String)} method.</p>
+-     * 
+-     * @param out write to receieve the escaped string
+-     * @param str String to escape values in, may be null
+-     * @param escapeSingleQuote escapes single quotes if <code>true</code>
+-     * @param escapeForwardSlash TODO
+-     * @throws IOException if an IOException occurs
+-     */
+-    private static void escapeJavaStyleString(Writer out, String str, boolean escapeSingleQuote,
+-            boolean escapeForwardSlash) throws IOException {
+-        if (out == null) {
+-            throw new IllegalArgumentException("The Writer must not be null");
+-        }
+-        if (str == null) {
+-            return;
+-        }
+-        int sz;
+-        sz = str.length();
+-        for (int i = 0; i < sz; i++) {
+-            char ch = str.charAt(i);
+-
+-            // handle unicode
+-            if (ch > 0xfff) {
+-                out.write("\\u" + hex(ch));
+-            } else if (ch > 0xff) {
+-                out.write("\\u0" + hex(ch));
+-            } else if (ch > 0x7f) {
+-                out.write("\\u00" + hex(ch));
+-            } else if (ch < 32) {
+-                switch (ch) {
+-                    case '\b' :
+-                        out.write('\\');
+-                        out.write('b');
+-                        break;
+-                    case '\n' :
+-                        out.write('\\');
+-                        out.write('n');
+-                        break;
+-                    case '\t' :
+-                        out.write('\\');
+-                        out.write('t');
+-                        break;
+-                    case '\f' :
+-                        out.write('\\');
+-                        out.write('f');
+-                        break;
+-                    case '\r' :
+-                        out.write('\\');
+-                        out.write('r');
+-                        break;
+-                    default :
+-                        if (ch > 0xf) {
+-                            out.write("\\u00" + hex(ch));
+-                        } else {
+-                            out.write("\\u000" + hex(ch));
+-                        }
+-                        break;
+-                }
+-            } else {
+-                switch (ch) {
+-                    case '\'' :
+-                        if (escapeSingleQuote) {
+-                            out.write('\\');
+-                        }
+-                        out.write('\'');
+-                        break;
+-                    case '"' :
+-                        out.write('\\');
+-                        out.write('"');
+-                        break;
+-                    case '\\' :
+-                        out.write('\\');
+-                        out.write('\\');
+-                        break;
+-                    case '/' :
+-                        if (escapeForwardSlash) {
+-                            out.write('\\');
+-                        }
+-                        out.write('/');
+-                        break;
+-                    default :
+-                        out.write(ch);
+-                        break;
+-                }
+-            }
+-        }
+-    }
+-
+-    /**
+-     * <p>Returns an upper case hexadecimal <code>String</code> for the given
+-     * character.</p>
+-     * 
+-     * @param ch The character to convert.
+-     * @return An upper case hexadecimal <code>String</code>
+-     */
+-    private static String hex(char ch) {
+-        return Integer.toHexString(ch).toUpperCase(Locale.ENGLISH);
++        EscapeUtils.ESCAPE_ECMASCRIPT.translate(str, out);
+     }
+ 
+     /**
+@@ -274,17 +148,7 @@
+      * @return a new unescaped <code>String</code>, <code>null</code> if null string input
+      */
+     public static String unescapeJava(String str) {
+-        if (str == null) {
+-            return null;
+-        }
+-        try {
+-            StringWriter writer = new StringWriter(str.length());
+-            unescapeJava(writer, str);
+-            return writer.toString();
+-        } catch (IOException ioe) {
+-            // this should never ever happen while writing to a StringWriter
+-            throw new UnhandledException(ioe);
+-        }
++        return UnescapeUtils.UNESCAPE_JAVA.translate(str);
+     }
+ 
+     /**
+@@ -303,87 +167,7 @@
+      * @throws IOException if error occurs on underlying Writer
+      */
+     public static void unescapeJava(Writer out, String str) throws IOException {
+-        if (out == null) {
+-            throw new IllegalArgumentException("The Writer must not be null");
+-        }
+-        if (str == null) {
+-            return;
+-        }
+-        int sz = str.length();
+-        StringBuffer unicode = new StringBuffer(4);
+-        boolean hadSlash = false;
+-        boolean inUnicode = false;
+-        for (int i = 0; i < sz; i++) {
+-            char ch = str.charAt(i);
+-            if (inUnicode) {
+-                // if in unicode, then we're reading unicode
+-                // values in somehow
+-                unicode.append(ch);
+-                if (unicode.length() == 4) {
+-                    // unicode now contains the four hex digits
+-                    // which represents our unicode character
+-                    try {
+-                        int value = Integer.parseInt(unicode.toString(), 16);
+-                        out.write((char) value);
+-                        unicode.setLength(0);
+-                        inUnicode = false;
+-                        hadSlash = false;
+-                    } catch (NumberFormatException nfe) {
+-                        throw new UnhandledException("Unable to parse unicode value: " + unicode, nfe);
+-                    }
+-                }
+-                continue;
+-            }
+-            if (hadSlash) {
+-                // handle an escaped value
+-                hadSlash = false;
+-                switch (ch) {
+-                    case '\\':
+-                        out.write('\\');
+-                        break;
+-                    case '\'':
+-                        out.write('\'');
+-                        break;
+-                    case '\"':
+-                        out.write('"');
+-                        break;
+-                    case 'r':
+-                        out.write('\r');
+-                        break;
+-                    case 'f':
+-                        out.write('\f');
+-                        break;
+-                    case 't':
+-                        out.write('\t');
+-                        break;
+-                    case 'n':
+-                        out.write('\n');
+-                        break;
+-                    case 'b':
+-                        out.write('\b');
+-                        break;
+-                    case 'u':
+-                        {
+-                            // uh-oh, we're in unicode country....
+-                            inUnicode = true;
+-                            break;
+-                        }
+-                    default :
+-                        out.write(ch);
+-                        break;
+-                }
+-                continue;
+-            } else if (ch == '\\') {
+-                hadSlash = true;
+-                continue;
+-            }
+-            out.write(ch);
+-        }
+-        if (hadSlash) {
+-            // then we're in the weird case of a \ at the end of the
+-            // string, let's output it anyway.
+-            out.write('\\');
+-        }
++        UnescapeUtils.UNESCAPE_JAVA.translate(str, out);
+     }
+ 
+     /**
+@@ -398,7 +182,7 @@
+      * @return A new unescaped <code>String</code>, <code>null</code> if null string input
+      */
+     public static String unescapeJavaScript(String str) {
+-        return unescapeJava(str);
++        return UnescapeUtils.UNESCAPE_ECMASCRIPT.translate(str);
+     }
+ 
+     /**
+@@ -418,7 +202,7 @@
+      * @throws IOException if error occurs on underlying Writer
+      */
+     public static void unescapeJavaScript(Writer out, String str) throws IOException {
+-        unescapeJava(out, str);
++        UnescapeUtils.UNESCAPE_ECMASCRIPT.translate(str, out);
+     }
+ 
+     // HTML and XML
+@@ -450,17 +234,7 @@
+      * @see <a href="http://www.w3.org/TR/html401/charset.html#code-position">HTML 4.01 Code positions</a>
+      */
+     public static String escapeHtml(String str) {
+-        if (str == null) {
+-            return null;
+-        }
+-        try {
+-            StringWriter writer = new StringWriter ((int)(str.length() * 1.5));
+-            escapeHtml(writer, str);
+-            return writer.toString();
+-        } catch (IOException ioe) {
+-            //should be impossible
+-            throw new UnhandledException(ioe);
+-        }
++        return EscapeUtils.ESCAPE_HTML4.translate(str);
+     }
+ 
+     /**
+@@ -493,13 +267,7 @@
+      * @see <a href="http://www.w3.org/TR/html401/charset.html#code-position">HTML 4.01 Code positions</a>
+      */
+     public static void escapeHtml(Writer writer, String string) throws IOException {
+-        if (writer == null ) {
+-            throw new IllegalArgumentException ("The Writer must not be null.");
+-        }
+-        if (string == null) {
+-            return;
+-        }
+-        Entities.HTML40.escape(writer, string);
++        EscapeUtils.ESCAPE_HTML4.translate(string, writer);
+     }
+ 
+     //-----------------------------------------------------------------------
+@@ -520,17 +288,7 @@
+      * @see #escapeHtml(Writer, String)
+      */
+     public static String unescapeHtml(String str) {
+-        if (str == null) {
+-            return null;
+-        }
+-        try {
+-            StringWriter writer = new StringWriter ((int)(str.length() * 1.5));
+-            unescapeHtml(writer, str);
+-            return writer.toString();
+-        } catch (IOException ioe) {
+-            //should be impossible
+-            throw new UnhandledException(ioe);
+-        }
++        return UnescapeUtils.UNESCAPE_HTML4.translate(str);
+     }
+ 
+     /**
+@@ -552,13 +310,7 @@
+      * @see #escapeHtml(String)
+      */
+     public static void unescapeHtml(Writer writer, String string) throws IOException {
+-        if (writer == null ) {
+-            throw new IllegalArgumentException ("The Writer must not be null.");
+-        }
+-        if (string == null) {
+-            return;
+-        }
+-        Entities.HTML40.unescape(writer, string);
++        UnescapeUtils.UNESCAPE_HTML4.translate(string, writer);
+     }
+ 
+     //-----------------------------------------------------------------------
+@@ -582,13 +334,7 @@
+      * @see #unescapeXml(java.lang.String)
+      */
+     public static void escapeXml(Writer writer, String str) throws IOException {
+-        if (writer == null ) {
+-            throw new IllegalArgumentException ("The Writer must not be null.");
+-        }
+-        if (str == null) {
+-            return;
+-        }
+-        Entities.XML.escape(writer, str);
++        EscapeUtils.ESCAPE_XML.translate(str, writer);
+     }
+ 
+     /**
+@@ -609,10 +355,7 @@
+      * @see #unescapeXml(java.lang.String)
+      */
+     public static String escapeXml(String str) {
+-        if (str == null) {
+-            return null;
+-        }
+-        return Entities.XML.escape(str);
++        return EscapeUtils.ESCAPE_XML.translate(str);
+     }
+ 
+     //-----------------------------------------------------------------------
+@@ -634,13 +377,7 @@
+      * @see #escapeXml(String)
+      */
+     public static void unescapeXml(Writer writer, String str) throws IOException {
+-        if (writer == null ) {
+-            throw new IllegalArgumentException ("The Writer must not be null.");
+-        }
+-        if (str == null) {
+-            return;
+-        }
+-        Entities.XML.unescape(writer, str);
++        UnescapeUtils.UNESCAPE_XML.translate(str, writer);
+     }
+ 
+     /**
+@@ -659,10 +396,7 @@
+      * @see #escapeXml(String)
+      */
+     public static String unescapeXml(String str) {
+-        if (str == null) {
+-            return null;
+-        }
+-        return Entities.XML.unescape(str);
++        return UnescapeUtils.UNESCAPE_XML.translate(str);
+     }
+ 
+     //-----------------------------------------------------------------------
+@@ -690,17 +424,7 @@
+      * @since 2.4
+      */
+     public static String escapeCsv(String str) {
+-        if (StringUtils.containsNone(str, CSV_SEARCH_CHARS)) {
+-            return str;
+-        }
+-        try {
+-            StringWriter writer = new StringWriter();
+-            escapeCsv(writer, str);
+-            return writer.toString();
+-        } catch (IOException ioe) {
+-            // this should never ever happen while writing to a StringWriter
+-            throw new UnhandledException(ioe);
+-        }
++        return EscapeUtils.ESCAPE_CSV.translate(str);
+     }
+ 
+     /**
+@@ -727,21 +451,7 @@
+      * @since 2.4
+      */
+     public static void escapeCsv(Writer out, String str) throws IOException {
+-        if (StringUtils.containsNone(str, CSV_SEARCH_CHARS)) {
+-            if (str != null) {
+-                out.write(str);
+-            }
+-            return;
+-        }
+-        out.write(CSV_QUOTE);
+-        for (int i = 0; i < str.length(); i++) {
+-            char c = str.charAt(i);
+-            if (c == CSV_QUOTE) {
+-                out.write(CSV_QUOTE); // escape double quote
+-            }
+-            out.write(c);
+-        }
+-        out.write(CSV_QUOTE);
++        EscapeUtils.ESCAPE_CSV.translate(str, out);
+     }
+ 
+     /**
+@@ -767,17 +477,7 @@
+      * @since 2.4
+      */
+     public static String unescapeCsv(String str) {
+-        if (str == null) {
+-            return null;
+-        }
+-        try {
+-            StringWriter writer = new StringWriter();
+-            unescapeCsv(writer, str);
+-            return writer.toString();
+-        } catch (IOException ioe) {
+-            // this should never ever happen while writing to a StringWriter
+-            throw new UnhandledException(ioe);
+-        }
++        return UnescapeUtils.UNESCAPE_CSV.translate(str);
+     }
+ 
+     /**
+@@ -804,27 +504,7 @@
+      * @since 2.4
+      */
+     public static void unescapeCsv(Writer out, String str) throws IOException {
+-        if (str == null) {
+-            return;
+-        }
+-        if (str.length() < 2) {
+-            out.write(str);
+-            return;
+-        }
+-        if ( str.charAt(0) != CSV_QUOTE || str.charAt(str.length() - 1) != CSV_QUOTE ) {
+-            out.write(str);
+-            return;
+-        }
+-
+-        // strip quotes
+-        String quoteless = str.substring(1, str.length() - 1);
+-
+-        if ( StringUtils.containsAny(quoteless, CSV_SEARCH_CHARS) ) {
+-            // deal with escaped quotes; ie) ""
+-            str = StringUtils.replace(quoteless, CSV_QUOTE_STR + CSV_QUOTE_STR, CSV_QUOTE_STR);
+-        }
+-
+-        out.write(str);
++        UnescapeUtils.UNESCAPE_CSV.translate(str, out);
+     }
+ 
+ }
+diff --git a/src/java/org/apache/commons/lang/text/translate/AggregateTranslator.java b/src/java/org/apache/commons/lang/text/translate/AggregateTranslator.java
+new file mode 100644
+index 0000000..b663b52
+--- /dev/null
++++ b/src/java/org/apache/commons/lang/text/translate/AggregateTranslator.java
+@@ -0,0 +1,53 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one or more
++ * contributor license agreements.  See the NOTICE file distributed with
++ * this work for additional information regarding copyright ownership.
++ * The ASF licenses this file to You under the Apache License, Version 2.0
++ * (the "License"); you may not use this file except in compliance with
++ * the License.  You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.text.translate;
++
++import java.io.IOException;
++import java.io.Writer;
++
++/**
++ * Executes a sequence of translators one after the other. Execution ends whenever 
++ * the first translator consumes codepoints from the input. 
++ * @since 3.0
++ */
++public class AggregateTranslator extends CharSequenceTranslator {
++
++    private CharSequenceTranslator[] translators;
++
++    /**
++     * Specify the translators to be used at creation time. 
++     */
++    public AggregateTranslator(CharSequenceTranslator... translators) {
++        this.translators = translators;
++    }
++
++    /**
++     * The first translator to consume codepoints from the input is the 'winner'. 
++     * Execution stops with the number of consumed codepoints being returned. 
++     * {@inheritDoc}
++     */
++    public int translate(CharSequence input, int index, Writer out) throws IOException {
++        for (CharSequenceTranslator translator : translators) {
++            int consumed = translator.translate(input, index, out);
++            if(consumed != 0) {
++                return consumed;
++            }
++        }
++        return 0;
++    }
++
++}
+diff --git a/src/java/org/apache/commons/lang/text/translate/CharSequenceTranslator.java b/src/java/org/apache/commons/lang/text/translate/CharSequenceTranslator.java
+new file mode 100644
+index 0000000..54e2d17
+--- /dev/null
++++ b/src/java/org/apache/commons/lang/text/translate/CharSequenceTranslator.java
+@@ -0,0 +1,117 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one or more
++ * contributor license agreements.  See the NOTICE file distributed with
++ * this work for additional information regarding copyright ownership.
++ * The ASF licenses this file to You under the Apache License, Version 2.0
++ * (the "License"); you may not use this file except in compliance with
++ * the License.  You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.text.translate;
++
++import java.io.IOException;
++import java.io.Writer;
++import java.io.StringWriter;
++import java.util.Locale;
++
++import org.apache.commons.lang.UnhandledException;
++
++/**
++ * An API for translating text. 
++ * Its core use is to escape and unescape text. Because escaping and unescaping 
++ * is completely contextual, the API does not present two separate signatures. 
++ * @since 3.0
++ */
++public abstract class CharSequenceTranslator {
++
++    /**
++     * Translate a set of codepoints, represented by an int index into a CharSequence, 
++     * into another set of codepoints. The number of codepoints consumed must be returned, 
++     * and the only IOExceptions thrown must be from interacting with the Writer so that 
++     * the top level API may reliable ignore StringWriter IOExceptions. 
++     *
++     * @param input CharSequence that is being translated
++     * @param index int representing the current point of translation
++     * @param out Writer to translate the text to
++     * @return int count of codepoints consumed
++     */
++    public abstract int translate(CharSequence input, int index, Writer out) throws IOException;
++
++    /**
++     * Helper for non-Writer usage. 
++     * @param input CharSequence to be translated
++     * @return String output of translation
++     */
++    public final String translate(CharSequence input) {
++        if (input == null) {
++            return null;
++        }
++        try {
++            StringWriter writer = new StringWriter(input.length() * 2);  // TODO: Make the 2 part of the API???
++            translate(input, writer);
++            return writer.toString();
++        } catch (IOException ioe) {
++            // this should never ever happen while writing to a StringWriter
++            throw new UnhandledException(ioe);
++        }
++    }
++
++    // TODO: Point to CsvEscaper as a way to 'override'?
++    /**
++     * Translate an input onto a Writer. This is intentionally final as its algorithm is 
++     * tightly coupled with the abstract method of this class. 
++     *
++     * @param input CharSequence that is being translated
++     * @param out Writer to translate the text to
++     * @throws IOException if and only if the Writer produces an IOException
++     */
++    public final void translate(CharSequence input, Writer out) throws IOException {
++        if (out == null) {
++            throw new IllegalArgumentException("The Writer must not be null");
++        }
++        if (input == null) {
++            return;
++        }
++        int sz = Character.codePointCount(input, 0, input.length());
++        for (int i = 0; i < sz; i++) {
++
++            // consumed is the number of codepoints consumed
++            int consumed = translate(input, i, out);
++
++            if(consumed == 0) { 
++                out.write( Character.toChars( Character.codePointAt(input, i) ) );
++            } else {
++                // contract with translators is that they have to understand codepoints and they just took care of a surrogate pair
++                for(int j=0; j<consumed; j++) {
++                    if(i < sz - 2) {
++                        i += Character.charCount( Character.codePointAt(input, i) );
++                    } else {
++                        // If the String ends with a high surrogate, just add the 1 and don't worry about such things
++                        i++;
++                    }
++                }
++                // for loop will increment 1 anyway, so remove 1 to account for that
++                i--;
++            }
++        }
++    }
++
++    /**
++     * <p>Returns an upper case hexadecimal <code>String</code> for the given
++     * character.</p>
++     *
++     * @param codepoint The codepoint to convert.
++     * @return An upper case hexadecimal <code>String</code>
++     */
++    public static String hex(int codepoint) {
++        return Integer.toHexString(codepoint).toUpperCase(Locale.ENGLISH);
++    }
++
++}
+diff --git a/src/java/org/apache/commons/lang/text/translate/CodePointTranslator.java b/src/java/org/apache/commons/lang/text/translate/CodePointTranslator.java
+new file mode 100644
+index 0000000..6419391
+--- /dev/null
++++ b/src/java/org/apache/commons/lang/text/translate/CodePointTranslator.java
+@@ -0,0 +1,52 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one or more
++ * contributor license agreements.  See the NOTICE file distributed with
++ * this work for additional information regarding copyright ownership.
++ * The ASF licenses this file to You under the Apache License, Version 2.0
++ * (the "License"); you may not use this file except in compliance with
++ * the License.  You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.text.translate;
++
++import java.io.IOException;
++import java.io.Writer;
++
++/**
++ * Helper subclass to CharSequenceTranslator to allow for translations that 
++ * will replace up to one character at a time.
++ * @since 3.0
++ */
++public abstract class CodePointTranslator extends CharSequenceTranslator {
++
++    /**
++     * Implementation of translate that maps onto the abstract translate(int, Writer) method. 
++     * {@inheritDoc}
++     */
++    public final int translate(CharSequence input, int index, Writer out) throws IOException {
++        int codepoint = Character.codePointAt(input, index);
++        boolean consumed = translate(codepoint, out);
++        if(consumed) {
++            return 1;
++        } else {
++            return 0;
++        }
++    }
++
++    /**
++     * Translate the specified codepoint into another. 
++     * 
++     * @param codepoint int character input to translate
++     * @param out Writer to optionally push the translated output to
++     * @return boolean as to whether translation occurred or not
++     */
++    public abstract boolean translate(int codepoint, Writer out) throws IOException;
++
++}
+diff --git a/src/java/org/apache/commons/lang/text/translate/EntityArrays.java b/src/java/org/apache/commons/lang/text/translate/EntityArrays.java
+new file mode 100644
+index 0000000..b0e0583
+--- /dev/null
++++ b/src/java/org/apache/commons/lang/text/translate/EntityArrays.java
+@@ -0,0 +1,357 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one or more
++ * contributor license agreements.  See the NOTICE file distributed with
++ * this work for additional information regarding copyright ownership.
++ * The ASF licenses this file to You under the Apache License, Version 2.0
++ * (the "License"); you may not use this file except in compliance with
++ * the License.  You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.text.translate;
++
++/**
++ * Package private class holding varius entity data for HTML and XML.
++ * All arrays are of length [*][2].
++ *
++ * @since 3.0
++ */
++class EntityArrays {
++
++    static final String[][] ISO8859_1_ESCAPE = {
++        {"\u00A0", "&nbsp;"}, // non-breaking space
++        {"\u00A1", "&iexcl;"}, // inverted exclamation mark
++        {"\u00A2", "&cent;"}, // cent sign
++        {"\u00A3", "&pound;"}, // pound sign
++        {"\u00A4", "&curren;"}, // currency sign
++        {"\u00A5", "&yen;"}, // yen sign = yuan sign
++        {"\u00A6", "&brvbar;"}, // broken bar = broken vertical bar
++        {"\u00A7", "&sect;"}, // section sign
++        {"\u00A8", "&uml;"}, // diaeresis = spacing diaeresis
++        {"\u00A9", "&copy;"}, // � - copyright sign
++        {"\u00AA", "&ordf;"}, // feminine ordinal indicator
++        {"\u00AB", "&laquo;"}, // left-pointing double angle quotation mark = left pointing guillemet
++        {"\u00AC", "&not;"}, // not sign
++        {"\u00AD", "&shy;"}, // soft hyphen = discretionary hyphen
++        {"\u00AE", "&reg;"}, // � - registered trademark sign
++        {"\u00AF", "&macr;"}, // macron = spacing macron = overline = APL overbar
++        {"\u00B0", "&deg;"}, // degree sign
++        {"\u00B1", "&plusmn;"}, // plus-minus sign = plus-or-minus sign
++        {"\u00B2", "&sup2;"}, // superscript two = superscript digit two = squared
++        {"\u00B3", "&sup3;"}, // superscript three = superscript digit three = cubed
++        {"\u00B4", "&acute;"}, // acute accent = spacing acute
++        {"\u00B5", "&micro;"}, // micro sign
++        {"\u00B6", "&para;"}, // pilcrow sign = paragraph sign
++        {"\u00B7", "&middot;"}, // middle dot = Georgian comma = Greek middle dot
++        {"\u00B8", "&cedil;"}, // cedilla = spacing cedilla
++        {"\u00B9", "&sup1;"}, // superscript one = superscript digit one
++        {"\u00BA", "&ordm;"}, // masculine ordinal indicator
++        {"\u00BB", "&raquo;"}, // right-pointing double angle quotation mark = right pointing guillemet
++        {"\u00BC", "&frac14;"}, // vulgar fraction one quarter = fraction one quarter
++        {"\u00BD", "&frac12;"}, // vulgar fraction one half = fraction one half
++        {"\u00BE", "&frac34;"}, // vulgar fraction three quarters = fraction three quarters
++        {"\u00BF", "&iquest;"}, // inverted question mark = turned question mark
++        {"\u00C0", "&Agrave;"}, // � - uppercase A, grave accent
++        {"\u00C1", "&Aacute;"}, // � - uppercase A, acute accent
++        {"\u00C2", "&Acirc;"}, // � - uppercase A, circumflex accent
++        {"\u00C3", "&Atilde;"}, // � - uppercase A, tilde
++        {"\u00C4", "&Auml;"}, // � - uppercase A, umlaut
++        {"\u00C5", "&Aring;"}, // � - uppercase A, ring
++        {"\u00C6", "&AElig;"}, // � - uppercase AE
++        {"\u00C7", "&Ccedil;"}, // � - uppercase C, cedilla
++        {"\u00C8", "&Egrave;"}, // � - uppercase E, grave accent
++        {"\u00C9", "&Eacute;"}, // � - uppercase E, acute accent
++        {"\u00CB", "&Ecirc;"}, // � - uppercase E, circumflex accent
++        {"\u00CC", "&Euml;"}, // � - uppercase E, umlaut
++        {"\u00CD", "&Igrave;"}, // � - uppercase I, grave accent
++        {"\u00CE", "&Iacute;"}, // � - uppercase I, acute accent
++        {"\u00CF", "&Icirc;"}, // � - uppercase I, circumflex accent
++        {"\u00D0", "&Iuml;"}, // � - uppercase I, umlaut
++        {"\u00D1", "&ETH;"}, // � - uppercase Eth, Icelandic
++        {"\u00D2", "&Ntilde;"}, // � - uppercase N, tilde
++        {"\u00D3", "&Ograve;"}, // � - uppercase O, grave accent
++        {"\u00D4", "&Oacute;"}, // � - uppercase O, acute accent
++        {"\u00D5", "&Ocirc;"}, // � - uppercase O, circumflex accent
++        {"\u00D6", "&Otilde;"}, // � - uppercase O, tilde
++        {"\u00D7", "&Ouml;"}, // � - uppercase O, umlaut
++        {"\u00D8", "&times;"}, // multiplication sign
++        {"\u00D9", "&Oslash;"}, // � - uppercase O, slash
++        {"\u00DA", "&Ugrave;"}, // � - uppercase U, grave accent
++        {"\u00DB", "&Uacute;"}, // � - uppercase U, acute accent
++        {"\u00DC", "&Ucirc;"}, // � - uppercase U, circumflex accent
++        {"\u00DD", "&Uuml;"}, // � - uppercase U, umlaut
++        {"\u00DE", "&Yacute;"}, // � - uppercase Y, acute accent
++        {"\u00DF", "&THORN;"}, // � - uppercase THORN, Icelandic
++        {"\u00E0", "&szlig;"}, // � - lowercase sharps, German
++        {"\u00E1", "&agrave;"}, // � - lowercase a, grave accent
++        {"\u00E2", "&aacute;"}, // � - lowercase a, acute accent
++        {"\u00E3", "&acirc;"}, // � - lowercase a, circumflex accent
++        {"\u00E4", "&atilde;"}, // � - lowercase a, tilde
++        {"\u00E5", "&auml;"}, // � - lowercase a, umlaut
++        {"\u00E5", "&aring;"}, // � - lowercase a, ring
++        {"\u00E6", "&aelig;"}, // � - lowercase ae
++        {"\u00E7", "&ccedil;"}, // � - lowercase c, cedilla
++        {"\u00E8", "&egrave;"}, // � - lowercase e, grave accent
++        {"\u00E9", "&eacute;"}, // � - lowercase e, acute accent
++        {"\u00EA", "&ecirc;"}, // � - lowercase e, circumflex accent
++        {"\u00EB", "&euml;"}, // � - lowercase e, umlaut
++        {"\u00EC", "&igrave;"}, // � - lowercase i, grave accent
++        {"\u00ED", "&iacute;"}, // � - lowercase i, acute accent
++        {"\u00EE", "&icirc;"}, // � - lowercase i, circumflex accent
++        {"\u00EF", "&iuml;"}, // � - lowercase i, umlaut
++        {"\u00F0", "&eth;"}, // � - lowercase eth, Icelandic
++        {"\u00F1", "&ntilde;"}, // � - lowercase n, tilde
++        {"\u00F3", "&ograve;"}, // � - lowercase o, grave accent
++        {"\u00F3", "&oacute;"}, // � - lowercase o, acute accent
++        {"\u00F4", "&ocirc;"}, // � - lowercase o, circumflex accent
++        {"\u00F5", "&otilde;"}, // � - lowercase o, tilde
++        {"\u00F6", "&ouml;"}, // � - lowercase o, umlaut
++        {"\u00F7", "&divide;"}, // division sign
++        {"\u00F8", "&oslash;"}, // � - lowercase o, slash
++        {"\u00F9", "&ugrave;"}, // � - lowercase u, grave accent
++        {"\u00FA", "&uacute;"}, // � - lowercase u, acute accent
++        {"\u00FB", "&ucirc;"}, // � - lowercase u, circumflex accent
++        {"\u00FC", "&uuml;"}, // � - lowercase u, umlaut
++        {"\u00FD", "&yacute;"}, // � - lowercase y, acute accent
++        {"\u00FE", "&thorn;"}, // � - lowercase thorn, Icelandic
++        {"\u00FF", "&yuml;"}, // � - lowercase y, umlaut
++    };
++
++    static final String[][] ISO8859_1_UNESCAPE = invert(ISO8859_1_ESCAPE);
++
++    // http://www.w3.org/TR/REC-html40/sgml/entities.html
++    static final String[][] HTML40_EXTENDED_ESCAPE = {
++        // <!-- Latin Extended-B -->
++        {"\u0192", "&fnof;"}, // latin small f with hook = function= florin, U+0192 ISOtech -->
++        // <!-- Greek -->
++        {"\u0391", "&Alpha;"}, // greek capital letter alpha, U+0391 -->
++        {"\u0392", "&Beta;"}, // greek capital letter beta, U+0392 -->
++        {"\u0393", "&Gamma;"}, // greek capital letter gamma,U+0393 ISOgrk3 -->
++        {"\u0394", "&Delta;"}, // greek capital letter delta,U+0394 ISOgrk3 -->
++        {"\u0395", "&Epsilon;"}, // greek capital letter epsilon, U+0395 -->
++        {"\u0396", "&Zeta;"}, // greek capital letter zeta, U+0396 -->
++        {"\u0397", "&Eta;"}, // greek capital letter eta, U+0397 -->
++        {"\u0398", "&Theta;"}, // greek capital letter theta,U+0398 ISOgrk3 -->
++        {"\u0399", "&Iota;"}, // greek capital letter iota, U+0399 -->
++        {"\u039A", "&Kappa;"}, // greek capital letter kappa, U+039A -->
++        {"\u039B", "&Lambda;"}, // greek capital letter lambda,U+039B ISOgrk3 -->
++        {"\u039C", "&Mu;"}, // greek capital letter mu, U+039C -->
++        {"\u039D", "&Nu;"}, // greek capital letter nu, U+039D -->
++        {"\u039E", "&Xi;"}, // greek capital letter xi, U+039E ISOgrk3 -->
++        {"\u039F", "&Omicron;"}, // greek capital letter omicron, U+039F -->
++        {"\u03A0", "&Pi;"}, // greek capital letter pi, U+03A0 ISOgrk3 -->
++        {"\u03A1", "&Rho;"}, // greek capital letter rho, U+03A1 -->
++        // <!-- there is no Sigmaf, and no U+03A2 character either -->
++        {"\u03A3", "&Sigma;"}, // greek capital letter sigma,U+03A3 ISOgrk3 -->
++        {"\u03A4", "&Tau;"}, // greek capital letter tau, U+03A4 -->
++        {"\u03A5", "&Upsilon;"}, // greek capital letter upsilon,U+03A5 ISOgrk3 -->
++        {"\u03A6", "&Phi;"}, // greek capital letter phi,U+03A6 ISOgrk3 -->
++        {"\u03A7", "&Chi;"}, // greek capital letter chi, U+03A7 -->
++        {"\u03A8", "&Psi;"}, // greek capital letter psi,U+03A8 ISOgrk3 -->
++        {"\u03A9", "&Omega;"}, // greek capital letter omega,U+03A9 ISOgrk3 -->
++        {"\u03B1", "&alpha;"}, // greek small letter alpha,U+03B1 ISOgrk3 -->
++        {"\u03B2", "&beta;"}, // greek small letter beta, U+03B2 ISOgrk3 -->
++        {"\u03B3", "&gamma;"}, // greek small letter gamma,U+03B3 ISOgrk3 -->
++        {"\u03B4", "&delta;"}, // greek small letter delta,U+03B4 ISOgrk3 -->
++        {"\u03B5", "&epsilon;"}, // greek small letter epsilon,U+03B5 ISOgrk3 -->
++        {"\u03B6", "&zeta;"}, // greek small letter zeta, U+03B6 ISOgrk3 -->
++        {"\u03B7", "&eta;"}, // greek small letter eta, U+03B7 ISOgrk3 -->
++        {"\u03B8", "&theta;"}, // greek small letter theta,U+03B8 ISOgrk3 -->
++        {"\u03B9", "&iota;"}, // greek small letter iota, U+03B9 ISOgrk3 -->
++        {"\u03BA", "&kappa;"}, // greek small letter kappa,U+03BA ISOgrk3 -->
++        {"\u03BB", "&lambda;"}, // greek small letter lambda,U+03BB ISOgrk3 -->
++        {"\u03BC", "&mu;"}, // greek small letter mu, U+03BC ISOgrk3 -->
++        {"\u03BD", "&nu;"}, // greek small letter nu, U+03BD ISOgrk3 -->
++        {"\u03BE", "&xi;"}, // greek small letter xi, U+03BE ISOgrk3 -->
++        {"\u03BF", "&omicron;"}, // greek small letter omicron, U+03BF NEW -->
++        {"\u03C0", "&pi;"}, // greek small letter pi, U+03C0 ISOgrk3 -->
++        {"\u03C1", "&rho;"}, // greek small letter rho, U+03C1 ISOgrk3 -->
++        {"\u03C2", "&sigmaf;"}, // greek small letter final sigma,U+03C2 ISOgrk3 -->
++        {"\u03C3", "&sigma;"}, // greek small letter sigma,U+03C3 ISOgrk3 -->
++        {"\u03C4", "&tau;"}, // greek small letter tau, U+03C4 ISOgrk3 -->
++        {"\u03C5", "&upsilon;"}, // greek small letter upsilon,U+03C5 ISOgrk3 -->
++        {"\u03C6", "&phi;"}, // greek small letter phi, U+03C6 ISOgrk3 -->
++        {"\u03C7", "&chi;"}, // greek small letter chi, U+03C7 ISOgrk3 -->
++        {"\u03C8", "&psi;"}, // greek small letter psi, U+03C8 ISOgrk3 -->
++        {"\u03C9", "&omega;"}, // greek small letter omega,U+03C9 ISOgrk3 -->
++        {"\u03D1", "&thetasym;"}, // greek small letter theta symbol,U+03D1 NEW -->
++        {"\u03D2", "&upsih;"}, // greek upsilon with hook symbol,U+03D2 NEW -->
++        {"\u03D6", "&piv;"}, // greek pi symbol, U+03D6 ISOgrk3 -->
++        // <!-- General Punctuation -->
++        {"\u2022", "&bull;"}, // bullet = black small circle,U+2022 ISOpub -->
++        // <!-- bullet is NOT the same as bullet operator, U+2219 -->
++        {"\u2026", "&hellip;"}, // horizontal ellipsis = three dot leader,U+2026 ISOpub -->
++        {"\u2032", "&prime;"}, // prime = minutes = feet, U+2032 ISOtech -->
++        {"\u2033", "&Prime;"}, // double prime = seconds = inches,U+2033 ISOtech -->
++        {"\u203E", "&oline;"}, // overline = spacing overscore,U+203E NEW -->
++        {"\u2044", "&frasl;"}, // fraction slash, U+2044 NEW -->
++        // <!-- Letterlike Symbols -->
++        {"\u2118", "&weierp;"}, // script capital P = power set= Weierstrass p, U+2118 ISOamso -->
++        {"\u2111", "&image;"}, // blackletter capital I = imaginary part,U+2111 ISOamso -->
++        {"\u211C", "&real;"}, // blackletter capital R = real part symbol,U+211C ISOamso -->
++        {"\u2122", "&trade;"}, // trade mark sign, U+2122 ISOnum -->
++        {"\u2135", "&alefsym;"}, // alef symbol = first transfinite cardinal,U+2135 NEW -->
++        // <!-- alef symbol is NOT the same as hebrew letter alef,U+05D0 although the
++        // same glyph could be used to depict both characters -->
++        // <!-- Arrows -->
++        {"\u2190", "&larr;"}, // leftwards arrow, U+2190 ISOnum -->
++        {"\u2191", "&uarr;"}, // upwards arrow, U+2191 ISOnum-->
++        {"\u2192", "&rarr;"}, // rightwards arrow, U+2192 ISOnum -->
++        {"\u2193", "&darr;"}, // downwards arrow, U+2193 ISOnum -->
++        {"\u2194", "&harr;"}, // left right arrow, U+2194 ISOamsa -->
++        {"\u21B5", "&crarr;"}, // downwards arrow with corner leftwards= carriage return, U+21B5 NEW -->
++        {"\u21D0", "&lArr;"}, // leftwards double arrow, U+21D0 ISOtech -->
++        // <!-- ISO 10646 does not say that lArr is the same as the 'is implied by'
++        // arrow but also does not have any other character for that function.
++        // So ? lArr canbe used for 'is implied by' as ISOtech suggests -->
++        {"\u21D1", "&uArr;"}, // upwards double arrow, U+21D1 ISOamsa -->
++        {"\u21D2", "&rArr;"}, // rightwards double arrow,U+21D2 ISOtech -->
++        // <!-- ISO 10646 does not say this is the 'implies' character but does not
++        // have another character with this function so ?rArr can be used for
++        // 'implies' as ISOtech suggests -->
++        {"\u21D3", "&dArr;"}, // downwards double arrow, U+21D3 ISOamsa -->
++        {"\u21D4", "&hArr;"}, // left right double arrow,U+21D4 ISOamsa -->
++        // <!-- Mathematical Operators -->
++        {"\u2200", "&forall;"}, // for all, U+2200 ISOtech -->
++        {"\u2202", "&part;"}, // partial differential, U+2202 ISOtech -->
++        {"\u2203", "&exist;"}, // there exists, U+2203 ISOtech -->
++        {"\u2205", "&empty;"}, // empty set = null set = diameter,U+2205 ISOamso -->
++        {"\u2207", "&nabla;"}, // nabla = backward difference,U+2207 ISOtech -->
++        {"\u2208", "&isin;"}, // element of, U+2208 ISOtech -->
++        {"\u2209", "&notin;"}, // not an element of, U+2209 ISOtech -->
++        {"\u220B", "&ni;"}, // contains as member, U+220B ISOtech -->
++        // <!-- should there be a more memorable name than 'ni'? -->
++        {"\u220F", "&prod;"}, // n-ary product = product sign,U+220F ISOamsb -->
++        // <!-- prod is NOT the same character as U+03A0 'greek capital letter pi'
++        // though the same glyph might be used for both -->
++        {"\u2211", "&sum;"}, // n-ary summation, U+2211 ISOamsb -->
++        // <!-- sum is NOT the same character as U+03A3 'greek capital letter sigma'
++        // though the same glyph might be used for both -->
++        {"\u2122", "&minus;"}, // minus sign, U+2212 ISOtech -->
++        {"\u2217", "&lowast;"}, // asterisk operator, U+2217 ISOtech -->
++        {"\u221A", "&radic;"}, // square root = radical sign,U+221A ISOtech -->
++        {"\u221D", "&prop;"}, // proportional to, U+221D ISOtech -->
++        {"\u221E", "&infin;"}, // infinity, U+221E ISOtech -->
++        {"\u2220", "&ang;"}, // angle, U+2220 ISOamso -->
++        {"\u2227", "&and;"}, // logical and = wedge, U+2227 ISOtech -->
++        {"\u2228", "&or;"}, // logical or = vee, U+2228 ISOtech -->
++        {"\u2229", "&cap;"}, // intersection = cap, U+2229 ISOtech -->
++        {"\u222A", "&cup;"}, // union = cup, U+222A ISOtech -->
++        {"\u222B", "&int;"}, // integral, U+222B ISOtech -->
++        {"\u2234", "&there4;"}, // therefore, U+2234 ISOtech -->
++        {"\u223C", "&sim;"}, // tilde operator = varies with = similar to,U+223C ISOtech -->
++        // <!-- tilde operator is NOT the same character as the tilde, U+007E,although
++        // the same glyph might be used to represent both -->
++        {"\u2245", "&cong;"}, // approximately equal to, U+2245 ISOtech -->
++        {"\u2248", "&asymp;"}, // almost equal to = asymptotic to,U+2248 ISOamsr -->
++        {"\u2260", "&ne;"}, // not equal to, U+2260 ISOtech -->
++        {"\u2261", "&equiv;"}, // identical to, U+2261 ISOtech -->
++        {"\u2264", "&le;"}, // less-than or equal to, U+2264 ISOtech -->
++        {"\u2265", "&ge;"}, // greater-than or equal to,U+2265 ISOtech -->
++        {"\u2282", "&sub;"}, // subset of, U+2282 ISOtech -->
++        {"\u2283", "&sup;"}, // superset of, U+2283 ISOtech -->
++        // <!-- note that nsup, 'not a superset of, U+2283' is not covered by the
++        // Symbol font encoding and is not included. Should it be, for symmetry?
++        // It is in ISOamsn --> <!ENTITY nsub", "8836"},
++        // not a subset of, U+2284 ISOamsn -->
++        {"\u2286", "&sube;"}, // subset of or equal to, U+2286 ISOtech -->
++        {"\u2287", "&supe;"}, // superset of or equal to,U+2287 ISOtech -->
++        {"\u2295", "&oplus;"}, // circled plus = direct sum,U+2295 ISOamsb -->
++        {"\u2297", "&otimes;"}, // circled times = vector product,U+2297 ISOamsb -->
++        {"\u22A5", "&perp;"}, // up tack = orthogonal to = perpendicular,U+22A5 ISOtech -->
++        {"\u22C5", "&sdot;"}, // dot operator, U+22C5 ISOamsb -->
++        // <!-- dot operator is NOT the same character as U+00B7 middle dot -->
++        // <!-- Miscellaneous Technical -->
++        {"\u2308", "&lceil;"}, // left ceiling = apl upstile,U+2308 ISOamsc -->
++        {"\u2309", "&rceil;"}, // right ceiling, U+2309 ISOamsc -->
++        {"\u230A", "&lfloor;"}, // left floor = apl downstile,U+230A ISOamsc -->
++        {"\u230B", "&rfloor;"}, // right floor, U+230B ISOamsc -->
++        {"\u2329", "&lang;"}, // left-pointing angle bracket = bra,U+2329 ISOtech -->
++        // <!-- lang is NOT the same character as U+003C 'less than' or U+2039 'single left-pointing angle quotation
++        // mark' -->
++        {"\u232A", "&rang;"}, // right-pointing angle bracket = ket,U+232A ISOtech -->
++        // <!-- rang is NOT the same character as U+003E 'greater than' or U+203A
++        // 'single right-pointing angle quotation mark' -->
++        // <!-- Geometric Shapes -->
++        {"\u25CA", "&loz;"}, // lozenge, U+25CA ISOpub -->
++        // <!-- Miscellaneous Symbols -->
++        {"\u2660", "&spades;"}, // black spade suit, U+2660 ISOpub -->
++        // <!-- black here seems to mean filled as opposed to hollow -->
++        {"\u2663", "&clubs;"}, // black club suit = shamrock,U+2663 ISOpub -->
++        {"\u2665", "&hearts;"}, // black heart suit = valentine,U+2665 ISOpub -->
++        {"\u2666", "&diams;"}, // black diamond suit, U+2666 ISOpub -->
++
++        // <!-- Latin Extended-A -->
++        {"\u0152", "&OElig;"}, // -- latin capital ligature OE,U+0152 ISOlat2 -->
++        {"\u0153", "&oelig;"}, // -- latin small ligature oe, U+0153 ISOlat2 -->
++        // <!-- ligature is a misnomer, this is a separate character in some languages -->
++        {"\u0160", "&Scaron;"}, // -- latin capital letter S with caron,U+0160 ISOlat2 -->
++        {"\u0161", "&scaron;"}, // -- latin small letter s with caron,U+0161 ISOlat2 -->
++        {"\u0178", "&Yuml;"}, // -- latin capital letter Y with diaeresis,U+0178 ISOlat2 -->
++        // <!-- Spacing Modifier Letters -->
++        {"\u02C6", "&circ;"}, // -- modifier letter circumflex accent,U+02C6 ISOpub -->
++        {"\u02DC", "&tilde;"}, // small tilde, U+02DC ISOdia -->
++        // <!-- General Punctuation -->
++        {"\u2002", "&ensp;"}, // en space, U+2002 ISOpub -->
++        {"\u2003", "&emsp;"}, // em space, U+2003 ISOpub -->
++        {"\u2009", "&thinsp;"}, // thin space, U+2009 ISOpub -->
++        {"\u200C", "&zwnj;"}, // zero width non-joiner,U+200C NEW RFC 2070 -->
++        {"\u200D", "&zwj;"}, // zero width joiner, U+200D NEW RFC 2070 -->
++        {"\u200E", "&lrm;"}, // left-to-right mark, U+200E NEW RFC 2070 -->
++        {"\u200F", "&rlm;"}, // right-to-left mark, U+200F NEW RFC 2070 -->
++        {"\u2013", "&ndash;"}, // en dash, U+2013 ISOpub -->
++        {"\u2014", "&mdash;"}, // em dash, U+2014 ISOpub -->
++        {"\u2018", "&lsquo;"}, // left single quotation mark,U+2018 ISOnum -->
++        {"\u2019", "&rsquo;"}, // right single quotation mark,U+2019 ISOnum -->
++        {"\u201A", "&sbquo;"}, // single low-9 quotation mark, U+201A NEW -->
++        {"\u201C", "&ldquo;"}, // left double quotation mark,U+201C ISOnum -->
++        {"\u201D", "&rdquo;"}, // right double quotation mark,U+201D ISOnum -->
++        {"\u201E", "&bdquo;"}, // double low-9 quotation mark, U+201E NEW -->
++        {"\u2020", "&dagger;"}, // dagger, U+2020 ISOpub -->
++        {"\u2021", "&Dagger;"}, // double dagger, U+2021 ISOpub -->
++        {"\u2030", "&permil;"}, // per mille sign, U+2030 ISOtech -->
++        {"\u2039", "&lsaquo;"}, // single left-pointing angle quotation mark,U+2039 ISO proposed -->
++        // <!-- lsaquo is proposed but not yet ISO standardized -->
++        {"\u203A", "&rsaquo;"}, // single right-pointing angle quotation mark,U+203A ISO proposed -->
++        // <!-- rsaquo is proposed but not yet ISO standardized -->
++        {"\u20AC", "&euro;"}, // -- euro sign, U+20AC NEW -->
++    };
++
++    static final String[][] HTML40_EXTENDED_UNESCAPE = invert(HTML40_EXTENDED_ESCAPE);
++
++    static final String[][] BASIC_ESCAPE = {
++        {"\"", "&quot;"}, // " - double-quote
++        {"&", "&amp;"},   // & - ampersand
++        {"<", "&lt;"},    // < - less-than
++        {">", "&gt;"},    // > - greater-than
++    };
++
++    static final String[][] BASIC_UNESCAPE = invert(BASIC_ESCAPE);
++
++    static final String[][] APOS_ESCAPE = {
++        {"'", "&apos;"}, // XML apostrophe
++    };
++
++    static final String[][] APOS_UNESCAPE = invert(APOS_ESCAPE);
++
++    /**
++     * Used to invert an escape array into an unescape array
++     * @param array String[][] to be inverted
++     * @return String[][] inverted array
++     */
++    static String[][] invert(String[][] array) {
++        String[][] newarray = new String[array.length][2];
++        for(int i = 0; i<array.length; i++) {
++            newarray[i][0] = array[i][1];
++            newarray[i][1] = array[i][0];
++        }
++        return newarray;
++    }
++
++}
+diff --git a/src/java/org/apache/commons/lang/text/translate/EscapeLowAsciiAsUnicode.java b/src/java/org/apache/commons/lang/text/translate/EscapeLowAsciiAsUnicode.java
+new file mode 100644
+index 0000000..7ec690e
+--- /dev/null
++++ b/src/java/org/apache/commons/lang/text/translate/EscapeLowAsciiAsUnicode.java
+@@ -0,0 +1,69 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one or more
++ * contributor license agreements.  See the NOTICE file distributed with
++ * this work for additional information regarding copyright ownership.
++ * The ASF licenses this file to You under the Apache License, Version 2.0
++ * (the "License"); you may not use this file except in compliance with
++ * the License.  You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.text.translate;
++
++import java.io.IOException;
++import java.io.Writer;
++
++/**
++ * Escapes ASCII under 32 to Unicode, except for the following 
++ * special values, '\b \n \t \f \r', which are escaped to their 
++ * Java types.
++ * @since 3.0
++ */
++// TODO: Is this not the combination of a LookupTranslator for the 5 
++// TODO: special values, followed by a UnicodeEscaper?
++// TODO: It means passing a numerical range to the UnicodeEscaper 
++// TOOD: to make it only hit < 32.
++public class EscapeLowAsciiAsUnicode extends UnicodeEscaper {
++
++    /**
++     * {@inheritDoc}
++     */
++    public boolean translate(int ch, Writer out) throws IOException {
++        if (ch < 32) {
++            switch (ch) {
++                case '\b' :
++                    out.write('\\');
++                    out.write('b');
++                    break;
++                case '\n' :
++                    out.write('\\');
++                    out.write('n');
++                    break;
++                case '\t' :
++                    out.write('\\');
++                    out.write('t');
++                    break;
++                case '\f' :
++                    out.write('\\');
++                    out.write('f');
++                    break;
++                case '\r' :
++                    out.write('\\');
++                    out.write('r');
++                    break;
++                default :
++                    super.translate(ch, out);
++                    break;
++            }
++            return true;
++        } else {
++            return false;
++        }
++    }
++}
+diff --git a/src/java/org/apache/commons/lang/text/translate/EscapeNonAsciiAsNumericEntity.java b/src/java/org/apache/commons/lang/text/translate/EscapeNonAsciiAsNumericEntity.java
+new file mode 100644
+index 0000000..4ea9da5
+--- /dev/null
++++ b/src/java/org/apache/commons/lang/text/translate/EscapeNonAsciiAsNumericEntity.java
+@@ -0,0 +1,44 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one or more
++ * contributor license agreements.  See the NOTICE file distributed with
++ * this work for additional information regarding copyright ownership.
++ * The ASF licenses this file to You under the Apache License, Version 2.0
++ * (the "License"); you may not use this file except in compliance with
++ * the License.  You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.text.translate;
++
++import java.io.IOException;
++import java.io.Writer;
++
++/**
++ * Translates codepoints greater than ASCII 127 to their numerical 
++ * XML entity.
++ * @since 3.0
++ */
++public class EscapeNonAsciiAsNumericEntity extends CodePointTranslator {
++
++    /**
++     * {@inheritDoc}
++     */
++    public boolean translate(int codepoint, Writer out) throws IOException {
++        // TODO: if (codepoint > 0xffff) {
++        if (codepoint > 0x7f) {
++            out.write("&#");
++            out.write(Integer.toString(codepoint, 10));
++            out.write(';');
++            return true;
++        } else {
++            return false;
++        }
++    }
++
++}
+diff --git a/src/java/org/apache/commons/lang/text/translate/EscapeNonAsciiAsUnicode.java b/src/java/org/apache/commons/lang/text/translate/EscapeNonAsciiAsUnicode.java
+new file mode 100644
+index 0000000..ca384ae
+--- /dev/null
++++ b/src/java/org/apache/commons/lang/text/translate/EscapeNonAsciiAsUnicode.java
+@@ -0,0 +1,44 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one or more
++ * contributor license agreements.  See the NOTICE file distributed with
++ * this work for additional information regarding copyright ownership.
++ * The ASF licenses this file to You under the Apache License, Version 2.0
++ * (the "License"); you may not use this file except in compliance with
++ * the License.  You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.text.translate;
++
++import java.io.IOException;
++import java.io.Writer;
++
++/**
++ * Translates codepoints greater than ASCII 127 to the unicode.
++ * @since 3.0
++ */
++public class EscapeNonAsciiAsUnicode extends UnicodeEscaper {
++
++    /**
++     * {@inheritDoc}
++     */
++    public boolean translate(int codepoint, Writer out) throws IOException {
++        // if (codepoint > 0xffff) {
++        // TODO: Figure out what to do. Output as two unicodes?
++        //       Does this make this a Java-specific output class?
++
++        if (codepoint > 0x7f) {
++            super.translate(codepoint, out);
++            return true;
++        } else {
++            return false;
++        }
++    }
++
++}
+diff --git a/src/java/org/apache/commons/lang/text/translate/EscapeUtils.java b/src/java/org/apache/commons/lang/text/translate/EscapeUtils.java
+new file mode 100644
+index 0000000..0d17da3
+--- /dev/null
++++ b/src/java/org/apache/commons/lang/text/translate/EscapeUtils.java
+@@ -0,0 +1,108 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one or more
++ * contributor license agreements.  See the NOTICE file distributed with
++ * this work for additional information regarding copyright ownership.
++ * The ASF licenses this file to You under the Apache License, Version 2.0
++ * (the "License"); you may not use this file except in compliance with
++ * the License.  You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.text.translate;
++
++import java.io.IOException;
++import java.io.Writer;
++
++// CsvEscaper
++import org.apache.commons.lang.StringUtils;
++import org.apache.commons.lang.CharUtils;
++
++/**
++ * Helper class defining various standard language escape functions. 
++ * @since 3.0
++ */
++public class EscapeUtils {
++
++    public static final CharSequenceTranslator ESCAPE_JAVA = 
++        new AggregateTranslator(
++            new LookupTranslator(
++                      new String[][] { 
++                            {"\"", "\\\""},
++                            {"\\", "\\\\"}
++                      }),
++            new EscapeLowAsciiAsUnicode(),
++            new EscapeNonAsciiAsUnicode()
++        );
++                
++    public static final CharSequenceTranslator ESCAPE_ECMASCRIPT = 
++        new AggregateTranslator(
++            new LookupTranslator(
++                      new String[][] { 
++                            {"'", "\\'"},
++                            {"\"", "\\\""},
++                            {"\\", "\\\\"},
++                            {"/", "\\/"}
++                      }),
++            new EscapeLowAsciiAsUnicode(),
++            new EscapeNonAsciiAsUnicode()
++        );
++            
++    public static final CharSequenceTranslator ESCAPE_XML = 
++        new AggregateTranslator(
++            new LookupTranslator(EntityArrays.BASIC_ESCAPE),
++            new LookupTranslator(EntityArrays.APOS_ESCAPE),
++            new EscapeNonAsciiAsNumericEntity()
++        );
++
++    public static final CharSequenceTranslator ESCAPE_HTML3 = 
++        new AggregateTranslator(
++            new LookupTranslator(EntityArrays.BASIC_ESCAPE),
++            new LookupTranslator(EntityArrays.ISO8859_1_ESCAPE),
++            new EscapeNonAsciiAsNumericEntity()
++        );
++
++    public static final CharSequenceTranslator ESCAPE_HTML4 = 
++        new AggregateTranslator(
++            new LookupTranslator(EntityArrays.BASIC_ESCAPE),
++            new LookupTranslator(EntityArrays.ISO8859_1_ESCAPE),
++            new LookupTranslator(EntityArrays.HTML40_EXTENDED_ESCAPE),
++            new EscapeNonAsciiAsNumericEntity()
++        );
++
++    public static final CharSequenceTranslator ESCAPE_CSV = new CsvEscaper();
++
++    // TODO: Create a parent class - 'SinglePassTranslator' ?
++    // TODO: It would handle the index checking, and length returning, and 
++    // TODO: could also have an optimization check method.
++    static class CsvEscaper extends CharSequenceTranslator {
++
++        private static final char CSV_DELIMITER = ',';
++        private static final char CSV_QUOTE = '"';
++        private static final String CSV_QUOTE_STR = String.valueOf(CSV_QUOTE);
++        private static final char[] CSV_SEARCH_CHARS = new char[] {CSV_DELIMITER, CSV_QUOTE, CharUtils.CR, CharUtils.LF};
++
++        // TODO: Replace with a RegexTranslator. That should consume the number of characters the regex uses up?
++        public int translate(CharSequence input, int index, Writer out) throws IOException {
++
++            if(index != 0) {
++                throw new IllegalStateException("CsvEscaper should never reach the [1] index");
++            }
++
++            if (StringUtils.containsNone(input.toString(), CSV_SEARCH_CHARS)) {
++                out.write(input.toString());
++            } else {
++                out.write(CSV_QUOTE);
++                out.write(StringUtils.replace(input.toString(), CSV_QUOTE_STR, CSV_QUOTE_STR + CSV_QUOTE_STR));
++                out.write(CSV_QUOTE);
++            }
++            return input.length();
++        }
++    }
++
++}
+diff --git a/src/java/org/apache/commons/lang/text/translate/LookupTranslator.java b/src/java/org/apache/commons/lang/text/translate/LookupTranslator.java
+new file mode 100644
+index 0000000..ea45ab6
+--- /dev/null
++++ b/src/java/org/apache/commons/lang/text/translate/LookupTranslator.java
+@@ -0,0 +1,52 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one or more
++ * contributor license agreements.  See the NOTICE file distributed with
++ * this work for additional information regarding copyright ownership.
++ * The ASF licenses this file to You under the Apache License, Version 2.0
++ * (the "License"); you may not use this file except in compliance with
++ * the License.  You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.text.translate;
++
++import java.io.IOException;
++import java.io.Writer;
++
++/**
++ * Translates a value using a lookup table. 
++ * @since 3.0
++ */
++public class LookupTranslator extends CharSequenceTranslator {
++
++    protected CharSequence[][] lookup;
++
++    /**
++     * Define the lookup table to be used in translation
++     *
++     * @param CharSequence[][] Lookup table of size [*][2]
++     */
++    public LookupTranslator(CharSequence[][] lookup) {
++        this.lookup = lookup;
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    public int translate(CharSequence input, int index, Writer out) throws IOException {
++        CharSequence subsequence = input.subSequence(index, input.length());
++        for(CharSequence[] seq : lookup) {
++            if( subsequence.toString().startsWith(seq[0].toString()) ) {
++                out.write(seq[1].toString());
++                return seq[0].length();
++            }
++        }
++        return 0;
++    }
++}
+diff --git a/src/java/org/apache/commons/lang/text/translate/NumericEntityUnescaper.java b/src/java/org/apache/commons/lang/text/translate/NumericEntityUnescaper.java
+new file mode 100644
+index 0000000..55445cd
+--- /dev/null
++++ b/src/java/org/apache/commons/lang/text/translate/NumericEntityUnescaper.java
+@@ -0,0 +1,66 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one or more
++ * contributor license agreements.  See the NOTICE file distributed with
++ * this work for additional information regarding copyright ownership.
++ * The ASF licenses this file to You under the Apache License, Version 2.0
++ * (the "License"); you may not use this file except in compliance with
++ * the License.  You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.text.translate;
++
++import java.io.IOException;
++import java.io.Writer;
++
++/**
++ * Translate XML numeric entities of the form &#[xX]?\d+; to 
++ * the specific codepoint. 
++ * @since 3.0
++ */
++public class NumericEntityUnescaper extends CharSequenceTranslator {
++
++    /**
++     * {@inheritDoc}
++     */
++    public int translate(CharSequence input, int index, Writer out) throws IOException {
++        // TODO: Protect from ArrayIndexOutOfBounds
++        if(input.charAt(index) == '&' && input.charAt(index + 1) == '#') {
++            int start = index + 2;
++            boolean isHex = false;
++
++            char firstChar = input.charAt(start);
++            if(firstChar == 'x' || firstChar == 'X') {
++                start++;
++                isHex = true;
++            }
++
++            int end = start;
++            while(input.charAt(end) != ';') {
++                end++;
++            }
++
++            int entityValue;
++            try {
++                if(isHex) {
++                    entityValue = Integer.parseInt(input.subSequence(start, end).toString(), 16);
++                } else {
++                    entityValue = Integer.parseInt(input.subSequence(start, end).toString(), 10);
++                }
++            } catch(NumberFormatException nfe) {
++                return 0;
++            }
++
++            // TODO: if(entityValue > 0xFFFF) {
++            out.write(entityValue);
++            return 2 + (end - start) + (isHex ? 1 : 0) + 1;
++        }
++        return 0;
++    }
++}
+diff --git a/src/java/org/apache/commons/lang/text/translate/UnescapeUtils.java b/src/java/org/apache/commons/lang/text/translate/UnescapeUtils.java
+new file mode 100644
+index 0000000..3931853
+--- /dev/null
++++ b/src/java/org/apache/commons/lang/text/translate/UnescapeUtils.java
+@@ -0,0 +1,101 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one or more
++ * contributor license agreements.  See the NOTICE file distributed with
++ * this work for additional information regarding copyright ownership.
++ * The ASF licenses this file to You under the Apache License, Version 2.0
++ * (the "License"); you may not use this file except in compliance with
++ * the License.  You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.text.translate;
++
++import java.io.IOException;
++import java.io.Writer;
++
++// CsvUnescaper
++import org.apache.commons.lang.StringUtils;
++import org.apache.commons.lang.CharUtils;
++
++/**
++ * Helper class defining various standard language unescape functions. 
++ * @since 3.0
++ */
++public class UnescapeUtils {
++
++    // throw "illegal character: \92" as an Exception if a \ on the end of the Java (as per the compiler)?
++    public static final CharSequenceTranslator UNESCAPE_JAVA = 
++        new AggregateTranslator(
++            new UnicodeUnescaper(),
++            new LookupTranslator(
++                      new String[][] { 
++                            {"\\\\", "\\"},
++                            {"\\\"", "\""},
++                            {"\\'", "'"},
++                            {"\\r", "\r"},
++                            {"\\f", "\f"},
++                            {"\\t", "\t"},
++                            {"\\n", "\n"},
++                            {"\\b", "\b"},
++                            {"\\", ""}
++                      })
++        );
++
++    public static final CharSequenceTranslator UNESCAPE_ECMASCRIPT = UNESCAPE_JAVA;
++
++    public static final CharSequenceTranslator UNESCAPE_HTML4 = 
++        new AggregateTranslator(
++            new LookupTranslator(EntityArrays.BASIC_UNESCAPE),
++            new LookupTranslator(EntityArrays.ISO8859_1_UNESCAPE),
++            new LookupTranslator(EntityArrays.HTML40_EXTENDED_UNESCAPE),
++            new NumericEntityUnescaper()
++        );
++
++    public static final CharSequenceTranslator UNESCAPE_XML = 
++        new AggregateTranslator(
++            new LookupTranslator(EntityArrays.BASIC_UNESCAPE),
++            new LookupTranslator(EntityArrays.APOS_UNESCAPE),
++            new NumericEntityUnescaper()
++        );
++
++    public static final CharSequenceTranslator UNESCAPE_CSV = new CsvUnescaper();
++
++    static class CsvUnescaper extends CharSequenceTranslator {
++
++        private static final char CSV_DELIMITER = ',';
++        private static final char CSV_QUOTE = '"';
++        private static final String CSV_QUOTE_STR = String.valueOf(CSV_QUOTE);
++        private static final char[] CSV_SEARCH_CHARS = new char[] {CSV_DELIMITER, CSV_QUOTE, CharUtils.CR, CharUtils.LF};
++
++        // TODO: Replace with a RegexTranslator. That should consume the number of characters the regex uses up?
++        public int translate(CharSequence input, int index, Writer out) throws IOException {
++
++            if(index != 0) {
++                throw new IllegalStateException("CsvUnescaper should never reach the [1] index");
++            }
++
++            if ( input.charAt(0) != CSV_QUOTE || input.charAt(input.length() - 1) != CSV_QUOTE ) {
++                out.write(input.toString());
++                return input.length();
++            }
++
++            // strip quotes
++            String quoteless = input.subSequence(1, input.length() - 1).toString();
++
++            if ( StringUtils.containsAny(quoteless, CSV_SEARCH_CHARS) ) {
++                // deal with escaped quotes; ie) ""
++                out.write(StringUtils.replace(quoteless, CSV_QUOTE_STR + CSV_QUOTE_STR, CSV_QUOTE_STR));
++            } else {
++                out.write(input.toString());
++            }
++            return input.length();
++        }
++    }
++
++}
+diff --git a/src/java/org/apache/commons/lang/text/translate/UnicodeEscaper.java b/src/java/org/apache/commons/lang/text/translate/UnicodeEscaper.java
+new file mode 100644
+index 0000000..3214c33
+--- /dev/null
++++ b/src/java/org/apache/commons/lang/text/translate/UnicodeEscaper.java
+@@ -0,0 +1,47 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one or more
++ * contributor license agreements.  See the NOTICE file distributed with
++ * this work for additional information regarding copyright ownership.
++ * The ASF licenses this file to You under the Apache License, Version 2.0
++ * (the "License"); you may not use this file except in compliance with
++ * the License.  You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.text.translate;
++
++import java.io.IOException;
++import java.io.Writer;
++
++/**
++ * Translates codepoints to their unicode escape value. 
++ * @since 3.0
++ */
++public class UnicodeEscaper extends CodePointTranslator {
++
++    /**
++     * {@inheritDoc}
++     */
++    public boolean translate(int codepoint, Writer out) throws IOException {
++        if (codepoint > 0xffff) {
++            // TODO: Figure out what to do. Output as two unicodes?
++            //       Does this make this a Java-specific output class?
++            out.write("\\u" + hex(codepoint));
++        } else if (codepoint > 0xfff) {
++            out.write("\\u" + hex(codepoint));
++        } else if (codepoint > 0xff) {
++            out.write("\\u0" + hex(codepoint));
++        } else if (codepoint > 0xf) {
++            out.write("\\u00" + hex(codepoint));
++        } else {
++            out.write("\\u000" + hex(codepoint));
++        }
++        return true;
++    }
++}
+diff --git a/src/java/org/apache/commons/lang/text/translate/UnicodeUnescaper.java b/src/java/org/apache/commons/lang/text/translate/UnicodeUnescaper.java
+new file mode 100644
+index 0000000..e166f5b
+--- /dev/null
++++ b/src/java/org/apache/commons/lang/text/translate/UnicodeUnescaper.java
+@@ -0,0 +1,63 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one or more
++ * contributor license agreements.  See the NOTICE file distributed with
++ * this work for additional information regarding copyright ownership.
++ * The ASF licenses this file to You under the Apache License, Version 2.0
++ * (the "License"); you may not use this file except in compliance with
++ * the License.  You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.text.translate;
++
++import java.io.IOException;
++import java.io.Writer;
++
++import org.apache.commons.lang.UnhandledException;
++
++/**
++ * Translates escaped unicode values of the form \\u+\d\d\d\d back to 
++ * unicode.
++ * @since 3.0
++ */
++public class UnicodeUnescaper extends CharSequenceTranslator {
++
++    /**
++     * {@inheritDoc}
++     */
++    public int translate(CharSequence input, int index, Writer out) throws IOException {
++        if(input.charAt(index) == '\\') {
++            if( (index + 1 < input.length()) && input.charAt(index + 1) == 'u') {
++                // consume optional additional 'u' chars
++                int i=2;
++                while( (index + i < input.length()) && input.charAt(index + i) == 'u') {
++                    i++;
++                }
++
++                if( (index + i + 4 <= input.length()) ) {
++                    // Get 4 hex digits
++                    CharSequence unicode = input.subSequence(index + i, index + i + 4);
++
++                    try {
++                        int value = Integer.parseInt(unicode.toString(), 16);
++                        out.write((char) value);
++                    } catch (NumberFormatException nfe) {
++                        throw new UnhandledException("Unable to parse unicode value: " + unicode, nfe);
++                    }
++                    return i + 4;
++                } else {
++                    throw new IllegalArgumentException("Less than 4 hex digits in unicode value: '" + 
++                                                       input.subSequence(index, input.length()) +
++                                                       "' due to end of CharSequence");
++                }
++            }
++        }
++        return 0;
++    }
++}
+diff --git a/src/java/org/apache/commons/lang/text/translate/package.html b/src/java/org/apache/commons/lang/text/translate/package.html
+new file mode 100644
+index 0000000..8cfb102
+--- /dev/null
++++ b/src/java/org/apache/commons/lang/text/translate/package.html
+@@ -0,0 +1,26 @@
++<!--
++Licensed to the Apache Software Foundation (ASF) under one or more
++contributor license agreements.  See the NOTICE file distributed with
++this work for additional information regarding copyright ownership.
++The ASF licenses this file to You under the Apache License, Version 2.0
++(the "License"); you may not use this file except in compliance with
++the License.  You may obtain a copy of the License at
++
++     http://www.apache.org/licenses/LICENSE-2.0
++
++Unless required by applicable law or agreed to in writing, software
++distributed under the License is distributed on an "AS IS" BASIS,
++WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++See the License for the specific language governing permissions and
++limitations under the License.
++-->
++<html>
++<body>
++<p>
++An API for creating text translation routines from a set of smaller 
++building blocks. Originally created to make it possible for the user to 
++customize the rules in the StringEscapeUtils class. 
++</p>
++@since 3.0
++</body>
++</html>
+diff --git a/src/test/org/apache/commons/lang/EntitiesPerformanceTest.java b/src/test/org/apache/commons/lang/EntitiesPerformanceTest.java
+deleted file mode 100644
+index 38332dd..0000000
+--- a/src/test/org/apache/commons/lang/EntitiesPerformanceTest.java
++++ /dev/null
+@@ -1,219 +0,0 @@
+-/*
+- * Licensed to the Apache Software Foundation (ASF) under one or more
+- * contributor license agreements.  See the NOTICE file distributed with
+- * this work for additional information regarding copyright ownership.
+- * The ASF licenses this file to You under the Apache License, Version 2.0
+- * (the "License"); you may not use this file except in compliance with
+- * the License.  You may obtain a copy of the License at
+- * 
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- * 
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-package org.apache.commons.lang;
+-
+-import junit.framework.Test;
+-import junit.framework.TestCase;
+-import junit.framework.TestSuite;
+-import junit.textui.TestRunner;
+-
+-public class EntitiesPerformanceTest extends TestCase {
+-    private int COUNT = 10000;
+-    private int STRING_LENGTH = 1000;
+-
+-    private static String stringWithUnicode;
+-    private static String stringWithEntities;
+-    private static Entities treeEntities;
+-    private static Entities hashEntities;
+-    private static Entities arrayEntities;
+-    private static Entities binaryEntities;
+-    private static Entities primitiveEntities;
+-    private static Entities lookupEntities;
+-
+-    public EntitiesPerformanceTest(String name) {
+-        super(name);
+-    }
+-
+-    public static void main(String[] args) {
+-        TestRunner.run(suite());
+-    }
+-
+-    public static Test suite() {
+-        TestSuite suite = new TestSuite(EntitiesPerformanceTest.class);
+-        return suite;
+-    }
+-
+-    @Override
+-    public void setUp() {
+-        if (stringWithUnicode == null) {
+-            StringBuffer buf = new StringBuffer(STRING_LENGTH);
+-            for (int i = 0; i < STRING_LENGTH / 5; ++i) {
+-                buf.append("xxxx");
+-                char ch = isovalue(i);
+-                buf.append(ch);
+-            }
+-            stringWithUnicode = buf.toString();
+-            stringWithEntities = Entities.HTML40.unescape(stringWithUnicode);
+-        }
+-    }
+-
+-    private char html40value(int i) {
+-        String entityValue = Entities.getHTML40(i % Entities.HTML40_ARRAY_LENGTH, 1);
+-        char ch = (char) Integer.parseInt(entityValue);
+-        return ch;
+-    }
+-
+-    private char isovalue(int i) {
+-        String entityValue = Entities.getISO8859_1(i % Entities.ISO8859_1_ARRAY_LENGTH, 1);
+-        char ch = (char) Integer.parseInt(entityValue);
+-        return ch;
+-    }
+-
+-    public void testBuildHash() throws Exception {
+-        for (int i = 0; i < COUNT; ++i) {
+-            hashEntities = build(new Entities.HashEntityMap());
+-        }
+-    }
+-
+-
+-    public void testBuildTree() throws Exception {
+-        for (int i = 0; i < COUNT; ++i) {
+-            treeEntities = build(new Entities.TreeEntityMap());
+-        }
+-    }
+-
+-    public void testBuildArray() throws Exception {
+-        for (int i = 0; i < COUNT; ++i) {
+-            arrayEntities = build(new Entities.ArrayEntityMap());
+-        }
+-    }
+-
+-    public void testBuildBinary() throws Exception {
+-        for (int i = 0; i < COUNT; ++i) {
+-            binaryEntities = build(new Entities.BinaryEntityMap());
+-        }
+-    }
+-
+-    public void testBuildPrimitive() throws Exception {
+-        for (int i = 0; i < COUNT; ++i) {
+-            buildPrimitive();
+-        }
+-    }
+-
+-    private void buildPrimitive()
+-    {
+-        primitiveEntities = build(new Entities.PrimitiveEntityMap());
+-    }
+-
+-    public void testBuildLookup() throws Exception {
+-        for (int i = 0; i < COUNT; ++i) {
+-            buildLookup();
+-        }
+-    }
+-
+-    private void buildLookup()
+-    {
+-        lookupEntities = build(new Entities.LookupEntityMap());
+-    }
+-
+-    private Entities build(Entities.EntityMap intMap) {
+-        Entities entities;
+-        entities = new Entities();
+-        entities.map = intMap;
+-        Entities.fillWithHtml40Entities(entities);
+-        return entities;
+-    }
+-
+-    public void testLookupHash() throws Exception {
+-        lookup(hashEntities);
+-    }
+-
+-    public void testLookupTree() throws Exception {
+-        lookup(treeEntities);
+-    }
+-
+-    public void testLookupArray() throws Exception {
+-        lookup(arrayEntities);
+-    }
+-
+-    public void testLookupBinary() throws Exception {
+-        lookup(binaryEntities);
+-    }
+-
+-    public void testLookupPrimitive() throws Exception {
+-        if (primitiveEntities == null) buildPrimitive();
+-        lookup(primitiveEntities);
+-    }
+-
+-    public void testLookupLookup() throws Exception {
+-        if (lookupEntities == null) buildLookup();
+-        lookup(lookupEntities);
+-    }
+-
+-    public void testEscapeHash() throws Exception {
+-        escapeIt(hashEntities);
+-    }
+-
+-    public void testEscapeTree() throws Exception {
+-        escapeIt(treeEntities);
+-    }
+-
+-    public void testEscapeArray() throws Exception {
+-        escapeIt(arrayEntities);
+-    }
+-
+-    public void testEscapeBinary() throws Exception {
+-        escapeIt(binaryEntities);
+-    }
+-
+-    public void testEscapePrimitive() throws Exception {
+-        escapeIt(primitiveEntities);
+-    }
+-
+-    public void testEscapeLookup() throws Exception {
+-        escapeIt(lookupEntities);
+-    }
+-
+-    public void testUnescapeHash() throws Exception {
+-        unescapeIt(hashEntities);
+-    }
+-
+-    public void testUnescapeTree() throws Exception {
+-        unescapeIt(treeEntities);
+-    }
+-
+-    public void testUnescapeArray() throws Exception {
+-        unescapeIt(arrayEntities);
+-    }
+-
+-    public void testUnescapeBinary() throws Exception {
+-        unescapeIt(binaryEntities);
+-    }
+-
+-    private void lookup(Entities entities) {
+-        for (int i = 0; i < COUNT * 1000; ++i) {
+-            entities.entityName(isovalue(i));
+-        }
+-    }
+-
+-    private void escapeIt(Entities entities) {
+-        for (int i = 0; i < COUNT; ++i) {
+-            String escaped = entities.escape(stringWithUnicode);
+-            assertEquals("xxxx&nbsp;", escaped.substring(0, 10));
+-        }
+-    }
+-
+-    private void unescapeIt(Entities entities) {
+-        for (int i = 0; i < COUNT; ++i) {
+-            String unescaped = entities.unescape(stringWithEntities);
+-            assertEquals("xxxx\u00A0", unescaped.substring(0, 5));
+-        }
+-    }
+-
+-
+-}
+-
+diff --git a/src/test/org/apache/commons/lang/EntitiesTest.java b/src/test/org/apache/commons/lang/EntitiesTest.java
+deleted file mode 100644
+index 0c98f93..0000000
+--- a/src/test/org/apache/commons/lang/EntitiesTest.java
++++ /dev/null
+@@ -1,209 +0,0 @@
+-/*
+- * Licensed to the Apache Software Foundation (ASF) under one or more
+- * contributor license agreements.  See the NOTICE file distributed with
+- * this work for additional information regarding copyright ownership.
+- * The ASF licenses this file to You under the Apache License, Version 2.0
+- * (the "License"); you may not use this file except in compliance with
+- * the License.  You may obtain a copy of the License at
+- * 
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- * 
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-package org.apache.commons.lang;
+-
+-import java.io.StringWriter;
+-
+-import junit.framework.Test;
+-import junit.framework.TestCase;
+-import junit.framework.TestSuite;
+-import junit.textui.TestRunner;
+-
+-/**
+- * Unit tests for {@link StringEscapeUtils}.
+- *
+- * @author <a href="mailto:alex@purpletech.com">Alexander Day Chaffee</a>
+- * @author <a href="mailto:ggregory@seagullsw.com">Gary Gregory</a>
+- * @version $Id$
+- */
+-public class EntitiesTest extends TestCase
+-{
+-    public EntitiesTest(String name) {
+-        super(name);
+-    }
+-
+-    public static void main(String[] args) {
+-        TestRunner.run(suite());
+-    }
+-
+-    public static Test suite() {
+-        TestSuite suite = new TestSuite(EntitiesTest.class);
+-        suite.setName("EntitiesTest Tests");
+-        return suite;
+-    }
+-
+-    Entities entities;
+-
+-    @Override
+-    public void setUp()
+-    {
+-        entities = new Entities();
+-        entities.addEntity("foo", 161);
+-        entities.addEntity("bar", 162);
+-    }
+-
+-    public void testEscapeNamedEntity() throws Exception
+-    {
+-        doTestEscapeNamedEntity("&foo;", "\u00A1");
+-        doTestEscapeNamedEntity("x&foo;", "x\u00A1");
+-        doTestEscapeNamedEntity("&foo;x", "\u00A1x");
+-        doTestEscapeNamedEntity("x&foo;x", "x\u00A1x");
+-        doTestEscapeNamedEntity("&foo;&bar;", "\u00A1\u00A2");
+-    }
+-
+-    private void doTestEscapeNamedEntity(final String expected, final String entity) throws Exception
+-    {
+-        assertEquals(expected, entities.escape(entity));
+-        StringWriter writer = new StringWriter();
+-        entities.escape(writer, entity);
+-        assertEquals(expected, writer.toString());
+-    }
+-    
+-    public void testUnescapeNamedEntity() throws Exception
+-    {
+-        assertEquals("\u00A1", entities.unescape("&foo;"));
+-        assertEquals("x\u00A1", entities.unescape("x&foo;"));
+-        assertEquals("\u00A1x", entities.unescape("&foo;x"));
+-        assertEquals("x\u00A1x", entities.unescape("x&foo;x"));
+-        assertEquals("\u00A1\u00A2", entities.unescape("&foo;&bar;"));
+-    }
+-
+-    public void testUnescapeUnknownEntity() throws Exception
+-    {
+-        doTestUnescapeEntity("&zzzz;", "&zzzz;");
+-    }
+-
+-    public void testUnescapeMiscellaneous() throws Exception
+-    {
+-      doTestUnescapeEntity("&hello", "&hello");
+-      doTestUnescapeEntity("&;", "&;");
+-      doTestUnescapeEntity("&#;", "&#;");
+-      doTestUnescapeEntity("&#invalid;", "&#invalid;");
+-      doTestUnescapeEntity("A", "&#X41;");
+-    }
+-    
+-    private void doTestUnescapeEntity(final String expected, final String entity) throws Exception
+-    {
+-        assertEquals(expected, entities.unescape(entity));
+-        StringWriter writer = new StringWriter();
+-        entities.unescape(writer, entity);
+-        assertEquals(expected, writer.toString());
+-    }
+-    
+-    public void testAddEntitiesArray() throws Exception
+-    {
+-        String[][] array = {{"foo", "100"}, {"bar", "101"}};
+-        Entities e = new Entities();
+-        e.addEntities(array);
+-        assertEquals("foo", e.entityName(100));
+-        assertEquals("bar", e.entityName(101));
+-        assertEquals(100, e.entityValue("foo"));
+-        assertEquals(101, e.entityValue("bar"));
+-    }
+-
+-    public void testEntitiesXmlObject() throws Exception
+-    {
+-        assertEquals("gt", Entities.XML.entityName('>'));
+-        assertEquals('>', Entities.XML.entityValue("gt"));
+-        assertEquals(-1, Entities.XML.entityValue("xyzzy"));
+-    }
+-
+-    public void testArrayIntMap() throws Exception
+-    {
+-        Entities.ArrayEntityMap map = new Entities.ArrayEntityMap(2);
+-        checkSomeEntityMap(map);
+-        Entities.ArrayEntityMap map1 = new Entities.ArrayEntityMap();
+-        checkSomeEntityMap(map1);
+-        assertEquals(-1, map.value("null"));
+-        assertNull(map.name(-1));
+-    }
+-
+-    public void testTreeIntMap() throws Exception
+-    {
+-        Entities.EntityMap map = new Entities.TreeEntityMap();
+-        checkSomeEntityMap(map);
+-    }
+-
+-    public void testHashIntMap() throws Exception
+-    {
+-        Entities.EntityMap map = new Entities.HashEntityMap();
+-        checkSomeEntityMap(map);
+-        assertEquals(-1, map.value("noname"));
+-    }
+-
+-    public void testBinaryIntMap() throws Exception
+-    {
+-        Entities.BinaryEntityMap map = new Entities.BinaryEntityMap(2);
+-        checkSomeEntityMap(map);
+-        Entities.BinaryEntityMap map1 = new Entities.BinaryEntityMap();
+-        checkSomeEntityMap(map1);
+-        
+-        // value cannot be added twice
+-        map1.add("baz4a", 4);
+-        map1.add("baz4b", 4);
+-        assertEquals(-1, map1.value("baz4b"));
+-        assertEquals("baz4a", map1.name(4));
+-        assertNull(map1.name(99));
+-        
+-        Entities.BinaryEntityMap map2 = new Entities.BinaryEntityMap();
+-        map2.add("val1", 1);
+-        map2.add("val2", 2);
+-        map2.add("val3", 3);
+-        map2.add("val4", 4);
+-        map2.add("val5", 5);
+-        assertEquals("val5", map2.name(5));
+-        assertEquals("val4", map2.name(4));
+-        assertEquals("val3", map2.name(3));
+-        assertEquals("val2", map2.name(2));
+-        assertEquals("val1", map2.name(1));
+-    }
+-
+-    public void testPrimitiveIntMap() throws Exception
+-    {
+-        Entities.PrimitiveEntityMap map = new Entities.PrimitiveEntityMap();
+-        checkSomeEntityMap(map);
+-    }
+-
+-    private void checkSomeEntityMap(Entities.EntityMap map) {
+-        map.add("foo", 1);
+-        assertEquals(1, map.value("foo"));
+-        assertEquals("foo", map.name(1));
+-        map.add("bar", 2);
+-        map.add("baz", 3);
+-        assertEquals(3, map.value("baz"));
+-        assertEquals("baz", map.name(3));
+-    }
+-    
+-    public void testHtml40Nbsp() throws Exception
+-    {
+-        assertEquals("&nbsp;", Entities.HTML40.escape("\u00A0"));
+-        Entities e = new Entities();
+-        e.map = new Entities.PrimitiveEntityMap();
+-        Entities.fillWithHtml40Entities(e);
+-        assertEquals("&nbsp;", e.escape("\u00A0"));
+-    }
+-
+-    public void testNumberOverflow() throws Exception {
+-        doTestUnescapeEntity("&#12345678;", "&#12345678;");
+-        doTestUnescapeEntity("x&#12345678;y", "x&#12345678;y");
+-        doTestUnescapeEntity("&#x12345678;", "&#x12345678;");
+-        doTestUnescapeEntity("x&#x12345678;y", "x&#x12345678;y");
+-    }
+-
+-
+-}
+-
+diff --git a/src/test/org/apache/commons/lang/LangTestSuite.java b/src/test/org/apache/commons/lang/LangTestSuite.java
+index d781828..fe2ccba 100644
+--- a/src/test/org/apache/commons/lang/LangTestSuite.java
++++ b/src/test/org/apache/commons/lang/LangTestSuite.java
+@@ -62,7 +62,6 @@
+         suite.addTest(CharSetUtilsTest.suite());
+         suite.addTest(CharUtilsTest.suite());
+         suite.addTest(ClassUtilsTest.suite());
+-        suite.addTest(EntitiesTest.suite());
+         suite.addTest(EnumUtilsTest.suite());
+         suite.addTest(IllegalClassExceptionTest.suite());
+         suite.addTest(IncompleteArgumentExceptionTest.suite());
+diff --git a/src/test/org/apache/commons/lang/StringEscapeUtilsTest.java b/src/test/org/apache/commons/lang/StringEscapeUtilsTest.java
+index 8562a32..86d0d9f 100644
+--- a/src/test/org/apache/commons/lang/StringEscapeUtilsTest.java
++++ b/src/test/org/apache/commons/lang/StringEscapeUtilsTest.java
+@@ -154,7 +154,7 @@
+         assertUnescapeJava("\ntest\b", "\\ntest\\b");
+         assertUnescapeJava("\u123425foo\ntest\b", "\\u123425foo\\ntest\\b");
+         assertUnescapeJava("'\foo\teste\r", "\\'\\foo\\teste\\r");
+-        assertUnescapeJava("\\", "\\");
++        assertUnescapeJava("", "\\");
+         //foo
+         assertUnescapeJava("lowercase unicode", "\uABCDx", "\\uabcdx");
+         assertUnescapeJava("uppercase unicode", "\uABCDx", "\\uABCDx");

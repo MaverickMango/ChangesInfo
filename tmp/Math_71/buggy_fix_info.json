@@ -1,0 +1,172 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math.ode.nonstiff.ClassicalRungeKuttaIntegratorTest::testMissedEndEvent,org.apache.commons.math.ode.nonstiff.DormandPrince853IntegratorTest::testMissedEndEvent",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math.ode.nonstiff.EmbeddedRungeKuttaIntegrator,org.apache.commons.math.ode.nonstiff.RungeKuttaIntegrator",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "71",
+  "workingDir": "../bugs/Math_71_tmp",
+  "bug_name": "Math_71",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math.ode.nonstiff.ClassicalRungeKuttaIntegratorTest",
+      "test_function": "testMissedEndEvent",
+      "assertion_line": "70",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c1.8782503799999986E9\u003e but was:\u003c1.878250439999994E9\u003e"
+    },
+    {
+      "test_class": "org.apache.commons.math.ode.nonstiff.DormandPrince853IntegratorTest",
+      "test_function": "testMissedEndEvent",
+      "assertion_line": "72",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c1.8782503799999986E9\u003e but was:\u003c1.878250479999994E9\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/ode/nonstiff/EmbeddedRungeKuttaIntegrator.java",
+        "src/main/java/org/apache/commons/math/ode/nonstiff/EmbeddedRungeKuttaIntegrator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.ode.nonstiff.EmbeddedRungeKuttaIntegrator:integrate:[final FirstOrderDifferentialEquations equations, final double t0, final double[] y0, final double t, final double[] y]:double"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.ode.nonstiff.EmbeddedRungeKuttaIntegrator:integrate:[final FirstOrderDifferentialEquations equations, final double t0, final double[] y0, final double t, final double[] y]:double"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "300",
+            "301",
+            "302",
+            "303"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "299"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/ode/nonstiff/EmbeddedRungeKuttaIntegrator.java b/src/main/java/org/apache/commons/math/ode/nonstiff/EmbeddedRungeKuttaIntegrator.java\nindex e03be9e..0840ac1 100644\n--- a/src/main/java/org/apache/commons/math/ode/nonstiff/EmbeddedRungeKuttaIntegrator.java\n+++ b/src/main/java/org/apache/commons/math/ode/nonstiff/EmbeddedRungeKuttaIntegrator.java\n@@ -297,10 +297,6 @@\n                   // it is so small (much probably exactly 0 due to limited accuracy)\n                   // that the code above would fail handling it.\n                   // So we set up an artificial 0 size step by copying states\n-                  interpolator.storeTime(stepStart);\n-                  System.arraycopy(y, 0, yTmp, 0, y0.length);\n-                  hNew     \u003d 0;\n-                  stepSize \u003d 0;\n                   loop     \u003d false;\n               } else {\n                   // reject the step to match exactly the next switch time\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [11294,11328]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [11347,11390]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [11409,11422]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [11441,11454]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/ode/nonstiff/RungeKuttaIntegrator.java",
+        "src/main/java/org/apache/commons/math/ode/nonstiff/RungeKuttaIntegrator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.ode.nonstiff.RungeKuttaIntegrator:integrate:[final FirstOrderDifferentialEquations equations, final double t0, final double[] y0, final double t, final double[] y]:double"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.ode.nonstiff.RungeKuttaIntegrator:integrate:[final FirstOrderDifferentialEquations equations, final double t0, final double[] y0, final double t, final double[] y]:double"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "180",
+            "181",
+            "182"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "179"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/ode/nonstiff/RungeKuttaIntegrator.java b/src/main/java/org/apache/commons/math/ode/nonstiff/RungeKuttaIntegrator.java\nindex b61b0b1..255b1f4 100644\n--- a/src/main/java/org/apache/commons/math/ode/nonstiff/RungeKuttaIntegrator.java\n+++ b/src/main/java/org/apache/commons/math/ode/nonstiff/RungeKuttaIntegrator.java\n@@ -177,9 +177,6 @@\n                 // it is so small (much probably exactly 0 due to limited accuracy)\n                 // that the code above would fail handling it.\n                 // So we set up an artificial 0 size step by copying states\n-                interpolator.storeTime(stepStart);\n-                System.arraycopy(y, 0, yTmp, 0, y0.length);\n-                stepSize \u003d 0;\n                 loop     \u003d false;\n             } else {\n                 // reject the step to match exactly the next switch time\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [6526,6560]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [6577,6620]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [6637,6650]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

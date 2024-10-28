@@ -1,0 +1,415 @@
+diff --git a/src/com/google/javascript/rhino/JSDocInfo.java b/src/com/google/javascript/rhino/JSDocInfo.java
+index 26470f2..325f073 100644
+--- a/src/com/google/javascript/rhino/JSDocInfo.java
++++ b/src/com/google/javascript/rhino/JSDocInfo.java
+@@ -64,7 +64,7 @@
+  * {@link JSDocInfoBuilder} which provides early incompatibility detection.</p>
+  *
+  */
+-public final class JSDocInfo implements Serializable {
++public class JSDocInfo implements Serializable {
+   private static final long serialVersionUID = 1L;
+ 
+   /**
+diff --git a/src/com/google/javascript/rhino/jstype/AllType.java b/src/com/google/javascript/rhino/jstype/AllType.java
+index ed06e3a..9deb939 100644
+--- a/src/com/google/javascript/rhino/jstype/AllType.java
++++ b/src/com/google/javascript/rhino/jstype/AllType.java
+@@ -109,6 +109,16 @@
+   }
+ 
+   @Override
++  public String getDisplayName() {
++    return "<Any Type>";
++  }
++
++  @Override
++  public boolean hasDisplayName() {
++    return true;
++  }
++
++  @Override
+   public <T> T visit(Visitor<T> visitor) {
+     return visitor.caseAllType();
+   }
+diff --git a/src/com/google/javascript/rhino/jstype/BooleanType.java b/src/com/google/javascript/rhino/jstype/BooleanType.java
+index 20f19d9..5331fdd 100644
+--- a/src/com/google/javascript/rhino/jstype/BooleanType.java
++++ b/src/com/google/javascript/rhino/jstype/BooleanType.java
+@@ -100,6 +100,11 @@
+ 
+   @Override
+   public String toString() {
++    return getDisplayName();
++  }
++
++  @Override
++  public String getDisplayName() {
+     return "boolean";
+   }
+ 
+diff --git a/src/com/google/javascript/rhino/jstype/EnumType.java b/src/com/google/javascript/rhino/jstype/EnumType.java
+index 273ff5e..8cc77f3 100644
+--- a/src/com/google/javascript/rhino/jstype/EnumType.java
++++ b/src/com/google/javascript/rhino/jstype/EnumType.java
+@@ -124,6 +124,11 @@
+   }
+ 
+   @Override
++  public String getDisplayName() {
++    return elementsType.getDisplayName();
++  }
++
++  @Override
+   public <T> T visit(Visitor<T> visitor) {
+     return visitor.caseObjectType(this);
+   }
+diff --git a/src/com/google/javascript/rhino/jstype/JSType.java b/src/com/google/javascript/rhino/jstype/JSType.java
+index 2ca901e..920e5d3 100644
+--- a/src/com/google/javascript/rhino/jstype/JSType.java
++++ b/src/com/google/javascript/rhino/jstype/JSType.java
+@@ -120,6 +120,27 @@
+   }
+ 
+   /**
++   * Returns a user meaningful label for the JSType instance.  For example,
++   * Functions and Enums will return their declaration name (if they have one).
++   * Some types will not have a meaningful display name.  Calls to
++   * hasDisplayName() will return true IFF getDisplayName() will return null
++   * or a zero length string.
++   *
++   * @return the display name of the type, or null if one is not available
++   */
++  public String getDisplayName() {
++    return null;
++  }
++
++  /**
++   * @return true if the JSType has a user meaningful label.
++   */
++  public boolean hasDisplayName() {
++    String displayName = getDisplayName();
++    return displayName != null && !displayName.isEmpty();
++  }
++
++  /**
+    * If we see a type name without braces, it might be legacy jsdoc.
+    * So we shouldn't emit warnings about it. This method is how we skip
+    * those warnings.
+diff --git a/src/com/google/javascript/rhino/jstype/NullType.java b/src/com/google/javascript/rhino/jstype/NullType.java
+index c008d15..8add698 100644
+--- a/src/com/google/javascript/rhino/jstype/NullType.java
++++ b/src/com/google/javascript/rhino/jstype/NullType.java
+@@ -101,6 +101,11 @@
+ 
+   @Override
+   public String toString() {
++    return getDisplayName();
++  }
++
++  @Override
++  public String getDisplayName() {
+     return "null";
+   }
+ 
+diff --git a/src/com/google/javascript/rhino/jstype/NumberType.java b/src/com/google/javascript/rhino/jstype/NumberType.java
+index 34d016d..3e6e5f0 100644
+--- a/src/com/google/javascript/rhino/jstype/NumberType.java
++++ b/src/com/google/javascript/rhino/jstype/NumberType.java
+@@ -94,6 +94,11 @@
+ 
+   @Override
+   public String toString() {
++    return getDisplayName();
++  }
++
++  @Override
++  public String getDisplayName() {
+     return "number";
+   }
+ 
+diff --git a/src/com/google/javascript/rhino/jstype/ObjectType.java b/src/com/google/javascript/rhino/jstype/ObjectType.java
+index f062c27..4d52b2f 100644
+--- a/src/com/google/javascript/rhino/jstype/ObjectType.java
++++ b/src/com/google/javascript/rhino/jstype/ObjectType.java
+@@ -183,6 +183,11 @@
+     return name;
+   }
+ 
++  @Override
++  public String getDisplayName() {
++    return getNormalizedReferenceName();
++  }
++
+   /**
+    * Creates a suffix for a proxy delegate.
+    * @see #getNormalizedReferenceName
+diff --git a/src/com/google/javascript/rhino/jstype/StringType.java b/src/com/google/javascript/rhino/jstype/StringType.java
+index ad4aa23..1f1f8d2 100644
+--- a/src/com/google/javascript/rhino/jstype/StringType.java
++++ b/src/com/google/javascript/rhino/jstype/StringType.java
+@@ -89,6 +89,11 @@
+ 
+   @Override
+   public String toString() {
++    return getDisplayName();
++  }
++
++  @Override
++  public String getDisplayName() {
+     return "string";
+   }
+ 
+diff --git a/src/com/google/javascript/rhino/jstype/UnknownType.java b/src/com/google/javascript/rhino/jstype/UnknownType.java
+index c4cf01b..7fa8ae0 100644
+--- a/src/com/google/javascript/rhino/jstype/UnknownType.java
++++ b/src/com/google/javascript/rhino/jstype/UnknownType.java
+@@ -171,6 +171,16 @@
+   }
+ 
+   @Override
++  public String getDisplayName() {
++    return "Unknown";
++  }
++
++  @Override
++  public boolean hasDisplayName() {
++    return true;
++  }
++
++  @Override
+   public boolean isPropertyTypeDeclared(String propertyName) {
+     return false;
+   }
+diff --git a/src/com/google/javascript/rhino/jstype/ValueType.java b/src/com/google/javascript/rhino/jstype/ValueType.java
+index 51819ad..0360724 100644
+--- a/src/com/google/javascript/rhino/jstype/ValueType.java
++++ b/src/com/google/javascript/rhino/jstype/ValueType.java
+@@ -1,4 +1,4 @@
+-/* 
++/*
+  *
+  * ***** BEGIN LICENSE BLOCK *****
+  * Version: MPL 1.1/GPL 2.0
+@@ -36,7 +36,7 @@
+  * file under either the MPL or the GPL.
+  *
+  * ***** END LICENSE BLOCK ***** */
+- 
++
+ package com.google.javascript.rhino.jstype;
+ 
+ import com.google.javascript.rhino.ErrorReporter;
+@@ -58,4 +58,10 @@
+   final JSType resolveInternal(ErrorReporter t, StaticScope<JSType> scope) {
+     return this;
+   }
++
++  @Override
++  public boolean hasDisplayName() {
++    return true;
++  }
++
+ }
+diff --git a/src/com/google/javascript/rhino/jstype/VoidType.java b/src/com/google/javascript/rhino/jstype/VoidType.java
+index c93e192..6271e6b 100644
+--- a/src/com/google/javascript/rhino/jstype/VoidType.java
++++ b/src/com/google/javascript/rhino/jstype/VoidType.java
+@@ -93,6 +93,11 @@
+ 
+   @Override
+   public String toString() {
++    return getDisplayName();
++  }
++
++  @Override
++  public String getDisplayName() {
+     return "undefined";
+   }
+ 
+diff --git a/test/com/google/javascript/rhino/jstype/JSTypeTest.java b/test/com/google/javascript/rhino/jstype/JSTypeTest.java
+index 32773f3..b2d9e98 100644
+--- a/test/com/google/javascript/rhino/jstype/JSTypeTest.java
++++ b/test/com/google/javascript/rhino/jstype/JSTypeTest.java
+@@ -365,6 +365,8 @@
+     // toString
+     assertEquals("Function",
+         U2U_CONSTRUCTOR_TYPE.toString());
++    assertTrue(U2U_CONSTRUCTOR_TYPE.hasDisplayName());
++    assertEquals("Function", U2U_CONSTRUCTOR_TYPE.getDisplayName());
+ 
+     // getPropertyType
+     assertTypeEquals(UNKNOWN_TYPE,
+@@ -504,6 +506,9 @@
+ 
+     // toString
+     assertEquals("NoObject", NO_OBJECT_TYPE.toString());
++    assertFalse(NO_OBJECT_TYPE.hasDisplayName());
++    assertEquals(null, NO_OBJECT_TYPE.getDisplayName());
++
+ 
+     // getPropertyType
+     assertTypeEquals(NO_TYPE,
+@@ -632,6 +637,8 @@
+ 
+     // toString
+     assertEquals("None", NO_TYPE.toString());
++    assertEquals(null, NO_TYPE.getDisplayName());
++    assertFalse(NO_TYPE.hasDisplayName());
+ 
+     // getPropertyType
+     assertTypeEquals(NO_TYPE,
+@@ -781,6 +788,8 @@
+ 
+     // toString
+     assertEquals("Array", ARRAY_TYPE.toString());
++    assertTrue(ARRAY_TYPE.hasDisplayName());
++    assertEquals("Array", ARRAY_TYPE.getDisplayName());
+ 
+     assertTrue(ARRAY_TYPE.isNativeObjectType());
+ 
+@@ -887,6 +896,8 @@
+ 
+     // toString
+     assertEquals("?", UNKNOWN_TYPE.toString());
++    assertTrue(UNKNOWN_TYPE.hasDisplayName());
++    assertEquals("Unknown", UNKNOWN_TYPE.getDisplayName());
+ 
+     Asserts.assertResolvesToSame(UNKNOWN_TYPE);
+   }
+@@ -1004,6 +1015,9 @@
+     // toString
+     assertEquals("*", ALL_TYPE.toString());
+ 
++    assertTrue(ALL_TYPE.hasDisplayName());
++    assertEquals("<Any Type>", ALL_TYPE.getDisplayName());
++
+     Asserts.assertResolvesToSame(ALL_TYPE);
+   }
+ 
+@@ -1290,6 +1304,8 @@
+ 
+     // toString
+     assertEquals("Number", NUMBER_OBJECT_TYPE.toString());
++    assertTrue(NUMBER_OBJECT_TYPE.hasDisplayName());
++    assertEquals("Number", NUMBER_OBJECT_TYPE.getDisplayName());
+ 
+     assertTrue(NUMBER_OBJECT_TYPE.isNativeObjectType());
+ 
+@@ -1412,6 +1428,8 @@
+ 
+     // toString
+     assertEquals("number", NUMBER_TYPE.toString());
++    assertTrue(NUMBER_TYPE.hasDisplayName());
++    assertEquals("number", NUMBER_TYPE.getDisplayName());
+ 
+     Asserts.assertResolvesToSame(NUMBER_TYPE);
+   }
+@@ -1556,6 +1574,8 @@
+ 
+     // toString
+     assertEquals("null", NULL_TYPE.toString());
++    assertTrue(NULL_TYPE.hasDisplayName());
++    assertEquals("null", NULL_TYPE.getDisplayName());
+ 
+     Asserts.assertResolvesToSame(NULL_TYPE);
+   }
+@@ -1759,6 +1779,8 @@
+ 
+     // toString
+     assertEquals("Date", DATE_TYPE.toString());
++    assertTrue(DATE_TYPE.hasDisplayName());
++    assertEquals("Date", DATE_TYPE.getDisplayName());
+ 
+     assertTrue(DATE_TYPE.isNativeObjectType());
+ 
+@@ -1902,6 +1924,8 @@
+ 
+     // toString
+     assertEquals("RegExp", REGEXP_TYPE.toString());
++    assertTrue(REGEXP_TYPE.hasDisplayName());
++    assertEquals("RegExp", REGEXP_TYPE.getDisplayName());
+ 
+     assertTrue(REGEXP_TYPE.isNativeObjectType());
+ 
+@@ -2063,6 +2087,9 @@
+     assertTrue(STRING_OBJECT_TYPE.isNativeObjectType());
+ 
+     Asserts.assertResolvesToSame(STRING_OBJECT_TYPE);
++
++    assertTrue(STRING_OBJECT_TYPE.hasDisplayName());
++    assertEquals("String", STRING_OBJECT_TYPE.getDisplayName());
+   }
+ 
+   /**
+@@ -2166,6 +2193,8 @@
+ 
+     // toString
+     assertEquals("string", STRING_TYPE.toString());
++    assertTrue(STRING_TYPE.hasDisplayName());
++    assertEquals("string", STRING_TYPE.getDisplayName());
+ 
+     // findPropertyType
+     assertTypeEquals(NUMBER_TYPE, STRING_TYPE.findPropertyType("length"));
+@@ -2427,6 +2456,10 @@
+     assertPropertyTypeInferred(functionType, "prototype");
+ 
+     Asserts.assertResolvesToSame(functionType);
++
++
++    assertEquals("aFunctionName", new FunctionBuilder(registry).
++        withName("aFunctionName").build().getDisplayName());
+   }
+ 
+   /**
+@@ -3051,6 +3084,8 @@
+ 
+     // toString
+     assertEquals("boolean", BOOLEAN_TYPE.toString());
++    assertTrue(BOOLEAN_TYPE.hasDisplayName());
++    assertEquals("boolean", BOOLEAN_TYPE.getDisplayName());
+ 
+     Asserts.assertResolvesToSame(BOOLEAN_TYPE);
+   }
+@@ -3155,6 +3190,8 @@
+ 
+     // toString
+     assertEquals("Boolean", BOOLEAN_OBJECT_TYPE.toString());
++    assertTrue(BOOLEAN_OBJECT_TYPE.hasDisplayName());
++    assertEquals("Boolean", BOOLEAN_OBJECT_TYPE.getDisplayName());
+ 
+     assertTrue(BOOLEAN_OBJECT_TYPE.isNativeObjectType());
+ 
+@@ -3262,6 +3299,12 @@
+ 
+     // toString
+     assertEquals("enum{Enum}", enumType.toString());
++    assertTrue(enumType.hasDisplayName());
++    assertEquals("Enum", enumType.getDisplayName());
++
++    assertEquals("AnotherEnum", new EnumType(registry, "AnotherEnum",
++        NUMBER_TYPE).getDisplayName());
++    assertFalse(new EnumType(registry, null, NUMBER_TYPE).hasDisplayName());
+ 
+     Asserts.assertResolvesToSame(enumType);
+   }
+@@ -3367,6 +3410,8 @@
+ 
+     // toString
+     assertEquals("Enum.<number>", elementsType.toString());
++    assertTrue(elementsType.hasDisplayName());
++    assertEquals("Enum", elementsType.getDisplayName());
+ 
+     Asserts.assertResolvesToSame(elementsType);
+   }
+@@ -3440,6 +3485,10 @@
+ 
+     // toString
+     assertEquals("{...}", objectType.toString());
++    assertEquals(null, objectType.getDisplayName());
++    assertFalse(objectType.hasReferenceName());
++    assertEquals("anObject", new PrototypeObjectType(registry, "anObject",
++        null).getDisplayName());
+ 
+     Asserts.assertResolvesToSame(objectType);
+   }

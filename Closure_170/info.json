@@ -1,0 +1,211 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Closure",
+  "id": "170",
+  "workingDir": "../bugs/Closure_170_buggy",
+  "inducingCommit": "209cd96451c4c5bf1f4c5fee6453c481946aa596",
+  "originalCommit": "a486b8345202c35efe3a2b63f16259e1933c359c",
+  "bug_name": "Closure_170",
+  "derive": "defects4j",
+  "original_fixing_commit": "49f54b28376a4ed5f72ec52d314020bd1f6cf3c6",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java",
+        "src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "getNumUseInUseCfgNode"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "getNumUseInUseCfgNode"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "425"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "425",
+            "426",
+            "427",
+            "428"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java b/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java\nindex 69d78e2..ecc1509 100644\n--- a/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java\n+++ b/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java\n@@ -422,7 +422,10 @@\n \n         @Override\n         public void visit(NodeTraversal t, Node n, Node parent) {\n-          if (NodeUtil.isName(n) \u0026\u0026 n.getString().equals(varName)) {\n+          if (NodeUtil.isName(n) \u0026\u0026 n.getString().equals(varName) \u0026\u0026\n+              // do not count in if it is left child of an assignment operator\n+              !(NodeUtil.isAssign(parent) \u0026\u0026\n+               (parent.getFirstChild() \u003d\u003d n))) {\n             numUseWithinUseCfgNode++;\n           }\n         }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PrefixExpression [14702,14778]"
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java",
+        "src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "getNumUseInUseCfgNode"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "getNumUseInUseCfgNode"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "419",
+            "427",
+            "428",
+            "429",
+            "434"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "420",
+            "421",
+            "429",
+            "430",
+            "431",
+            "434",
+            "435",
+            "436",
+            "437",
+            "438",
+            "439",
+            "440",
+            "441",
+            "442",
+            "445"
+          ],
+          "num": 15
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Closure_170/properties/modified_classes/inducing/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java data/changesInfo//Closure_170/cleaned/fixing/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java\n--- data/changesInfo//Closure_170/properties/modified_classes/inducing/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java\t2023-08-25 14:17:30.127507314 +0800\n+++ data/changesInfo//Closure_170/cleaned/fixing/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java\t2023-08-03 20:10:40.973802360 +0800\n@@ -417,6 +417,8 @@\n      */\n     private void getNumUseInUseCfgNode(Node n, Node parant) {\n \n+      final Node cfgNode \u003d n;\n+      numUseWithinUseCfgNode \u003d 0;\n       AbstractCfgNodeTraversalCallback gatherCb \u003d\n           new AbstractCfgNodeTraversalCallback() {\n \n@@ -424,14 +426,23 @@\n         public void visit(NodeTraversal t, Node n, Node parent) {\n           if (NodeUtil.isName(n) \u0026\u0026 n.getString().equals(varName) \u0026\u0026\n               // do not count in if it is left child of an assignment operator\n-              !(NodeUtil.isAssign(parent) \u0026\u0026\n-               (parent.getFirstChild() \u003d\u003d n))) {\n-            numUseWithinUseCfgNode++;\n+            !(NodeUtil.isAssign(parent) \u0026\u0026\n+                    (parent.getFirstChild() \u003d\u003d n) \u0026\u0026 isAssignChain(parent, cfgNode))) {\n+              numUseWithinUseCfgNode++;\n           }\n         }\n+        \n+        private boolean isAssignChain(Node child, Node ancestor) {\n+          for (Node n \u003d child; n !\u003d ancestor; n \u003d n.getParent()) {\n+            if (!NodeUtil.isAssign(n)) {\n+              return false;\n+            }\n+          }\n+          return true;\n+        }\n       };\n \n-      NodeTraversal.traverse(compiler, n, gatherCb);\n+      NodeTraversal.traverse(compiler, cfgNode, gatherCb);\n     }\n   }\n \n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [14360,14383]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [14390,14417]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: final [14360,14365]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [14366,14370]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [14371,14382]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: cfgNode [14371,14378]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [14962,15215]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [14848,14878]"
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

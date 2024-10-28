@@ -1,0 +1,276 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Closure",
+  "id": "107",
+  "workingDir": "../bugs/Closure_107_buggy",
+  "inducingCommit": "4adf024b5eb87f6b760b40e9923ed1391bca4152",
+  "originalCommit": "1c4c4fcaa092b3c11428beb1880282ca24456778",
+  "bug_name": "Closure_107",
+  "derive": "defects4j",
+  "original_fixing_commit": "49e9565febba904484396e2aef7dbe86f55e9cc5",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CommandLineRunner.java",
+        "src/com/google/javascript/jscomp/CommandLineRunner.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "createOptions"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "createOptions"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "36",
+            "348",
+            "629",
+            "639"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "37",
+            "350",
+            "351",
+            "352",
+            "353",
+            "354",
+            "355",
+            "356",
+            "357",
+            "358",
+            "359",
+            "640",
+            "651",
+            "652",
+            "653",
+            "654",
+            "655",
+            "656",
+            "657",
+            "658",
+            "659",
+            "660",
+            "661",
+            "662",
+            "663",
+            "664",
+            "665",
+            "666",
+            "667",
+            "668",
+            "669",
+            "670"
+          ],
+          "num": 32
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/CommandLineRunner.java b/src/com/google/javascript/jscomp/CommandLineRunner.java\nindex 6224434..a544ceb 100644\n--- a/src/com/google/javascript/jscomp/CommandLineRunner.java\n+++ b/src/com/google/javascript/jscomp/CommandLineRunner.java\n@@ -34,6 +34,7 @@\n import org.kohsuke.args4j.spi.StringOptionHandler;\n \n import java.io.File;\n+import java.io.FileInputStream;\n import java.io.IOException;\n import java.io.InputStream;\n import java.io.PrintStream;\n@@ -346,6 +347,16 @@\n         usage \u003d \"Prints the compiler version to stderr.\")\n     private boolean version \u003d false;\n \n+    @Option(name \u003d \"--translations_file\",\n+        usage \u003d \"Source of translated messages. Currently only supports XTB.\")\n+    private String translationsFile \u003d \"\";\n+\n+    @Option(name \u003d \"--translations_project\",\n+        usage \u003d \"Scopes all translations to the specified project.\" +\n+        \"When specified, we will use different message ids so that messages \" +\n+        \"in different projects can have different translations.\")\n+    private String translationsProject \u003d null;\n+\n     @Option(name \u003d \"--flagfile\",\n         usage \u003d \"A file containing additional command-line options.\")\n     private String flag_file \u003d \"\";\n@@ -626,7 +637,7 @@\n       level.setDebugOptionsForCompilationLevel(options);\n     }\n \n-    if(flags.generate_exports) {\n+    if (flags.generate_exports) {\n       options.setGenerateExports(flags.generate_exports);\n     }\n \n@@ -637,6 +648,26 @@\n     }\n \n     options.closurePass \u003d flags.process_closure_primitives;\n+\n+    if (!flags.translationsFile.isEmpty()) {\n+      try {\n+        options.messageBundle \u003d new XtbMessageBundle(\n+            new FileInputStream(flags.translationsFile),\n+            flags.translationsProject);\n+      } catch (IOException e) {\n+        throw new RuntimeException(\"Reading XTB file\", e);\n+      }\n+    } else if (CompilationLevel.ADVANCED_OPTIMIZATIONS \u003d\u003d level) {\n+      // In SIMPLE or WHITESPACE mode, if the user hasn\u0027t specified a\n+      // translations file, they might reasonably try to write their own\n+      // implementation of goog.getMsg that makes the substitution at\n+      // run-time.\n+      //\n+      // In ADVANCED mode, goog.getMsg is going to be renamed anyway,\n+      // so we might as well inline it.\n+      options.messageBundle \u003d new EmptyMessageBundle();\n+    }\n+\n     return options;\n   }\n \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [1300,1331]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [14733,14891]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [14897,15200]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [25085,25867]"
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [
+        "src/com/google/javascript/jscomp/EmptyMessageBundle.java"
+      ],
+      "num": 1
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.CommandLineRunnerTest",
+      "test_function": "testGetMsgWiringNoWarnings",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected no warnings or errors"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CommandLineRunner.java",
+        "src/com/google/javascript/jscomp/CommandLineRunner.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "createOptions"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "createOptions"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "73",
+            "668"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "74",
+            "75",
+            "76",
+            "77",
+            "78",
+            "79",
+            "80",
+            "81",
+            "82",
+            "83",
+            "84",
+            "85",
+            "86",
+            "87",
+            "669"
+          ],
+          "num": 15
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Closure_107/properties/modified_classes/inducing/src/com/google/javascript/jscomp/CommandLineRunner.java data/changesInfo//Closure_107/cleaned/fixing/src/com/google/javascript/jscomp/CommandLineRunner.java\n--- data/changesInfo//Closure_107/properties/modified_classes/inducing/src/com/google/javascript/jscomp/CommandLineRunner.java\t2023-08-25 13:27:32.613538861 +0800\n+++ data/changesInfo//Closure_107/cleaned/fixing/src/com/google/javascript/jscomp/CommandLineRunner.java\t2023-07-25 15:26:14.681019022 +0800\n@@ -666,6 +666,7 @@\n       // In ADVANCED mode, goog.getMsg is going to be renamed anyway,\n       // so we might as well inline it.\n       options.messageBundle \u003d new EmptyMessageBundle();\n+      options.setWarningLevel(JsMessageVisitor.MSG_CONVENTIONS, CheckLevel.OFF);\n     }\n \n     return options;\ndiff -u -r data/changesInfo//Closure_107/properties/modified_classes/inducing/src/com/google/javascript/jscomp/JsMessageVisitor.java data/changesInfo//Closure_107/cleaned/fixing/src/com/google/javascript/jscomp/JsMessageVisitor.java\n--- data/changesInfo//Closure_107/properties/modified_classes/inducing/src/com/google/javascript/jscomp/JsMessageVisitor.java\t2023-07-25 15:42:16.088454884 +0800\n+++ data/changesInfo//Closure_107/cleaned/fixing/src/com/google/javascript/jscomp/JsMessageVisitor.java\t2023-07-25 15:43:56.810894694 +0800\n@@ -71,6 +71,20 @@\n       DiagnosticType.error(\"JSC_MSG_NOT_INITIALIZED_USING_NEW_SYNTAX\",\n           \"message not initialized using \" + MSG_FUNCTION_NAME);\n \n+  /**\n+   * Warnings that only apply to people who use MSG_ to denote\n+   * messages. Note that this doesn\u0027t include warnings about\n+   * proper use of goog.getMsg\n+   */\n+  static final DiagnosticGroup MSG_CONVENTIONS \u003d new DiagnosticGroup(\n+      \"messageConventions\",\n+      MESSAGE_HAS_NO_DESCRIPTION,\n+      MESSAGE_HAS_NO_TEXT,\n+      MESSAGE_TREE_MALFORMED,\n+      MESSAGE_HAS_NO_VALUE,\n+      MESSAGE_DUPLICATE_KEY,\n+      MESSAGE_NOT_INITIALIZED_USING_NEW_SYNTAX);\n+\n   private static final String PH_JS_PREFIX \u003d \"{$\";\n   private static final String PH_JS_SUFFIX \u003d \"}\";\n \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [25868,25942]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/JsMessageVisitor.java",
+        "src/com/google/javascript/jscomp/JsMessageVisitor.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "extractFromCallNode"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "extractFromCallNode"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "73",
+            "668"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "74",
+            "75",
+            "76",
+            "77",
+            "78",
+            "79",
+            "80",
+            "81",
+            "82",
+            "83",
+            "84",
+            "85",
+            "86",
+            "87",
+            "669"
+          ],
+          "num": 15
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Closure_107/properties/modified_classes/inducing/src/com/google/javascript/jscomp/CommandLineRunner.java data/changesInfo//Closure_107/cleaned/fixing/src/com/google/javascript/jscomp/CommandLineRunner.java\n--- data/changesInfo//Closure_107/properties/modified_classes/inducing/src/com/google/javascript/jscomp/CommandLineRunner.java\t2023-08-25 13:27:32.613538861 +0800\n+++ data/changesInfo//Closure_107/cleaned/fixing/src/com/google/javascript/jscomp/CommandLineRunner.java\t2023-07-25 15:26:14.681019022 +0800\n@@ -666,6 +666,7 @@\n       // In ADVANCED mode, goog.getMsg is going to be renamed anyway,\n       // so we might as well inline it.\n       options.messageBundle \u003d new EmptyMessageBundle();\n+      options.setWarningLevel(JsMessageVisitor.MSG_CONVENTIONS, CheckLevel.OFF);\n     }\n \n     return options;\ndiff -u -r data/changesInfo//Closure_107/properties/modified_classes/inducing/src/com/google/javascript/jscomp/JsMessageVisitor.java data/changesInfo//Closure_107/cleaned/fixing/src/com/google/javascript/jscomp/JsMessageVisitor.java\n--- data/changesInfo//Closure_107/properties/modified_classes/inducing/src/com/google/javascript/jscomp/JsMessageVisitor.java\t2023-07-25 15:42:16.088454884 +0800\n+++ data/changesInfo//Closure_107/cleaned/fixing/src/com/google/javascript/jscomp/JsMessageVisitor.java\t2023-07-25 15:43:56.810894694 +0800\n@@ -71,6 +71,20 @@\n       DiagnosticType.error(\"JSC_MSG_NOT_INITIALIZED_USING_NEW_SYNTAX\",\n           \"message not initialized using \" + MSG_FUNCTION_NAME);\n \n+  /**\n+   * Warnings that only apply to people who use MSG_ to denote\n+   * messages. Note that this doesn\u0027t include warnings about\n+   * proper use of goog.getMsg\n+   */\n+  static final DiagnosticGroup MSG_CONVENTIONS \u003d new DiagnosticGroup(\n+      \"messageConventions\",\n+      MESSAGE_HAS_NO_DESCRIPTION,\n+      MESSAGE_HAS_NO_TEXT,\n+      MESSAGE_TREE_MALFORMED,\n+      MESSAGE_HAS_NO_VALUE,\n+      MESSAGE_DUPLICATE_KEY,\n+      MESSAGE_NOT_INITIALIZED_USING_NEW_SYNTAX);\n+\n   private static final String PH_JS_PREFIX \u003d \"{$\";\n   private static final String PH_JS_SUFFIX \u003d \"}\";\n \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [2843,3302]"
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

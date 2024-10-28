@@ -1,0 +1,232 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.jxpath.ri.model.dom.DOMModelTest::testAxisAttribute,org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest::testAxisAttribute",
+    "test.dir": "src/test",
+    "clz.modified": "org.apache.commons.jxpath.ri.axes.AttributeContext",
+    "src.dir": "src/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JxPath",
+  "id": "18",
+  "workingDir": "../bugs/JxPath_18_tmp",
+  "bug_name": "JxPath_18",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.jxpath.ri.model.dom.DOMModelTest",
+      "test_function": "testAxisAttribute",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Evaluating value iterator \u003cvendor/product/price:amount/attribute::node()\u003e expected:\u003c[10%, 20%]\u003e but was:\u003c[]\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/jxpath/ri/axes/AttributeContext.java",
+        "src/java/org/apache/commons/jxpath/ri/axes/AttributeContext.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.jxpath.ri.axes.AttributeContext:nextNode:[]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.jxpath.ri.axes.AttributeContext:nextNode:[]:boolean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "19",
+            "24",
+            "35",
+            "78",
+            "79",
+            "80",
+            "81",
+            "82",
+            "83",
+            "84",
+            "85",
+            "86",
+            "87",
+            "90",
+            "91",
+            "102"
+          ],
+          "num": 16
+        },
+        {
+          "qualified_names": [
+            "18",
+            "36",
+            "75",
+            "78",
+            "79",
+            "80",
+            "112"
+          ],
+          "num": 7
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/jxpath/ri/axes/AttributeContext.java b/src/java/org/apache/commons/jxpath/ri/axes/AttributeContext.java\nindex 4193b3a..4198333 100644\n--- a/src/java/org/apache/commons/jxpath/ri/axes/AttributeContext.java\n+++ b/src/java/org/apache/commons/jxpath/ri/axes/AttributeContext.java\n@@ -16,12 +16,10 @@\n  */\n package org.apache.commons.jxpath.ri.axes;\n \n-import org.apache.commons.jxpath.ri.Compiler;\n import org.apache.commons.jxpath.ri.EvalContext;\n import org.apache.commons.jxpath.ri.QName;\n import org.apache.commons.jxpath.ri.compiler.NodeNameTest;\n import org.apache.commons.jxpath.ri.compiler.NodeTest;\n-import org.apache.commons.jxpath.ri.compiler.NodeTypeTest;\n import org.apache.commons.jxpath.ri.model.NodeIterator;\n import org.apache.commons.jxpath.ri.model.NodePointer;\n \n@@ -32,7 +30,6 @@\n  * @version $Revision$ $Date$\n  */\n public class AttributeContext extends EvalContext {\n-    private static final NodeNameTest WILDCARD_TEST \u003d new NodeNameTest(new QName(null, \"*\"));\n \n     private NodeTest nodeTest;\n     private boolean setStarted \u003d false;\n@@ -75,20 +72,12 @@\n         super.setPosition(getCurrentPosition() + 1);\n         if (!setStarted) {\n             setStarted \u003d true;\n-            NodeNameTest nodeNameTest \u003d null;\n-            if (nodeTest instanceof NodeTypeTest) {\n-                if (((NodeTypeTest) nodeTest).getNodeType() \u003d\u003d Compiler.NODE_TYPE_NODE) {\n-                    nodeNameTest \u003d WILDCARD_TEST;\n-                }\n-            }\n-            else if (nodeTest instanceof NodeNameTest) {\n-                nodeNameTest \u003d (NodeNameTest) nodeTest;\n-            }\n-            if (nodeNameTest \u003d\u003d null) {\n+            if (!(nodeTest instanceof NodeNameTest)) {\n                 return false;\n             }\n-            iterator \u003d parentContext.getCurrentNodePointer().attributeIterator(\n-                    nodeNameTest.getNodeName());\n+            QName name \u003d ((NodeNameTest) nodeTest).getNodeName();\n+            iterator \u003d\n+                parentContext.getCurrentNodePointer().attributeIterator(name);\n         }\n         if (iterator \u003d\u003d null) {\n             return false;\n@@ -99,4 +88,4 @@\n         currentNodePointer \u003d iterator.getNodePointer();\n         return true;\n     }\n-}\n\\ No newline at end of file\n+}\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [2533,2586]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrefixExpression [2438,2473]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [2533,2538]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [2539,2585]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PREFIX_EXPRESSION_OPERATOR: ! [2438,2439]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ParenthesizedExpression [2439,2473]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: name [2539,2543]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ParenthesizedExpression [2546,2571]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: name [2682,2686]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [846,891]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1098,1156]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [1444,1533]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [2964,3003]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: nodeNameTest [3202,3214]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [2633,2666]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InstanceofExpression [2683,2715]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [2717,2890]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [2679,3017]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [3034,3054]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [3056,3101]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [3030,3101]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

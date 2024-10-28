@@ -1,0 +1,201 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.jsoup.safety.CleanerTest::testIsValid",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.jsoup.safety.Cleaner",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Jsoup",
+  "id": "30",
+  "workingDir": "../bugs/Jsoup_30_tmp",
+  "bug_name": "Jsoup_30",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.jsoup.safety.CleanerTest",
+      "test_function": "testIsValid",
+      "assertion_line": "99",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/safety/Cleaner.java",
+        "src/main/java/org/jsoup/safety/Cleaner.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.safety.Cleaner\\$CleaningVisitor:CleaningVisitor:[Element root, Element destination]:null",
+            "org.jsoup.safety.Cleaner:copySafeNodes:[Element source, Element dest]:int",
+            "org.jsoup.safety.Cleaner\\$CleaningVisitor:head:[Node source, int depth]:void",
+            "org.jsoup.safety.Cleaner\\$CleaningVisitor:tail:[Node source, int depth]:void"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "org.jsoup.safety.Cleaner:copySafeNodes:[Element root, Element destination]:int"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "6",
+            "7",
+            "72",
+            "73",
+            "74",
+            "75",
+            "77",
+            "78",
+            "79",
+            "80",
+            "81",
+            "82",
+            "92",
+            "93",
+            "100",
+            "101",
+            "105",
+            "106",
+            "107",
+            "108",
+            "109",
+            "110",
+            "112",
+            "113",
+            "114",
+            "115",
+            "116"
+          ],
+          "num": 27
+        },
+        {
+          "qualified_names": [
+            "5",
+            "70",
+            "71",
+            "72",
+            "74",
+            "84",
+            "85",
+            "87",
+            "95"
+          ],
+          "num": 9
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/safety/Cleaner.java b/src/main/java/org/jsoup/safety/Cleaner.java\nindex 27af7a7..e4d45bd 100644\n--- a/src/main/java/org/jsoup/safety/Cleaner.java\n+++ b/src/main/java/org/jsoup/safety/Cleaner.java\n@@ -3,8 +3,6 @@\n import org.jsoup.helper.Validate;\n import org.jsoup.nodes.*;\n import org.jsoup.parser.Tag;\n-import org.jsoup.select.NodeTraversor;\n-import org.jsoup.select.NodeVisitor;\n \n import java.util.List;\n \n@@ -69,17 +67,11 @@\n     /**\n      Iterates the input and copies trusted nodes (tags, attributes, text) into the destination.\n      */\n-    private final class CleaningVisitor implements NodeVisitor {\n-        private int numDiscarded \u003d 0;\n-        private final Element root;\n-        private Element destination; // current element to append nodes to\n+    private int copySafeNodes(Element root, Element destination) {\n+        List\u003cNode\u003e sourceChildren \u003d root.childNodes();\n+        int numDiscarded \u003d 0;\n \n-        private CleaningVisitor(Element root, Element destination) {\n-            this.root \u003d root;\n-            this.destination \u003d destination;\n-        }\n-\n-        public void head(Node source, int depth) {\n+        for (Node source : sourceChildren) {\n             if (source instanceof Element) {\n                 Element sourceEl \u003d (Element) source;\n \n@@ -89,31 +81,20 @@\n                     destination.appendChild(destChild);\n \n                     numDiscarded +\u003d meta.numAttribsDiscarded;\n-                    destination \u003d destChild;\n-                } else if (source !\u003d root) { // not a safe tag, so don\u0027t add. don\u0027t count root against discarded.\n+                    numDiscarded +\u003d copySafeNodes(sourceEl, destChild);\n+                } else {\n                     numDiscarded++;\n+                    numDiscarded +\u003d copySafeNodes(sourceEl, destination);\n                 }\n             } else if (source instanceof TextNode) {\n                 TextNode sourceText \u003d (TextNode) source;\n                 TextNode destText \u003d new TextNode(sourceText.getWholeText(), source.baseUri());\n                 destination.appendChild(destText);\n-            } else { // else, we don\u0027t care about comments, xml proc instructions, etc\n-                numDiscarded++;\n             }\n         }\n+        return numDiscarded;\n \n-        public void tail(Node source, int depth) {\n-            if (source instanceof Element \u0026\u0026 whitelist.isSafeTag(source.nodeName())) {\n-                destination \u003d destination.parent(); // would have descended, so pop destination stack\n-            }\n-        }\n-    }\n \n-    private int copySafeNodes(Element source, Element dest) {\n-        CleaningVisitor cleaningVisitor \u003d new CleaningVisitor(source, dest);\n-        NodeTraversor traversor \u003d new NodeTraversor(cleaningVisitor);\n-        traversor.traverse(source);\n-        return cleaningVisitor.numDiscarded;\n     }\n \n     private ElementMeta createSafeElement(Element sourceEl) {\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [2792,2899]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [2975,3021]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [3030,3051]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "EnhancedForStatement [3061,4035]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [4044,4064]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [116,154]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [155,191]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TypeDeclaration [2868,4711]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [4783,4851]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [4860,4921]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [4930,4957]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [4966,5002]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.jsoup.safety.Cleaner:copySafeNodes:[Element root, Element destination]:int"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.jsoup.safety.Cleaner\\$CleaningVisitor:head:[Node source, int depth]:void",
+        "org.jsoup.safety.Cleaner\\$CleaningVisitor:tail:[Node source, int depth]:void",
+        "org.jsoup.safety.Cleaner:copySafeNodes:[Element source, Element dest]:int",
+        "org.jsoup.safety.Cleaner\\$CleaningVisitor:CleaningVisitor:[Element root, Element destination]:null"
+      ],
+      "num": 4
+    }
+  }
+}

@@ -1,0 +1,127 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.mockito.internal.util.TimerTest::should_throw_friendly_reminder_exception_when_duration_is_negative,org.mockito.verification.NegativeDurationTest::should_throw_exception_when_duration_is_negative_for_timeout_method,org.mockito.verification.NegativeDurationTest::should_throw_exception_when_duration_is_negative_for_after_method",
+    "test.dir": "test",
+    "clz.modified": "org.mockito.internal.util.Timer",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Mockito",
+  "id": "2",
+  "workingDir": "../bugs/Mockito_2_tmp",
+  "bug_name": "Mockito_2",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.mockito.internal.util.TimerTest",
+      "test_function": "should_throw_friendly_reminder_exception_when_duration_is_negative",
+      "assertion_line": "48",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "It is forbidden to create timer with negative value of timer\u0027s duration."
+    },
+    {
+      "test_class": "org.mockito.verification.NegativeDurationTest",
+      "test_function": "should_throw_exception_when_duration_is_negative_for_timeout_method",
+      "assertion_line": "14",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "It is forbidden to invoke Mockito.timeout() with negative value."
+    },
+    {
+      "test_class": "org.mockito.verification.NegativeDurationTest",
+      "test_function": "should_throw_exception_when_duration_is_negative_for_after_method",
+      "assertion_line": "24",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "It is forbidden to invoke Mockito.after() with negative value."
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/org/mockito/internal/util/Timer.java",
+        "src/org/mockito/internal/util/Timer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.mockito.internal.util.Timer:Timer:[long durationMillis]:null",
+            "org.mockito.internal.util.Timer:validateInput:[long durationMillis]:void"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.mockito.internal.util.Timer:Timer:[long durationMillis]:null"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "3",
+            "11",
+            "30",
+            "31",
+            "32",
+            "33",
+            "34"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "2",
+            "11",
+            "31"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/org/mockito/internal/util/Timer.java b/src/org/mockito/internal/util/Timer.java\nindex 907e545..4a51e5c 100644\n--- a/src/org/mockito/internal/util/Timer.java\n+++ b/src/org/mockito/internal/util/Timer.java\n@@ -1,6 +1,5 @@\n package org.mockito.internal.util;\n \n-import org.mockito.exceptions.Reporter;\n \n public class Timer {\n \n@@ -8,7 +7,6 @@\n     private long startTime \u003d -1;\n \n     public Timer(long durationMillis) {\n-        validateInput(durationMillis);\n         this.durationMillis \u003d durationMillis;\n     }\n \n@@ -27,9 +25,4 @@\n         startTime \u003d System.currentTimeMillis();\n     }\n \n-    private void validateInput(long durationMillis) {\n-        if (durationMillis \u003c 0) {\n-            new Reporter().cannotCreateTimerWithNegativeDurationTime(durationMillis);\n-        }\n-    }\n }\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [36,75]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [220,250]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [660,845]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.mockito.internal.util.Timer:validateInput:[long durationMillis]:void"
+      ],
+      "num": 1
+    }
+  }
+}

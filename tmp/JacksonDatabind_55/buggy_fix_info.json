@@ -1,0 +1,142 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.ser.TestEnumSerialization::testEnumsWithJsonPropertyAsKey",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.ser.std.StdKeySerializers",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "55",
+  "workingDir": "../bugs/JacksonDatabind_55_tmp",
+  "bug_name": "JacksonDatabind_55",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.ser.TestEnumSerialization",
+      "test_function": "testEnumsWithJsonPropertyAsKey",
+      "assertion_line": "441",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c{\"[aleph]\":\"b\"}\u003e but was:\u003c{\"[A]\":\"b\"}\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/ser/std/StdKeySerializers.java",
+        "src/main/java/com/fasterxml/jackson/databind/ser/std/StdKeySerializers.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.std.StdKeySerializers\\$EnumKeySerializer:EnumKeySerializer:[Class\u003c?\u003e enumType, EnumValues values]:null",
+            "com.fasterxml.jackson.databind.ser.std.StdKeySerializers\\$EnumKeySerializer:construct:[Class\u003c?\u003e enumType, EnumValues enumValues]:EnumKeySerializer",
+            "com.fasterxml.jackson.databind.ser.std.StdKeySerializers:getFallbackKeySerializer:[SerializationConfig config, Class\u003c?\u003e rawKeyType]:JsonSerializer\u003cObject\u003e",
+            "com.fasterxml.jackson.databind.ser.std.StdKeySerializers\\$EnumKeySerializer:serialize:[Object value, JsonGenerator g, SerializerProvider serializers]:void"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.std.StdKeySerializers:getFallbackKeySerializer:[SerializationConfig config, Class\u003c?\u003e rawKeyType]:JsonSerializer\u003cObject\u003e"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "10",
+            "83",
+            "84",
+            "217",
+            "218",
+            "219",
+            "221",
+            "222",
+            "223",
+            "224",
+            "226",
+            "227",
+            "228",
+            "229",
+            "230",
+            "232",
+            "233",
+            "234",
+            "235",
+            "236",
+            "237",
+            "238",
+            "239",
+            "240",
+            "241",
+            "242",
+            "243"
+          ],
+          "num": 27
+        },
+        {
+          "qualified_names": [
+            "9",
+            "82",
+            "218"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/ser/std/StdKeySerializers.java b/src/main/java/com/fasterxml/jackson/databind/ser/std/StdKeySerializers.java\nindex 7afcc55..7f55a3f 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/ser/std/StdKeySerializers.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/ser/std/StdKeySerializers.java\n@@ -7,7 +7,6 @@\n import com.fasterxml.jackson.core.*;\n import com.fasterxml.jackson.databind.*;\n import com.fasterxml.jackson.databind.ser.impl.PropertySerializerMap;\n-import com.fasterxml.jackson.databind.util.EnumValues;\n \n @SuppressWarnings(\"serial\")\n public class StdKeySerializers\n@@ -80,8 +79,7 @@\n                 return new Dynamic();\n             }\n             if (rawKeyType.isEnum()) {\n-                return EnumKeySerializer.construct(rawKeyType,\n-                        EnumValues.constructFromName(config, (Class\u003cEnum\u003c?\u003e\u003e) rawKeyType));\n+                return new Default(Default.TYPE_ENUM, rawKeyType);\n             }\n         }\n         return DEFAULT_KEY_SERIALIZER;\n@@ -214,31 +212,7 @@\n      *\n      * @since 2.8\n      */\n-    public static class EnumKeySerializer extends StdSerializer\u003cObject\u003e\n-    {\n-        protected final EnumValues _values;\n \n-        protected EnumKeySerializer(Class\u003c?\u003e enumType, EnumValues values) {\n-            super(enumType, false);\n-            _values \u003d values;\n-        }\n \n-        public static EnumKeySerializer construct(Class\u003c?\u003e enumType,\n-                EnumValues enumValues)\n-        {\n-            return new EnumKeySerializer(enumType, enumValues);\n-        }\n         \n-        @Override\n-        public void serialize(Object value, JsonGenerator g, SerializerProvider serializers)\n-                throws IOException\n-        {\n-            if (serializers.isEnabled(SerializationFeature.WRITE_ENUMS_USING_TO_STRING)) {\n-                g.writeFieldName(value.toString());\n-                return;\n-            }\n-            Enum\u003c?\u003e en \u003d (Enum\u003c?\u003e) value;\n-            g.writeFieldName(_values.serializedValueFor(en));\n-        }\n-    }\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [3392,3442]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [276,330]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [3447,3585]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TypeDeclaration [8106,9149]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.ser.std.StdKeySerializers\\$EnumKeySerializer:construct:[Class\u003c?\u003e enumType, EnumValues enumValues]:EnumKeySerializer",
+        "com.fasterxml.jackson.databind.ser.std.StdKeySerializers\\$EnumKeySerializer:serialize:[Object value, JsonGenerator g, SerializerProvider serializers]:void",
+        "com.fasterxml.jackson.databind.ser.std.StdKeySerializers\\$EnumKeySerializer:EnumKeySerializer:[Class\u003c?\u003e enumType, EnumValues values]:null"
+      ],
+      "num": 3
+    }
+  }
+}

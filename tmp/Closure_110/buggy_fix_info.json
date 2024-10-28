@@ -1,0 +1,250 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.ScopedAliasesTest::testHoistedFunctionDeclaration,com.google.javascript.jscomp.ScopedAliasesTest::testFunctionDeclaration",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.ScopedAliases,com.google.javascript.rhino.Node",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "110",
+  "workingDir": "../bugs/Closure_110_tmp",
+  "bug_name": "Closure_110",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.ScopedAliasesTest",
+      "test_function": "testHoistedFunctionDeclaration",
+      "assertion_line": "522",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Unexpected error(s): JSC_GOOG_SCOPE_NON_ALIAS_LOCAL. The local variable f is in a goog.scope and is not an alias. at testcode line 1 : 39 expected:\u003c0\u003e but was:\u003c1\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.ScopedAliasesTest",
+      "test_function": "testFunctionDeclaration",
+      "assertion_line": "515",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Unexpected error(s): JSC_GOOG_SCOPE_NON_ALIAS_LOCAL. The local variable f is in a goog.scope and is not an alias. at testcode line 1 : 41 expected:\u003c0\u003e but was:\u003c1\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/ScopedAliases.java",
+        "src/com/google/javascript/jscomp/ScopedAliases.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.ScopedAliases\\$Traversal:findAliases:[NodeTraversal t]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.ScopedAliases\\$Traversal:recordAlias:[Var aliasVar]:void",
+            "com.google.javascript.jscomp.ScopedAliases\\$Traversal:findAliases:[NodeTraversal t]:void"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "358",
+            "367",
+            "368",
+            "370",
+            "371",
+            "373",
+            "385",
+            "387",
+            "396",
+            "397",
+            "399",
+            "400",
+            "401",
+            "402",
+            "405",
+            "406",
+            "407",
+            "408",
+            "422",
+            "423",
+            "424",
+            "426"
+          ],
+          "num": 22
+        },
+        {
+          "qualified_names": [
+            "357",
+            "366",
+            "368",
+            "369",
+            "371",
+            "386",
+            "399",
+            "435"
+          ],
+          "num": 8
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/ScopedAliases.java b/src/com/google/javascript/jscomp/ScopedAliases.java\nindex fbd46d3..7e9c8b8 100644\n--- a/src/com/google/javascript/jscomp/ScopedAliases.java\n+++ b/src/com/google/javascript/jscomp/ScopedAliases.java\n@@ -355,7 +355,6 @@\n         Node n \u003d v.getNode();\n         Node parent \u003d n.getParent();\n         boolean isVar \u003d parent.isVar();\n-        boolean isFunctionDecl \u003d NodeUtil.isFunctionDeclaration(parent);\n         if (isVar \u0026\u0026 n.getFirstChild() !\u003d null \u0026\u0026 n.getFirstChild().isQualifiedName()) {\n           recordAlias(v);\n         } else if (v.isBleedingFunction()) {\n@@ -364,13 +363,12 @@\n         } else if (parent.getType() \u003d\u003d Token.LP) {\n           // Parameters of the scope function also get a BAD_PARAMETERS\n           // error.\n-        } else if (isVar || isFunctionDecl) {\n-          boolean isHoisted \u003d NodeUtil.isHoistedFunctionDeclaration(parent);\n+        } else if (isVar) {\n           Node grandparent \u003d parent.getParent();\n-          Node value \u003d v.getInitialValue() !\u003d null ?\n-              v.getInitialValue() :\n+          Node value \u003d n.hasChildren() ?\n+              v.getInitialValue().detachFromParent() :\n               null;\n-          Node varNode \u003d null;\n+          Node varNode \u003d parent;\n \n           String name \u003d n.getString();\n           int nameCount \u003d scopedAliasNames.count(name);\n@@ -382,9 +380,7 @@\n \n           // First, we need to free up the function expression (EXPR)\n           // to be used in another expression.\n-          if (isFunctionDecl) {\n             // Replace \"function NAME() { ... }\" with \"var NAME;\".\n-            Node existingName \u003d v.getNameNode();\n \n             // We can\u0027t keep the local name on the function expression,\n             // because IE is buggy and will leak the name into the global\n@@ -393,19 +389,9 @@\n             //\n             // This will only cause problems if this is a hoisted, recursive\n             // function, and the programmer is using the hoisting.\n-            Node newName \u003d IR.name(\"\").useSourceInfoFrom(existingName);\n-            value.replaceChild(existingName, newName);\n \n-            varNode \u003d IR.var(existingName).useSourceInfoFrom(existingName);\n-            grandparent.replaceChild(parent, varNode);\n-          } else {\n-            if (value !\u003d null) {\n               // If this is a VAR, we can just detach the expression and\n               // the tree will still be valid.\n-              value.detachFromParent();\n-            }\n-            varNode \u003d parent;\n-          }\n \n           // Add $jscomp.scope.name \u003d EXPR;\n           // Make sure we copy over all the jsdoc and debug info.\n@@ -419,11 +405,7 @@\n             NodeUtil.setDebugInformation(\n                 newDecl.getFirstChild().getFirstChild(), n, name);\n \n-            if (isHoisted) {\n-              grandparent.addChildToFront(newDecl);\n-            } else {\n               grandparent.addChildBefore(newDecl, varNode);\n-            }\n           }\n \n           // Rewrite \"var name \u003d EXPR;\" to \"var name \u003d $jscomp.scope.name;\"\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [12682,12787]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: parent [12813,12819]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [12199,12263]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: || [12693,12695]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: isFunctionDecl [12696,12710]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [12687,12710]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [12724,12790]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [12850,12948]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NullLiteral [12974,12978]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [13406,14575]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: isHoisted [15129,15138]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [15140,15207]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [15213,15288]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [15125,15288]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/Node.java",
+        "src/com/google/javascript/rhino/Node.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.Node:getChildBefore:[Node child]:Node"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.Node:getChildBefore:[Node child]:Node"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "554",
+            "555",
+            "556"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "553"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/Node.java b/src/com/google/javascript/rhino/Node.java\nindex 6a3e9e0..b645632 100644\n--- a/src/com/google/javascript/rhino/Node.java\n+++ b/src/com/google/javascript/rhino/Node.java\n@@ -551,9 +551,6 @@\n       return null;\n     }\n     Node n \u003d first;\n-    if (n \u003d\u003d null) {\n-      throw new RuntimeException(\"node is not a child\");\n-    }\n \n     while (n.next !\u003d child) {\n       n \u003d n.next;\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [17455,17534]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.ScopedAliases\\$Traversal:recordAlias:[Var aliasVar]:void"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

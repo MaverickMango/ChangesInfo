@@ -1,0 +1,180 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.joda.time.format.TestDateTimeFormatterBuilder::test_printParseZoneDawsonCreek",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.joda.time.format.DateTimeFormatterBuilder",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Time",
+  "id": "20",
+  "workingDir": "../bugs/Time_20_tmp",
+  "bug_name": "Time_20",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.joda.time.format.TestDateTimeFormatterBuilder",
+      "test_function": "test_printParseZoneDawsonCreek",
+      "assertion_line": "262",
+      "exception": "java.lang.IllegalArgumentException",
+      "message": "Invalid format: \"2007-03-04 12:30 America/Dawson_Creek\" is malformed at \"_Creek\""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/joda/time/format/DateTimeFormatterBuilder.java",
+        "src/main/java/org/joda/time/format/DateTimeFormatterBuilder.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.joda.time.format.DateTimeFormatterBuilder:parseInto:[DateTimeParserBucket bucket, String text, int position]:int"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.joda.time.format.DateTimeFormatterBuilder:parseInto:[DateTimeParserBucket bucket, String text, int position]:int"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "2542",
+            "2545",
+            "2546",
+            "2547",
+            "2550",
+            "2551",
+            "2552",
+            "2553"
+          ],
+          "num": 8
+        },
+        {
+          "qualified_names": [
+            "2544",
+            "2545"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/joda/time/format/DateTimeFormatterBuilder.java b/src/main/java/org/joda/time/format/DateTimeFormatterBuilder.java\nindex ebb4b08..558a586 100644\n--- a/src/main/java/org/joda/time/format/DateTimeFormatterBuilder.java\n+++ b/src/main/java/org/joda/time/format/DateTimeFormatterBuilder.java\n@@ -2539,18 +2539,12 @@\n \n         public int parseInto(DateTimeParserBucket bucket, String text, int position) {\n             String str \u003d text.substring(position);\n-            String best \u003d null;\n             for (String id : ALL_IDS) {\n                 if (str.startsWith(id)) {\n-                \tif (best \u003d\u003d null || id.length() \u003e best.length()) {\n-                \t\tbest \u003d id;\n-                \t}\n+                    bucket.setZone(DateTimeZone.forID(id));\n+                    return position + id.length();\n                 }\n             }\n-            if (best !\u003d null) {\n-                bucket.setZone(DateTimeZone.forID(best));\n-                return position + best.length();\n-            }\n             return ~position;\n         }\n     }\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [94358,94377]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [94481,94524]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: best [94546,94550]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ASSIGNMENT_OPERATOR: \u003d [94551,94552]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Assignment [94546,94555]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ExpressionStatement [94546,94556]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [94526,94575]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [94477,94575]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [94624,94636]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [94638,94760]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [94620,94760]",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

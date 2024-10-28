@@ -1,0 +1,225 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.jfree.data.category.junit.DefaultCategoryDatasetTests::testBug1835955,org.jfree.data.junit.DefaultKeyedValues2DTests::testRemoveColumnByKey,org.jfree.data.junit.DefaultKeyedValuesTests::testRemoveValue,org.jfree.data.junit.DefaultKeyedValuesTests::testGetIndex2",
+    "test.dir": "tests",
+    "clz.modified": "org.jfree.data.DefaultKeyedValues,org.jfree.data.DefaultKeyedValues2D",
+    "src.dir": "source"
+  },
+  "timeoutSecond": 100,
+  "proj": "Chart",
+  "id": "18",
+  "workingDir": "../bugs/Chart_18_tmp",
+  "bug_name": "Chart_18",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.jfree.data.category.junit.DefaultCategoryDatasetTests",
+      "test_function": "testBug1835955",
+      "assertion_line": "350",
+      "exception": "java.lang.IndexOutOfBoundsException",
+      "message": "Index: 0, Size: 0"
+    },
+    {
+      "test_class": "org.jfree.data.junit.DefaultKeyedValues2DTests",
+      "test_function": "testRemoveColumnByKey",
+      "assertion_line": "354",
+      "exception": "java.lang.IndexOutOfBoundsException",
+      "message": "Index: 0, Size: 0"
+    },
+    {
+      "test_class": "org.jfree.data.junit.DefaultKeyedValuesTests",
+      "test_function": "testRemoveValue",
+      "assertion_line": "372",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    },
+    {
+      "test_class": "org.jfree.data.junit.DefaultKeyedValuesTests",
+      "test_function": "testGetIndex2",
+      "assertion_line": "244",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c-1\u003e but was:\u003c0\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "source/org/jfree/data/DefaultKeyedValues.java",
+        "source/org/jfree/data/DefaultKeyedValues.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jfree.data.DefaultKeyedValues:removeValue:[int index]:void",
+            "org.jfree.data.DefaultKeyedValues:removeValue:[Comparable key]:void"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.jfree.data.DefaultKeyedValues:removeValue:[int index]:void",
+            "org.jfree.data.DefaultKeyedValues:removeValue:[Comparable key]:void"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "317",
+            "333",
+            "334"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "318",
+            "320",
+            "335"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/source/org/jfree/data/DefaultKeyedValues.java b/source/org/jfree/data/DefaultKeyedValues.java\nindex 5569198..707eb0a 100644\n--- a/source/org/jfree/data/DefaultKeyedValues.java\n+++ b/source/org/jfree/data/DefaultKeyedValues.java\n@@ -315,7 +315,9 @@\n     public void removeValue(int index) {\n         this.keys.remove(index);\n         this.values.remove(index);\n+        if (index \u003c this.keys.size()) {\n         rebuildIndex();\n+        }\n     }\n \n     /**\n@@ -330,8 +332,7 @@\n     public void removeValue(Comparable key) {\n         int index \u003d getIndex(key);\n         if (index \u003c 0) {\n-            throw new UnknownKeyException(\"The key (\" + key \n-                    + \") is not recognised.\");\n+\t\t\treturn;\n         }\n         removeValue(index);\n     }\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [10570,10635]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [10574,10598]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [10600,10635]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ReturnStatement [11062,11069]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ThrowStatement [11021,11116]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "source/org/jfree/data/DefaultKeyedValues2D.java",
+        "source/org/jfree/data/DefaultKeyedValues2D.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jfree.data.DefaultKeyedValues2D:removeColumn:[Comparable columnKey]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.jfree.data.DefaultKeyedValues2D:removeColumn:[Comparable columnKey]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "455",
+            "456",
+            "457",
+            "458",
+            "459",
+            "460",
+            "464",
+            "465",
+            "467"
+          ],
+          "num": 9
+        },
+        {
+          "qualified_names": [
+            "454"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/source/org/jfree/data/DefaultKeyedValues2D.java b/source/org/jfree/data/DefaultKeyedValues2D.java\nindex cb81694..798d5d0 100644\n--- a/source/org/jfree/data/DefaultKeyedValues2D.java\n+++ b/source/org/jfree/data/DefaultKeyedValues2D.java\n@@ -452,19 +452,10 @@\n      * @see #removeRow(Comparable)\r\n      */\r\n     public void removeColumn(Comparable columnKey) {\r\n-    \tif (columnKey \u003d\u003d null) {\r\n-    \t\tthrow new IllegalArgumentException(\"Null \u0027columnKey\u0027 argument.\");\r\n-    \t}\r\n-    \tif (!this.columnKeys.contains(columnKey)) {\r\n-    \t\tthrow new UnknownKeyException(\"Unknown key: \" + columnKey);\r\n-    \t}\r\n         Iterator iterator \u003d this.rows.iterator();\r\n         while (iterator.hasNext()) {\r\n             DefaultKeyedValues rowData \u003d (DefaultKeyedValues) iterator.next();\r\n-            int index \u003d rowData.getIndex(columnKey);\r\n-            if (index \u003e\u003d 0) {\r\n                 rowData.removeValue(columnKey);\r\n-            }\r\n         }\r\n         this.columnKeys.remove(columnKey);\r\n     }\r\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [14918,15023]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [15030,15148]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [15331,15371]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [15389,15399]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [15401,15466]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [15385,15466]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

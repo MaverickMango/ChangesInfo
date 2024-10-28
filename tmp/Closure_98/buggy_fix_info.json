@@ -1,0 +1,137 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.InlineVariablesTest::testNoInlineAliasesInLoop",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.ReferenceCollectingCallback",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "98",
+  "workingDir": "../bugs/Closure_98_tmp",
+  "bug_name": "Closure_98",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.InlineVariablesTest",
+      "test_function": "testNoInlineAliasesInLoop",
+      "assertion_line": "617",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function f(){var i\u003d0;for(;i\u003c5;i++){var x\u003dextern();(function(){var y\u003dx;window.setTimeout(function(){extern(y)},0)})()}}\nResult: function f(){var i\u003d0;for(;i\u003c5;i++){var x\u003dextern();(function(){window.setTimeout(function(){extern(x)},0)})()}}"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/ReferenceCollectingCallback.java",
+        "src/com/google/javascript/jscomp/ReferenceCollectingCallback.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.ReferenceCollectingCallback\\$BasicBlock:BasicBlock:[BasicBlock parent, Node root]:null",
+            "com.google.javascript.jscomp.ReferenceCollectingCallback\\$ReferenceCollection:isAssignedOnceInLifetime:[]:boolean"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.ReferenceCollectingCallback\\$BasicBlock:provablyExecutesBefore:[BasicBlock thatBlock]:boolean",
+            "com.google.javascript.jscomp.ReferenceCollectingCallback\\$BasicBlock:BasicBlock:[BasicBlock parent, Node root]:null",
+            "com.google.javascript.jscomp.ReferenceCollectingCallback\\$ReferenceCollection:isAssignedOnceInLifetime:[]:boolean"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "361",
+            "362",
+            "363",
+            "364",
+            "365",
+            "366",
+            "367",
+            "368",
+            "553",
+            "558",
+            "571",
+            "573",
+            "574",
+            "575",
+            "576",
+            "577",
+            "578",
+            "579",
+            "580"
+          ],
+          "num": 19
+        },
+        {
+          "qualified_names": [
+            "360",
+            "560",
+            "580"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/ReferenceCollectingCallback.java b/src/com/google/javascript/jscomp/ReferenceCollectingCallback.java\nindex da4ed3e..f053321 100644\n--- a/src/com/google/javascript/jscomp/ReferenceCollectingCallback.java\n+++ b/src/com/google/javascript/jscomp/ReferenceCollectingCallback.java\n@@ -358,14 +358,6 @@\n       }\n \n       // Make sure this assignment is not in a loop.\n-      for (BasicBlock block \u003d ref.getBasicBlock();\n-           block !\u003d null; block \u003d block.getParent()) {\n-        if (block.isFunction) {\n-          break;\n-        } else if (block.isLoop) {\n-          return false;\n-        }\n-      }\n \n       return true;\n     }\n@@ -550,12 +542,10 @@\n     /**\n      * Whether this block denotes a function scope.\n      */\n-    private final boolean isFunction;\n \n     /**\n      * Whether this block denotes a loop.\n      */\n-    private final boolean isLoop;\n \n     /**\n      * Creates a new block.\n@@ -568,16 +558,7 @@\n       // only named functions may be hoisted.\n       this.isHoisted \u003d NodeUtil.isHoistedFunctionDeclaration(root);\n \n-      this.isFunction \u003d root.getType() \u003d\u003d Token.FUNCTION;\n \n-      if (root.getParent() !\u003d null) {\n-        int pType \u003d root.getParent().getType();\n-        this.isLoop \u003d pType \u003d\u003d Token.DO ||\n-            pType \u003d\u003d Token.WHILE ||\n-            pType \u003d\u003d Token.FOR;\n-      } else {\n-        this.isLoop \u003d false;\n-      }\n     }\n \n     BasicBlock getParent() {\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ForStatement [10913,11138]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [16270,16371]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [16377,16464]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [16797,16848]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [16856,17098]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.ReferenceCollectingCallback\\$BasicBlock:provablyExecutesBefore:[BasicBlock thatBlock]:boolean"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.TypeCheckTest::testIssue669",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.TypeInference",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "35",
+  "workingDir": "../bugs/Closure_35_tmp",
+  "bug_name": "Closure_35",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testIssue669",
+      "assertion_line": "5621",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "unexpected warnings(s):"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/TypeInference.java",
+        "src/com/google/javascript/jscomp/TypeInference.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypeInference:inferPropertyTypesToMatchConstraint:[JSType type, JSType constraint]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypeInference:inferPropertyTypesToMatchConstraint:[JSType type, JSType constraint]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1121",
+            "1122"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "1121",
+            "1122",
+            "1123",
+            "1124",
+            "1125",
+            "1126",
+            "1127",
+            "1128",
+            "1129",
+            "1130",
+            "1131",
+            "1132",
+            "1133",
+            "1134",
+            "1135"
+          ],
+          "num": 15
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/TypeInference.java b/src/com/google/javascript/jscomp/TypeInference.java\nindex fb6be1e..13e1092 100644\n--- a/src/com/google/javascript/jscomp/TypeInference.java\n+++ b/src/com/google/javascript/jscomp/TypeInference.java\n@@ -1118,8 +1118,21 @@\n \n     ObjectType constraintObj \u003d\n         ObjectType.cast(constraint.restrictByNotNullOrUndefined());\n-    if (constraintObj !\u003d null) {\n-      type.matchConstraint(constraintObj);\n+    if (constraintObj !\u003d null \u0026\u0026 constraintObj.isRecordType()) {\n+      ObjectType objType \u003d ObjectType.cast(type.restrictByNotNullOrUndefined());\n+      if (objType !\u003d null) {\n+        for (String prop : constraintObj.getOwnPropertyNames()) {\n+          JSType propType \u003d constraintObj.getPropertyType(prop);\n+          if (!objType.isPropertyTypeDeclared(prop)) {\n+            JSType typeToInfer \u003d propType;\n+            if (!objType.hasProperty(prop)) {\n+              typeToInfer \u003d\n+                  getNativeType(VOID_TYPE).getLeastSupertype(propType);\n+            }\n+            objType.defineInferredProperty(prop, typeToInfer, null);\n+          }\n+        }\n+      }\n     }\n   }\n \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [39850,40514]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [39850,39927]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

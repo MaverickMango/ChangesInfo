@@ -1,0 +1,634 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.jxpath.ri.model.XMLSpaceTest::testPreserveDOM,org.apache.commons.jxpath.ri.model.XMLSpaceTest::testNestedJDOM,org.apache.commons.jxpath.ri.model.XMLSpaceTest::testNestedWithCommentsJDOM,org.apache.commons.jxpath.ri.model.XMLSpaceTest::testPreserveJDOM,org.apache.commons.jxpath.ri.model.XMLSpaceTest::testNestedDOM,org.apache.commons.jxpath.ri.model.XMLSpaceTest::testNestedWithCommentsDOM",
+    "test.dir": "src/test",
+    "clz.modified": "org.apache.commons.jxpath.ri.model.dom.DOMNodePointer,org.apache.commons.jxpath.ri.model.jdom.JDOMNodePointer",
+    "src.dir": "src/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JxPath",
+  "id": "4",
+  "workingDir": "../bugs/JxPath_4_tmp",
+  "bug_name": "JxPath_4",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.jxpath.ri.model.XMLSpaceTest",
+      "test_function": "testPreserveDOM",
+      "assertion_line": "67",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003cfoo\u003e but was:\u003c foo \u003e"
+    },
+    {
+      "test_class": "org.apache.commons.jxpath.ri.model.XMLSpaceTest",
+      "test_function": "testNestedJDOM",
+      "assertion_line": "91",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c\u003e but was:\u003cfoo;bar; baz \u003e"
+    },
+    {
+      "test_class": "org.apache.commons.jxpath.ri.model.XMLSpaceTest",
+      "test_function": "testNestedWithCommentsJDOM",
+      "assertion_line": "95",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c\u003e but was:\u003cfoo;bar; baz \u003e"
+    },
+    {
+      "test_class": "org.apache.commons.jxpath.ri.model.XMLSpaceTest",
+      "test_function": "testPreserveJDOM",
+      "assertion_line": "87",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003cfoo\u003e but was:\u003c foo \u003e"
+    },
+    {
+      "test_class": "org.apache.commons.jxpath.ri.model.XMLSpaceTest",
+      "test_function": "testNestedDOM",
+      "assertion_line": "55",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003cfoo"
+    },
+    {
+      "test_class": "org.apache.commons.jxpath.ri.model.XMLSpaceTest",
+      "test_function": "testNestedWithCommentsDOM",
+      "assertion_line": "55",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003cfoo"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/jxpath/ri/model/dom/DOMNodePointer.java",
+        "src/java/org/apache/commons/jxpath/ri/model/dom/DOMNodePointer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.jxpath.ri.model.dom.DOMNodePointer:stringValue:[Node node]:String",
+            "org.apache.commons.jxpath.ri.model.dom.DOMNodePointer:getLanguage:[]:String",
+            "org.apache.commons.jxpath.ri.model.dom.DOMNodePointer:getValue:[]:Object",
+            "org.apache.commons.jxpath.ri.model.dom.DOMNodePointer:findEnclosingAttribute:[Node n, String attrName]:String"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.jxpath.ri.model.dom.DOMNodePointer:getLanguage:[]:String",
+            "org.apache.commons.jxpath.ri.model.dom.DOMNodePointer:stringValue:[Node node]:String"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "296",
+            "300",
+            "310",
+            "311",
+            "312",
+            "634",
+            "635",
+            "636",
+            "637",
+            "644",
+            "646",
+            "649",
+            "653",
+            "661"
+          ],
+          "num": 14
+        },
+        {
+          "qualified_names": [
+            "296",
+            "297",
+            "301",
+            "308",
+            "638",
+            "639",
+            "643",
+            "647",
+            "653",
+            "654",
+            "655",
+            "656",
+            "658",
+            "660"
+          ],
+          "num": 14
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/jxpath/ri/model/dom/DOMNodePointer.java b/src/java/org/apache/commons/jxpath/ri/model/dom/DOMNodePointer.java\nindex 1ad9324..5236867 100644\n--- a/src/java/org/apache/commons/jxpath/ri/model/dom/DOMNodePointer.java\n+++ b/src/java/org/apache/commons/jxpath/ri/model/dom/DOMNodePointer.java\n@@ -293,11 +293,12 @@\n                 : current.toUpperCase().startsWith(lang.toUpperCase());\n     }\n \n-    protected static String findEnclosingAttribute(Node n, String attrName) {\n+    protected String getLanguage() {\n+        Node n \u003d node;\n         while (n !\u003d null) {\n             if (n.getNodeType() \u003d\u003d Node.ELEMENT_NODE) {\n                 Element e \u003d (Element) n;\n-                String attr \u003d e.getAttribute(attrName);\n+                String attr \u003d e.getAttribute(\"xml:lang\");\n                 if (attr !\u003d null \u0026\u0026 !attr.equals(\"\")) {\n                     return attr;\n                 }\n@@ -307,9 +308,6 @@\n         return null;\n     }\n \n-    protected String getLanguage() {\n-        return findEnclosingAttribute(node, \"xml:lang\");\n-    }\n \n     /**\n      * Sets contents of the node to the specified value. If the value is\n@@ -631,34 +629,35 @@\n     }\n \n     public Object getValue() {\n-        if (node.getNodeType() \u003d\u003d Node.COMMENT_NODE) {\n-            String text \u003d ((Comment) node).getData();\n-            return text \u003d\u003d null ? \"\" : text.trim();\n-        }\n         return stringValue(node);\n     }\n \n     private String stringValue(Node node) {\n         int nodeType \u003d node.getNodeType();\n         if (nodeType \u003d\u003d Node.COMMENT_NODE) {\n-            return \"\";\n+            String text \u003d ((Comment) node).getData();\n+            return text \u003d\u003d null ? \"\" : text.trim();\n         }\n-        boolean trim \u003d !\"preserve\".equals(findEnclosingAttribute(node, \"xml:space\"));\n         if (nodeType \u003d\u003d Node.TEXT_NODE || nodeType \u003d\u003d Node.CDATA_SECTION_NODE) {\n             String text \u003d node.getNodeValue();\n-            return text \u003d\u003d null ? \"\" : trim ? text.trim() : text;\n+            return text \u003d\u003d null ? \"\" : text.trim();\n         }\n         if (nodeType \u003d\u003d Node.PROCESSING_INSTRUCTION_NODE) {\n             String text \u003d ((ProcessingInstruction) node).getData();\n-            return text \u003d\u003d null ? \"\" : trim ? text.trim() : text;\n+            return text \u003d\u003d null ? \"\" : text.trim();\n         }\n         NodeList list \u003d node.getChildNodes();\n         StringBuffer buf \u003d new StringBuffer(16);\n         for (int i \u003d 0; i \u003c list.getLength(); i++) {\n             Node child \u003d list.item(i);\n+            if (child.getNodeType() \u003d\u003d Node.TEXT_NODE) {\n+                buf.append(child.getNodeValue());\n+            }\n+            else {\n             buf.append(stringValue(child));\n+            }\n         }\n-        return buf.toString();\n+        return buf.toString().trim();\n     }\n \n     /**\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [9740,9754]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [22228,22249]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [21334,21375]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [21578,21617]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [21768,21807]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [22017,22202]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [22228,22242]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: trim [22243,22247]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ConditionalExpression [21395,21426]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [22021,22058]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Block [22060,22125]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [22143,22202]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [21395,21407]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [21415,21426]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "StringLiteral: \"xml:lang\" [9925,9935]"
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: protected [9699,9708]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: static [9709,9715]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [9716,9722]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: findEnclosingAttribute [9723,9745]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [9746,9752]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [9754,9769]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [9771,10146]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodDeclaration [9699,10146]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: attrName [9943,9951]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [10193,10241]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [21273,21435]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [21650,21727]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [21868,21921]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [22072,22125]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/jxpath/ri/model/jdom/JDOMNodePointer.java",
+        "src/java/org/apache/commons/jxpath/ri/model/jdom/JDOMNodePointer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.jxpath.ri.model.jdom.JDOMNodePointer:getLanguage:[]:String",
+            "org.apache.commons.jxpath.ri.model.jdom.JDOMNodePointer:findEnclosingAttribute:[Object n, String attrName, Namespace ns]:String",
+            "org.apache.commons.jxpath.ri.model.jdom.JDOMNodePointer:getValue:[]:Object"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.jxpath.ri.model.jdom.JDOMNodePointer:getLanguage:[]:String",
+            "org.apache.commons.jxpath.ri.model.jdom.JDOMNodePointer:getValue:[]:Object"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "240",
+            "241",
+            "242",
+            "243",
+            "244",
+            "245",
+            "246",
+            "247",
+            "256",
+            "258",
+            "261",
+            "263",
+            "264",
+            "438",
+            "439",
+            "440",
+            "441",
+            "445",
+            "760"
+          ],
+          "num": 19
+        },
+        {
+          "qualified_names": [
+            "240",
+            "250",
+            "251",
+            "252",
+            "253",
+            "256",
+            "257",
+            "258",
+            "259",
+            "260",
+            "262",
+            "436",
+            "440",
+            "441",
+            "763"
+          ],
+          "num": 15
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/jxpath/ri/model/jdom/JDOMNodePointer.java b/src/java/org/apache/commons/jxpath/ri/model/jdom/JDOMNodePointer.java\nindex a26f118..975dbc4 100644\n--- a/src/java/org/apache/commons/jxpath/ri/model/jdom/JDOMNodePointer.java\n+++ b/src/java/org/apache/commons/jxpath/ri/model/jdom/JDOMNodePointer.java\n@@ -237,14 +237,7 @@\n \n     public Object getValue() {\n         if (node instanceof Element) {\n-            StringBuffer buf \u003d new StringBuffer();\n-            for (NodeIterator children \u003d childIterator(null, false, null); children.setPosition(children.getPosition() + 1);) {\n-                NodePointer ptr \u003d children.getNodePointer();\n-                if (ptr.getImmediateNode() instanceof Element || ptr.getImmediateNode() instanceof Text) {\n-                    buf.append(ptr.getValue());\n-                }\n-            }\n-            return buf.toString();\n+            return ((Element) node).getTextTrim();\n         }\n         if (node instanceof Comment) {\n             String text \u003d ((Comment) node).getText();\n@@ -253,15 +246,20 @@\n             }\n             return text;\n         }\n-        String result \u003d null;\n         if (node instanceof Text) {\n-            result \u003d ((Text) node).getText();\n+            return ((Text) node).getTextTrim();\n+        }\n+        if (node instanceof CDATA) {\n+            return ((CDATA) node).getTextTrim();\n         }\n         if (node instanceof ProcessingInstruction) {\n-            result \u003d ((ProcessingInstruction) node).getData();\n+            String text \u003d ((ProcessingInstruction) node).getData();\n+            if (text !\u003d null) {\n+                text \u003d text.trim();\n+            }\n+            return text;\n         }\n-        boolean trim \u003d !\"preserve\".equals(findEnclosingAttribute(node, \"space\", Namespace.XML_NAMESPACE));\n-        return result !\u003d null \u0026\u0026 trim ? result.trim() : result;\n+        return null;\n     }\n \n     public void setValue(Object value) {\n@@ -435,14 +433,12 @@\n     }\n \n     protected String getLanguage() {\n-        return findEnclosingAttribute(node, \"lang\", Namespace.XML_NAMESPACE);\n-    }\n-\n-    protected static String findEnclosingAttribute(Object n, String attrName, Namespace ns) {\n+        Object n \u003d node;\n         while (n !\u003d null) {\n             if (n instanceof Element) {\n                 Element e \u003d (Element) n;\n-                String attr \u003d e.getAttributeValue(attrName, ns);\n+                String attr \u003d\n+                    e.getAttributeValue(\"lang\", Namespace.XML_NAMESPACE);\n                 if (attr !\u003d null \u0026\u0026 !attr.equals(\"\")) {\n                     return attr;\n                 }\n@@ -757,4 +753,4 @@\n         return factory;\n     }\n \n-}\n\\ No newline at end of file\n+}\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [7557,7644]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [14264,14280]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [7196,7234]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [7503,7538]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [7710,7765]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [7778,7847]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [7860,7872]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [7710,7716]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [7717,7764]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: text [7717,7721]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "StringLiteral: \"lang\" [14460,14466]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "QualifiedName: Namespace.XML_NAMESPACE [14468,14491]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [7196,7234]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ForStatement [7247,7610]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [7623,7645]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [7874,7895]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [7944,7977]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: result [8053,8059]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ASSIGNMENT_OPERATOR: \u003d [8060,8061]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Assignment [8053,8102]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ExpressionStatement [8053,8103]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [8122,8220]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: result [8236,8242]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: !\u003d [8243,8245]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [8236,8250]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [8251,8253]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: trim [8254,8258]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [8236,8258]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [8261,8274]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: result [8277,8283]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ConditionalExpression [8236,8283]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: attrName [14975,14983]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: ns [14985,14987]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [14645,14714]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: protected [14726,14735]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: static [14736,14742]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [14743,14749]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: findEnclosingAttribute [14750,14772]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [14773,14781]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [14783,14798]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [14800,14812]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [14814,15178]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodDeclaration [14726,15178]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.apache.commons.jxpath.ri.model.dom.DOMNodePointer:findEnclosingAttribute:[Node n, String attrName]:String",
+        "org.apache.commons.jxpath.ri.model.dom.DOMNodePointer:getValue:[]:Object",
+        "org.apache.commons.jxpath.ri.model.jdom.JDOMNodePointer:findEnclosingAttribute:[Object n, String attrName, Namespace ns]:String"
+      ],
+      "num": 3
+    }
+  }
+}

@@ -1,0 +1,1847 @@
+diff --git a/src/java/org/apache/commons/math/analysis/BisectionSolver.java b/src/java/org/apache/commons/math/analysis/BisectionSolver.java
+index 9da0931..6b7c484 100644
+--- a/src/java/org/apache/commons/math/analysis/BisectionSolver.java
++++ b/src/java/org/apache/commons/math/analysis/BisectionSolver.java
+@@ -15,23 +15,25 @@
+  */
+ package org.apache.commons.math.analysis;
+ 
+-import java.io.Serializable;
+-
+-import org.apache.commons.math.MathException;
++import org.apache.commons.math.FunctionEvaluationException;
++import org.apache.commons.math.ConvergenceException;
+ 
+ /**
+- * Implements the <a href="http://mathworld.wolfram.com/Bisection.html">bisection algorithm</a>
+- *  for finding zeros of univariate real functions.  This algorithm will find only one zero in the given interval.
++ * Implements the <a href="http://mathworld.wolfram.com/Bisection.html">
++ * bisection algorithm</a> for finding zeros of univariate real functions. 
++ * <p>
+  * The function should be continuous but not necessarily smooth.
+- * @version $Revision: 1.17 $ $Date: 2004/06/23 16:26:14 $
++ * 
++ * @version $Revision: 1.18 $ $Date: 2004/07/17 21:19:39 $
+  */
+-public class BisectionSolver extends UnivariateRealSolverImpl implements Serializable {
++public class BisectionSolver extends UnivariateRealSolverImpl {
+     
+     /** Serializable version identifier */
+     static final long serialVersionUID = 7137520585963699578L;
+     
+     /**
+      * Construct a solver for the given function.
++     * 
+      * @param f function to solve.
+      */
+     public BisectionSolver(UnivariateRealFunction f) {
+@@ -40,30 +42,38 @@
+ 
+     /**
+      * Find a zero in the given interval.
++     * 
+      * @param min the lower bound for the interval.
+      * @param max the upper bound for the interval.
+      * @param initial the start value to use (ignored).
+      * @return the value where the function is zero
+-     * @throws MathException if the iteration count was exceeded or the
+-     *  solver detects convergence problems otherwise.
++     * @throws ConvergenceException the maximum iteration count is exceeded 
++     * @throws FunctionEvaluationException if an error occurs evaluating
++     *  the function
++     * @throws IllegalArgumentException if min is not less than max
+      */
+     public double solve(double min, double max, double initial)
+-        throws MathException {
+-            
++        throws ConvergenceException, FunctionEvaluationException {
++          
+         return solve(min, max);
+     }
+     
+     /**
+      * Find a zero root in the given interval.
+-     * @param min the lower bound for the interval.
+-     * @param max the upper bound for the interval.
++     * 
++     * @param min the lower bound for the interval
++     * @param max the upper bound for the interval
+      * @return the value where the function is zero
+-     * @throws MathException if the iteration count was exceeded or the
+-     *  solver detects convergence problems otherwise.
++     * @throws ConvergenceException if the maximum iteration count is exceeded.
++     * @throws FunctionEvaluationException if an error occurs evaluating the
++     * function
++     * @throws IllegalArgumentException if min is not less than max
+      */
+-    public double solve(double min, double max) throws MathException {
++    public double solve(double min, double max) throws ConvergenceException,
++        FunctionEvaluationException {
++        
+         clearResult();
+-
++        verifyInterval(min,max);
+         double m;
+         double fm;
+         double fmin;
+@@ -71,8 +81,8 @@
+         int i = 0;
+         while (i < maximalIterationCount) {
+             m = UnivariateRealSolverUtils.midpoint(min, max);
+-            fmin = f.value(min);
+-            fm = f.value(m);
++           fmin = f.value(min);
++           fm = f.value(m);
+ 
+             if (fm * fmin > 0.0) {
+                 // max and m bracket the root.
+@@ -91,6 +101,7 @@
+             ++i;
+         }
+         
+-        throw new MathException("Maximum number of iterations exceeded");
++        throw new ConvergenceException
++            ("Maximum number of iterations exceeded: "  + maximalIterationCount);
+     }
+ }
+diff --git a/src/java/org/apache/commons/math/analysis/BrentSolver.java b/src/java/org/apache/commons/math/analysis/BrentSolver.java
+index ef2a985..80a48f0 100644
+--- a/src/java/org/apache/commons/math/analysis/BrentSolver.java
++++ b/src/java/org/apache/commons/math/analysis/BrentSolver.java
+@@ -17,23 +17,25 @@
+ 
+ import java.io.Serializable;
+ 
+-import org.apache.commons.math.MathException;
++import org.apache.commons.math.ConvergenceException;
++import org.apache.commons.math.FunctionEvaluationException;
+ 
+ /**
+- * Implements the <a href="http://mathworld.wolfram.com/BrentsMethod.html">Brent algorithm</a>
+- * for  finding zeros of real univariate
+- * functions. This algorithm will find only one zero in the given interval. 
++ * Implements the <a href="http://mathworld.wolfram.com/BrentsMethod.html">
++ * Brent algorithm</a> for  finding zeros of real univariate functions.
++ * <p>
+  * The function should be continuous but not necessarily smooth.
+  *  
+- * @version $Revision: 1.16 $ $Date: 2004/06/23 16:26:14 $
++ * @version $Revision: 1.17 $ $Date: 2004/07/17 21:19:39 $
+  */
+-public class BrentSolver extends UnivariateRealSolverImpl implements Serializable {
++public class BrentSolver extends UnivariateRealSolverImpl {
+     
+     /** Serializable version identifier */
+     static final long serialVersionUID = 3350616277306882875L;
+ 
+     /**
+      * Construct a solver for the given function.
++     * 
+      * @param f function to solve.
+      */
+     public BrentSolver(UnivariateRealFunction f) {
+@@ -42,39 +44,57 @@
+ 
+     /**
+      * Find a zero in the given interval.
++     * <p>
++     * Throws <code>ConvergenceException</code> if the values of the function
++     * at the endpoints of the interval have the same sign.
++     * 
+      * @param min the lower bound for the interval.
+      * @param max the upper bound for the interval.
+      * @param initial the start value to use (ignored).
+      * @return the value where the function is zero
+-     * @throws MathException if the iteration count was exceeded or the
+-     *  solver detects convergence problems otherwise.
++     * @throws ConvergenceException the maximum iteration count is exceeded 
++     * @throws FunctionEvaluationException if an error occurs evaluating
++     *  the function
++     * @throws IllegalArgumentException if initial is not between min and max
+      */
+     public double solve(double min, double max, double initial)
+-        throws MathException {
++        throws ConvergenceException, FunctionEvaluationException {
+             
+         return solve(min, max);
+     }
+     
+     /**
+      * Find a zero in the given interval.
++     * <p>
++     * Requires that the values of the function at the endpoints have opposite
++     * signs. An <code>IllegalArgumentException</code> is thrown if this is not
++     * the case.
++     * 
+      * @param min the lower bound for the interval.
+      * @param max the upper bound for the interval.
+      * @return the value where the function is zero
+-     * @throws MathException if the iteration count was exceeded or the
+-     *  solver detects convergence problems otherwise.
++     * @throws ConvergenceException if the maximum iteration count is exceeded
++     * @throws FunctionEvaluationException if an error occurs evaluating the
++     * function 
++     * @throws IllegalArgumentException if min is not less than max or the
++     * signs of the values of the function at the endpoints are not opposites
+      */
+-    public double solve(double min, double max) throws MathException {
++    public double solve(double min, double max) throws ConvergenceException, 
++        FunctionEvaluationException {
++        
+         clearResult();
++        verifyBracketing(min, max, f);
++        
+         // Index 0 is the old approximation for the root.
+         // Index 1 is the last calculated approximation  for the root.
+         // Index 2 is a bracket for the root with respect to x1.
+         double x0 = min;
+         double x1 = max;
+-        double y0 = f.value(x0);
+-        double y1 = f.value(x1);
+-        if ((y0 > 0) == (y1 > 0)) {
+-            throw new MathException("Interval doesn't bracket a zero.");
+-        }
++        double y0;
++        double y1;
++        y0 = f.value(x0);
++        y1 = f.value(x1);
++   
+         double x2 = x0;
+         double y2 = y0;
+         double delta = x1 - x0;
+@@ -161,6 +181,6 @@
+             }
+             i++;
+         }
+-        throw new MathException("Maximum number of iterations exceeded.");
++        throw new ConvergenceException("Maximum number of iterations exceeded.");
+     }
+ }
+diff --git a/src/java/org/apache/commons/math/analysis/NewtonSolver.java b/src/java/org/apache/commons/math/analysis/NewtonSolver.java
+index 3eeac40..8035d22 100644
+--- a/src/java/org/apache/commons/math/analysis/NewtonSolver.java
++++ b/src/java/org/apache/commons/math/analysis/NewtonSolver.java
+@@ -16,19 +16,18 @@
+ 
+ package org.apache.commons.math.analysis;
+ 
+-import java.io.Serializable;
+-
+-import org.apache.commons.math.MathException;
++import org.apache.commons.math.ConvergenceException;
++import org.apache.commons.math.FunctionEvaluationException; 
+ 
+ /**
+  * Implements <a href="http://mathworld.wolfram.com/NewtonsMethod.html">
+- * Newton's Method</a> for finding zeros of real univariate functions. This
+- * algorithm will find only one zero in the given interval.  The function should
+- * be continuous but not necessarily smooth.
++ * Newton's Method</a> for finding zeros of real univariate functions. 
++ * <p> 
++ * The function should be continuous but not necessarily smooth.
+  *
+- * @version $Revision: 1.5 $ $Date: 2004/06/23 16:26:14 $
++ * @version $Revision: 1.6 $ $Date: 2004/07/17 21:19:39 $
+  */
+-public class NewtonSolver extends UnivariateRealSolverImpl implements Serializable {
++public class NewtonSolver extends UnivariateRealSolverImpl {
+     
+     /** Serializable version identifier */
+     static final long serialVersionUID = 2606474895443431607L;
+@@ -47,29 +46,37 @@
+ 
+     /**
+      * Find a zero near the midpoint of <code>min</code> and <code>max</code>.
+-     * @param min the lower bound for the interval.
+-     * @param max the upper bound for the interval.
++     * 
++     * @param min the lower bound for the interval
++     * @param max the upper bound for the interval
+      * @return the value where the function is zero
+-     * @throws MathException if the iteration count was exceeded or the
+-     *  solver detects convergence problems otherwise.
++     * @throws ConvergenceException if the maximum iteration count is exceeded 
++     * @throws FunctionEvaluationException if an error occurs evaluating the
++     * function or derivative
++     * @throws IllegalArgumentException if min is not less than max
+      */
+-    public double solve(double min, double max) throws MathException {
++    public double solve(double min, double max) throws ConvergenceException, 
++        FunctionEvaluationException  {
+         return solve(min, max, UnivariateRealSolverUtils.midpoint(min, max));
+     }
+ 
+     /**
+      * Find a zero near the value <code>startValue</code>.
++     * 
+      * @param min the lower bound for the interval (ignored).
+      * @param max the upper bound for the interval (ignored).
+      * @param startValue the start value to use.
+      * @return the value where the function is zero
+-     * @throws MathException if the iteration count was exceeded or the
+-     *  solver detects convergence problems otherwise.
++    * @throws ConvergenceException if the maximum iteration count is exceeded 
++     * @throws FunctionEvaluationException if an error occurs evaluating the
++     * function or derivative
++     * @throws IllegalArgumentException if startValue is not between min and max
+      */
+     public double solve(double min, double max, double startValue)
+-        throws MathException {
++        throws ConvergenceException, FunctionEvaluationException {
+         
+         clearResult();
++        verifySequence(min, startValue, max);
+ 
+         double x0 = startValue;
+         double x1;
+@@ -77,7 +84,6 @@
+         int i = 0;
+         while (i < maximalIterationCount) {
+             x1 = x0 - (f.value(x0) / derivative.value(x0));
+-
+             if (Math.abs(x1 - x0) <= absoluteAccuracy) {
+                 
+                 setResult(x1, i);
+@@ -88,7 +94,8 @@
+             ++i;
+         }
+         
+-        throw new MathException("Maximum number of iterations exceeded");
++        throw new ConvergenceException
++            ("Maximum number of iterations exceeded " + i);
+     }
+ 
+ }
+diff --git a/src/java/org/apache/commons/math/analysis/PolynomialSplineFunction.java b/src/java/org/apache/commons/math/analysis/PolynomialSplineFunction.java
+index cbab446..b5789ec 100644
+--- a/src/java/org/apache/commons/math/analysis/PolynomialSplineFunction.java
++++ b/src/java/org/apache/commons/math/analysis/PolynomialSplineFunction.java
+@@ -18,7 +18,7 @@
+ import java.io.Serializable;
+ import java.util.Arrays;
+ 
+-import org.apache.commons.math.MathException;
++import org.apache.commons.math.FunctionEvaluationException;
+ 
+ /**
+  * Represents a polynomial spline function.
+@@ -41,7 +41,7 @@
+  * <li> Let <code>j</code> be the index of the largest knot point that is less than or equal to <code>x</code>. 
+  *  The value returned is <br> <code>polynomials[j](x - knot[j])</code></li></ol>
+  *
+- * @version $Revision: 1.6 $ $Date: 2004/06/23 16:26:14 $
++ * @version $Revision: 1.7 $ $Date: 2004/07/17 21:19:39 $
+  */
+ public class PolynomialSplineFunction implements UnivariateRealFunction, Serializable {
+    
+@@ -104,13 +104,13 @@
+      * 
+      * @param v the point for which the function value should be computed
+      * @return the value
+-     * @throws MathException if the function couldn't be computed due to
+-     *  missing additional data or other environmental problems.
+-     * @see UnivariateRealFunction#value(double)
++     * @throws FunctionEvaluationException if v is outside of the domain of
++     * of the spline function (less than the smallest knot point or greater
++     * than the largest knot point)
+      */
+-    public double value(double v) throws MathException {
++    public double value(double v) throws FunctionEvaluationException {
+         if (v < knots[0] || v >= knots[n]) {
+-            throw new IllegalArgumentException("Argument outside domain");
++            throw new FunctionEvaluationException(v,"Argument outside domain");
+         }
+         int i = Arrays.binarySearch(knots, v);
+         if (i < 0) {
+diff --git a/src/java/org/apache/commons/math/analysis/SecantSolver.java b/src/java/org/apache/commons/math/analysis/SecantSolver.java
+index fcbe99b..85e4910 100644
+--- a/src/java/org/apache/commons/math/analysis/SecantSolver.java
++++ b/src/java/org/apache/commons/math/analysis/SecantSolver.java
+@@ -17,21 +17,25 @@
+ 
+ import java.io.Serializable;
+ 
+-import org.apache.commons.math.MathException;
++import org.apache.commons.math.ConvergenceException;
++import org.apache.commons.math.FunctionEvaluationException;
++
+ 
+ /**
+  * Implements a modified version of the 
+  * <a href="http://mathworld.wolfram.com/SecantMethod.html">secant method</a>
+  * for approximating a zero of a real univariate function.  
+  * <p>
+- * The algorithm is modified to maintain bracketing of a root by subsequent approximations. 
+- * Because of forced bracketing, convergence may be slower than the unrestricted secant algorithm. 
+- * However, this implementation  should in general outperform the 
+- * <a href="http://mathworld.wolfram.com/MethodofFalsePosition.html">regula falsi method.</a>
++ * The algorithm is modified to maintain bracketing of a root by successive
++ * approximations. Because of forced bracketing, convergence may be slower than
++ * the unrestricted secant algorithm. However, this implementation should in
++ * general outperform the 
++ * <a href="http://mathworld.wolfram.com/MethodofFalsePosition.html">
++ * regula falsi method.</a>
+  * <p>
+- * The function is supposed to be continuous but not necessarily smooth.
++ * The function is assumed to be continuous but not necessarily smooth.
+  *  
+- * @version $Revision: 1.16 $ $Date: 2004/06/23 16:26:14 $
++ * @version $Revision: 1.17 $ $Date: 2004/07/17 21:19:39 $
+  */
+ public class SecantSolver extends UnivariateRealSolverImpl implements Serializable {
+     
+@@ -48,15 +52,19 @@
+ 
+     /**
+      * Find a zero in the given interval.
+-     * @param min the lower bound for the interval.
+-     * @param max the upper bound for the interval.
+-     * @param initial the start value to use (ignored).
++     * 
++     * @param min the lower bound for the interval
++     * @param max the upper bound for the interval
++     * @param initial the start value to use (ignored)
+      * @return the value where the function is zero
+-     * @throws MathException if the iteration count was exceeded or the
+-     *  solver detects convergence problems otherwise.
++     * @throws ConvergenceException if the maximum iteration count is exceeded
++     * @throws FunctionEvaluationException if an error occurs evaluating the
++     * function 
++     * @throws IllegalArgumentException if min is not less than max or the
++     * signs of the values of the function at the endpoints are not opposites
+      */
+     public double solve(double min, double max, double initial)
+-        throws MathException {
++        throws ConvergenceException, FunctionEvaluationException {
+             
+         return solve(min, max);
+     }
+@@ -66,11 +74,18 @@
+      * @param min the lower bound for the interval.
+      * @param max the upper bound for the interval.
+      * @return the value where the function is zero
+-     * @throws MathException if the iteration count was exceeded or the
+-     *  solver detects convergence problems otherwise.
++     * @throws ConvergenceException  if the maximum iteration count is exceeded
++     * @throws FunctionEvaluationException if an error occurs evaluating the
++     * function 
++     * @throws IllegalArgumentException if min is not less than max or the
++     * signs of the values of the function at the endpoints are not opposites
+      */
+-    public double solve(double min, double max) throws MathException {
++    public double solve(double min, double max) throws ConvergenceException, 
++        FunctionEvaluationException {
++        
+         clearResult();
++        verifyBracketing(min, max, f);
++        
+         // Index 0 is the old approximation for the root.
+         // Index 1 is the last calculated approximation  for the root.
+         // Index 2 is a bracket for the root with respect to x0.
+@@ -80,9 +95,6 @@
+         double x1 = max;
+         double y0 = f.value(x0);
+         double y1 = f.value(x1);
+-        if ((y0 > 0) == (y1 > 0)) {
+-            throw new MathException("Interval doesn't bracket a zero.");
+-        }
+         double x2 = x0;
+         double y2 = y0;
+         double oldDelta = x2 - x1;
+@@ -129,7 +141,7 @@
+             oldDelta = x2 - x1;
+             i++;
+         }
+-        throw new MathException("Maximal iteration number exceeded");
++        throw new ConvergenceException("Maximal iteration number exceeded" + i);
+     }
+ 
+ }
+diff --git a/src/java/org/apache/commons/math/analysis/UnivariateRealFunction.java b/src/java/org/apache/commons/math/analysis/UnivariateRealFunction.java
+index 0eed263..0ddd8b4 100644
+--- a/src/java/org/apache/commons/math/analysis/UnivariateRealFunction.java
++++ b/src/java/org/apache/commons/math/analysis/UnivariateRealFunction.java
+@@ -15,21 +15,20 @@
+  */
+ package org.apache.commons.math.analysis;
+ 
+-import org.apache.commons.math.MathException;
++import org.apache.commons.math.FunctionEvaluationException;
+ 
+ /**
+  * An interface representing a univariate real function.
+  *  
+- * @version $Revision: 1.13 $ $Date: 2004/06/23 16:26:14 $
++ * @version $Revision: 1.14 $ $Date: 2004/07/17 21:19:39 $
+  */
+ public interface UnivariateRealFunction {
+     /**
+      * Compute the value for the function.
+      * @param x the point for which the function value should be computed
+      * @return the value
+-     * @throws MathException if the function couldn't be computed due to
+-     *  missing additional data or other environmental problems.
++     * @throws FunctionEvaluationException if the function evaluation fails
+      */
+-    public double value(double x) throws MathException;
++    public double value(double x) throws FunctionEvaluationException;
+ 
+ }
+diff --git a/src/java/org/apache/commons/math/analysis/UnivariateRealSolver.java b/src/java/org/apache/commons/math/analysis/UnivariateRealSolver.java
+index d11d412..e166473 100644
+--- a/src/java/org/apache/commons/math/analysis/UnivariateRealSolver.java
++++ b/src/java/org/apache/commons/math/analysis/UnivariateRealSolver.java
+@@ -15,14 +15,16 @@
+  */
+ package org.apache.commons.math.analysis;
+ 
+-import org.apache.commons.math.MathException;
++import org.apache.commons.math.ConvergenceException;
++import org.apache.commons.math.FunctionEvaluationException;
++
+ 
+ /**
+  * Interface for (univariate real) rootfinding algorithms.
+  * <p>
+  * Implementations will search for only one zero in the given interval.
+  *  
+- * @version $Revision: 1.13 $ $Date: 2004/06/23 16:26:14 $
++ * @version $Revision: 1.14 $ $Date: 2004/07/17 21:19:39 $
+  */
+ public interface UnivariateRealSolver {
+ 
+@@ -33,18 +35,19 @@
+      * the "reasonable value" varies widely for different solvers.  Users are
+      * advised to use the default value supplied by the solver.
+      * <p>
+-     * An exception will be thrown if the number is exceeded.
++     * A <code>ConvergenceException</code> will be thrown if this number
++     * is exceeded.
+      *  
+      * @param count maximum number of iterations
+      */
+-    public void setMaximalIterationCount(int count);
++    void setMaximalIterationCount(int count);
+ 
+     /**
+      * Get the upper limit for the number of iterations.
+      * 
+      * @return the actual upper limit
+      */
+-    public int getMaximalIterationCount();
++    int getMaximalIterationCount();
+ 
+     /**
+      * Reset the upper limit for the number of iterations to the default.
+@@ -53,7 +56,7 @@
+      * 
+      * @see #setMaximalIterationCount(int)
+      */
+-    public void resetMaximalIterationCount();
++    void resetMaximalIterationCount();
+ 
+     /**
+      * Set the absolute accuracy.
+@@ -67,24 +70,24 @@
+      * accuracy, but clients should not rely on this.
+      *  
+      * @param accuracy the accuracy.
+-     * @throws MathException if the accuracy can't be achieved by the solver or
+-     *         is otherwise deemed unreasonable. 
++     * @throws IllegalArgumentException if the accuracy can't be achieved by
++     * the solver or is otherwise deemed unreasonable. 
+      */
+-    public void setAbsoluteAccuracy(double accuracy) throws MathException;
++    void setAbsoluteAccuracy(double accuracy);
+ 
+     /**
+      * Get the actual absolute accuracy.
+      * 
+      * @return the accuracy
+      */
+-    public double getAbsoluteAccuracy();
++    double getAbsoluteAccuracy();
+ 
+     /**
+      * Reset the absolute accuracy to the default.
+      * <p>
+      * The default value is provided by the solver implementation.
+      */
+-    public void resetAbsoluteAccuracy();
++    void resetAbsoluteAccuracy();
+ 
+     /**
+      * Set the relative accuracy.
+@@ -97,22 +100,22 @@
+      * like 1E-1000.
+      * 
+      * @param accuracy the relative accuracy.
+-     * @throws MathException if the accuracy can't be achieved by the solver or
+-     *         is otherwise deemed unreasonable. 
++     * @throws IllegalArgumentException if the accuracy can't be achieved by
++     *  the solver or is otherwise deemed unreasonable. 
+      */
+-    public void setRelativeAccuracy(double accuracy) throws MathException;
++    void setRelativeAccuracy(double accuracy);
+ 
+     /**
+      * Get the actual relative accuracy.
+      * @return the accuracy
+      */
+-    public double getRelativeAccuracy();
++    double getRelativeAccuracy();
+ 
+     /**
+      * Reset the relative accuracy to the default.
+      * The default value is provided by the solver implementation.
+      */
+-    public void resetRelativeAccuracy();
++    void resetRelativeAccuracy();
+ 
+     /**
+      * Set the function value accuracy.
+@@ -124,22 +127,22 @@
+      * general.
+      * 
+      * @param accuracy the accuracy.
+-     * @throws MathException if the accuracy can't be achieved by the solver or
+-     *         is otherwise deemed unreasonable. 
++     * @throws IllegalArgumentException if the accuracy can't be achieved by
++     * the solver or is otherwise deemed unreasonable. 
+      */
+-    public void setFunctionValueAccuracy(double accuracy) throws MathException;
++    void setFunctionValueAccuracy(double accuracy);
+ 
+     /**
+      * Get the actual function value accuracy.
+      * @return the accuracy
+      */
+-    public double getFunctionValueAccuracy();
++    double getFunctionValueAccuracy();
+ 
+     /**
+      * Reset the actual function accuracy to the default.
+      * The default value is provided by the solver implementation.
+      */
+-    public void resetFunctionValueAccuracy();
++    void resetFunctionValueAccuracy();
+ 
+     /**
+      * Solve for a zero root in the given interval.
+@@ -148,10 +151,15 @@
+      * @param min the lower bound for the interval.
+      * @param max the upper bound for the interval.
+      * @return a value where the function is zero
+-     * @throws MathException if the iteration count was exceeded or the
+-     *  solver detects convergence problems otherwise.
++     * @throws ConvergenceException if the maximum iteration count is exceeded
++     * or the solver detects convergence problems otherwise.
++     * @throws FunctionEvaluationException if an error occurs evaluating the
++     * function
++     * @throws IllegalArgumentException if min > max or the endpoints do not
++     * satisfy the requirements specified by the solver
+      */
+-    public double solve(double min, double max) throws MathException;
++    double solve(double min, double max) throws ConvergenceException, 
++        FunctionEvaluationException;
+ 
+     /**
+      * Solve for a zero in the given interval, start at startValue.
+@@ -161,19 +169,24 @@
+      * @param max the upper bound for the interval.
+      * @param startValue the start value to use
+      * @return a value where the function is zero
+-     * @throws MathException if the iteration count was exceeded or the
+-     *  solver detects convergence problems otherwise.
++     * @throws ConvergenceException if the maximum iteration count is exceeded
++     * or the solver detects convergence problems otherwise.
++     * @throws FunctionEvaluationException if an error occurs evaluating the
++     * function
++     * @throws IllegalArgumentException if min > max or the arguments do not
++     * satisfy the requirements specified by the solver
+      */
+-    public double solve(double min, double max, double startValue)
+-        throws MathException;
++    double solve(double min, double max, double startValue)
++        throws ConvergenceException, FunctionEvaluationException;
+ 
+     /**
+      * Get the result of the last run of the solver.
++     * 
+      * @return the last result.
+-     * @throws MathException if there is no result available, either
++     * @throws IllegalStateException if there is no result available, either
+      * because no result was yet computed or the last attempt failed.
+      */
+-    public double getResult() throws MathException;
++    double getResult();
+ 
+     /**
+      * Get the number of iterations in the last run of the solver.
+@@ -185,8 +198,8 @@
+      * problem.
+      * 
+      * @return the last iteration count.
+-     * @throws MathException if there is no result available, either
++     * @throws IllegalStateException if there is no result available, either
+      * because no result was yet computed or the last attempt failed.
+      */
+-    public int getIterationCount() throws MathException;
++    int getIterationCount();
+ }
+\ No newline at end of file
+diff --git a/src/java/org/apache/commons/math/analysis/UnivariateRealSolverImpl.java b/src/java/org/apache/commons/math/analysis/UnivariateRealSolverImpl.java
+index c1a22eb..f0cb2f5 100644
+--- a/src/java/org/apache/commons/math/analysis/UnivariateRealSolverImpl.java
++++ b/src/java/org/apache/commons/math/analysis/UnivariateRealSolverImpl.java
+@@ -18,15 +18,16 @@
+ 
+ import java.io.Serializable;
+ 
+-import org.apache.commons.math.MathException;
++import org.apache.commons.math.FunctionEvaluationException;
+ 
+ /**
+  * Provide a default implementation for several functions useful to generic
+  * solvers.
+  *  
+- * @version $Revision: 1.14 $ $Date: 2004/06/23 16:26:14 $
++ * @version $Revision: 1.15 $ $Date: 2004/07/17 21:19:39 $
+  */
+-public abstract class UnivariateRealSolverImpl implements UnivariateRealSolver, Serializable {
++public abstract class UnivariateRealSolverImpl implements UnivariateRealSolver,
++    Serializable {
+ 
+     /** Serializable version identifier */
+     static final long serialVersionUID = 1112491292565386596L;
+@@ -70,10 +71,12 @@
+ 
+     /**
+      * Construct a solver with given iteration count and accuracy.
++     * 
+      * @param f the function to solve.
+-     * @param defaultAbsoluteAccuracy maximum absolue error.
+-     * @param defaultMaximalIterationCount maximum number of iterations.
+-     * @throws IllegalArgumentException if function is null.
++     * @param defaultAbsoluteAccuracy maximum absolute error
++     * @param defaultMaximalIterationCount maximum number of iterations
++     * @throws IllegalArgumentException if f is null or the 
++     * defaultAbsoluteAccuracy is not valid
+      */
+     protected UnivariateRealSolverImpl(
+         UnivariateRealFunction f,
+@@ -99,33 +102,36 @@
+ 
+     /**
+      * Access the last computed root.
+-     * @return the last computed root.
+-     * @throws MathException if no root has been computed.
++     * 
++     * @return the last computed root
++     * @throws IllegalStateException if no root has been computed
+      */
+-    public double getResult() throws MathException {
++    public double getResult() {
+         if (resultComputed) {
+             return result;
+         } else {
+-            throw new MathException("No result available");
++            throw new IllegalStateException("No result available");
+         }
+     }
+ 
+     /**
+      * Access the last iteration count.
+-     * @return the last iteration count.
+-     * @throws MathException if no root has been computed.
++     * 
++     * @return the last iteration count
++     * @throws IllegalStateException if no root has been computed
+      *  
+      */
+-    public int getIterationCount() throws MathException {
++    public int getIterationCount() {
+         if (resultComputed) {
+             return iterationCount;
+         } else {
+-            throw new MathException("No result available");
++            throw new IllegalStateException("No result available");
+         }
+     }
+ 
+     /**
+      * Convenience function for implementations.
++     * 
+      * @param result the result to set
+      * @param iterationCount the iteration count to set
+      */
+@@ -146,11 +152,10 @@
+      * Set the absolute accuracy.
+      * 
+      * @param accuracy the accuracy.
+-     * @throws MathException if the accuracy can't be achieved by the solver or
+-     *         is otherwise deemed unreasonable. 
++     * @throws IllegalArgumentException if the accuracy can't be achieved by
++     *  the solver or is otherwise deemed unreasonable. 
+      */
+-    public void setAbsoluteAccuracy(double accuracy)
+-        throws MathException {
++    public void setAbsoluteAccuracy(double accuracy) {
+         absoluteAccuracy = accuracy;
+     }
+ 
+@@ -199,10 +204,10 @@
+      * Set the relative accuracy.
+      * 
+      * @param accuracy the relative accuracy.
+-     * @throws MathException if the accuracy can't be achieved by the solver or
+-     *         is otherwise deemed unreasonable. 
++     * @throws IllegalArgumentException if the accuracy can't be achieved by
++     *  the solver or is otherwise deemed unreasonable. 
+      */
+-    public void setRelativeAccuracy(double accuracy) throws MathException {
++    public void setRelativeAccuracy(double accuracy) {
+         relativeAccuracy = accuracy;
+     }
+ 
+@@ -225,11 +230,10 @@
+      * Set the function value accuracy.
+      * 
+      * @param accuracy the accuracy.
+-     * @throws MathException if the accuracy can't be achieved by the solver or
+-     *         is otherwise deemed unreasonable. 
++     * @throws IllegalArgumentException if the accuracy can't be achieved by
++     * the solver or is otherwise deemed unreasonable. 
+      */
+-    public void setFunctionValueAccuracy(double accuracy)
+-        throws MathException {
++    public void setFunctionValueAccuracy(double accuracy) {
+         functionValueAccuracy = accuracy;
+     }
+ 
+@@ -247,4 +251,88 @@
+     public void resetFunctionValueAccuracy() {
+         functionValueAccuracy = defaultFunctionValueAccuracy;
+     }
++    
++    
++    /**
++     * Returns true iff the function takes opposite signs at the endpoints.
++     * 
++     * @param lower  the lower endpoint 
++     * @param upper  the upper endpoint
++     * @param f the function
++     * @return true if f(lower) * f(upper) < 0
++     * @throws FunctionEvaluationException if an error occurs evaluating the 
++     * function at the endpoints
++     */
++    protected boolean isBracketing(double lower, double upper, 
++            UnivariateRealFunction f) throws FunctionEvaluationException {
++        return  (f.value(lower) * f.value(upper) < 0);
++    }
++    
++    /**
++     * Returns true if the arguments form a (strictly) increasing sequence
++     * 
++     * @param start  first number
++     * @param mid   second number
++     * @param end  third number
++     * @return true if the arguments form an increasing sequence
++     */
++    protected boolean isSequence(double start, double mid, double end) {
++        return (start < mid) && (mid < end);
++    }
++    
++    /**
++     * Verifies that the endpoints specify an interval, 
++     * throws IllegalArgumentException if not
++     * 
++     * @param lower  lower endpoint
++     * @param upper upper endpoint
++     * @throws IllegalArgumentException
++     */
++    protected void verifyInterval(double lower, double upper) {
++        if (lower >= upper) {
++            throw new IllegalArgumentException
++                ("Endpoints do not specify an interval: [" + lower + 
++                        "," + upper + "]");
++        }       
++    }
++    
++    /**
++     * Verifies that <code>lower < initial < upper</code>
++     * throws IllegalArgumentException if not
++     * 
++     * @param lower  lower endpoint
++     * @param initial initial value
++     * @param upper upper endpoint
++     * @throws IllegalArgumentException
++     */
++    protected void verifySequence(double lower, double initial, double upper) {
++        if (!isSequence(lower, initial, upper)) {
++            throw new IllegalArgumentException
++                ("Invalid interval, initial value parameters:  lower=" + 
++                   lower + " initial=" + initial + " upper=" + upper);
++        }       
++    }
++    
++    /**
++     * Verifies that the endpoints specify an interval and the function takes
++     * opposite signs at the enpoints, throws IllegalArgumentException if not
++     * 
++     * @param lower  lower endpoint
++     * @param upper upper endpoint
++     * @param f function
++     * @throws IllegalArgumentException
++     * @throws FunctionEvaluationException if an error occurs evaluating the 
++     * function at the endpoints
++     */
++    protected void verifyBracketing(double lower, double upper, 
++            UnivariateRealFunction f) throws FunctionEvaluationException {
++        
++        verifyInterval(lower, upper);
++        if (!isBracketing(lower, upper, f)) {
++            throw new IllegalArgumentException
++            ("Function values at endpoints do not have different signs." +
++                    "  Endpoints: [" + lower + "," + upper + "]" + 
++                    "  Values: [" + f.value(lower) + "," + f.value(upper) + "]");       
++        }
++    }
+ }
+diff --git a/src/java/org/apache/commons/math/analysis/UnivariateRealSolverUtils.java b/src/java/org/apache/commons/math/analysis/UnivariateRealSolverUtils.java
+index 7ae6a29..826f405 100644
+--- a/src/java/org/apache/commons/math/analysis/UnivariateRealSolverUtils.java
++++ b/src/java/org/apache/commons/math/analysis/UnivariateRealSolverUtils.java
+@@ -15,11 +15,13 @@
+  */
+ package org.apache.commons.math.analysis;
+ 
+-import org.apache.commons.math.MathException;
++import org.apache.commons.math.FunctionEvaluationException;
++import org.apache.commons.math.ConvergenceException;
+ 
+ /**
+  * Utility routines for {@link UnivariateRealSolver} objects.
+- * @version $Revision: 1.9 $ $Date: 2004/06/23 16:26:14 $
++ * 
++ * @version $Revision: 1.10 $ $Date: 2004/07/17 21:19:39 $
+  */
+ public class UnivariateRealSolverUtils {
+     /**
+@@ -28,97 +30,155 @@
+     private UnivariateRealSolverUtils() {
+         super();
+     }
++    
++    /** Cached solver factory */
++    private static UnivariateRealSolverFactory factory = null;
+ 
+     /**
+-     * Method to solve for zeros of real univariate functions.  A
+-     * default solver is created and used for solving. 
++     * Convenience method to find a zero of a univariate real function.  A default
++     * solver is used. 
++     * 
+      * @param f the function.
+      * @param x0 the lower bound for the interval.
+      * @param x1 the upper bound for the interval.
+      * @return a value where the function is zero.
+-     * @throws MathException if the iteration count was exceeded or the
+-     *         solver detects convergence problems otherwise.
++     * @throws ConvergenceException if the iteration count was exceeded
++     * @throws FunctionEvaluationException if an error occurs evaluating
++     * the function
++     * @throws IllegalArgumentException if f is null or the endpoints do not
++     * specify a valid interval
+      */
+     public static double solve(UnivariateRealFunction f, double x0, double x1)
+-        throws MathException
+-    {
+-        if(f == null){
+-            throw new IllegalArgumentException("f can not be null.");    
+-        }
+-        
+-        return UnivariateRealSolverFactory.newInstance().newDefaultSolver(f)
+-            .solve(x0, x1);
++    throws ConvergenceException, FunctionEvaluationException {
++        setup(f);
++        return factory.newDefaultSolver(f).solve(x0, x1);
+     }
+ 
+     /**
+-     * Convience method to solve for zeros of real univariate functions.  A
+-     * default solver is created and used for solving. 
+-     * @param f the function.
+-     * @param x0 the lower bound for the interval.
+-     * @param x1 the upper bound for the interval.
+-     * @param absoluteAccuracy the accuracy to be used by the solver.
+-     * @return a value where the function is zero.
+-     * @throws MathException if the iteration count was exceeded or the
+-     *         solver detects convergence problems otherwise.
++     * Convenience method to find a zero of a univariate real function.  A default
++     * solver is used. 
++     * 
++     * @param f the function
++     * @param x0 the lower bound for the interval
++     * @param x1 the upper bound for the interval
++     * @param absoluteAccuracy the accuracy to be used by the solver
++     * @return a value where the function is zero
++     * @throws ConvergenceException if the iteration count is exceeded
++     * @throws FunctionEvaluationException if an error occurs evaluating the
++     * function
++     * @throws IllegalArgumentException if f is null, the endpoints do not 
++     * specify a valid interval, or the absoluteAccuracy is not valid for the
++     * default solver
+      */
+-    public static double solve(
+-        UnivariateRealFunction f,
+-        double x0,
+-        double x1,
+-        double absoluteAccuracy)
+-        throws MathException
+-    {
+-        if(f == null){
+-            throw new IllegalArgumentException("f can not be null.");    
+-        }
+-            
+-        UnivariateRealSolver solver = UnivariateRealSolverFactory.newInstance()
+-            .newDefaultSolver(f);
++    public static double solve(UnivariateRealFunction f, double x0, double x1,
++            double absoluteAccuracy) throws ConvergenceException, 
++            FunctionEvaluationException {    
++       
++        setup(f);
++        UnivariateRealSolver solver = factory.newDefaultSolver(f);
+         solver.setAbsoluteAccuracy(absoluteAccuracy);
+         return solver.solve(x0, x1);
+     }
+ 
+     /**
+-     * For a function, f, this method returns two values, a and b that bracket
+-     * a root of f.  That is to say, there exists a value c between a and b
+-     * such that f(c) = 0.
++     * This method attempts to find two values a and b satisfying <ul>
++    * <li> <code> lowerBound <= a < initial < b <= upperBound</code> </li>
++     * <li> <code> f(a) * f(b) < 0 </code></li>
++     * </ul>
++     * If f is continuous on <code>[a,b],</code> this means that <code>a</code>
++     * and <code>b</code> bracket a root of f.
++     * <p>
++     * The algorithm starts by setting 
++     * <code>a := initial -1; b := initial +1,</code> examines the value of the
++     * function at <code>a</code> and <code>b</code> and keeps moving
++     * the endpoints out by one unit each time through a loop that terminates 
++     * when one of the following happens: <ul>
++     * <li> <code> f(a) * f(b) < 0 </code> --  success!</li>
++     * <li> <code> a = lower </code> and <code> b = upper</code> 
++     * -- ConvergenceException </li>
++     * <li> <code> Integer.MAX_VALUE</code> iterations elapse 
++     * -- ConvergenceException </li>
++     * </ul>
++     * <p>
++     * <strong>Note: </strong> this method can take 
++     * <code>Integer.MAX_VALUE</code> iterations to throw a 
++     * <code>ConvergenceException.</code>  Unless you are confident that there
++     * is a root between <code>lowerBound</code> and <code>upperBound</code>
++     * near <code>initial,</code> it is better to use 
++     * {@link #bracket(UnivariateRealFunction, double, double, double, int)}, 
++     * explicitly specifying the maximum number of iterations.
+      *
+      * @param function the function
+-     * @param initial midpoint of the returned range.
+-     * @param lowerBound for numerical safety, a never is less than this value.
+-     * @param upperBound for numerical safety, b never is greater than this
+-     *                   value.
+-     * @return a two element array holding {a, b}.
+-     * @throws MathException if a root can not be bracketted.
++     * @param initial initial midpoint of interval being expanded to
++     * bracket a root
++     * @param lowerBound lower bound (a is never lower than this value)
++     * @param upperBound upper bound (b never is greater than this
++     * value)
++     * @return a two element array holding {a, b}
++     * @throws ConvergenceException if a root can not be bracketted
++     * @throws FunctionEvaluationException if an error occurs evaluating the
++     * function
++     * @throws IllegalArgumentException if function is null, maximumIterations
++     * is not positive, or initial is not between lowerBound and upperBound
+      */
+-    public static double[] bracket(UnivariateRealFunction function,
+-                                   double initial,
+-                                   double lowerBound,
+-                                   double upperBound) throws MathException {
++    public static double[] bracket(UnivariateRealFunction function, 
++            double initial, double lowerBound, double upperBound) 
++    throws ConvergenceException, FunctionEvaluationException {
+         return bracket( function, initial, lowerBound, upperBound,
+             Integer.MAX_VALUE ) ;
+     }
+ 
+-    /**
+-     * For a function, f, this method returns two values, a and b that bracket
+-     * a root of f.  That is to say, there exists a value c between a and b
+-     * such that f(c) = 0.
+-     *
++     /**
++     * This method attempts to find two values a and b satisfying <ul>
++     * <li> <code> lowerBound <= a < initial < b <= upperBound</code> </li>
++     * <li> <code> f(a) * f(b) < 0 </code> </li>
++     * </ul>
++     * If f is continuous on <code>[a,b],</code> this means that <code>a</code>
++     * and <code>b</code> bracket a root of f.
++     * <p>
++     * The algorithm starts by setting 
++     * <code>a := initial -1; b := initial +1,</code> examines the value of the
++     * function at <code>a</code> and <code>b</code> and keeps moving
++     * the endpoints out by one unit each time through a loop that terminates 
++     * when one of the following happens: <ul>
++     * <li> <code> f(a) * f(b) < 0 </code> --  success!</li>
++     * <li> <code> a = lower </code> and <code> b = upper</code> 
++     * -- ConvergenceException </li>
++     * <li> <code> maximumIterations</code> iterations elapse 
++     * -- ConvergenceException </li></ul>
++     * 
+      * @param function the function
+-     * @param initial midpoint of the returned range.
+-     * @param lowerBound for numerical safety, a never is less than this value.
+-     * @param upperBound for numerical safety, b never is greater than this
+-     *                   value.
+-     * @param maximumIterations to guard against infinite looping, maximum
+-     *                          number of iterations to perform
++     * @param initial initial midpoint of interval being expanded to
++     * bracket a root
++     * @param lowerBound lower bound (a is never lower than this value)
++     * @param upperBound upper bound (b never is greater than this
++     * value)
++     * @param maximumIterations maximum number of iterations to perform
+      * @return a two element array holding {a, b}.
+-     * @throws MathException if a root can not be bracketted.
++     * @throws ConvergenceException if the algorithm fails to find a and b
++     * satisfying the desired conditions
++     * @throws FunctionEvaluationException if an error occurs evaluating the 
++     * function
++     * @throws IllegalArgumentException if function is null, maximumIterations
++     * is not positive, or initial is not between lowerBound and upperBound
+      */
+     public static double[] bracket(UnivariateRealFunction function,
+-                                   double initial,
+-                                   double lowerBound,
+-                                   double upperBound,
+-                                   int maximumIterations) throws MathException {
++            double initial, double lowerBound, double upperBound, 
++            int maximumIterations) throws ConvergenceException, 
++            FunctionEvaluationException {
++        
++        if (function == null) {
++            throw new IllegalArgumentException ("function is null.");
++        }
++        if (maximumIterations <= 0)  {
++            throw new IllegalArgumentException
++            ("bad value for maximumIterations: " + maximumIterations);
++        }
++        if (initial < lowerBound || initial > upperBound || lowerBound >= upperBound) {
++            throw new IllegalArgumentException
++            ("Invalid endpoint parameters:  lowerBound=" + lowerBound + 
++              " initial=" + initial + " upperBound=" + upperBound);
++        }
+         double a = initial;
+         double b = initial;
+         double fa;
+@@ -129,15 +189,27 @@
+             a = Math.max(a - 1.0, lowerBound);
+             b = Math.min(b + 1.0, upperBound);
+             fa = function.value(a);
++            
+             fb = function.value(b);
+-            numIterations += 1 ;
+-        } while ( (fa * fb > 0.0) && ( numIterations < maximumIterations ) );
+-    
++            numIterations++ ;
++        } while ((fa * fb > 0.0) && (numIterations < maximumIterations) && 
++                ((a > lowerBound) || (b < upperBound)));
++   
++        if (fa * fb >= 0.0 ) {
++            throw new ConvergenceException
++            ("Number of iterations= " + numIterations +
++              " maximum iterations= "  + maximumIterations +
++              " initial= " + initial + " lowerBound=" + lowerBound +
++              " upperBound=" + upperBound + " final a value=" + a +
++              " final b value=" + b + " f(a)=" + fa + " f(b)=" + fb);
++        }
++        
+         return new double[]{a, b};
+     }
+ 
+     /**
+      * Compute the midpoint of two values.
++     * 
+      * @param a first value.
+      * @param b second value.
+      * @return the midpoint. 
+@@ -145,4 +217,22 @@
+     public static double midpoint(double a, double b) {
+         return (a + b) * .5;
+     }
++    
++    /**
++     * Checks to see if f is null, throwing IllegalArgumentException if so.
++     * Also initializes factory if factory is null.
++     * 
++     * @param f  input function
++     * @throws IllegalArgumentException if f is null
++     */
++    private static void setup(UnivariateRealFunction f) {
++       
++        if (f == null) {
++            throw new IllegalArgumentException("function can not be null.");    
++        }
++        
++        if (factory == null) {
++            factory = UnivariateRealSolverFactory.newInstance();
++        }       
++    }
+ }
+diff --git a/src/java/org/apache/commons/math/distribution/AbstractContinuousDistribution.java b/src/java/org/apache/commons/math/distribution/AbstractContinuousDistribution.java
+index a6f2c9a..78cbb02 100644
+--- a/src/java/org/apache/commons/math/distribution/AbstractContinuousDistribution.java
++++ b/src/java/org/apache/commons/math/distribution/AbstractContinuousDistribution.java
+@@ -17,6 +17,8 @@
+ 
+ import java.io.Serializable;
+ 
++import org.apache.commons.math.ConvergenceException;
++import org.apache.commons.math.FunctionEvaluationException;
+ import org.apache.commons.math.MathException;
+ import org.apache.commons.math.analysis.UnivariateRealFunction;
+ import org.apache.commons.math.analysis.UnivariateRealSolverUtils;
+@@ -26,7 +28,7 @@
+  * implementations for some of the methods that do not vary from distribution
+  * to distribution.
+  *  
+- * @version $Revision: 1.24 $ $Date: 2004/06/23 16:26:15 $
++ * @version $Revision: 1.25 $ $Date: 2004/07/17 21:19:39 $
+  */
+ public abstract class AbstractContinuousDistribution
+     implements ContinuousDistribution, Serializable {
+@@ -79,31 +81,51 @@
+             throw new IllegalArgumentException("p must be between 0.0 and 1.0, inclusive.");
+         }
+ 
+-        // by default, do simple root finding using bracketing and bisection.
++        // by default, do simple root finding using bracketing and default solver.
+         // subclasses can overide if there is a better method.
+         UnivariateRealFunction rootFindingFunction =
+             new UnivariateRealFunction() {
+ 
+-            public double value(double x) throws MathException {
+-                return cumulativeProbability(x) - p;
++            public double value(double x) throws FunctionEvaluationException {
++                try {
++                    return cumulativeProbability(x) - p;
++                } catch (MathException ex) {
++                    throw new FunctionEvaluationException
++                        (x, "Error computing cdf", ex);
++                }
+             }
+         };
+-
+-        // bracket root
+-        double[] bracket =
+-            UnivariateRealSolverUtils.bracket(
+-                rootFindingFunction,
+-                getInitialDomain(p),
+-                getDomainLowerBound(p),
+-                getDomainUpperBound(p));
++              
++        // Try to bracket root, test domain endoints if this fails     
++        double lowerBound = getDomainLowerBound(p);
++        double upperBound = getDomainUpperBound(p);
++        double[] bracket = null;
++        try {
++            bracket = UnivariateRealSolverUtils.bracket(
++                    rootFindingFunction, getInitialDomain(p),
++                    lowerBound, upperBound);
++        }  catch (ConvergenceException ex) {
++            /* 
++             * Check domain endpoints to see if one gives value that is within
++             * the default solver's defaultAbsoluteAccuracy of 0 (will be the
++             * case if density has bounded support and p is 0 or 1).
++             * 
++             * TODO: expose the default solver, defaultAbsoluteAccuracy as
++             * a constant.
++             */ 
++            if (Math.abs(rootFindingFunction.value(lowerBound)) < 1E-6) {
++                return lowerBound;
++            }
++            if (Math.abs(rootFindingFunction.value(upperBound)) < 1E-6) {
++                return upperBound;
++            }     
++            // Failed bracket convergence was not because of corner solution
++            throw new MathException(ex);
++        }
+ 
+         // find root
+-        double root =
+-            UnivariateRealSolverUtils.solve(
+-                rootFindingFunction,
+-                bracket[0],
+-                bracket[1]);
+-
++        double root = UnivariateRealSolverUtils.solve(rootFindingFunction,
++                bracket[0],bracket[1]);
+         return root;
+     }
+ 
+diff --git a/src/test/org/apache/commons/math/analysis/BisectionSolverTest.java b/src/test/org/apache/commons/math/analysis/BisectionSolverTest.java
+index 5c24010..041a7a8 100644
+--- a/src/test/org/apache/commons/math/analysis/BisectionSolverTest.java
++++ b/src/test/org/apache/commons/math/analysis/BisectionSolverTest.java
+@@ -19,12 +19,11 @@
+ 
+ import org.apache.commons.math.MathException;
+ import org.apache.commons.math.TestUtils;
+-import org.apache.commons.math.stat.univariate.DescriptiveStatistics;
+ 
+ import junit.framework.TestCase;
+ 
+ /**
+- * @version $Revision: 1.11 $ $Date: 2004/06/02 00:11:53 $
++ * @version $Revision: 1.12 $ $Date: 2004/07/17 21:19:39 $
+  */
+ public final class BisectionSolverTest extends TestCase {
+     /**
+@@ -82,74 +81,57 @@
+ 
+         result = solver.solve(0.85, 5);
+         assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
++        
++        assertEquals(result, solver.getResult(), 0);
++        assertTrue(solver.getIterationCount() > 0);
+     }
+     
+     /**
+      * 
+      */
+     public void testSetFunctionValueAccuracy(){
+-        double expected = 1.0e-2;
+-        
++        double expected = 1.0e-2;    
+         UnivariateRealFunction f = new QuinticFunction();
+         UnivariateRealSolver solver = new BisectionSolver(f);
+-        try {
+-            solver.setFunctionValueAccuracy(expected);
+-            assertEquals(expected, solver.getFunctionValueAccuracy(), 1.0e-2);
+-        } catch (MathException ex) {
+-            fail(ex.getMessage());
+-        }
++        solver.setFunctionValueAccuracy(expected);
++        assertEquals(expected, solver.getFunctionValueAccuracy(), 1.0e-2);
+     }        
+     
+     /**
+      * 
+      */
+     public void testResetFunctionValueAccuracy(){
+-        double newValue = 1.0e-2;
+-        
++        double newValue = 1.0e-2;    
+         UnivariateRealFunction f = new QuinticFunction();
+         UnivariateRealSolver solver = new BisectionSolver(f);
+-        try {
+-            double oldValue = solver.getFunctionValueAccuracy();
+-            solver.setFunctionValueAccuracy(newValue);
+-            solver.resetFunctionValueAccuracy();
+-            assertEquals(oldValue, solver.getFunctionValueAccuracy(), 1.0e-2);
+-        } catch(MathException ex){
+-            fail(ex.getMessage());
+-        }
++        double oldValue = solver.getFunctionValueAccuracy();
++        solver.setFunctionValueAccuracy(newValue);
++        solver.resetFunctionValueAccuracy();
++        assertEquals(oldValue, solver.getFunctionValueAccuracy(), 1.0e-2);
+     }        
+     
+     /**
+      * 
+      */
+     public void testSetAbsoluteAccuracy(){
+-        double expected = 1.0e-2;
+-        
++        double expected = 1.0e-2; 
+         UnivariateRealFunction f = new QuinticFunction();
+         UnivariateRealSolver solver = new BisectionSolver(f);
+-        try {
+-            solver.setAbsoluteAccuracy(expected);
+-            assertEquals(expected, solver.getAbsoluteAccuracy(), 1.0e-2);
+-        } catch(MathException ex){
+-            fail(ex.getMessage());
+-        }
++        solver.setAbsoluteAccuracy(expected);
++        assertEquals(expected, solver.getAbsoluteAccuracy(), 1.0e-2); 
+     }        
+     
+     /**
+      * 
+      */
+     public void testResetAbsoluteAccuracy(){
+-        double newValue = 1.0e-2;
+-        
++        double newValue = 1.0e-2;       
+         UnivariateRealFunction f = new QuinticFunction();
+         UnivariateRealSolver solver = new BisectionSolver(f);
+-        try {
+-            double oldValue = solver.getAbsoluteAccuracy();
+-            solver.setAbsoluteAccuracy(newValue);
+-            solver.resetAbsoluteAccuracy();
+-            assertEquals(oldValue, solver.getAbsoluteAccuracy(), 1.0e-2);
+-        } catch(MathException ex){
+-            fail(ex.getMessage());
+-        }
++        double oldValue = solver.getAbsoluteAccuracy();
++        solver.setAbsoluteAccuracy(newValue);
++        solver.resetAbsoluteAccuracy();
++        assertEquals(oldValue, solver.getAbsoluteAccuracy(), 1.0e-2);
+     }        
+     
+     /**
+@@ -186,117 +168,96 @@
+         
+         UnivariateRealFunction f = new QuinticFunction();
+         UnivariateRealSolver solver = new BisectionSolver(f);
+-        try {
+-            solver.setRelativeAccuracy(expected);
+-            assertEquals(expected, solver.getRelativeAccuracy(), 1.0e-2);
+-        } catch(MathException ex){
+-            fail(ex.getMessage());
+-        }
++        solver.setRelativeAccuracy(expected);
++        assertEquals(expected, solver.getRelativeAccuracy(), 1.0e-2);
+     }        
+     
+     /**
+      * 
+      */
+     public void testResetRelativeAccuracy(){
+-        double newValue = 1.0e-2;
+-        
++        double newValue = 1.0e-2;        
+         UnivariateRealFunction f = new QuinticFunction();
+         UnivariateRealSolver solver = new BisectionSolver(f);
+-        try {
+-            double oldValue = solver.getRelativeAccuracy();
+-            solver.setRelativeAccuracy(newValue);
+-            solver.resetRelativeAccuracy();
+-            assertEquals(oldValue, solver.getRelativeAccuracy(), 1.0e-2);
+-        } catch(MathException ex){
+-            fail(ex.getMessage());
+-        }
++        double oldValue = solver.getRelativeAccuracy();
++        solver.setRelativeAccuracy(newValue);
++        solver.resetRelativeAccuracy();
++        assertEquals(oldValue, solver.getRelativeAccuracy(), 1.0e-2);
+     }        
+     
+     /**
+      * Test Serialization and Recovery
+      */
+-   public void testSerialization() {
+-
++   public void testSerialization() throws MathException {
++       UnivariateRealFunction f = (UnivariateRealFunction)TestUtils.serializeAndRecover(new QuinticFunction());
++       double result;
+        
+-       try {
+-           UnivariateRealFunction f = (UnivariateRealFunction)TestUtils.serializeAndRecover(new QuinticFunction());
+-           double result;
+-           
+-           BisectionSolver solver = new BisectionSolver(f);
+-           UnivariateRealSolver solver2 = (UnivariateRealSolver)TestUtils.serializeAndRecover(solver);
+-           
+-           result = solver.solve(-0.2, 0.2);
+-           assertEquals(result, 0, solver.getAbsoluteAccuracy());
+-           assertEquals(solver2.solve(-0.2, 0.2), result, solver2.getAbsoluteAccuracy());
+-           
+-           result = solver.solve(-0.1, 0.3);
+-           assertEquals(result, 0, solver.getAbsoluteAccuracy());
+-           assertEquals(solver2.solve(-0.1, 0.3), result, solver2.getAbsoluteAccuracy());
+-           
+-           result = solver.solve(-0.3, 0.45);
+-           assertEquals(result, 0, solver.getAbsoluteAccuracy());
+-           assertEquals(solver2.solve(-0.3, 0.45), result, solver2.getAbsoluteAccuracy());
+-           
+-           result = solver.solve(0.3, 0.7);
+-           assertEquals(result, 0.5, solver.getAbsoluteAccuracy());
+-           assertEquals(solver2.solve(0.3, 0.7), result, solver2.getAbsoluteAccuracy());
+-           
+-           result = solver.solve(0.2, 0.6);
+-           assertEquals(result, 0.5, solver.getAbsoluteAccuracy());
+-           assertEquals(solver2.solve(0.2, 0.6), result, solver2.getAbsoluteAccuracy());
+-           
+-           result = solver.solve(0.05, 0.95);
+-           assertEquals(result, 0.5, solver.getAbsoluteAccuracy());
+-           assertEquals(solver2.solve(0.05, 0.95), result, solver2.getAbsoluteAccuracy());
+-           
+-           result = solver.solve(0.85, 1.25);
+-           assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+-           assertEquals(solver2.solve(0.85, 1.25), result, solver2.getAbsoluteAccuracy());
+-           
+-           result = solver.solve(0.8, 1.2);
+-           assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+-           assertEquals(solver2.solve(0.8, 1.2), result, solver2.getAbsoluteAccuracy());
+-           
+-           result = solver.solve(0.85, 1.75);
+-           assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+-           assertEquals(solver2.solve(0.85, 1.75), result, solver2.getAbsoluteAccuracy());
+-           
+-           result = solver.solve(0.55, 1.45);
+-           assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+-           assertEquals(solver2.solve(0.55, 1.45), result, solver2.getAbsoluteAccuracy());
+-           
+-           result = solver.solve(0.85, 5);
+-           assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
+-           assertEquals(solver2.solve(0.85, 5), result, solver2.getAbsoluteAccuracy());
+-           
+-       } catch(MathException ex){
+-           fail(ex.getMessage());
+-       }
++       BisectionSolver solver = new BisectionSolver(f);
++       UnivariateRealSolver solver2 = (UnivariateRealSolver)TestUtils.serializeAndRecover(solver);
++       
++       result = solver.solve(-0.2, 0.2);
++       assertEquals(result, 0, solver.getAbsoluteAccuracy());
++       assertEquals(solver2.solve(-0.2, 0.2), result, solver2.getAbsoluteAccuracy());
++       
++       result = solver.solve(-0.1, 0.3);
++       assertEquals(result, 0, solver.getAbsoluteAccuracy());
++       assertEquals(solver2.solve(-0.1, 0.3), result, solver2.getAbsoluteAccuracy());
++       
++       result = solver.solve(-0.3, 0.45);
++       assertEquals(result, 0, solver.getAbsoluteAccuracy());
++       assertEquals(solver2.solve(-0.3, 0.45), result, solver2.getAbsoluteAccuracy());
++       
++       result = solver.solve(0.3, 0.7);
++       assertEquals(result, 0.5, solver.getAbsoluteAccuracy());
++       assertEquals(solver2.solve(0.3, 0.7), result, solver2.getAbsoluteAccuracy());
++       
++       result = solver.solve(0.2, 0.6);
++       assertEquals(result, 0.5, solver.getAbsoluteAccuracy());
++       assertEquals(solver2.solve(0.2, 0.6), result, solver2.getAbsoluteAccuracy());
++       
++       result = solver.solve(0.05, 0.95);
++       assertEquals(result, 0.5, solver.getAbsoluteAccuracy());
++       assertEquals(solver2.solve(0.05, 0.95), result, solver2.getAbsoluteAccuracy());
++       
++       result = solver.solve(0.85, 1.25);
++       assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
++       assertEquals(solver2.solve(0.85, 1.25), result, solver2.getAbsoluteAccuracy());
++       
++       result = solver.solve(0.8, 1.2);
++       assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
++       assertEquals(solver2.solve(0.8, 1.2), result, solver2.getAbsoluteAccuracy());
++       
++       result = solver.solve(0.85, 1.75);
++       assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
++       assertEquals(solver2.solve(0.85, 1.75), result, solver2.getAbsoluteAccuracy());
++       
++       result = solver.solve(0.55, 1.45);
++       assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
++       assertEquals(solver2.solve(0.55, 1.45), result, solver2.getAbsoluteAccuracy());
++       
++       result = solver.solve(0.85, 5);
++       assertEquals(result, 1.0, solver.getAbsoluteAccuracy());
++       assertEquals(solver2.solve(0.85, 5), result, solver2.getAbsoluteAccuracy());
+        
+        /* Test Reset */
+-       try{ 
+-           double newValue = 1.0e-2;
+-           UnivariateRealFunction f = (UnivariateRealFunction)TestUtils.serializeAndRecover(new QuinticFunction());
+-           UnivariateRealSolver solver = new BisectionSolver(f);
+-
+-           double oldValue = solver.getRelativeAccuracy();
+-           solver.setRelativeAccuracy(newValue);
+-           solver.resetRelativeAccuracy();
+-           assertEquals(oldValue, solver.getRelativeAccuracy(), 1.0e-2);
++       double newValue = 1.0e-2;
++       f = (UnivariateRealFunction)TestUtils.serializeAndRecover(new QuinticFunction());
++       solver = new BisectionSolver(f);
+        
+-           UnivariateRealSolver  solver2 = (UnivariateRealSolver)TestUtils.serializeAndRecover(solver); 
++       double oldValue = solver.getRelativeAccuracy();
++       solver.setRelativeAccuracy(newValue);
++       solver.resetRelativeAccuracy();
++       assertEquals(oldValue, solver.getRelativeAccuracy(), 1.0e-2);
+        
+-           assertEquals(oldValue, solver2.getRelativeAccuracy(), 1.0e-2);
++       solver2 = (UnivariateRealSolver)TestUtils.serializeAndRecover(solver); 
+        
+-           solver2.setRelativeAccuracy(newValue);
+-           solver2.resetRelativeAccuracy();
++       assertEquals(oldValue, solver2.getRelativeAccuracy(), 1.0e-2);
+        
+-           assertEquals(oldValue, solver2.getRelativeAccuracy(), 1.0e-2);
++       solver2.setRelativeAccuracy(newValue);
++       solver2.resetRelativeAccuracy();
+        
+-       } catch(MathException ex){
+-           fail(ex.getMessage());
+-       }
+-    
++       assertEquals(oldValue, solver2.getRelativeAccuracy(), 1.0e-2);
++       
+    }
+-    
++   
+ }
+diff --git a/src/test/org/apache/commons/math/analysis/NewtonSolverTest.java b/src/test/org/apache/commons/math/analysis/NewtonSolverTest.java
+index e478e47..e7d7db5 100644
+--- a/src/test/org/apache/commons/math/analysis/NewtonSolverTest.java
++++ b/src/test/org/apache/commons/math/analysis/NewtonSolverTest.java
+@@ -22,7 +22,7 @@
+ import junit.framework.TestCase;
+ 
+ /**
+- * @version $Revision: 1.1 $ $Date: 2004/04/08 21:19:17 $
++ * @version $Revision: 1.2 $ $Date: 2004/07/17 21:19:39 $
+  */
+ public final class NewtonSolverTest extends TestCase {
+     /**
+@@ -38,6 +38,10 @@
+ 
+         result = solver.solve(1, 4);
+         assertEquals(result, Math.PI, solver.getAbsoluteAccuracy());
++        
++        //TODO:  create abstract solver test class, move these there
++        assertEquals(result, solver.getResult(), 0);
++        assertTrue(solver.getIterationCount() > 0);
+     }
+ 
+     /**
+diff --git a/src/test/org/apache/commons/math/analysis/QuinticFunction.java b/src/test/org/apache/commons/math/analysis/QuinticFunction.java
+index 4a76b0e..c6bd251 100644
+--- a/src/test/org/apache/commons/math/analysis/QuinticFunction.java
++++ b/src/test/org/apache/commons/math/analysis/QuinticFunction.java
+@@ -17,12 +17,12 @@
+ 
+ import java.io.Serializable;
+ 
+-import org.apache.commons.math.MathException;
++import org.apache.commons.math.FunctionEvaluationException;
+ 
+ /**
+  * Auxillary class for testing solvers.
+  *
+- * @version $Revision: 1.13 $ $Date: 2004/06/02 00:12:01 $ 
++ * @version $Revision: 1.14 $ $Date: 2004/07/17 21:19:39 $ 
+  */
+ public class QuinticFunction implements DifferentiableUnivariateRealFunction, Serializable {
+ 
+@@ -31,13 +31,13 @@
+     /* Evaluate quintic.
+      * @see org.apache.commons.math.UnivariateRealFunction#value(double)
+      */
+-    public double value(double x) throws MathException {
++    public double value(double x) throws FunctionEvaluationException {
+         return (x-1)*(x-0.5)*x*(x+0.5)*(x+1);
+     }
+ 
+     public UnivariateRealFunction derivative() {
+         return new UnivariateRealFunction() {
+-            public double value(double x) throws MathException {
++            public double value(double x) throws FunctionEvaluationException {
+                 return (5*x*x-3.75)*x*x+0.25;
+             }
+         };
+diff --git a/src/test/org/apache/commons/math/analysis/SinFunction.java b/src/test/org/apache/commons/math/analysis/SinFunction.java
+index 12d7ccc..8d6eb76 100644
+--- a/src/test/org/apache/commons/math/analysis/SinFunction.java
++++ b/src/test/org/apache/commons/math/analysis/SinFunction.java
+@@ -15,7 +15,7 @@
+  */
+ package org.apache.commons.math.analysis;
+ 
+-import org.apache.commons.math.MathException;
++import org.apache.commons.math.FunctionEvaluationException;
+ 
+ /**
+  * Auxillary class for testing solvers.
+@@ -25,14 +25,14 @@
+  * which means linear approximation (Regula Falsi) will converge
+  * quadratically.
+  * 
+- * @version $Revision: 1.12 $ $Date: 2004/04/08 21:19:17 $
++ * @version $Revision: 1.13 $ $Date: 2004/07/17 21:19:39 $
+  */
+ public class SinFunction implements DifferentiableUnivariateRealFunction {
+ 
+     /* Evaluate sinus fuction.
+      * @see org.apache.commons.math.UnivariateRealFunction#value(double)
+      */
+-    public double value(double x) throws MathException {
++    public double value(double x) throws FunctionEvaluationException {
+         return Math.sin(x);
+     }
+ 
+@@ -40,7 +40,7 @@
+      */
+     public UnivariateRealFunction derivative() {
+         return new UnivariateRealFunction() {
+-            public double value(double x) throws MathException {
++            public double value(double x) throws FunctionEvaluationException {
+                 return Math.cos(x);
+             }
+         };
+diff --git a/src/test/org/apache/commons/math/analysis/UnivariateRealSolverUtilsTest.java b/src/test/org/apache/commons/math/analysis/UnivariateRealSolverUtilsTest.java
+index 40d9580..79978d3 100644
+--- a/src/test/org/apache/commons/math/analysis/UnivariateRealSolverUtilsTest.java
++++ b/src/test/org/apache/commons/math/analysis/UnivariateRealSolverUtilsTest.java
+@@ -16,67 +16,115 @@
+ 
+ package org.apache.commons.math.analysis;
+ 
++import org.apache.commons.math.ConvergenceException;
+ import org.apache.commons.math.MathException;
+ 
+ import junit.framework.TestCase;
+ 
+ /**
+- * @version $Revision: 1.7 $ $Date: 2004/02/21 21:35:16 $
++ * @version $Revision: 1.8 $ $Date: 2004/07/17 21:19:39 $
+  */
+ public class UnivariateRealSolverUtilsTest extends TestCase {
+-    /**
+-     * 
+-     */
+-    public void testSolveNull(){
++    
++    protected UnivariateRealFunction sin = new SinFunction();
++    
++    public void testSolveNull() throws MathException {
+         try {
+             UnivariateRealSolverUtils.solve(null, 0.0, 4.0);
+             fail();
+-        } catch(MathException ex){
+-            fail("math exception should no be thrown.");
+         } catch(IllegalArgumentException ex){
+             // success
+         }
+     }
+     
+-    /**
+-     * 
+-     */
+-    public void testSolveSin(){
+-        try {
+-            double x = UnivariateRealSolverUtils.solve(new SinFunction(), 1.0,
+-                4.0);
+-            assertEquals(Math.PI, x, 1.0e-4);
+-        } catch(MathException ex){
+-            fail("math exception should no be thrown.");
+-        }
++    public void testSolveBadParameters() throws MathException {
++        try { // bad endpoints
++            double x = UnivariateRealSolverUtils.solve(sin,0.0, 4.0, 4.0); 
++        } catch (IllegalArgumentException ex) {
++            // expected
++        }    
++        try { // bad accuracy
++            double x = UnivariateRealSolverUtils.solve(sin, 0.0, 4.0, 0.0); 
++        } catch (IllegalArgumentException ex) {
++            // expected
++        }        
+     }
+-
+-    /**
+-     * 
+-     */
+-    public void testSolveAccuracyNull(){
++    
++    public void testSolveSin() throws MathException {     
++        double x = UnivariateRealSolverUtils.solve(sin, 1.0,
++                4.0);
++        assertEquals(Math.PI, x, 1.0e-4);
++    }
++    
++    public void testSolveAccuracyNull()  throws MathException {
+         try {
+             double accuracy = 1.0e-6;
+             UnivariateRealSolverUtils.solve(null, 0.0, 4.0, accuracy);
+             fail();
+-        } catch(MathException ex){
+-            fail("math exception should no be thrown.");
+         } catch(IllegalArgumentException ex){
+             // success
+         }
+     }
+     
+-    /**
+-     * 
+-     */
+-    public void testSolveAccuracySin(){
+-        try {
+-            double accuracy = 1.0e-6;
+-            double x = UnivariateRealSolverUtils.solve(new SinFunction(), 1.0,
++    public void testSolveAccuracySin() throws MathException {
++        double accuracy = 1.0e-6;
++        double x = UnivariateRealSolverUtils.solve(sin, 1.0,
+                 4.0, accuracy);
+-            assertEquals(Math.PI, x, accuracy);
+-        } catch(MathException ex){
+-            fail("math exception should no be thrown.");
++        assertEquals(Math.PI, x, accuracy);
++    }
++    
++    public void testSolveNoRoot() throws MathException {
++        try {
++            double x = UnivariateRealSolverUtils.solve(sin, 1.0,
++                    1.5);  
++            fail("Expecting IllegalArgumentException ");  
++        } catch (IllegalArgumentException ex) {
++            // expected
+         }
+     }
++    
++    public void testBracketSin() throws MathException {
++        double[] result = UnivariateRealSolverUtils.bracket(sin, 
++                0.0, -2.0, 2.0);
++        assertTrue(sin.value(result[0]) < 0);
++        assertTrue(sin.value(result[1]) > 0);
++    }
++    
++    public void testBracketCornerSolution() throws MathException {
++        try {
++            double[] result = UnivariateRealSolverUtils.bracket(sin, 
++                    1.5, 0, 2.0); 
++            fail("Expecting ConvergenceException");
++        } catch (ConvergenceException ex) {
++            // expected
++        }
++    }
++    
++    public void testBadParameters() throws MathException {
++        try { // null function
++            double[] result = UnivariateRealSolverUtils.bracket(null, 1.5, 0, 2.0);
++            fail("Expecting IllegalArgumentException");
++        } catch (IllegalArgumentException ex) {
++            // expected
++        }
++        try { // initial not between endpoints
++            double[] result = UnivariateRealSolverUtils.bracket(sin, 2.5, 0, 2.0);
++            fail("Expecting IllegalArgumentException");
++        } catch (IllegalArgumentException ex) {
++            // expected
++        }
++        try { // endpoints not valid
++            double[] result = UnivariateRealSolverUtils.bracket(sin, 1.5, 2.0, 1.0);
++            fail("Expecting IllegalArgumentException");
++        } catch (IllegalArgumentException ex) {
++            // expected
++        }
++        try { // bad maximum iterations
++            double[] result = UnivariateRealSolverUtils.bracket(sin, 1.5, 0, 2.0, 0);
++            fail("Expecting IllegalArgumentException");
++        } catch (IllegalArgumentException ex) {
++            // expected
++        }        
++    }
++    
+ }

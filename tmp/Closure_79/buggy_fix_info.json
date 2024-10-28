@@ -1,0 +1,168 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.NormalizeTest::testIssue,com.google.javascript.jscomp.VarCheckTest::testPropReferenceInExterns1,com.google.javascript.jscomp.VarCheckTest::testPropReferenceInExterns3,com.google.javascript.jscomp.VarCheckTest::testVarReferenceInExterns,com.google.javascript.jscomp.VarCheckTest::testCallInExterns",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.Normalize,com.google.javascript.jscomp.VarCheck",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "79",
+  "workingDir": "../bugs/Closure_79_tmp",
+  "bug_name": "Closure_79",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.NormalizeTest",
+      "test_function": "testIssue",
+      "assertion_line": "386",
+      "exception": "java.lang.RuntimeException",
+      "message": "INTERNAL COMPILER ERROR."
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.VarCheckTest",
+      "test_function": "testPropReferenceInExterns1",
+      "assertion_line": "141",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "compiler.reportCodeChange() should have been called"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.VarCheckTest",
+      "test_function": "testPropReferenceInExterns3",
+      "assertion_line": "151",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "compiler.reportCodeChange() should have been called"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.VarCheckTest",
+      "test_function": "testVarReferenceInExterns",
+      "assertion_line": "131",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "compiler.reportCodeChange() should have been called"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.VarCheckTest",
+      "test_function": "testCallInExterns",
+      "assertion_line": "136",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "compiler.reportCodeChange() should have been called"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/Normalize.java",
+        "src/com/google/javascript/jscomp/Normalize.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.Normalize:process:[Node externs, Node root]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.Normalize:process:[Node externs, Node root]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "122"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "122"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/Normalize.java b/src/com/google/javascript/jscomp/Normalize.java\nindex 8bee886..6738b10 100644\n--- a/src/com/google/javascript/jscomp/Normalize.java\n+++ b/src/com/google/javascript/jscomp/Normalize.java\n@@ -119,7 +119,7 @@\n   public void process(Node externs, Node root) {\n     new NodeTraversal(\n         compiler, new NormalizeStatements(compiler, assertOnChange))\n-        .traverseRoots(externs, root);\n+        .traverse(root);\n     if (MAKE_LOCAL_NAMES_UNIQUE) {\n       MakeDeclaredNamesUnique renamer \u003d new MakeDeclaredNamesUnique();\n       NodeTraversal t \u003d new NodeTraversal(compiler, renamer);\n",
+      "operations": [
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: externs [4383,4390]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/VarCheck.java",
+        "src/com/google/javascript/jscomp/VarCheck.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.VarCheck:createSynthesizedExternVar:[String varName]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.VarCheck:createSynthesizedExternVar:[String varName]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "221"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "220"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/VarCheck.java b/src/com/google/javascript/jscomp/VarCheck.java\nindex f8ebfa3..c8196b1 100644\n--- a/src/com/google/javascript/jscomp/VarCheck.java\n+++ b/src/com/google/javascript/jscomp/VarCheck.java\n@@ -218,7 +218,6 @@\n     getSynthesizedExternsRoot().addChildToBack(\n         new Node(Token.VAR, nameNode));\n     varsToDeclareInExterns.remove(varName);\n-    compiler.reportCodeChange();\n   }\n \n   /**\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [8150,8178]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,599 @@
+diff -r -u buggy/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java inducing/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java
+--- buggy/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java	2023-06-12 11:34:19.746097976 +0800
++++ inducing/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java	2023-06-12 11:34:20.110104633 +0800
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright 2009 The Closure Compiler Authors.
++ * Copyright 2009 Google Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -52,6 +52,7 @@
+  * <p>Other requirements can be found in {@link Candidate#canInline}. Currently
+  * this pass does not operate on the global scope due to compilation time.
+  *
++*
+  */
+ class FlowSensitiveInlineVariables extends AbstractPostOrderCallback
+     implements CompilerPass, ScopedCallback {
+@@ -91,11 +92,11 @@
+         // TODO(user): We only care about calls to functions that
+         // passes one of the dependent variable to a non-sideeffect free
+         // function.
+-        if (n.isCall() && NodeUtil.functionCallHasSideEffects(n)) {
++        if (NodeUtil.isCall(n) && NodeUtil.functionCallHasSideEffects(n)) {
+           return true;
+         }
+ 
+-        if (n.isNew() && NodeUtil.constructorCallHasSideEffects(n)) {
++        if (NodeUtil.isNew(n) && NodeUtil.constructorCallHasSideEffects(n)) {
+           return true;
+         }
+ 
+@@ -119,15 +120,10 @@
+       return; // Don't even brother. All global variables are likely escaped.
+     }
+ 
+-    if (LiveVariablesAnalysis.MAX_VARIABLES_TO_ANALYZE <
+-        t.getScope().getVarCount()) {
+-      return;
+-    }
+-
+     // Compute the forward reaching definition.
+-    ControlFlowAnalysis cfa = new ControlFlowAnalysis(compiler, false, true);
++    ControlFlowAnalysis cfa = new ControlFlowAnalysis(compiler, false);
+     // Process the body of the function.
+-    Preconditions.checkState(t.getScopeRoot().isFunction());
++    Preconditions.checkState(NodeUtil.isFunction(t.getScopeRoot()));
+     cfa.process(null, t.getScopeRoot().getLastChild());
+     cfg = cfa.getCfg();
+     reachingDef = new MustBeReachingVariableDef(cfg, t.getScope(), compiler);
+@@ -189,13 +185,13 @@
+ 
+         @Override
+         public void visit(NodeTraversal t, Node n, Node parent) {
+-          if (n.isName()) {
++          if (NodeUtil.isName(n)) {
+ 
+             // Make sure that the name node is purely a read.
+             if ((NodeUtil.isAssignmentOp(parent) && parent.getFirstChild() == n)
+-                || parent.isVar() || parent.isInc() ||
+-                parent.isDec() || parent.isParamList() ||
+-                parent.isCatch()) {
++                || NodeUtil.isVar(parent) || parent.getType() == Token.INC ||
++                parent.getType() == Token.DEC || parent.getType() == Token.LP ||
++                parent.getType() == Token.CATCH) {
+               return;
+             }
+ 
+@@ -205,8 +201,7 @@
+             }
+ 
+             Node defNode = reachingDef.getDef(name, cfgNode);
+-            if (defNode != null &&
+-                !reachingDef.dependsOnOuterScopeVars(name, cfgNode)) {
++            if (defNode != null) {
+               candidates.add(new Candidate(name, defNode, n, cfgNode));
+             }
+           }
+@@ -238,7 +233,7 @@
+     private int numUseWithinUseCfgNode;
+ 
+     Candidate(String varName, Node defCfgNode, Node use, Node useCfgNode) {
+-      Preconditions.checkArgument(use.isName());
++      Preconditions.checkArgument(NodeUtil.isName(use));
+       this.varName = varName;
+       this.defCfgNode = defCfgNode;
+       this.use = use;
+@@ -248,7 +243,7 @@
+     private boolean canInline() {
+ 
+       // Cannot inline a parameter.
+-      if (defCfgNode.isFunction()) {
++      if (NodeUtil.isFunction(defCfgNode)) {
+         return false;
+       }
+ 
+@@ -262,7 +257,7 @@
+ 
+       // Check that the assignment isn't used as a R-Value.
+       // TODO(user): Certain cases we can still inline.
+-      if (def.isAssign() && !NodeUtil.isExprAssign(def.getParent())) {
++      if (NodeUtil.isAssign(def) && !NodeUtil.isExprAssign(def.getParent())) {
+         return false;
+       }
+ 
+@@ -281,6 +276,21 @@
+         return false;
+       }
+ 
++      // Similar side effect check as above but this time the side effect is
++      // else where along the path.
++      // x = readProp(b); while(modifyProp(b)) {}; print(x);
++      CheckPathsBetweenNodes<Node, ControlFlowGraph.Branch>
++        pathCheck = new CheckPathsBetweenNodes<Node, ControlFlowGraph.Branch>(
++               cfg,
++               cfg.getDirectedGraphNode(defCfgNode),
++               cfg.getDirectedGraphNode(useCfgNode),
++               SIDE_EFFECT_PREDICATE,
++               Predicates.
++                   <DiGraphEdge<Node, ControlFlowGraph.Branch>>alwaysTrue(),
++               false);
++      if (pathCheck.somePathsSatisfyPredicate()) {
++        return false;
++      }
+ 
+       // TODO(user): Side-effect is ok sometimes. As long as there are no
+       // side-effect function down all paths to the use. Once we have all the
+@@ -298,18 +308,6 @@
+         return false;
+       }
+ 
+-      // Make sure that the name is not within a loop
+-      if (NodeUtil.isWithinLoop(use)) {
+-        return false;
+-      }
+-
+-
+-      Collection<Node> uses = reachingUses.getUses(varName, defCfgNode);
+-
+-      if (uses.size() != 1) {
+-        return false;
+-      }
+-
+       // We give up inling stuff with R-Value that has GETPROP, GETELEM,
+       // or anything that creates a new object.
+       // Example:
+@@ -337,31 +335,16 @@
+               @Override
+               public boolean apply(Node input) {
+                 // Recurse if the node is not a function.
+-                return !input.isFunction();
++                return !NodeUtil.isFunction(input);
+               }
+           })) {
+         return false;
+       }
+ 
+-      // We can skip the side effect check along the paths of two nodes if
+-      // they are just next to each other.
+-      if (NodeUtil.isStatementBlock(defCfgNode.getParent()) &&
+-          defCfgNode.getNext() != useCfgNode) {
+-        // Similar side effect check as above but this time the side effect is
+-        // else where along the path.
+-        // x = readProp(b); while(modifyProp(b)) {}; print(x);
+-        CheckPathsBetweenNodes<Node, ControlFlowGraph.Branch>
+-          pathCheck = new CheckPathsBetweenNodes<Node, ControlFlowGraph.Branch>(
+-                 cfg,
+-                 cfg.getDirectedGraphNode(defCfgNode),
+-                 cfg.getDirectedGraphNode(useCfgNode),
+-                 SIDE_EFFECT_PREDICATE,
+-                 Predicates.
+-                     <DiGraphEdge<Node, ControlFlowGraph.Branch>>alwaysTrue(),
+-                 false);
+-        if (pathCheck.somePathsSatisfyPredicate()) {
+-          return false;
+-        }
++      Collection<Node> uses = reachingUses.getUses(varName, defCfgNode);
++
++      if (uses.size() != 1) {
++        return false;
+       }
+ 
+       return true;
+@@ -373,17 +356,17 @@
+     private void inlineVariable() {
+       Node defParent = def.getParent();
+       Node useParent = use.getParent();
+-      if (def.isAssign()) {
++      if (NodeUtil.isAssign(def)) {
+         Node rhs = def.getLastChild();
+         rhs.detachFromParent();
+         // Oh yes! I have grandparent to remove this.
+-        Preconditions.checkState(defParent.isExprResult());
+-        while (defParent.getParent().isLabel()) {
++        Preconditions.checkState(NodeUtil.isExpressionNode(defParent));
++        while (defParent.getParent().getType() == Token.LABEL) {
+           defParent = defParent.getParent();
+         }
+         defParent.detachFromParent();
+         useParent.replaceChild(use, rhs);
+-      } else if (defParent.isVar()) {
++      } else if (NodeUtil.isVar(defParent)) {
+         Node rhs = def.getLastChild();
+         def.removeChild(rhs);
+         useParent.replaceChild(use, rhs);
+@@ -413,7 +396,7 @@
+ 
+             case Token.ASSIGN:
+               Node lhs = n.getFirstChild();
+-              if (lhs.isName() && lhs.getString().equals(varName)) {
++              if (NodeUtil.isName(lhs) && lhs.getString().equals(varName)) {
+                 def = n;
+               }
+               return;
+@@ -434,10 +417,7 @@
+ 
+         @Override
+         public void visit(NodeTraversal t, Node n, Node parent) {
+-          if (n.isName() && n.getString().equals(varName) &&
+-              // do not count in if it is left child of an assignment operator
+-              !(parent.isAssign() &&
+-               (parent.getFirstChild() == n))) {
++          if (NodeUtil.isName(n) && n.getString().equals(varName)) {
+             numUseWithinUseCfgNode++;
+           }
+         }
+diff -r -u buggy/src/com/google/javascript/jscomp/MustBeReachingVariableDef.java inducing/src/com/google/javascript/jscomp/MustBeReachingVariableDef.java
+--- buggy/src/com/google/javascript/jscomp/MustBeReachingVariableDef.java	2023-06-12 11:34:19.750098050 +0800
++++ inducing/src/com/google/javascript/jscomp/MustBeReachingVariableDef.java	2023-06-12 11:34:20.158105510 +0800
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright 2008 The Closure Compiler Authors.
++ * Copyright 2008 Google Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -16,6 +16,7 @@
+ 
+ package com.google.javascript.jscomp;
+ 
++import javax.annotation.Nullable;
+ import com.google.common.base.Preconditions;
+ import com.google.common.collect.Maps;
+ import com.google.common.collect.Sets;
+@@ -23,17 +24,13 @@
+ import com.google.javascript.jscomp.ControlFlowGraph.Branch;
+ import com.google.javascript.jscomp.Scope.Var;
+ import com.google.javascript.jscomp.graph.GraphNode;
+-import com.google.javascript.jscomp.graph.LatticeElement;
+ import com.google.javascript.rhino.Node;
+ import com.google.javascript.rhino.Token;
+ 
+ import java.util.Iterator;
+ import java.util.Map;
+-import java.util.Map.Entry;
+ import java.util.Set;
+ 
+-import javax.annotation.Nullable;
+-
+ /**
+  * Computes reaching definition for all use of each variables.
+  *
+@@ -41,6 +38,7 @@
+  * the use of {@code A} in {@code alert(A)} if all paths from entry node must
+  * reaches that definition and it is the last definition before the use.
+  *
++*
+  */
+ final class MustBeReachingVariableDef extends
+     DataFlowAnalysis<Node, MustBeReachingVariableDef.MustDef> {
+@@ -52,7 +50,7 @@
+ 
+   MustBeReachingVariableDef(
+       ControlFlowGraph<Node> cfg, Scope jsScope, AbstractCompiler compiler) {
+-    super(cfg, new MustDefJoin());
++    super(cfg, new JoinOp());
+     this.jsScope = jsScope;
+     this.compiler = compiler;
+     this.escaped = Sets.newHashSet();
+@@ -101,7 +99,7 @@
+    *          (BOTTOM)
+    *
+    */
+-  static final class MustDef implements LatticeElement {
++  static final class MustDef implements DataFlowAnalysis.LatticeElement {
+ 
+     // TODO(user): Use bit vector instead of maps might get better
+     // performance. Change it after this is tested to be fully functional.
+@@ -142,16 +140,16 @@
+     }
+   }
+ 
+-  private static class MustDefJoin extends JoinOp.BinaryJoinOp<MustDef> {
++  private static class JoinOp extends DataFlowAnalysis.BinaryJoinOp<MustDef> {
+     @Override
+     public MustDef apply(MustDef a, MustDef b) {
+       MustDef result = new MustDef();
+       Map<Var, Definition> resultMap = result.reachingDef;
+ 
+       // Take the join of all variables that are not TOP in this.
+-      for (Map.Entry<Var, Definition> varEntry : a.reachingDef.entrySet()) {
+-        Var var = varEntry.getKey();
+-        Definition aDef = varEntry.getValue();
++      for (Var var : a.reachingDef.keySet()) {
++
++        Definition aDef = a.reachingDef.get(var);
+ 
+         if (aDef == null) {
+           // "a" is BOTTOM implies that the variable has more than one possible
+@@ -178,10 +176,9 @@
+ 
+       // Take the join of all variables that are not TOP in other but it is TOP
+       // in this.
+-      for (Map.Entry<Var, Definition> entry : b.reachingDef.entrySet()) {
+-        Var var = entry.getKey();
++      for (Var var : b.reachingDef.keySet()) {
+         if (!a.reachingDef.containsKey(var)) {
+-          resultMap.put(var, entry.getValue());
++          resultMap.put(var, b.reachingDef.get(var));
+         }
+       }
+       return result;
+@@ -243,10 +240,10 @@
+           // for(x in y) {...}
+           Node lhs = n.getFirstChild();
+           Node rhs = lhs.getNext();
+-          if (lhs.isVar()) {
++          if (NodeUtil.isVar(lhs)) {
+             lhs = lhs.getLastChild(); // for(var x in y) {...}
+           }
+-          if (lhs.isName()) {
++          if (NodeUtil.isName(lhs)) {
+             addToDefIfLocal(lhs.getString(), cfgNode, rhs, output);
+           }
+         }
+@@ -275,43 +272,27 @@
+         return;
+ 
+       default:
+-        if (NodeUtil.isAssignmentOp(n)) {
+-          if (n.getFirstChild().isName()) {
+-            Node name = n.getFirstChild();
+-            computeMustDef(name.getNext(), cfgNode, output, conditional);
+-            addToDefIfLocal(name.getString(), conditional ? null : cfgNode,
++        if (NodeUtil.isAssignmentOp(n) && NodeUtil.isName(n.getFirstChild())) {
++          Node name = n.getFirstChild();
++          computeMustDef(name.getNext(), cfgNode, output, conditional);
++          addToDefIfLocal(name.getString(), conditional ? null : cfgNode,
+               n.getLastChild(), output);
+-            return;
+-          } else if (NodeUtil.isGet(n.getFirstChild())) {
+-            // Treat all assignments to arguments as redefining the
+-            // parameters itself.
+-            Node obj = n.getFirstChild().getFirstChild();
+-            if (obj.isName() && "arguments".equals(obj.getString())) {
+-              // TODO(user): More accuracy can be introduced
+-              // ie: We know exactly what arguments[x] is if x is a constant
+-              // number.
+-              escapeParameters(output);
++        } else {
++
++          // DEC and INC actually defines the variable.
++          if (n.getType() == Token.DEC || n.getType() == Token.INC) {
++            Node target = n.getFirstChild();
++            if (NodeUtil.isName(target)) {
++              addToDefIfLocal(target.getString(),
++                  conditional ? null : cfgNode, null, output);
++              return;
+             }
+           }
+-        }
+-
+-        if (n.isName() && "arguments".equals(n.getString())) {
+-          escapeParameters(output);
+-        }
+ 
+-        // DEC and INC actually defines the variable.
+-        if (n.isDec() || n.isInc()) {
+-          Node target = n.getFirstChild();
+-          if (target.isName()) {
+-            addToDefIfLocal(target.getString(),
+-                conditional ? null : cfgNode, null, output);
+-            return;
++          for (Node c = n.getFirstChild(); c != null; c = c.getNext()) {
++            computeMustDef(c, cfgNode, output, conditional);
+           }
+         }
+-
+-        for (Node c = n.getFirstChild(); c != null; c = c.getNext()) {
+-          computeMustDef(c, cfgNode, output, conditional);
+-        }
+     }
+   }
+ 
+@@ -355,34 +336,6 @@
+     }
+   }
+ 
+-  private void escapeParameters(MustDef output) {
+-    for (Iterator<Var> i = jsScope.getVars(); i.hasNext();) {
+-      Var v = i.next();
+-      if (isParameter(v)) {
+-        // Assume we no longer know where the parameter comes from
+-        // anymore.
+-        output.reachingDef.put(v, null);
+-      }
+-    }
+-
+-    // Also, assume we no longer know anything that depends on a parameter.
+-    for (Entry<Var, Definition> pair: output.reachingDef.entrySet()) {
+-      Definition value = pair.getValue();
+-      if (value == null) {
+-        continue;
+-      }
+-      for (Var dep : value.depends) {
+-        if (isParameter(dep)) {
+-          output.reachingDef.put(pair.getKey(), null);
+-        }
+-      }
+-    }
+-  }
+-
+-  private boolean isParameter(Var v) {
+-    return v.getParentNode().isParamList();
+-  }
+-
+   /**
+    * Computes all the local variables that rValue reads from and store that
+    * in the def's depends set.
+@@ -392,7 +345,7 @@
+         new AbstractCfgNodeTraversalCallback() {
+       @Override
+       public void visit(NodeTraversal t, Node n, Node parent) {
+-        if (n.isName() && jsScope.isDeclared(n.getString(), true)) {
++        if (NodeUtil.isName(n) && jsScope.isDeclared(n.getString(), false)) {
+           def.depends.add(jsScope.getVar(n.getString()));
+         }
+       }
+@@ -419,17 +372,4 @@
+       return def.node;
+     }
+   }
+-
+-  boolean dependsOnOuterScopeVars(String name, Node useNode) {
+-    Preconditions.checkArgument(getCfg().hasNode(useNode));
+-    GraphNode<Node, Branch> n = getCfg().getNode(useNode);
+-    FlowState<MustDef> state = n.getAnnotation();
+-    Definition def = state.getIn().reachingDef.get(jsScope.getVar(name));
+-    for (Var s : def.depends) {
+-      if (s.scope != jsScope) {
+-        return true;
+-      }
+-    }
+-    return false;
+-  }
+ }
+diff -r -u buggy/test/com/google/javascript/jscomp/FlowSensitiveInlineVariablesTest.java inducing/test/com/google/javascript/jscomp/FlowSensitiveInlineVariablesTest.java
+--- buggy/test/com/google/javascript/jscomp/FlowSensitiveInlineVariablesTest.java	2023-06-12 11:34:19.778098561 +0800
++++ inducing/test/com/google/javascript/jscomp/FlowSensitiveInlineVariablesTest.java	2023-06-12 11:34:20.262107412 +0800
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright 2009 The Closure Compiler Authors.
++ * Copyright 2009 Google Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -21,6 +21,7 @@
+ /**
+  * Unit tests for {@link FlowSensitiveInlineVariables}.
+  *
++*
+  */
+ public class FlowSensitiveInlineVariablesTest extends CompilerTestCase  {
+ 
+@@ -50,14 +51,12 @@
+     inline("var x; x = 1; print(x)", "var x; print(1)");
+     inline("var x; x = 1; x", "var x; 1");
+     inline("var x; x = 1; var a = x", "var x; var a = 1");
+-    inline("var x; x = 1; x = x + 1", "var x; x = 1 + 1");
+   }
+ 
+   public void testSimpleVar() {
+     inline("var x = 1; print(x)", "var x; print(1)");
+     inline("var x = 1; x", "var x; 1");
+     inline("var x = 1; var a = x", "var x; var a = 1");
+-    inline("var x = 1; x = x + 1", "var x; x = 1 + 1");
+   }
+ 
+   public void testExported() {
+@@ -103,10 +102,8 @@
+   }
+ 
+   public void testMultiDefinitionsInSameCfgNode() {
+-    noInline("var x; (x = 1) || (x = 2); print(x)");
+-    noInline("var x; x = (1 || (x = 2)); print(x)");
+-    noInline("var x;(x = 1) && (x = 2); print(x)");
+-    noInline("var x;x = (1 && (x = 2)); print(x)");
++    noInline("var x; x = 1 || x = 2; print(x)");
++    noInline("var x; x = 1 && x = 2; print(x)");
+     noInline("var x; x = 1 , x = 2; print(x)");
+   }
+ 
+@@ -126,10 +123,6 @@
+     noInline("while (z) { var x = 3; } var y = x;");
+   }
+ 
+-  public void testDoNotInlineWithinLoop() {
+-    noInline("var y = noSFX(); do { var z = y.foo(); } while (true);");
+-  }
+-
+   public void testDefinitionAfterUse() {
+     inline("var x = 0; print(x); x = 1", "var x; print(0); x = 1");
+   }
+@@ -282,7 +275,6 @@
+     noInline("var x = a[i]; a[j] = 2; print(x); ");
+   }
+ 
+-  // TODO(user): These should be inlinable.
+   public void testNoInlineConstructors() {
+     noInline("var x = new Iterator(); x.next();");
+   }
+@@ -292,18 +284,16 @@
+     noInline("var x = []; print(x)");
+   }
+ 
+-  // TODO(user): These should be inlinable.
+   public void testNoInlineObjectLits() {
+     noInline("var x = {}; print(x)");
+   }
+ 
+-  // TODO(user): These should be inlinable after the REGEX checks.
+   public void testNoInlineRegExpLits() {
+     noInline("var x = /y/; print(x)");
+   }
+ 
+   public void testInlineConstructorCallsIntoLoop() {
+-    // Don't inline construction into loops.
++    // Is a bad idea, a similar case was found in closure string.js
+     noInline("var x = new Iterator();" +
+              "for(i = 0; i < 10; i++) {j = x.next()}");
+   }
+@@ -349,53 +339,15 @@
+            "var y; var x, z = noSFX(); noSFX(); noSFX(), print(noSFX(Y))");
+   }
+ 
+-  public void testDependOnOuterScopeVariables() {
+-    noInline("var x; function foo() { var y = x; x = 0; print(y) }");
+-    noInline("var x; function foo() { var y = x; x++; print(y) }");
+-
+-    // Sadly, we don't understand the data flow of outer scoped variables as
+-    // it can be modified by code outside of this scope. We can't inline
+-    // at all if the definition has dependence on such variable.
+-    noInline("var x; function foo() { var y = x; print(y) }");
+-  }
+-
+-  public void testInlineIfNameIsLeftSideOfAssign() {
+-    inline("var x = 1; x = print(x) + 1", "var x; x = print(1) + 1");
+-    inline("var x = 1; L: x = x + 2", "var x; L: x = 1 + 2");
+-    inline("var x = 1; x = (x = x + 1)", "var x; x = (x = 1 + 1)");
+-
+-    noInline("var x = 1; x = (x = (x = 10) + x)");
+-    noInline("var x = 1; x = (f(x) + (x = 10) + x);");
+-    noInline("var x = 1; x=-1,foo(x)");
+-    noInline("var x = 1; x-=1,foo(x)");
+-  }
+-
+   public void testInlineArguments() {
+     testSame("function _func(x) { print(x) }");
+     testSame("function _func(x,y) { if(y) { x = 1 }; print(x) }");
+ 
+-    test("function f(x, y) { x = 1; print(x) }",
+-         "function f(x, y) { print(1) }");
+-
+-    test("function f(x, y) { if (y) { x = 1; print(x) }}",
+-         "function f(x, y) { if (y) { print(1) }}");
+-  }
+-
+-  public void testInvalidInlineArguments1() {
+-    testSame("function f(x, y) { x = 1; arguments[0] = 2; print(x) }");
+-    testSame("function f(x, y) { x = 1; var z = arguments;" +
+-        "z[0] = 2; z[1] = 3; print(x)}");
+-    testSame("function g(a){a[0]=2} function f(x){x=1;g(arguments);print(x)}");
+-  }
+-
+-  public void testInvalidInlineArguments2() {
+-    testSame("function f(c) {var f = c; arguments[0] = this;" +
+-             "f.apply(this, arguments); return this;}");
+-  }
++    test("function(x, y) { x = 1; print(x) }",
++         "function(x, y) { print(1) }");
+ 
+-  public void testNotOkToSkipCheckPathBetweenNodes() {
+-    noInline("var x; for(x = 1; foo(x);) {}");
+-    noInline("var x; for(; x = 1;foo(x)) {}");
++    test("function(x, y) { if (y) { x = 1; print(x) }}",
++         "function(x, y) { if (y) { print(1) }}");
+   }
+ 
+   private void noInline(String input) {

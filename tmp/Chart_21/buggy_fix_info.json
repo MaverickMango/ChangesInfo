@@ -1,0 +1,203 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.jfree.data.statistics.junit.DefaultBoxAndWhiskerCategoryDatasetTests::testGetRangeBounds",
+    "test.dir": "tests",
+    "clz.modified": "org.jfree.data.statistics.DefaultBoxAndWhiskerCategoryDataset",
+    "src.dir": "source"
+  },
+  "timeoutSecond": 100,
+  "proj": "Chart",
+  "id": "21",
+  "workingDir": "../bugs/Chart_21_tmp",
+  "bug_name": "Chart_21",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.jfree.data.statistics.junit.DefaultBoxAndWhiskerCategoryDatasetTests",
+      "test_function": "testGetRangeBounds",
+      "assertion_line": "292",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003cRange[8.5,9.6]\u003e but was:\u003cRange[8.6,9.6]\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "source/org/jfree/data/statistics/DefaultBoxAndWhiskerCategoryDataset.java",
+        "source/org/jfree/data/statistics/DefaultBoxAndWhiskerCategoryDataset.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jfree.data.statistics.DefaultBoxAndWhiskerCategoryDataset:add:[BoxAndWhiskerItem item, Comparable rowKey, Comparable columnKey]:void",
+            "org.jfree.data.statistics.DefaultBoxAndWhiskerCategoryDataset:updateBounds:[]:void"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.jfree.data.statistics.DefaultBoxAndWhiskerCategoryDataset:equals:[Object obj]:boolean",
+            "org.jfree.data.statistics.DefaultBoxAndWhiskerCategoryDataset:add:[BoxAndWhiskerItem item, Comparable rowKey, Comparable columnKey]:void"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "157",
+            "189",
+            "743",
+            "744",
+            "746",
+            "747",
+            "748",
+            "749",
+            "750",
+            "751",
+            "752",
+            "753",
+            "754",
+            "755",
+            "756",
+            "757",
+            "758",
+            "759",
+            "760",
+            "761",
+            "762",
+            "763",
+            "764",
+            "765",
+            "766",
+            "767",
+            "768",
+            "769",
+            "770",
+            "771",
+            "772",
+            "773",
+            "774",
+            "775",
+            "776",
+            "777",
+            "778",
+            "779",
+            "780"
+          ],
+          "num": 39
+        },
+        {
+          "qualified_names": [
+            "156",
+            "189",
+            "744"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/source/org/jfree/data/statistics/DefaultBoxAndWhiskerCategoryDataset.java b/source/org/jfree/data/statistics/DefaultBoxAndWhiskerCategoryDataset.java\nindex a973da9..7fd86f4 100644\n--- a/source/org/jfree/data/statistics/DefaultBoxAndWhiskerCategoryDataset.java\n+++ b/source/org/jfree/data/statistics/DefaultBoxAndWhiskerCategoryDataset.java\n@@ -154,7 +154,6 @@\n                 \u0026\u0026 this.minimumRangeValueColumn \u003d\u003d c))  {\r\n             updateBounds();\r\n         }\r\n-        else {\r\n         \r\n             double minval \u003d Double.NaN;\r\n             if (item.getMinOutlier() !\u003d null) {\r\n@@ -186,7 +185,6 @@\n                 this.minimumRangeValueRow \u003d r;\r\n                 this.minimumRangeValueColumn \u003d c;\r\n             }\r\n-        }\r\n         \r\n         this.rangeBounds \u003d new Range(this.minimumRangeValue,\r\n               this.maximumRangeValue);\r\n@@ -740,44 +738,7 @@\n      */\r\n     private void updateBounds() {\r\n         this.minimumRangeValue \u003d Double.NaN;\r\n-        this.minimumRangeValueRow \u003d -1;\r\n-        this.minimumRangeValueColumn \u003d -1;\r\n         this.maximumRangeValue \u003d Double.NaN;\r\n-        this.maximumRangeValueRow \u003d -1;\r\n-        this.maximumRangeValueColumn \u003d -1;\r\n-        int rowCount \u003d getRowCount();\r\n-        int columnCount \u003d getColumnCount();\r\n-        for (int r \u003d 0; r \u003c rowCount; r++) {\r\n-            for (int c \u003d 0; c \u003c columnCount; c++) {\r\n-                BoxAndWhiskerItem item \u003d getItem(r, c);\r\n-                if (item !\u003d null) {\r\n-                    Number min \u003d item.getMinOutlier();\r\n-                    if (min !\u003d null) {\r\n-                        double minv \u003d min.doubleValue();\r\n-                        if (!Double.isNaN(minv)) {\r\n-                            if (minv \u003c this.minimumRangeValue || Double.isNaN(\r\n-                                    this.minimumRangeValue)) {\r\n-                                this.minimumRangeValue \u003d minv;\r\n-                                this.minimumRangeValueRow \u003d r;\r\n-                                this.minimumRangeValueColumn \u003d c;\r\n-                            }\r\n-                        }\r\n-                    }\r\n-                    Number max \u003d item.getMaxOutlier();\r\n-                    if (max !\u003d null) {\r\n-                        double maxv \u003d max.doubleValue();\r\n-                        if (!Double.isNaN(maxv)) {\r\n-                            if (maxv \u003e this.maximumRangeValue || Double.isNaN(\r\n-                                    this.maximumRangeValue)) {\r\n-                                this.maximumRangeValue \u003d maxv;\r\n-                                this.maximumRangeValueRow \u003d r;\r\n-                                this.maximumRangeValueColumn \u003d c;\r\n-                            }\r\n-                        }\r\n-                    }\r\n-                }\r\n-            }\r\n-        }\r\n     }\r\n     \r\n     /**\r\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [6301,7561]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [22801,22832]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [22842,22876]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [22932,22963]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [22973,23007]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [23017,23046]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [23056,23091]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ForStatement [23101,24581]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.jfree.data.statistics.DefaultBoxAndWhiskerCategoryDataset:equals:[Object obj]:boolean"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.jfree.data.statistics.DefaultBoxAndWhiskerCategoryDataset:updateBounds:[]:void"
+      ],
+      "num": 1
+    }
+  }
+}

@@ -1,0 +1,152 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.jsoup.nodes.EntitiesTest::letterDigitEntities",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.jsoup.parser.CharacterReader,org.jsoup.parser.Tokeniser",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Jsoup",
+  "id": "23",
+  "workingDir": "../bugs/Jsoup_23_tmp",
+  "bug_name": "Jsoup_23",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.jsoup.nodes.EntitiesTest",
+      "test_function": "letterDigitEntities",
+      "assertion_line": "60",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c[\u0026sup1;\u0026sup2;\u0026sup3;\u0026frac14;\u0026frac12;\u0026]frac34;\u003e but was:\u003c[⊃1;⊃2;⊃3;\u0026amp;frac14;\u0026amp;frac12;\u0026amp;]frac34;\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/parser/CharacterReader.java",
+        "src/main/java/org/jsoup/parser/CharacterReader.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.parser.CharacterReader:consumeLetterThenDigitSequence:[]:String"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "118",
+            "119",
+            "120",
+            "121",
+            "122",
+            "123",
+            "124",
+            "125",
+            "126",
+            "127",
+            "128",
+            "129",
+            "130",
+            "131",
+            "132",
+            "133",
+            "135",
+            "136"
+          ],
+          "num": 18
+        },
+        {
+          "qualified_names": [
+            "117"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/parser/CharacterReader.java b/src/main/java/org/jsoup/parser/CharacterReader.java\nindex 4db4d79..e07f7de 100644\n--- a/src/main/java/org/jsoup/parser/CharacterReader.java\n+++ b/src/main/java/org/jsoup/parser/CharacterReader.java\n@@ -115,25 +115,7 @@\n         return input.substring(start, pos);\n     }\n \n-    String consumeLetterThenDigitSequence() {\n-        int start \u003d pos;\n-        while (!isEmpty()) {\n-            char c \u003d input.charAt(pos);\n-            if ((c \u003e\u003d \u0027A\u0027 \u0026\u0026 c \u003c\u003d \u0027Z\u0027) || (c \u003e\u003d \u0027a\u0027 \u0026\u0026 c \u003c\u003d \u0027z\u0027))\n-                pos++;\n-            else\n-                break;\n-        }\n-        while (!isEmpty()) {\n-            char c \u003d input.charAt(pos);\n-            if (c \u003e\u003d \u00270\u0027 \u0026\u0026 c \u003c\u003d \u00279\u0027)\n-                pos++;\n-            else\n-                break;\n-        }\n \n-        return input.substring(start, pos);\n-    }\n \n     String consumeHexSequence() {\n         int start \u003d pos;\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [2561,3066]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/parser/Tokeniser.java",
+        "src/main/java/org/jsoup/parser/Tokeniser.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.parser.Tokeniser:consumeCharacterReference:[Character additionalAllowedCharacter, boolean inAttribute]:Character"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.jsoup.parser.Tokeniser:consumeCharacterReference:[Character additionalAllowedCharacter, boolean inAttribute]:Character"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "135"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "135"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/parser/Tokeniser.java b/src/main/java/org/jsoup/parser/Tokeniser.java\nindex d53a49b..d1e3ee6 100644\n--- a/src/main/java/org/jsoup/parser/Tokeniser.java\n+++ b/src/main/java/org/jsoup/parser/Tokeniser.java\n@@ -132,7 +132,7 @@\n             }\n         } else { // named\n             // get as many letters as possible, and look for matching entities. unconsume backwards till a match is found\n-            String nameRef \u003d reader.consumeLetterThenDigitSequence();\n+            String nameRef \u003d reader.consumeLetterSequence();\n             String origNameRef \u003d new String(nameRef); // for error reporting. nameRef gets chomped looking for matches\n             boolean looksLegit \u003d reader.matches(\u0027;\u0027);\n             boolean found \u003d false;\n",
+      "operations": [
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.jsoup.parser.CharacterReader:consumeLetterThenDigitSequence:[]:String"
+      ],
+      "num": 1
+    }
+  }
+}

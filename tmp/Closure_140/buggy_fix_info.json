@@ -1,0 +1,128 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.CrossModuleCodeMotionTest::testEmptyModule",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.Compiler",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "140",
+  "workingDir": "../bugs/Closure_140_tmp",
+  "bug_name": "Closure_140",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.CrossModuleCodeMotionTest",
+      "test_function": "testEmptyModule",
+      "assertion_line": "678",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "compiler.reportCodeChange() was called even though nothing changed"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/Compiler.java",
+        "src/com/google/javascript/jscomp/Compiler.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.Compiler:fillEmptyModules:[JSModule[] modules]:void",
+            "com.google.javascript.jscomp.Compiler:init:[JSSourceFile[] externs, JSModule[] modules, CompilerOptions options]:void",
+            "com.google.javascript.jscomp.Compiler:getNodeForCodeInsertion:[JSModule module]:Node"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.Compiler:init:[JSSourceFile[] externs, JSModule[] modules, CompilerOptions options]:void",
+            "com.google.javascript.jscomp.Compiler:getNodeForCodeInsertion:[JSModule module]:Node"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "264",
+            "329",
+            "330",
+            "331",
+            "332",
+            "333",
+            "334",
+            "335",
+            "336",
+            "1590"
+          ],
+          "num": 10
+        },
+        {
+          "qualified_names": [
+            "263",
+            "329",
+            "1582",
+            "1583",
+            "1584",
+            "1585",
+            "1586",
+            "1587"
+          ],
+          "num": 8
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/Compiler.java b/src/com/google/javascript/jscomp/Compiler.java\nindex 448e2b5..d2524b4 100644\n--- a/src/com/google/javascript/jscomp/Compiler.java\n+++ b/src/com/google/javascript/jscomp/Compiler.java\n@@ -261,7 +261,6 @@\n     initOptions(options);\n \n     checkFirstModule(modules);\n-    fillEmptyModules(modules);\n \n     this.externs \u003d makeCompilerInput(externs, true);\n     this.modules \u003d modules;\n@@ -326,14 +325,6 @@\n    * Fill any empty modules with a place holder file. It makes any cross module\n    * motion easier.\n    */\n-  private void fillEmptyModules(JSModule[] modules) {\n-    for (int i \u003d 1; i \u003c modules.length; i ++) {\n-      JSModule module \u003d modules[i];\n-      if (module.getInputs().isEmpty()) {\n-        module.add(JSSourceFile.fromCode(\"[\" + module.getName() + \"]\", \"\"));\n-      }\n-    }\n-  }\n   \n   static final DiagnosticType DUPLICATE_INPUT_IN_MODULES \u003d\n       DiagnosticType.error(\"JSC_DUPLICATE_INPUT_IN_MODULES_ERROR\",\n@@ -1588,6 +1579,12 @@\n     if (inputs.size() \u003e 0) {\n       return inputs.get(0).getAstRoot(this);\n     }\n+    for (JSModule m : getModuleGraph().getTransitiveDepsDeepestFirst(module)) {\n+      inputs \u003d m.getInputs();\n+      if (inputs.size() \u003e 0) {\n+        return inputs.get(0).getAstRoot(this);\n+      }\n+    }\n     throw new IllegalStateException(\"Root module has no inputs\");\n   }\n \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [9893,10002]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "EnhancedForStatement [45503,45700]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [7903,7929]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [9924,10308]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.Compiler:fillEmptyModules:[JSModule[] modules]:void"
+      ],
+      "num": 1
+    }
+  }
+}

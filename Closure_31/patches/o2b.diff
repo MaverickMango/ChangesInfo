@@ -1,0 +1,232 @@
+Only in buggy/: javadoc
+diff -r -u original/src/com/google/javascript/jscomp/Compiler.java buggy/src/com/google/javascript/jscomp/Compiler.java
+--- original/src/com/google/javascript/jscomp/Compiler.java	2023-06-13 15:31:39.295080876 +0800
++++ buggy/src/com/google/javascript/jscomp/Compiler.java	2023-06-12 11:40:19.799024464 +0800
+@@ -32,6 +32,10 @@
+ import com.google.javascript.jscomp.deps.SortedDependencies.MissingProvideException;
+ import com.google.javascript.jscomp.parsing.Config;
+ import com.google.javascript.jscomp.parsing.ParserRunner;
++import com.google.javascript.jscomp.type.ChainableReverseAbstractInterpreter;
++import com.google.javascript.jscomp.type.ClosureReverseAbstractInterpreter;
++import com.google.javascript.jscomp.type.ReverseAbstractInterpreter;
++import com.google.javascript.jscomp.type.SemanticReverseAbstractInterpreter;
+ import com.google.javascript.rhino.IR;
+ import com.google.javascript.rhino.InputId;
+ import com.google.javascript.rhino.JSDocInfo;
+@@ -479,14 +483,14 @@
+     inputsById = new HashMap<InputId, CompilerInput>();
+     for (CompilerInput input : externs) {
+       InputId id = input.getInputId();
+-      CompilerInput previous = inputsById.put(id, input);
++      CompilerInput previous = putCompilerInput(id, input);
+       if (previous != null) {
+         report(JSError.make(DUPLICATE_EXTERN_INPUT, input.getName()));
+       }
+     }
+     for (CompilerInput input : inputs) {
+       InputId id = input.getInputId();
+-      CompilerInput previous = inputsById.put(id, input);
++      CompilerInput previous = putCompilerInput(id, input);
+       if (previous != null) {
+         report(JSError.make(DUPLICATE_INPUT, input.getName()));
+       }
+@@ -1021,17 +1025,22 @@
+       throw new IllegalArgumentException("Conflicting externs name: " + name);
+     }
+     CompilerInput input = new CompilerInput(ast, true);
+-    inputsById.put(input.getInputId(), input);
++    putCompilerInput(input.getInputId(), input);
+     externsRoot.addChildToFront(ast.getAstRoot(this));
+     externs.add(0, input);
+     return input;
+   }
+ 
++  private CompilerInput putCompilerInput(InputId id, CompilerInput input) {
++    input.setCompiler(this);
++    return inputsById.put(id, input);
++  }
++
+   /** Add a source input dynamically. Intended for incremental compilation. */
+   void addIncrementalSourceAst(JsAst ast) {
+     InputId id = ast.getInputId();
+     Preconditions.checkState(getInput(id) == null, "Duplicate input %s", id.getIdName());
+-    inputsById.put(id, new CompilerInput(ast));
++    putCompilerInput(id, new CompilerInput(ast));
+   }
+ 
+   /**
+@@ -1059,7 +1068,7 @@
+     }
+ 
+     CompilerInput newInput = new CompilerInput(ast);
+-    inputsById.put(ast.getInputId(), newInput);
++    putCompilerInput(ast.getInputId(), newInput);
+ 
+     JSModule module = oldInput.getModule();
+     if (module != null) {
+@@ -1108,7 +1117,7 @@
+       modules.get(0).add(newInput);
+     }
+ 
+-    inputsById.put(ast.getInputId(), newInput);
++    putCompilerInput(ast.getInputId(), newInput);
+ 
+     return true;
+   }
+@@ -1268,11 +1277,14 @@
+         processAMDAndCommonJSModules();
+       }
+ 
++      // Check if inputs need to be rebuilt from modules.
++      boolean staleInputs = false;
++
+       // Check if the sources need to be re-ordered.
+-      if (options.dependencyOptions.needsManagement()) {
++      if (options.dependencyOptions.needsManagement() &&
++          !options.skipAllPasses &&
++          options.closurePass) {
+         for (CompilerInput input : inputs) {
+-          input.setCompiler(this);
+-
+           // Forward-declare all the provided types, so that they
+           // are not flagged even if they are dropped from the process.
+           for (String provide : input.getProvides()) {
+@@ -1284,6 +1296,7 @@
+           inputs =
+               (moduleGraph == null ? new JSModuleGraph(modules) : moduleGraph)
+               .manageDependencies(options.dependencyOptions, inputs);
++          staleInputs = true;
+         } catch (CircularDependencyException e) {
+           report(JSError.make(
+               JSModule.CIRCULAR_DEPENDENCY_ERROR, e.getMessage()));
+@@ -1303,8 +1316,6 @@
+         }
+       }
+ 
+-      // Check if inputs need to be rebuilt from modules.
+-      boolean staleInputs = false;
+       for (CompilerInput input : inputs) {
+         Node n = input.getAstRoot(this);
+ 
+@@ -1380,7 +1391,7 @@
+    * process and creates JSModules and the corresponding dependency tree
+    * on the way.
+    */
+-  private void processAMDAndCommonJSModules() {
++  void processAMDAndCommonJSModules() {
+     Map<String, JSModule> modulesByName = Maps.newLinkedHashMap();
+     Map<CompilerInput, JSModule> modulesByInput = Maps.newLinkedHashMap();
+     // TODO(nicksantos): Refactor module dependency resolution to work nicely
+@@ -1416,7 +1427,12 @@
+       for (JSModule module : modules) {
+         for (CompilerInput input : module.getInputs()) {
+           for (String require : input.getRequires()) {
+-            module.addDependency(modulesByName.get(require));
++            JSModule dependency = modulesByName.get(require);
++            if (dependency == null) {
++              report(JSError.make(MISSING_ENTRY_ERROR, require));
++            } else {
++              module.addDependency(dependency);
++            }
+           }
+         }
+       }
+@@ -1446,7 +1462,7 @@
+   Node parseSyntheticCode(String js) {
+     CompilerInput input = new CompilerInput(
+         SourceFile.fromCode(" [synthetic:" + (++syntheticCodeId) + "] ", js));
+-    inputsById.put(input.getInputId(), input);
++    putCompilerInput(input.getInputId(), input);
+     return input.getAstRoot(this);
+   }
+ 
+@@ -1475,11 +1491,11 @@
+   Node parseTestCode(String js) {
+     initCompilerOptionsIfTesting();
+     CompilerInput input = new CompilerInput(
+-        SourceFile.fromCode(" [testcode] ", js));
++        SourceFile.fromCode("[testcode]", js));
+     if (inputsById == null) {
+       inputsById = Maps.newHashMap();
+     }
+-    inputsById.put(input.getInputId(), input);
++    putCompilerInput(input.getInputId(), input);
+     return input.getAstRoot(this);
+   }
+ 
+diff -r -u original/test/com/google/javascript/jscomp/CommandLineRunnerTest.java buggy/test/com/google/javascript/jscomp/CommandLineRunnerTest.java
+--- original/test/com/google/javascript/jscomp/CommandLineRunnerTest.java	2023-06-13 15:31:39.295080876 +0800
++++ buggy/test/com/google/javascript/jscomp/CommandLineRunnerTest.java	2023-06-12 11:40:19.799024464 +0800
+@@ -349,10 +349,14 @@
+   //////////////////////////////////////////////////////////////////////////////
+   // Integration tests
+ 
+-  public void testIssue70() {
++  public void testIssue70a() {
+     test("function foo({}) {}", RhinoErrorReporter.PARSE_ERROR);
+   }
+ 
++  public void testIssue70b() {
++    test("function foo([]) {}", RhinoErrorReporter.PARSE_ERROR);
++  }
++
+   public void testIssue81() {
+     args.add("--compilation_level=ADVANCED_OPTIMIZATIONS");
+     useStringComparison = true;
+@@ -499,14 +503,15 @@
+   }
+ 
+   public void testSourceSortingOff() {
+-    test(new String[] {
++    args.add("--compilation_level=WHITESPACE_ONLY");
++    testSame(
++        new String[] {
+           "goog.require('beer');",
+           "goog.provide('beer');"
+-         }, ProcessClosurePrimitives.LATE_PROVIDE_ERROR);
++        });
+   }
+ 
+   public void testSourceSortingOn() {
+-    args.add("--manage_closure_dependencies=true");
+     test(new String[] {
+           "goog.require('beer');",
+           "goog.provide('beer');"
+@@ -642,6 +647,37 @@
+          RhinoErrorReporter.TYPE_PARSE_ERROR);
+   }
+ 
++  public void testOnlyClosureDependenciesEmptyEntryPoints() throws Exception {
++    // Prevents this from trying to load externs.zip
++    args.add("--use_only_custom_externs=true");
++
++    args.add("--only_closure_dependencies=true");
++    try {
++      CommandLineRunner runner = createCommandLineRunner(new String[0]);
++      runner.doRun();
++      fail("Expected FlagUsageException");
++    } catch (FlagUsageException e) {
++      assertTrue(e.getMessage(),
++          e.getMessage().contains("only_closure_dependencies"));
++    }
++  }
++
++  public void testOnlyClosureDependenciesOneEntryPoint() throws Exception {
++    args.add("--only_closure_dependencies=true");
++    args.add("--closure_entry_point=beer");
++    test(new String[] {
++          "goog.require('beer'); var beerRequired = 1;",
++          "goog.provide('beer');\ngoog.require('hops');\nvar beerProvided = 1;",
++          "goog.provide('hops'); var hopsProvided = 1;",
++          "goog.provide('scotch'); var scotchProvided = 1;",
++          "var includeFileWithoutProvides = 1;"
++         },
++         new String[] {
++           "var hops = {}, hopsProvided = 1;",
++           "var beer = {}, beerProvided = 1;"
++         });
++  }
++
+   public void testSourceMapExpansion1() {
+     args.add("--js_output_file");
+     args.add("/path/to/out.js");

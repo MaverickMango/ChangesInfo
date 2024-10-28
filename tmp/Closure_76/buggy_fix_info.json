@@ -1,0 +1,272 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.DeadAssignmentsEliminationTest::testInExpression2,com.google.javascript.jscomp.DeadAssignmentsEliminationTest::testIssue384b,com.google.javascript.jscomp.DeadAssignmentsEliminationTest::testIssue384c,com.google.javascript.jscomp.DeadAssignmentsEliminationTest::testIssue384d",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.DeadAssignmentsElimination",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "76",
+  "workingDir": "../bugs/Closure_76_tmp",
+  "bug_name": "Closure_76",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.DeadAssignmentsEliminationTest",
+      "test_function": "testInExpression2",
+      "assertion_line": "459",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function FUNC(param1,param2){var a;a\u003d1;if(2||(a\u003d3)||a);}\nResult: function FUNC(param1,param2){var a;a\u003d1;if((a\u003d2)||(a\u003d3)||a);}"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.DeadAssignmentsEliminationTest",
+      "test_function": "testIssue384b",
+      "assertion_line": "345",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function FUNC(param1,param2){var a,b;f(b\u003dtrue)||f(b\u003dfalse)?a\u003db:a\u003dnull;return a}\nResult: function FUNC(param1,param2){var a,b;f(true)||f(b\u003dfalse)?a\u003db:a\u003dnull;return a}"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.DeadAssignmentsEliminationTest",
+      "test_function": "testIssue384c",
+      "assertion_line": "345",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function FUNC(param1,param2){var a,b;(a?f(b\u003dtrue):f(b\u003dfalse))\u0026\u0026(a\u003db);return a}\nResult: function FUNC(param1,param2){var a,b;(a?f(true):f(b\u003dfalse))\u0026\u0026(a\u003db);return a}"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.DeadAssignmentsEliminationTest",
+      "test_function": "testIssue384d",
+      "assertion_line": "345",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function FUNC(param1,param2){var a,b;(f(b\u003dtrue)||f(b\u003dfalse))\u0026\u0026(a\u003db);return a}\nResult: function FUNC(param1,param2){var a,b;(f(true)||f(b\u003dfalse))\u0026\u0026(a\u003db);return a}"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/DeadAssignmentsElimination.java",
+        "src/com/google/javascript/jscomp/DeadAssignmentsElimination.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.DeadAssignmentsElimination:isVariableReadBeforeKill:[Node n, String variable]:VariableLiveness",
+            "com.google.javascript.jscomp.DeadAssignmentsElimination:isVariableStillLiveWithinExpression:[Node n, Node exprRoot, String variable]:boolean"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.DeadAssignmentsElimination:isVariableStillLiveWithinExpression:[Node n, Node exprRoot, String variable]:boolean",
+            "com.google.javascript.jscomp.DeadAssignmentsElimination:checkHookBranchReadBeforeKill:[Node trueCase, Node falseCase, String variable]:VariableLiveness",
+            "com.google.javascript.jscomp.DeadAssignmentsElimination:isVariableReadBeforeKill:[Node n, String variable]:VariableLiveness"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "300",
+            "301",
+            "302",
+            "303",
+            "304",
+            "305",
+            "306",
+            "307",
+            "313",
+            "314",
+            "315",
+            "316",
+            "317",
+            "323",
+            "324",
+            "325",
+            "326",
+            "327",
+            "354",
+            "355",
+            "356",
+            "379",
+            "380",
+            "381",
+            "382",
+            "385",
+            "386",
+            "387",
+            "388",
+            "389",
+            "390",
+            "391",
+            "393",
+            "394",
+            "395",
+            "396",
+            "397",
+            "404"
+          ],
+          "num": 38
+        },
+        {
+          "qualified_names": [
+            "309",
+            "317",
+            "318",
+            "319",
+            "367",
+            "372",
+            "378",
+            "395"
+          ],
+          "num": 8
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/DeadAssignmentsElimination.java b/src/com/google/javascript/jscomp/DeadAssignmentsElimination.java\nindex aaab0d6..63a7f29 100644\n--- a/src/com/google/javascript/jscomp/DeadAssignmentsElimination.java\n+++ b/src/com/google/javascript/jscomp/DeadAssignmentsElimination.java\n@@ -297,40 +297,26 @@\n           // If the currently node is the first child of\n           // AND/OR, be conservative only consider the READs\n           // of the second operand.\n-          if (n.getNext() !\u003d null) {\n-            state \u003d isVariableReadBeforeKill(\n-                n.getNext(), variable);\n-            if (state \u003d\u003d VariableLiveness.KILL) {\n-              state \u003d VariableLiveness.MAYBE_LIVE;\n-            }\n-          }\n-          break;\n \n         case Token.HOOK:\n           // If current node is the condition, check each following\n           // branch, otherwise it is a conditional branch and the\n           // other branch can be ignored.\n-          if (n.getNext() !\u003d null \u0026\u0026 n.getNext().getNext() !\u003d null) {\n-            state \u003d checkHookBranchReadBeforeKill(\n-                n.getNext(), n.getNext().getNext(), variable);\n-          }\n-          break;\n \n         default:\n           for(Node sibling \u003d n.getNext(); sibling !\u003d null;\n               sibling \u003d sibling.getNext()) {\n+            if (!ControlFlowGraph.isEnteringNewCfgNode(sibling)) {\n             state \u003d isVariableReadBeforeKill(sibling, variable);\n-            if (state !\u003d VariableLiveness.MAYBE_LIVE) {\n-              break;\n-            }\n-          }\n-      }\n \n       // If we see a READ or KILL there is no need to continue.\n       if (state \u003d\u003d VariableLiveness.READ) {\n         return true;\n       } else if (state \u003d\u003d VariableLiveness.KILL) {\n         return false;\n+            }\n+          }\n+      }\n       }\n       n \u003d n.getParent();\n     }\n@@ -351,9 +337,6 @@\n    */\n   private VariableLiveness isVariableReadBeforeKill(\n       Node n, String variable) {\n-    if (ControlFlowGraph.isEnteringNewCfgNode(n)) { // Not a FUNCTION\n-      return VariableLiveness.MAYBE_LIVE;\n-    }\n \n     if (NodeUtil.isName(n) \u0026\u0026 variable.equals(n.getString())) {\n       if (NodeUtil.isLhs(n, n.getParent())) {\n@@ -376,25 +359,9 @@\n       // Conditionals\n       case Token.OR:\n       case Token.AND:\n-        VariableLiveness v1 \u003d isVariableReadBeforeKill(\n-          n.getFirstChild(), variable);\n-        VariableLiveness v2 \u003d isVariableReadBeforeKill(\n-          n.getLastChild(), variable);\n         // With a AND/OR the first branch always runs, but the second is\n         // may not.\n-        if (v1 !\u003d VariableLiveness.MAYBE_LIVE) {\n-          return v1;\n-        } else if (v2 \u003d\u003d VariableLiveness.READ) {\n-          return VariableLiveness.READ;\n-        } else {\n-          return VariableLiveness.MAYBE_LIVE;\n-        }\n       case Token.HOOK:\n-        VariableLiveness first \u003d isVariableReadBeforeKill(\n-            n.getFirstChild(), variable);\n-        if (first !\u003d VariableLiveness.MAYBE_LIVE) {\n-          return first;\n-        }\n         return checkHookBranchReadBeforeKill(\n             n.getFirstChild().getNext(), n.getLastChild(), variable);\n \n@@ -402,11 +369,13 @@\n         // Expressions are evaluated left-right, depth first.\n         for (Node child \u003d n.getFirstChild();\n             child !\u003d null; child \u003d child.getNext()) {\n+          if (!ControlFlowGraph.isEnteringNewCfgNode(child)) { // Not a FUNCTION\n           VariableLiveness state \u003d isVariableReadBeforeKill(child, variable);\n           if (state !\u003d VariableLiveness.MAYBE_LIVE) {\n             return state;\n           }\n         }\n+      }\n     }\n \n     return VariableLiveness.MAYBE_LIVE;\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrefixExpression [13070,13115]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [10883,11231]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PREFIX_EXPRESSION_OPERATOR: ! [13070,13071]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PrefixExpression [10887,10934]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [10936,11231]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [10557,10796]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "BreakStatement [10807,10813]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [11026,11211]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "BreakStatement [11222,11228]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [11428,11506]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [13263,13350]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [13359,13445]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [13547,13771]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [13803,13895]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [13904,13981]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [12440,12475]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.DeadAssignmentsElimination:checkHookBranchReadBeforeKill:[Node trueCase, Node falseCase, String variable]:VariableLiveness"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

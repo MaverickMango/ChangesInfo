@@ -1,0 +1,157 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.ser.TestMapSerialization::testClassKey",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.ser.std.StdKeySerializer",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "9",
+  "workingDir": "../bugs/JacksonDatabind_9_tmp",
+  "bug_name": "JacksonDatabind_9",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.ser.TestMapSerialization",
+      "test_function": "testClassKey",
+      "assertion_line": "256",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c{\"[]java.lang.String\":2}\u003e but was:\u003c{\"[class ]java.lang.String\":2}\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/ser/std/StdKeySerializer.java",
+        "src/main/java/com/fasterxml/jackson/databind/ser/std/StdKeySerializer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.std.StdKeySerializer:serialize:[Object value, JsonGenerator jgen, SerializerProvider provider]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.std.StdKeySerializer:serialize:[Object value, JsonGenerator jgen, SerializerProvider provider]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "27",
+            "29",
+            "30",
+            "31",
+            "34",
+            "35"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "28"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/ser/std/StdKeySerializer.java b/src/main/java/com/fasterxml/jackson/databind/ser/std/StdKeySerializer.java\nindex 56fbbe1..5fdf4eb 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/ser/std/StdKeySerializer.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/ser/std/StdKeySerializer.java\n@@ -24,15 +24,10 @@\n     @Override\n     public void serialize(Object value, JsonGenerator jgen, SerializerProvider provider) throws IOException {\n         String str;\n-        Class\u003c?\u003e cls \u003d value.getClass();\n         \n-        if (cls \u003d\u003d String.class) {\n-            str \u003d (String) value;\n-        } else if (Date.class.isAssignableFrom(cls)) {\n+        if (value instanceof Date) {\n             provider.defaultSerializeDateKey((Date) value, jgen);\n             return;\n-        } else if (cls \u003d\u003d Class.class) {\n-            str \u003d ((Class\u003c?\u003e) value).getName();\n         } else {\n             str \u003d value.toString();\n         }\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [919,1096]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InstanceofExpression [923,944]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [910,942]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [964,983]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [985,1030]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [1040,1072]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [1181,1199]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [1201,1260]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [1177,1313]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [1036,1313]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [960,1313]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

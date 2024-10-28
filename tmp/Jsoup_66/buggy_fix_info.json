@@ -1,0 +1,143 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.jsoup.nodes.ElementTest::testNextElementSiblingAfterClone",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.jsoup.nodes.Element",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Jsoup",
+  "id": "66",
+  "workingDir": "../bugs/Jsoup_66_tmp",
+  "bug_name": "Jsoup_66",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.jsoup.nodes.ElementTest",
+      "test_function": "testNextElementSiblingAfterClone",
+      "assertion_line": "1235",
+      "exception": "java.lang.NullPointerException",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/nodes/Element.java",
+        "src/main/java/org/jsoup/nodes/Element.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.nodes.Element:doClone:[Node parent]:Element",
+            "org.jsoup.nodes.Element\\$NodeList:NodeList:[Element owner, int initialCapacity]:null",
+            "org.jsoup.nodes.Element\\$NodeList:onContentsChanged:[]:void",
+            "org.jsoup.nodes.Element:ensureChildNodes:[]:List\u003cNode\u003e"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "org.jsoup.nodes.Element\\$NodeList:NodeList:[int initialCapacity]:null",
+            "org.jsoup.nodes.Element:ensureChildNodes:[]:List\u003cNode\u003e",
+            "org.jsoup.nodes.Element\\$NodeList:onContentsChanged:[]:void",
+            "org.jsoup.nodes.Element:doClone:[Node parent]:Element"
+          ],
+          "num": 4
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "89",
+            "1402",
+            "1408",
+            "1409",
+            "1410",
+            "1411",
+            "1413",
+            "1417"
+          ],
+          "num": 8
+        },
+        {
+          "qualified_names": [
+            "89",
+            "1402",
+            "1408",
+            "1409",
+            "1414"
+          ],
+          "num": 5
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/nodes/Element.java b/src/main/java/org/jsoup/nodes/Element.java\nindex 85d335a..461a922 100644\n--- a/src/main/java/org/jsoup/nodes/Element.java\n+++ b/src/main/java/org/jsoup/nodes/Element.java\n@@ -86,7 +86,7 @@\n \n     protected List\u003cNode\u003e ensureChildNodes() {\n         if (childNodes \u003d\u003d EMPTY_NODES) {\n-            childNodes \u003d new NodeList(this, 4);\n+            childNodes \u003d new NodeList(4);\n         }\n         return childNodes;\n     }\n@@ -1399,22 +1399,19 @@\n         Element clone \u003d (Element) super.doClone(parent);\n         clone.attributes \u003d attributes !\u003d null ? attributes.clone() : null;\n         clone.baseUri \u003d baseUri;\n-        clone.childNodes \u003d new NodeList(clone, childNodes.size());\n+        clone.childNodes \u003d new NodeList(childNodes.size());\n         clone.childNodes.addAll(childNodes);\n \n         return clone;\n     }\n \n-    private static final class NodeList extends ChangeNotifyingArrayList\u003cNode\u003e {\n-        private final Element owner;\n-\n-        NodeList(Element owner, int initialCapacity) {\n+    private final class NodeList extends ChangeNotifyingArrayList\u003cNode\u003e {\n+        NodeList(int initialCapacity) {\n             super(initialCapacity);\n-            this.owner \u003d owner;\n         }\n \n         public void onContentsChanged() {\n-            owner.nodelistChanged();\n+            nodelistChanged();\n         }\n     }\n }\n",
+      "operations": [
+        {
+          "type": "delete-node",
+          "from": "ThisExpression [2839,2843]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: clone [50501,50506]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: static [50615,50621]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [50692,50720]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [50739,50752]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [50825,50844]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_RECEIVER [50910,50915]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.jsoup.nodes.Element\\$NodeList:NodeList:[int initialCapacity]:null"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.jsoup.nodes.Element\\$NodeList:NodeList:[Element owner, int initialCapacity]:null"
+      ],
+      "num": 1
+    }
+  }
+}

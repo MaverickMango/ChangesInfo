@@ -1,0 +1,31 @@
+{
+  "bugName": "Lang_14_buggy",
+  "bugId": "36",
+  "repo": {
+    "name": "../bugs/Lang_14_buggy/.git"
+  },
+  "inducingCommit": {
+    "sha": "cf2e48a05c250feb636dd337dae1ffb7a1d9d411",
+    "branchName": "HEAD",
+    "fullMessage": "Change StringUtils arguments from String to CharSequence.\n\nDetails: Working with (trunk) StringUtils (SU) I see the following emerge: \n\n- In SVN already and continuing: Change StringUtils arguments from String to CharSequence (CS).\n\n- This leads to replacing calls to String.substring(int[,int]) with calls to CharSequence.subSequence(int)\n\n- This leads to creating a CharSequenceUtils class (in SVN now, more on this new class below) and CharSequenceUtils.subSequence(CharSequence,int) to avoid changing \"str.substring(start)\" over and over to \"str.subSequence(start, str.length())\". For examples, see new versions of capitalize and uncapitalize.\n\n- We end up using a toString() on CharSequence to return a String from StringUtil when working with a CharSequence.\n\nSo we have StringUtils using CharSequence inputs as much as possible instead of String, which is nice. \n\nThe CharSequence method subSequence returns a CharSequence; though the Javadoc states \"Returns a new CharSequence that is a subsequence of this sequence.\", this does not guaranteed the return value to be the same kind of CharSequence as the receiver). Since we are after all in a class called StringUtil, calling toString() is a must.\n\nI propose that we create when possible the methods that are now StringUtils CharSequence methods into CharSequenceUtils and let StringUtil call CharSequenceUtils and then do its toString() and other String specific logic. Later we could have other CharSequence type of utils (for CharBuffer, StringBuiler, StringBuffer, etc) that use the \u0027primitives\u0027 from CharSequenceUtils.\nThis means that for methods that are based solely on methods that are now in CharSequence, these can be moved to CharSequenceUtils without effort (all is* methods only call CharSequence#length() and charAt() for example and are now typed as CS, still in SU). \n\nWe can leave @deprecateds method in SU as a nicety to avoid too much porting pain: First change the package to lang3 then you can \u0027optimize\u0027 by changing call sites from SU to CSU.\n\nAs a start, I put in SVN a CharSequenceUtils (CSU) implementation for length() and subSequence().\n\n\ngit-svn-id: https://svn.apache.org/repos/asf/commons/proper/lang/trunk@920543 13f79535-47bb-0310-9956-ffa450edef68\n",
+    "repoName": "../bugs/Lang_14_buggy/.git"
+  },
+  "originalCommit": {
+    "sha": "43885858071f12924607fb91ea595424e5880c3d",
+    "branchName": "HEAD",
+    "fullMessage": "Convert defaultIfEmpty from String to CharSequence.\n\ngit-svn-id: https://svn.apache.org/repos/asf/commons/proper/lang/trunk@920187 13f79535-47bb-0310-9956-ffa450edef68\n",
+    "repoName": "../bugs/Lang_14_buggy/.git"
+  },
+  "fixedCommit": {
+    "sha": "cf7211f9d7d70d56501d8c4c827bf9ce3cac5f0b",
+    "branchName": "HEAD",
+    "fullMessage": "[LANG-786] StringUtils equals() relies on undefined behavior; thanks to Daniel Trebbien\n\ngit-svn-id: https://svn.apache.org/repos/asf/commons/proper/lang/trunk@1234915 13f79535-47bb-0310-9956-ffa450edef68\n",
+    "repoName": "../bugs/Lang_14_buggy/.git"
+  },
+  "buggyCommit": {
+    "sha": "c8afaa3e869cc8c25577641553e0d0b5bdac78b5",
+    "branchName": "HEAD",
+    "fullMessage": "Adding the issues in 3.2 to changes.xml\n\ngit-svn-id: https://svn.apache.org/repos/asf/commons/proper/lang/trunk@1225140 13f79535-47bb-0310-9956-ffa450edef68\n",
+    "repoName": "../bugs/Lang_14_buggy/.git"
+  }
+}

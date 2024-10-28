@@ -1,0 +1,506 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.convert.TestConvertingSerializer::testIssue731",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.JavaType,com.fasterxml.jackson.databind.ser.BeanSerializerFactory,com.fasterxml.jackson.databind.ser.std.BeanSerializerBase,com.fasterxml.jackson.databind.ser.std.StdDelegatingSerializer,com.fasterxml.jackson.databind.ser.std.StdSerializer",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "15",
+  "workingDir": "../bugs/JacksonDatabind_15_tmp",
+  "bug_name": "JacksonDatabind_15",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.convert.TestConvertingSerializer",
+      "test_function": "testIssue731",
+      "assertion_line": "201",
+      "exception": "com.fasterxml.jackson.databind.JsonMappingException",
+      "message": "No serializer found for class com.fasterxml.jackson.databind.convert.TestConvertingSerializer$DummyBean and no properties discovered to create BeanSerializer (to avoid exception, disable SerializationFeature.FAIL_ON_EMPTY_BEANS) )"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/JavaType.java",
+        "src/main/java/com/fasterxml/jackson/databind/JavaType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.JavaType:isJavaLangObject:[]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "302"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "301"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/JavaType.java b/src/main/java/com/fasterxml/jackson/databind/JavaType.java\nindex 07b6ba9..c3d85c9 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/JavaType.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/JavaType.java\n@@ -299,7 +299,6 @@\n      *\n      * @since 2.5\n      */\n-    public final boolean isJavaLangObject() { return _class \u003d\u003d Object.class; }\n \n     /**\n      * Accessor for checking whether handlers for dealing with values of\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [10089,10382]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/ser/BeanSerializerFactory.java",
+        "src/main/java/com/fasterxml/jackson/databind/ser/BeanSerializerFactory.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.BeanSerializerFactory:createSerializer:[SerializerProvider prov, JavaType origType]:JsonSerializer\u003cObject\u003e"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.BeanSerializerFactory:createSerializer:[SerializerProvider prov, JavaType origType]:JsonSerializer\u003cObject\u003e"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "163"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "163"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/ser/BeanSerializerFactory.java b/src/main/java/com/fasterxml/jackson/databind/ser/BeanSerializerFactory.java\nindex 14e6d93..a65f9d2 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/ser/BeanSerializerFactory.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/ser/BeanSerializerFactory.java\n@@ -160,7 +160,7 @@\n             ser \u003d findSerializerFromAnnotation(prov, beanDesc.getClassInfo());\n         }\n         // [databind#731]: Should skip if nominally java.lang.Object\n-        if (ser \u003d\u003d null \u0026\u0026 !delegateType.isJavaLangObject()) {\n+        if (ser \u003d\u003d null) {\n             ser \u003d _createSerializer2(prov, delegateType, beanDesc, true);\n         }\n         return new StdDelegatingSerializer(conv, delegateType, ser);\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [7516,7518]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "PrefixExpression [7519,7551]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [7504,7551]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/ser/std/BeanSerializerBase.java",
+        "src/main/java/com/fasterxml/jackson/databind/ser/std/BeanSerializerBase.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.std.BeanSerializerBase:findConvertingSerializer:[SerializerProvider provider, BeanPropertyWriter prop]:JsonSerializer\u003cObject\u003e"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.std.BeanSerializerBase:findConvertingSerializer:[SerializerProvider provider, BeanPropertyWriter prop]:JsonSerializer\u003cObject\u003e"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "370",
+            "371"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "370"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/ser/std/BeanSerializerBase.java b/src/main/java/com/fasterxml/jackson/databind/ser/std/BeanSerializerBase.java\nindex 3e11648..e69205e 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/ser/std/BeanSerializerBase.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/ser/std/BeanSerializerBase.java\n@@ -367,8 +367,7 @@\n                     Converter\u003cObject,Object\u003e conv \u003d provider.converterInstance(prop.getMember(), convDef);\n                     JavaType delegateType \u003d conv.getOutputType(provider.getTypeFactory());\n                     // [databind#731]: Should skip if nominally java.lang.Object\n-                    JsonSerializer\u003c?\u003e ser \u003d delegateType.isJavaLangObject() ? null\n-                            : provider.findValueSerializer(delegateType, prop);\n+                    JsonSerializer\u003c?\u003e ser \u003d provider.findValueSerializer(delegateType, prop);\n                     return new StdDelegatingSerializer(conv, delegateType, ser);\n                 }\n             }\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [14547,14578]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NullLiteral [14581,14585]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ConditionalExpression [14547,14664]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/ser/std/StdDelegatingSerializer.java",
+        "src/main/java/com/fasterxml/jackson/databind/ser/std/StdDelegatingSerializer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.std.StdDelegatingSerializer:serializeWithType:[Object value, JsonGenerator gen, SerializerProvider provider, TypeSerializer typeSer]:void",
+            "com.fasterxml.jackson.databind.ser.std.StdDelegatingSerializer:isEmpty:[Object value]:boolean",
+            "com.fasterxml.jackson.databind.ser.std.StdDelegatingSerializer:isEmpty:[SerializerProvider prov, Object value]:boolean",
+            "com.fasterxml.jackson.databind.ser.std.StdDelegatingSerializer:acceptJsonFormatVisitor:[JsonFormatVisitorWrapper visitor, JavaType typeHint]:void",
+            "com.fasterxml.jackson.databind.ser.std.StdDelegatingSerializer:_findSerializer:[Object value, SerializerProvider serializers]:JsonSerializer\u003cObject\u003e",
+            "com.fasterxml.jackson.databind.ser.std.StdDelegatingSerializer:serialize:[Object value, JsonGenerator gen, SerializerProvider provider]:void",
+            "com.fasterxml.jackson.databind.ser.std.StdDelegatingSerializer:createContextual:[SerializerProvider provider, BeanProperty property]:JsonSerializer\u003c?\u003e"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.std.StdDelegatingSerializer:getSchema:[SerializerProvider provider, Type typeHint]:JsonNode",
+            "com.fasterxml.jackson.databind.ser.std.StdDelegatingSerializer:createContextual:[SerializerProvider provider, BeanProperty property]:JsonSerializer\u003c?\u003e",
+            "com.fasterxml.jackson.databind.ser.std.StdDelegatingSerializer:serialize:[Object value, JsonGenerator gen, SerializerProvider provider]:void",
+            "com.fasterxml.jackson.databind.ser.std.StdDelegatingSerializer:serializeWithType:[Object value, JsonGenerator gen, SerializerProvider provider, TypeSerializer typeSer]:void",
+            "com.fasterxml.jackson.databind.ser.std.StdDelegatingSerializer:acceptJsonFormatVisitor:[JsonFormatVisitorWrapper visitor, JavaType typeHint]:void"
+          ],
+          "num": 5
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "121",
+            "123",
+            "128",
+            "129",
+            "130",
+            "131",
+            "165",
+            "166",
+            "167",
+            "168",
+            "169",
+            "180",
+            "181",
+            "182",
+            "183",
+            "184",
+            "192",
+            "193",
+            "194",
+            "202",
+            "203",
+            "204",
+            "242",
+            "243",
+            "244",
+            "276",
+            "277",
+            "278",
+            "280",
+            "281"
+          ],
+          "num": 30
+        },
+        {
+          "qualified_names": [
+            "126",
+            "127",
+            "161",
+            "172",
+            "203",
+            "216",
+            "224",
+            "295"
+          ],
+          "num": 8
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/ser/std/StdDelegatingSerializer.java b/src/main/java/com/fasterxml/jackson/databind/ser/std/StdDelegatingSerializer.java\nindex 6c52b73..3aeb4f3 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/ser/std/StdDelegatingSerializer.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/ser/std/StdDelegatingSerializer.java\n@@ -118,17 +118,13 @@\n             /* 02-Apr-2015, tatu: For \"dynamic case\", where type is only specified as\n              *    java.lang.Object (or missing generic), [databind#731]\n              */\n-            if (!delegateType.isJavaLangObject()) {\n                 delSer \u003d provider.findValueSerializer(delegateType);\n-            }\n         }\n         if (delSer instanceof ContextualSerializer) {\n             delSer \u003d provider.handleSecondaryContextualization(delSer, property);\n         }\n-        if (delSer \u003d\u003d _delegateSerializer \u0026\u0026 delegateType \u003d\u003d _delegateType) {\n-            return this;\n-        }\n-        return withDelegate(_converter, delegateType, delSer);\n+        return (delSer \u003d\u003d _delegateSerializer) ? this\n+                : withDelegate(_converter, delegateType, delSer);\n     }\n \n     /*\n@@ -162,11 +158,7 @@\n             return;\n         }\n         // 02-Apr-2015, tatu: As per [databind#731] may need to do dynamic lookup\n-        JsonSerializer\u003cObject\u003e ser \u003d _delegateSerializer;\n-        if (ser \u003d\u003d null) {\n-            ser \u003d _findSerializer(delegateValue, provider);\n-        }\n-        ser.serialize(delegateValue, gen, provider);\n+        _delegateSerializer.serialize(delegateValue, gen, provider);\n     }\n \n     @Override\n@@ -177,11 +169,7 @@\n          *    let\u0027s give it a chance?\n          */\n         Object delegateValue \u003d convertValue(value);\n-        JsonSerializer\u003cObject\u003e ser \u003d _delegateSerializer;\n-        if (ser \u003d\u003d null) {\n-            ser \u003d _findSerializer(value, provider);\n-        }\n-        ser.serializeWithType(delegateValue, gen, provider, typeSer);\n+        _delegateSerializer.serializeWithType(delegateValue, gen, provider, typeSer);\n     }\n \n     @Override\n@@ -189,9 +177,6 @@\n     public boolean isEmpty(Object value)\n     {\n         Object delegateValue \u003d convertValue(value);\n-        if (_delegateSerializer \u003d\u003d null) { // best we can do for now, too costly to look up\n-            return (value \u003d\u003d null);\n-        }\n         return _delegateSerializer.isEmpty(delegateValue);\n     }\n \n@@ -199,9 +184,6 @@\n     public boolean isEmpty(SerializerProvider prov, Object value)\n     {\n         Object delegateValue \u003d convertValue(value);\n-        if (_delegateSerializer \u003d\u003d null) { // best we can do for now, too costly to look up\n-            return (value \u003d\u003d null);\n-        }\n         return _delegateSerializer.isEmpty(prov, delegateValue);\n     }\n \n@@ -239,9 +221,7 @@\n          *    properly... but for now, try this:\n          */\n         // 02-Apr-2015, tatu: For dynamic case, very little we can do\n-        if (_delegateSerializer !\u003d null) {\n-            _delegateSerializer.acceptJsonFormatVisitor(visitor, typeHint);\n-        }\n+        _delegateSerializer.acceptJsonFormatVisitor(visitor, typeHint);\n     }\n \n     /*\n@@ -273,10 +253,5 @@\n      *\n      * @since 2.6\n      */\n-    protected JsonSerializer\u003cObject\u003e _findSerializer(Object value, SerializerProvider serializers)\n-        throws JsonMappingException\n-    {\n         // NOTE: will NOT call contextualization\n-        return serializers.findValueSerializer(value.getClass());\n-    }\n }\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ConditionalExpression [4608,4711]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ParenthesizedExpression [4608,4639]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ThisExpression [4642,4646]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "PrefixExpression [4384,4416]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [4418,4502]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [4380,4502]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [4667,4771]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ParameterizedType [5780,5802]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: ser [5803,5806]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [5803,5828]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [5780,5829]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [5838,5926]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ParameterizedType [6351,6373]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: ser [6374,6377]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [6374,6399]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [6351,6400]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [6409,6489]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [6717,6846]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [7059,7188]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [8517,8544]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [8546,8633]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [8513,8633]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [9284,9860]",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/ser/std/StdSerializer.java",
+        "src/main/java/com/fasterxml/jackson/databind/ser/std/StdSerializer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.std.StdSerializer:findConvertingContentSerializer:[SerializerProvider provider, BeanProperty prop, JsonSerializer\u003c?\u003e existingSerializer]:JsonSerializer\u003c?\u003e"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.std.StdSerializer:findConvertingContentSerializer:[SerializerProvider provider, BeanProperty prop, JsonSerializer\u003c?\u003e existingSerializer]:JsonSerializer\u003c?\u003e"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "262"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "262"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/ser/std/StdSerializer.java b/src/main/java/com/fasterxml/jackson/databind/ser/std/StdSerializer.java\nindex 6089e6b..53e0984 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/ser/std/StdSerializer.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/ser/std/StdSerializer.java\n@@ -259,7 +259,7 @@\n                     Converter\u003cObject,Object\u003e conv \u003d provider.converterInstance(prop.getMember(), convDef);\n                     JavaType delegateType \u003d conv.getOutputType(provider.getTypeFactory());\n                     // [databind#731]: Should skip if nominally java.lang.Object\n-                    if (existingSerializer \u003d\u003d null \u0026\u0026 !delegateType.hasRawClass(Object.class)) {\n+                    if (existingSerializer \u003d\u003d null) {\n                         existingSerializer \u003d provider.findValueSerializer(delegateType);\n                     }\n                     return new StdDelegatingSerializer(conv, delegateType, existingSerializer);\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [9774,9776]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "PrefixExpression [9777,9816]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [9747,9816]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.ser.std.StdDelegatingSerializer:getSchema:[SerializerProvider provider, Type typeHint]:JsonNode"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.JavaType:isJavaLangObject:[]:boolean",
+        "com.fasterxml.jackson.databind.ser.std.StdDelegatingSerializer:_findSerializer:[Object value, SerializerProvider serializers]:JsonSerializer\u003cObject\u003e",
+        "com.fasterxml.jackson.databind.ser.std.StdDelegatingSerializer:isEmpty:[SerializerProvider prov, Object value]:boolean",
+        "com.fasterxml.jackson.databind.ser.std.StdDelegatingSerializer:isEmpty:[Object value]:boolean"
+      ],
+      "num": 4
+    }
+  }
+}

@@ -1,0 +1,74 @@
+diff --git a/src/org/mockito/internal/verification/argumentmatching/ArgumentMatchingTool.java b/src/org/mockito/internal/verification/argumentmatching/ArgumentMatchingTool.java
+index 671fbc5..9d4f834 100644
+--- a/src/org/mockito/internal/verification/argumentmatching/ArgumentMatchingTool.java
++++ b/src/org/mockito/internal/verification/argumentmatching/ArgumentMatchingTool.java
+@@ -45,6 +45,6 @@
+     }
+ 
+     private boolean toStringEquals(Matcher m, Object arg) {
+-        return StringDescription.toString(m).equals(arg.toString());
++        return StringDescription.toString(m).equals(arg == null? "null" : arg.toString());
+     }
+ }
+diff --git a/test/org/mockito/internal/verification/argumentmatching/ArgumentMatchingToolTest.java b/test/org/mockito/internal/verification/argumentmatching/ArgumentMatchingToolTest.java
+index c2091e0..51ff20d 100644
+--- a/test/org/mockito/internal/verification/argumentmatching/ArgumentMatchingToolTest.java
++++ b/test/org/mockito/internal/verification/argumentmatching/ArgumentMatchingToolTest.java
+@@ -77,6 +77,15 @@
+     }
+     
+     @Test
++    public void shouldWorkFineWhenGivenArgIsNull() {
++        //when
++        Integer[] suspicious = tool.getSuspiciouslyNotMatchingArgsIndexes((List) Arrays.asList(new Equals(20)), new Object[] {null});
++        
++        //then
++        assertEquals(0, suspicious.length);
++    }
++    
++    @Test
+     public void shouldUseMatchersSafely() {
+         //given
+         List<Matcher> matchers = (List) Arrays.asList(new BaseMatcher() {
+diff --git a/test/org/mockitousage/bugs/ActualInvocationHasNullArgumentNPEBugTest.java b/test/org/mockitousage/bugs/ActualInvocationHasNullArgumentNPEBugTest.java
+new file mode 100644
+index 0000000..60539ae
+--- /dev/null
++++ b/test/org/mockitousage/bugs/ActualInvocationHasNullArgumentNPEBugTest.java
+@@ -0,0 +1,35 @@
++/*
++ * Copyright (c) 2007 Mockito contributors
++ * This program is made available under the terms of the MIT License.
++ */
++package org.mockitousage.bugs;
++
++import static org.mockito.Matchers.*;
++import static org.mockito.Mockito.*;
++
++import org.junit.Test;
++import org.mockitoutil.TestBase;
++
++public class ActualInvocationHasNullArgumentNPEBugTest extends TestBase {
++    
++    public interface Fun {
++        String doFun(String something);
++    }
++
++    @Test
++    public void shouldAllowPassingNullArgument() {
++        //given
++        Fun mockFun = mock(Fun.class);
++        when(mockFun.doFun((String) anyObject())).thenReturn("value");
++
++        //when
++        mockFun.doFun(null);
++
++        //then
++        try {
++            verify(mockFun).doFun("hello");
++        } catch(AssertionError r) {
++            //it's ok, we just want to reproduce the bug
++        }
++    }
++}
+\ No newline at end of file

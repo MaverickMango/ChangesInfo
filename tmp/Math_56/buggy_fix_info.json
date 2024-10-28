@@ -1,0 +1,118 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math.util.MultidimensionalCounterTest::testIterationConsistency",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math.util.MultidimensionalCounter",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "56",
+  "workingDir": "../bugs/Math_56_tmp",
+  "bug_name": "Math_56",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math.util.MultidimensionalCounterTest",
+      "test_function": "testIterationConsistency",
+      "assertion_line": "172",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Wrong multidimensional index for [3][2] expected:\u003c3\u003e but was:\u003c2\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/util/MultidimensionalCounter.java",
+        "src/main/java/org/apache/commons/math/util/MultidimensionalCounter.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.util.MultidimensionalCounter:getCounts:[int index]:int[]"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.util.MultidimensionalCounter:getCounts:[int index]:int[]"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "237"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "237",
+            "238",
+            "239",
+            "240",
+            "241",
+            "242",
+            "243"
+          ],
+          "num": 7
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/util/MultidimensionalCounter.java b/src/main/java/org/apache/commons/math/util/MultidimensionalCounter.java\nindex fb0614e..56c9ffe 100644\n--- a/src/main/java/org/apache/commons/math/util/MultidimensionalCounter.java\n+++ b/src/main/java/org/apache/commons/math/util/MultidimensionalCounter.java\n@@ -234,7 +234,13 @@\n             indices[i] \u003d idx;\n         }\n \n-        indices[last] \u003d index - count;\n+        int idx \u003d 1;\n+        while (count \u003c index) {\n+            count +\u003d idx;\n+            ++idx;\n+        }\n+        --idx;\n+        indices[last] \u003d idx;\n \n         return indices;\n     }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [6918,6930]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "WhileStatement [6939,7017]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [7026,7032]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: idx [7057,7060]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [6934,6947]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

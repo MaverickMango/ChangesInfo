@@ -1,0 +1,194 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.mockitousage.annotation.SpyAnnotationTest::should_spy_inner_class,org.mockitousage.annotation.SpyAnnotationTest::should_report_when_constructor_is_explosive,org.mockitousage.constructor.CreatingMocksWithConstructorTest::can_spy_abstract_classes,org.mockitousage.constructor.CreatingMocksWithConstructorTest::exception_message_when_constructor_not_found,org.mockitousage.constructor.CreatingMocksWithConstructorTest::can_create_mock_with_constructor,org.mockitousage.constructor.CreatingMocksWithConstructorTest::can_mock_inner_classes,org.mockitousage.constructor.CreatingMocksWithConstructorTest::mocking_inner_classes_with_wrong_outer_instance,org.mockitousage.constructor.CreatingMocksWithConstructorTest::can_mock_abstract_classes",
+    "test.dir": "test",
+    "clz.modified": "org.mockito.internal.creation.bytebuddy.ByteBuddyMockMaker",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Mockito",
+  "id": "20",
+  "workingDir": "../bugs/Mockito_20_tmp",
+  "bug_name": "Mockito_20",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.mockitousage.annotation.SpyAnnotationTest",
+      "test_function": "should_spy_inner_class",
+      "assertion_line": "150",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c[inner] strength\u003e but was:\u003c[null] strength\u003e"
+    },
+    {
+      "test_class": "org.mockitousage.annotation.SpyAnnotationTest",
+      "test_function": "should_report_when_constructor_is_explosive",
+      "assertion_line": "101",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    },
+    {
+      "test_class": "org.mockitousage.constructor.CreatingMocksWithConstructorTest",
+      "test_function": "can_spy_abstract_classes",
+      "assertion_line": "46",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003chey!\u003e but was:\u003cnull\u003e"
+    },
+    {
+      "test_class": "org.mockitousage.constructor.CreatingMocksWithConstructorTest",
+      "test_function": "exception_message_when_constructor_not_found",
+      "assertion_line": "65",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    },
+    {
+      "test_class": "org.mockitousage.constructor.CreatingMocksWithConstructorTest",
+      "test_function": "can_create_mock_with_constructor",
+      "assertion_line": "34",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003chey!\u003e but was:\u003cnull\u003e"
+    },
+    {
+      "test_class": "org.mockitousage.constructor.CreatingMocksWithConstructorTest",
+      "test_function": "can_mock_inner_classes",
+      "assertion_line": "52",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003chey!\u003e but was:\u003cnull\u003e"
+    },
+    {
+      "test_class": "org.mockitousage.constructor.CreatingMocksWithConstructorTest",
+      "test_function": "mocking_inner_classes_with_wrong_outer_instance",
+      "assertion_line": "78",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    },
+    {
+      "test_class": "org.mockitousage.constructor.CreatingMocksWithConstructorTest",
+      "test_function": "can_mock_abstract_classes",
+      "assertion_line": "40",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003chey!\u003e but was:\u003cnull\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/org/mockito/internal/creation/bytebuddy/ByteBuddyMockMaker.java",
+        "src/org/mockito/internal/creation/bytebuddy/ByteBuddyMockMaker.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.mockito.internal.creation.bytebuddy.ByteBuddyMockMaker:createMock:[MockCreationSettings\u003cT\u003e settings, MockHandler handler]:T"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.mockito.internal.creation.bytebuddy.ByteBuddyMockMaker:createMock:[MockCreationSettings\u003cT\u003e settings, MockHandler handler]:T"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "32",
+            "35",
+            "46"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "34",
+            "45"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/org/mockito/internal/creation/bytebuddy/ByteBuddyMockMaker.java b/src/org/mockito/internal/creation/bytebuddy/ByteBuddyMockMaker.java\nindex d5f77b6..9dc44e6 100644\n--- a/src/org/mockito/internal/creation/bytebuddy/ByteBuddyMockMaker.java\n+++ b/src/org/mockito/internal/creation/bytebuddy/ByteBuddyMockMaker.java\n@@ -29,10 +29,9 @@\n                 settings.getTypeToMock(),\n                 settings.getExtraInterfaces()\n         );\n-        Instantiator instantiator \u003d new InstantiatorProvider().getInstantiator(settings);\n         T mockInstance \u003d null;\n         try {\n-            mockInstance \u003d instantiator.newInstance(mockedProxyType);\n+            mockInstance \u003d classInstantiator.instantiate(mockedProxyType);\n             MockMethodInterceptor.MockAccess mockAccess \u003d (MockMethodInterceptor.MockAccess) mockInstance;\n             mockAccess.setMockitoInterceptor(new MockMethodInterceptor(asInternalMockHandler(handler), settings));\n \n@@ -43,7 +42,7 @@\n                     \"  class to mock : \" + describeClass(mockedProxyType),\n                     \"  created class : \" + describeClass(settings.getTypeToMock()),\n                     \"  proxy instance class : \" + describeClass(mockInstance),\n-                    \"  instance creation by : \" + instantiator.getClass().getSimpleName(),\n+                    \"  instance creation by : \" + classInstantiator.getClass().getSimpleName(),\n                     \"\",\n                     \"You might experience classloading issues, please ask the mockito mailing-list.\",\n                     \"\"\n",
+      "operations": [
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [1409,1461]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [1381,1462]",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

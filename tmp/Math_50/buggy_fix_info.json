@@ -1,0 +1,94 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math.analysis.solvers.RegulaFalsiSolverTest::testIssue631",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math.analysis.solvers.BaseSecantSolver",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "50",
+  "workingDir": "../bugs/Math_50_tmp",
+  "bug_name": "Math_50",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math.analysis.solvers.RegulaFalsiSolverTest",
+      "test_function": "testIssue631",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected exception: org.apache.commons.math.exception.TooManyEvaluationsException"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/analysis/solvers/BaseSecantSolver.java",
+        "src/main/java/org/apache/commons/math/analysis/solvers/BaseSecantSolver.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.solvers.BaseSecantSolver:doSolve:[]:double"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.solvers.BaseSecantSolver:doSolve:[]:double"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "186"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "187",
+            "188",
+            "189",
+            "190"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/analysis/solvers/BaseSecantSolver.java b/src/main/java/org/apache/commons/math/analysis/solvers/BaseSecantSolver.java\nindex c781a90..e47d982 100644\n--- a/src/main/java/org/apache/commons/math/analysis/solvers/BaseSecantSolver.java\n+++ b/src/main/java/org/apache/commons/math/analysis/solvers/BaseSecantSolver.java\n@@ -184,6 +184,10 @@\n                     break;\n                 case REGULA_FALSI:\n                     // Nothing.\n+                    if (x \u003d\u003d x1) {\n+                        x0 \u003d 0.5 * (x0 + x1 - FastMath.max(rtol * FastMath.abs(x1), atol));\n+                        f0 \u003d computeObjectiveValue(x0);\n+                    }\n                     break;\n                 default:\n                     // Should never happen.\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [7235,7419]"
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

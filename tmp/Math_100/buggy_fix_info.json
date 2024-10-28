@@ -1,0 +1,108 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math.estimation.GaussNewtonEstimatorTest::testBoundParameters",
+    "test.dir": "src/test",
+    "clz.modified": "org.apache.commons.math.estimation.AbstractEstimator",
+    "src.dir": "src/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "100",
+  "workingDir": "../bugs/Math_100_tmp",
+  "bug_name": "Math_100",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math.estimation.GaussNewtonEstimatorTest",
+      "test_function": "testBoundParameters",
+      "assertion_line": "472",
+      "exception": "java.lang.ArrayIndexOutOfBoundsException",
+      "message": "6"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/math/estimation/AbstractEstimator.java",
+        "src/java/org/apache/commons/math/estimation/AbstractEstimator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.estimation.AbstractEstimator:getCovariances:[EstimationProblem problem]:double[][]",
+            "org.apache.commons.math.estimation.AbstractEstimator:guessParametersErrors:[EstimationProblem problem]:double[]"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.estimation.AbstractEstimator:getCovariances:[EstimationProblem problem]:double[][]",
+            "org.apache.commons.math.estimation.AbstractEstimator:guessParametersErrors:[EstimationProblem problem]:double[]"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "166",
+            "202",
+            "207"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "166",
+            "202",
+            "207"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/math/estimation/AbstractEstimator.java b/src/java/org/apache/commons/math/estimation/AbstractEstimator.java\nindex 8e5fe1a..ea5083d 100644\n--- a/src/java/org/apache/commons/math/estimation/AbstractEstimator.java\n+++ b/src/java/org/apache/commons/math/estimation/AbstractEstimator.java\n@@ -163,7 +163,7 @@\n \n         // compute transpose(J).J, avoiding building big intermediate matrices\n         final int rows \u003d problem.getMeasurements().length;\n-        final int cols \u003d problem.getUnboundParameters().length;\n+        final int cols \u003d problem.getAllParameters().length;\n         final int max  \u003d cols * rows;\n         double[][] jTj \u003d new double[cols][cols];\n         for (int i \u003d 0; i \u003c cols; ++i) {\n@@ -199,12 +199,12 @@\n     public double[] guessParametersErrors(EstimationProblem problem)\n       throws EstimationException {\n         int m \u003d problem.getMeasurements().length;\n-        int p \u003d problem.getUnboundParameters().length;\n+        int p \u003d problem.getAllParameters().length;\n         if (m \u003c\u003d p) {\n             throw new EstimationException(\"no degrees of freedom ({0} measurements, {1} parameters)\",\n                                           new Object[] { new Integer(m), new Integer(p)});\n         }\n-        double[] errors \u003d new double[problem.getUnboundParameters().length];\n+        double[] errors \u003d new double[problem.getAllParameters().length];\n         final double c \u003d Math.sqrt(getChiSquare(problem) / (m - p));\n         double[][] covar \u003d getCovariances(problem);\n         for (int i \u003d 0; i \u003c errors.length; ++i) {\n",
+      "operations": [
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

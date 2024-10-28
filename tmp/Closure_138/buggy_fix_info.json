@@ -1,0 +1,265 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.ClosureReverseAbstractInterpreterTest::testGoogIsArrayOnNull,com.google.javascript.jscomp.ClosureReverseAbstractInterpreterTest::testGoogIsFunctionOnNull,com.google.javascript.jscomp.ClosureReverseAbstractInterpreterTest::testGoogIsObjectOnNull,com.google.javascript.jscomp.TypeCheckTest::testIssue124b,com.google.javascript.jscomp.TypeCheckTest::testIssue124",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.ClosureReverseAbstractInterpreter,com.google.javascript.jscomp.TypeInference",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "138",
+  "workingDir": "../bugs/Closure_138_tmp",
+  "bug_name": "Closure_138",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.ClosureReverseAbstractInterpreterTest",
+      "test_function": "testGoogIsArrayOnNull",
+      "assertion_line": "125",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003cArray\u003e but was:\u003cnull\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.ClosureReverseAbstractInterpreterTest",
+      "test_function": "testGoogIsFunctionOnNull",
+      "assertion_line": "132",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003cFunction\u003e but was:\u003cnull\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.ClosureReverseAbstractInterpreterTest",
+      "test_function": "testGoogIsObjectOnNull",
+      "assertion_line": "139",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003cObject\u003e but was:\u003cnull\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testIssue124b",
+      "assertion_line": "6916",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c...tes to false"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testIssue124",
+      "assertion_line": "6921",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "unexpected warnings(s):"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/ClosureReverseAbstractInterpreter.java",
+        "src/com/google/javascript/jscomp/ClosureReverseAbstractInterpreter.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.ClosureReverseAbstractInterpreter:getPreciserScopeKnowingConditionOutcome:[Node condition, FlowScope blindScope, boolean outcome]:FlowScope"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.ClosureReverseAbstractInterpreter:getPreciserScopeKnowingConditionOutcome:[Node condition, FlowScope blindScope, boolean outcome]:FlowScope"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "207",
+            "216"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "208",
+            "218"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/ClosureReverseAbstractInterpreter.java b/src/com/google/javascript/jscomp/ClosureReverseAbstractInterpreter.java\nindex 7bfbae5..720b60b 100644\n--- a/src/com/google/javascript/jscomp/ClosureReverseAbstractInterpreter.java\n+++ b/src/com/google/javascript/jscomp/ClosureReverseAbstractInterpreter.java\n@@ -205,6 +205,7 @@\n       Node param \u003d condition.getLastChild();\n       if (callee.getType() \u003d\u003d GETPROP \u0026\u0026 param.isQualifiedName()) {\n         JSType paramType \u003d  getTypeIfRefinable(param, blindScope);\n+        if (paramType !\u003d null) {\n         Node left \u003d callee.getFirstChild();\n         Node right \u003d callee.getLastChild();\n         if (left.getType() \u003d\u003d NAME \u0026\u0026 \"goog\".equals(left.getString()) \u0026\u0026\n@@ -214,6 +215,7 @@\n           if (restricter !\u003d null) {\n             return restrictParameter(param, paramType, blindScope, restricter,\n                 outcome);\n+            }\n           }\n         }\n       }\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [7138,7648]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [7142,7159]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [7161,7648]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/TypeInference.java",
+        "src/com/google/javascript/jscomp/TypeInference.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypeInference:traverseName:[Node n, FlowScope scope]:FlowScope"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypeInference:traverseName:[Node n, FlowScope scope]:FlowScope"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "632",
+            "638",
+            "639",
+            "640",
+            "645",
+            "646",
+            "647",
+            "648",
+            "650",
+            "654"
+          ],
+          "num": 10
+        },
+        {
+          "qualified_names": [
+            "632",
+            "633"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/TypeInference.java b/src/com/google/javascript/jscomp/TypeInference.java\nindex 749eb6d..1b3755d 100644\n--- a/src/com/google/javascript/jscomp/TypeInference.java\n+++ b/src/com/google/javascript/jscomp/TypeInference.java\n@@ -629,29 +629,21 @@\n       return scope;\n     } else {\n       StaticSlot\u003cJSType\u003e var \u003d scope.getSlot(varName);\n-      if (var !\u003d null) {\n+      if (var !\u003d null \u0026\u0026\n+          !(var.isTypeInferred() \u0026\u0026 unflowableVarNames.contains(varName))) {\n         // There are two situations where we don\u0027t want to use type information\n         // from the scope, even if we have it.\n \n         // 1) The var is escaped in a weird way, e.g.,\n         // function f() { var x \u003d 3; function g() { x \u003d null } (x); }\n-        boolean isInferred \u003d var.isTypeInferred();\n-        boolean unflowable \u003d\n-            isInferred \u0026\u0026 unflowableVarNames.contains(varName);\n \n         // 2) We\u0027re reading type information from another scope for an\n         // inferred variable.\n         // var t \u003d null; function f() { (t); }\n-        boolean nonLocalInferredSlot \u003d\n-            isInferred \u0026\u0026\n-            syntacticScope.getParent() !\u003d null \u0026\u0026\n-            var \u003d\u003d syntacticScope.getParent().getSlot(varName);\n \n-        if (!unflowable \u0026\u0026 !nonLocalInferredSlot) {\n           type \u003d var.getType();\n           if (type \u003d\u003d null) {\n             type \u003d getNativeType(UNKNOWN_TYPE);\n-          }\n         }\n       }\n     }\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [21821,21832]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrefixExpression [21846,21909]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ParenthesizedExpression [21847,21909]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "PrefixExpression [22574,22585]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: nonLocalInferredSlot [22590,22610]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PrefixExpression [22589,22610]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [21821,21832]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [22097,22139]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [22148,22232]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [22390,22560]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [21834,22753]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [21817,22753]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

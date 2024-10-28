@@ -1,0 +1,141 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.gson.functional.TypeVariableTest::testSingle",
+    "test.dir": "gson/src/test/java",
+    "clz.modified": "com.google.gson.TypeInfoFactory",
+    "src.dir": "gson/src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Gson",
+  "id": "1",
+  "workingDir": "../bugs/Gson_1_tmp",
+  "bug_name": "Gson_1",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.gson.functional.TypeVariableTest",
+      "test_function": "testSingle",
+      "assertion_line": "41",
+      "exception": "java.lang.UnsupportedOperationException",
+      "message": "Expecting parameterized type, got class com.google.gson.functional.TypeVariableTest$Bar."
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "gson/src/main/java/com/google/gson/TypeInfoFactory.java",
+        "gson/src/main/java/com/google/gson/TypeInfoFactory.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.gson.TypeInfoFactory:getActualType:[Type typeToEvaluate, Type parentType, Class\u003c?\u003e rawParentClass]:Type",
+            "com.google.gson.TypeInfoFactory:extractTypeForHierarchy:[Type parentType, TypeVariable\u003c?\u003e typeToEvaluate]:Type"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.google.gson.TypeInfoFactory:getActualType:[Type typeToEvaluate, Type parentType, Class\u003c?\u003e rawParentClass]:Type"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "93",
+            "94",
+            "96",
+            "97",
+            "98",
+            "100",
+            "101",
+            "102",
+            "117",
+            "118",
+            "119",
+            "120",
+            "121",
+            "122",
+            "123",
+            "124",
+            "125",
+            "126",
+            "128",
+            "129",
+            "130",
+            "132",
+            "133",
+            "134",
+            "136",
+            "137",
+            "138",
+            "139",
+            "140",
+            "141",
+            "142",
+            "143",
+            "145",
+            "146",
+            "147",
+            "148",
+            "149",
+            "150",
+            "151",
+            "152",
+            "153"
+          ],
+          "num": 41
+        },
+        {
+          "qualified_names": [
+            "92",
+            "124"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/gson/src/main/java/com/google/gson/TypeInfoFactory.java b/gson/src/main/java/com/google/gson/TypeInfoFactory.java\nindex 3085e8a..9b444fe 100644\n--- a/gson/src/main/java/com/google/gson/TypeInfoFactory.java\n+++ b/gson/src/main/java/com/google/gson/TypeInfoFactory.java\n@@ -90,16 +90,8 @@\n         int indexOfActualTypeArgument \u003d getIndex(classTypeVariables, fieldTypeVariable);\n         Type[] actualTypeArguments \u003d objParameterizedType.getActualTypeArguments();\n         return actualTypeArguments[indexOfActualTypeArgument];\n-      } else if (typeToEvaluate instanceof TypeVariable\u003c?\u003e) {\n-        Type theSearchedType \u003d null;\n \n-        do {\n-          theSearchedType \u003d extractTypeForHierarchy(parentType, (TypeVariable\u003c?\u003e) typeToEvaluate);\n-        } while ((theSearchedType !\u003d null) \u0026\u0026 (theSearchedType instanceof TypeVariable\u003c?\u003e));\n \n-        if (theSearchedType !\u003d null) {\n-          return theSearchedType;\n-        }\n       }\n \n       throw new UnsupportedOperationException(\"Expecting parameterized type, got \" + parentType\n@@ -114,43 +106,10 @@\n     }\n   }\n \n-  private static Type extractTypeForHierarchy(Type parentType, TypeVariable\u003c?\u003e typeToEvaluate) {\n-    Class\u003c?\u003e rawParentType \u003d null;\n-    if (parentType instanceof Class\u003c?\u003e) {\n-      rawParentType \u003d (Class\u003c?\u003e) parentType;\n-    } else if (parentType instanceof ParameterizedType) {\n-      ParameterizedType parentTypeAsPT \u003d (ParameterizedType) parentType;\n-      rawParentType \u003d (Class\u003c?\u003e) parentTypeAsPT.getRawType();\n-    } else {\n-      return null;\n-    }\n \n-    Type superClass \u003d rawParentType.getGenericSuperclass();\n-    if (superClass instanceof ParameterizedType\n-        \u0026\u0026 ((ParameterizedType) superClass).getRawType() \u003d\u003d typeToEvaluate.getGenericDeclaration()) {\n       // Evaluate type on this type\n-      TypeVariable\u003c?\u003e[] classTypeVariables \u003d\n-          ((Class\u003c?\u003e) ((ParameterizedType) superClass).getRawType()).getTypeParameters();\n-      int indexOfActualTypeArgument \u003d getIndex(classTypeVariables, typeToEvaluate);\n \n-      Type[] actualTypeArguments \u003d null;\n-      if (parentType instanceof Class\u003c?\u003e) {\n-        actualTypeArguments \u003d ((ParameterizedType) superClass).getActualTypeArguments();\n-      } else if (parentType instanceof ParameterizedType) {\n-        actualTypeArguments \u003d ((ParameterizedType) parentType).getActualTypeArguments();\n-      } else {\n-        return null;\n-      }\n \n-      return actualTypeArguments[indexOfActualTypeArgument];\n-    }\n-\n-    Type searchedType \u003d null;\n-    if (superClass !\u003d null) {\n-      searchedType \u003d extractTypeForHierarchy(superClass, typeToEvaluate);\n-    }\n-    return searchedType;\n-  }\n \n   private static Type[] extractRealTypes(\n       Type[] actualTypeArguments, Type parentType, Class\u003c?\u003e rawParentClass) {\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [4081,4464]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [5152,6671]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.gson.TypeInfoFactory:extractTypeForHierarchy:[Type parentType, TypeVariable\u003c?\u003e typeToEvaluate]:Type"
+      ],
+      "num": 1
+    }
+  }
+}

@@ -1,0 +1,477 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Math",
+  "id": "28",
+  "workingDir": "../bugs/Math_28_buggy",
+  "inducingCommit": "e1776ba6ae75701bd275edd60356cada29342214",
+  "originalCommit": "fd2759092b941101d28574bfb00705d2aab9660e",
+  "bug_name": "Math_28",
+  "derive": "defects4j",
+  "original_fixing_commit": "d3fc5af31eb696af03cfbe2e18584c7e1d307d54",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math3/optimization/linear/SimplexSolver.java",
+        "src/main/java/org/apache/commons/math3/optimization/linear/SimplexSolver.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "doIteration",
+            "getPivotRow",
+            "getPivotColumn"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "getPivotColumn",
+            "doIteration",
+            "getPivotRow"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "74",
+            "98",
+            "110",
+            "112",
+            "113",
+            "114",
+            "115",
+            "116",
+            "117",
+            "118",
+            "119",
+            "120",
+            "121",
+            "123",
+            "152"
+          ],
+          "num": 15
+        },
+        {
+          "qualified_names": [
+            "74",
+            "75",
+            "76",
+            "100",
+            "101",
+            "102",
+            "114",
+            "116",
+            "117",
+            "118",
+            "119",
+            "120",
+            "121",
+            "122",
+            "123",
+            "124",
+            "125",
+            "126",
+            "128",
+            "129",
+            "130",
+            "131",
+            "132",
+            "133",
+            "134",
+            "135",
+            "136",
+            "137",
+            "138",
+            "139",
+            "140",
+            "141",
+            "142",
+            "143",
+            "144",
+            "145",
+            "146",
+            "147",
+            "176"
+          ],
+          "num": 39
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math3/optimization/linear/SimplexSolver.java b/src/main/java/org/apache/commons/math3/optimization/linear/SimplexSolver.java\nindex c3d9089..c2fa14d 100644\n--- a/src/main/java/org/apache/commons/math3/optimization/linear/SimplexSolver.java\n+++ b/src/main/java/org/apache/commons/math3/optimization/linear/SimplexSolver.java\n@@ -71,7 +71,9 @@\n         Integer minPos \u003d null;\n         for (int i \u003d tableau.getNumObjectiveFunctions(); i \u003c tableau.getWidth() - 1; i++) {\n             final double entry \u003d tableau.getEntry(0, i);\n-            if (Precision.compareTo(entry, minValue, maxUlps) \u003c 0) {\n+            // check if the entry is strictly smaller than the current minimum\n+            // do not use a ulp/epsilon check\n+            if (entry \u003c minValue) {\n                 minValue \u003d entry;\n                 minPos \u003d i;\n             }\n@@ -95,7 +97,9 @@\n \n             if (Precision.compareTo(entry, 0d, maxUlps) \u003e 0) {\n                 final double ratio \u003d rhs / entry;\n-                final int cmp \u003d Precision.compareTo(ratio, minRatio, maxUlps);\n+                // check if the entry is strictly equal to the current min ratio\n+                // do not use a ulp/epsilon check\n+                final int cmp \u003d Double.compare(ratio, minRatio);\n                 if (cmp \u003d\u003d 0) {\n                     minRatioPositions.add(i);\n                 } else if (cmp \u003c 0) {\n@@ -107,20 +111,40 @@\n         }\n \n         if (minRatioPositions.size() \u003d\u003d 0) {\n-          return null;\n+            return null;\n         } else if (minRatioPositions.size() \u003e 1) {\n-          // there\u0027s a degeneracy as indicated by a tie in the minimum ratio test\n-          // check if there\u0027s an artificial variable that can be forced out of the basis\n-          for (Integer row : minRatioPositions) {\n-            for (int i \u003d 0; i \u003c tableau.getNumArtificialVariables(); i++) {\n-              int column \u003d i + tableau.getArtificialVariableOffset();\n-              final double entry \u003d tableau.getEntry(row, column);\n-              if (Precision.equals(entry, 1d, maxUlps) \u0026\u0026\n-                  row.equals(tableau.getBasicRow(column))) {\n-                return row;\n-              }\n+            // there\u0027s a degeneracy as indicated by a tie in the minimum ratio test\n+\n+            // 1. check if there\u0027s an artificial variable that can be forced out of the basis\n+            for (Integer row : minRatioPositions) {\n+                for (int i \u003d 0; i \u003c tableau.getNumArtificialVariables(); i++) {\n+                    int column \u003d i + tableau.getArtificialVariableOffset();\n+                    final double entry \u003d tableau.getEntry(row, column);\n+                    if (Precision.equals(entry, 1d, maxUlps) \u0026\u0026 row.equals(tableau.getBasicRow(column))) {\n+                        return row;\n+                    }\n+                }\n             }\n-          }\n+\n+            // 2. apply Bland\u0027s rule to prevent cycling:\n+            //    take the row for which the corresponding basic variable has the smallest index\n+            //\n+            // see http://www.stanford.edu/class/msande310/blandrule.pdf\n+            // see http://en.wikipedia.org/wiki/Bland%27s_rule (not equivalent to the above paper)\n+            Integer minRow \u003d null;\n+            int minIndex \u003d tableau.getWidth();\n+            for (Integer row : minRatioPositions) {\n+                for (int i \u003d tableau.getNumObjectiveFunctions(); i \u003c tableau.getWidth() - 1 \u0026\u0026 minRow !\u003d row; i++) {\n+                    if (row \u003d\u003d tableau.getBasicRow(i)) {\n+                        if (i \u003c minIndex) {\n+                            minIndex \u003d i;\n+                            minRow \u003d row;\n+                        }\n+                    }\n+                }\n+            }\n+\n+            return minRow;\n         }\n         return minRatioPositions.get(0);\n     }\n@@ -149,7 +173,7 @@\n         // set the rest of the pivot column to 0\n         for (int i \u003d 0; i \u003c tableau.getHeight(); i++) {\n             if (i !\u003d pivotRow) {\n-                double multiplier \u003d tableau.getEntry(i, pivotCol);\n+                final double multiplier \u003d tableau.getEntry(i, pivotCol);\n                 tableau.subtractRow(i, pivotRow, multiplier);\n             }\n         }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [5579,5601]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [5614,5648]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "EnhancedForStatement [5661,6082]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [6096,6110]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: final [7173,7178]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_RECEIVER [2767,2776]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: compareTo [2777,2786]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: maxUlps [2804,2811]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [2787,2811]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [2767,2812]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NumberLiteral: 0 [2815,2816]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: maxUlps [3920,3927]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math3/optimization/linear/SimplexTableau.java",
+        "src/main/java/org/apache/commons/math3/optimization/linear/SimplexTableau.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "subtractRow"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "subtractRow"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "29",
+            "70",
+            "456",
+            "457"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "30",
+            "31",
+            "73",
+            "74",
+            "75",
+            "461",
+            "462",
+            "463",
+            "464",
+            "465",
+            "466",
+            "467",
+            "468"
+          ],
+          "num": 13
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math3/optimization/linear/SimplexTableau.java b/src/main/java/org/apache/commons/math3/optimization/linear/SimplexTableau.java\nindex 327b2ae..e07cfc5 100644\n--- a/src/main/java/org/apache/commons/math3/optimization/linear/SimplexTableau.java\n+++ b/src/main/java/org/apache/commons/math3/optimization/linear/SimplexTableau.java\n@@ -27,6 +27,8 @@\n import java.util.List;\n import java.util.Set;\n \n+import odk.lang.FastMath;\n+\n import org.apache.commons.math3.linear.Array2DRowRealMatrix;\n import org.apache.commons.math3.linear.MatrixUtils;\n import org.apache.commons.math3.linear.RealMatrix;\n@@ -68,6 +70,9 @@\n     /** Default amount of error to accept in floating point comparisons (as ulps). */\n     private static final int DEFAULT_ULPS \u003d 10;\n \n+    /** The cut-off threshold to zero-out entries. */\n+    private static final double CUTOFF_THRESHOLD \u003d 1e-12;\n+\n     /** Serializable version identifier. */\n     private static final long serialVersionUID \u003d -1369660067587938365L;\n \n@@ -453,8 +458,14 @@\n      */\n     protected void subtractRow(final int minuendRow, final int subtrahendRow,\n                                final double multiple) {\n-        tableau.setRowVector(minuendRow, tableau.getRowVector(minuendRow)\n-            .subtract(tableau.getRowVector(subtrahendRow).mapMultiply(multiple)));\n+        for (int i \u003d 0; i \u003c getWidth(); i++) {\n+            double result \u003d tableau.getEntry(minuendRow, i) - tableau.getEntry(subtrahendRow, i) * multiple;\n+            // cut-off values smaller than the CUTOFF_THRESHOLD, otherwise may lead to numerical instabilities\n+            if (FastMath.abs(result) \u003c CUTOFF_THRESHOLD) {\n+                result \u003d 0.0;\n+            }\n+            tableau.setEntry(minuendRow, i, result);\n+        }\n     }\n \n     /**\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [1114,1139]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [2726,2833]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ForStatement [17986,18410]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [17846,17994]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math3/optimization/linear/SimplexSolver.java",
+        "src/main/java/org/apache/commons/math3/optimization/linear/SimplexSolver.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "getPivotRow"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "getPivotRow"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "30",
+            "134",
+            "135",
+            "136",
+            "137",
+            "138",
+            "139",
+            "140",
+            "141",
+            "145",
+            "147",
+            "464"
+          ],
+          "num": 12
+        },
+        {
+          "qualified_names": [
+            "30",
+            "134",
+            "135",
+            "136",
+            "137",
+            "138",
+            "139",
+            "140",
+            "141",
+            "142",
+            "143",
+            "148",
+            "149",
+            "464"
+          ],
+          "num": 14
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Math_28/properties/modified_classes/inducing/src/main/java/org/apache/commons/math3/optimization/linear/SimplexSolver.java data/changesInfo//Math_28/cleaned/fixing/src/main/java/org/apache/commons/math3/optimization/linear/SimplexSolver.java\n--- data/changesInfo//Math_28/properties/modified_classes/inducing/src/main/java/org/apache/commons/math3/optimization/linear/SimplexSolver.java\t2023-08-25 13:54:27.747406707 +0800\n+++ data/changesInfo//Math_28/cleaned/fixing/src/main/java/org/apache/commons/math3/optimization/linear/SimplexSolver.java\t2023-08-02 20:59:05.903741502 +0800\n@@ -131,20 +131,22 @@\n             //\n             // see http://www.stanford.edu/class/msande310/blandrule.pdf\n             // see http://en.wikipedia.org/wiki/Bland%27s_rule (not equivalent to the above paper)\n-            Integer minRow \u003d null;\n-            int minIndex \u003d tableau.getWidth();\n-            for (Integer row : minRatioPositions) {\n-                for (int i \u003d tableau.getNumObjectiveFunctions(); i \u003c tableau.getWidth() - 1 \u0026\u0026 minRow !\u003d row; i++) {\n-                    if (row \u003d\u003d tableau.getBasicRow(i)) {\n-                        if (i \u003c minIndex) {\n-                            minIndex \u003d i;\n-                            minRow \u003d row;\n+            if (getIterations() \u003c getMaxIterations() / 2) {\n+                Integer minRow \u003d null;\n+                int minIndex \u003d tableau.getWidth();\n+                for (Integer row : minRatioPositions) {\n+                    for (int i \u003d tableau.getNumObjectiveFunctions(); i \u003c tableau.getWidth() - 1 \u0026\u0026 minRow !\u003d row; i++) {\n+                        if (row \u003d\u003d tableau.getBasicRow(i)) {\n+                            if (i \u003c minIndex) {\n+                                minIndex \u003d i;\n+                                minRow \u003d row;\n+                            }\n                         }\n                     }\n                 }\n-            }\n \n-            return minRow;\n+                return minRow;\n+            }\n         }\n         return minRatioPositions.get(0);\n     }\ndiff -u -r data/changesInfo//Math_28/properties/modified_classes/inducing/src/main/java/org/apache/commons/math3/optimization/linear/SimplexTableau.java data/changesInfo//Math_28/cleaned/fixing/src/main/java/org/apache/commons/math3/optimization/linear/SimplexTableau.java\n--- data/changesInfo//Math_28/properties/modified_classes/inducing/src/main/java/org/apache/commons/math3/optimization/linear/SimplexTableau.java\t2023-08-25 13:54:27.747406707 +0800\n+++ data/changesInfo//Math_28/cleaned/fixing/src/main/java/org/apache/commons/math3/optimization/linear/SimplexTableau.java\t2023-08-02 20:56:34.685000000 +0800\n@@ -27,7 +27,7 @@\n import java.util.List;\n import java.util.Set;\n \n-import odk.lang.FastMath;\n+//import odk.lang.FastMath;\n \n import org.apache.commons.math3.linear.Array2DRowRealMatrix;\n import org.apache.commons.math3.linear.MatrixUtils;\n@@ -461,7 +461,7 @@\n         for (int i \u003d 0; i \u003c getWidth(); i++) {\n             double result \u003d tableau.getEntry(minuendRow, i) - tableau.getEntry(subtrahendRow, i) * multiple;\n             // cut-off values smaller than the CUTOFF_THRESHOLD, otherwise may lead to numerical instabilities\n-            if (FastMath.abs(result) \u003c CUTOFF_THRESHOLD) {\n+            if (Math.abs(result) \u003c CUTOFF_THRESHOLD) {\n                 result \u003d 0.0;\n             }\n             tableau.setEntry(minuendRow, i, result);\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [5579,6236]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [5583,5623]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [5625,6236]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math3/optimization/linear/SimplexTableau.java",
+        "src/main/java/org/apache/commons/math3/optimization/linear/SimplexTableau.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "subtractRow",
+            "SimplexTableau"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "subtractRow",
+            "SimplexTableau"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "30",
+            "134",
+            "135",
+            "136",
+            "137",
+            "138",
+            "139",
+            "140",
+            "141",
+            "145",
+            "147",
+            "464"
+          ],
+          "num": 12
+        },
+        {
+          "qualified_names": [
+            "30",
+            "134",
+            "135",
+            "136",
+            "137",
+            "138",
+            "139",
+            "140",
+            "141",
+            "142",
+            "143",
+            "148",
+            "149",
+            "464"
+          ],
+          "num": 14
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Math_28/properties/modified_classes/inducing/src/main/java/org/apache/commons/math3/optimization/linear/SimplexSolver.java data/changesInfo//Math_28/cleaned/fixing/src/main/java/org/apache/commons/math3/optimization/linear/SimplexSolver.java\n--- data/changesInfo//Math_28/properties/modified_classes/inducing/src/main/java/org/apache/commons/math3/optimization/linear/SimplexSolver.java\t2023-08-25 13:54:27.747406707 +0800\n+++ data/changesInfo//Math_28/cleaned/fixing/src/main/java/org/apache/commons/math3/optimization/linear/SimplexSolver.java\t2023-08-02 20:59:05.903741502 +0800\n@@ -131,20 +131,22 @@\n             //\n             // see http://www.stanford.edu/class/msande310/blandrule.pdf\n             // see http://en.wikipedia.org/wiki/Bland%27s_rule (not equivalent to the above paper)\n-            Integer minRow \u003d null;\n-            int minIndex \u003d tableau.getWidth();\n-            for (Integer row : minRatioPositions) {\n-                for (int i \u003d tableau.getNumObjectiveFunctions(); i \u003c tableau.getWidth() - 1 \u0026\u0026 minRow !\u003d row; i++) {\n-                    if (row \u003d\u003d tableau.getBasicRow(i)) {\n-                        if (i \u003c minIndex) {\n-                            minIndex \u003d i;\n-                            minRow \u003d row;\n+            if (getIterations() \u003c getMaxIterations() / 2) {\n+                Integer minRow \u003d null;\n+                int minIndex \u003d tableau.getWidth();\n+                for (Integer row : minRatioPositions) {\n+                    for (int i \u003d tableau.getNumObjectiveFunctions(); i \u003c tableau.getWidth() - 1 \u0026\u0026 minRow !\u003d row; i++) {\n+                        if (row \u003d\u003d tableau.getBasicRow(i)) {\n+                            if (i \u003c minIndex) {\n+                                minIndex \u003d i;\n+                                minRow \u003d row;\n+                            }\n                         }\n                     }\n                 }\n-            }\n \n-            return minRow;\n+                return minRow;\n+            }\n         }\n         return minRatioPositions.get(0);\n     }\ndiff -u -r data/changesInfo//Math_28/properties/modified_classes/inducing/src/main/java/org/apache/commons/math3/optimization/linear/SimplexTableau.java data/changesInfo//Math_28/cleaned/fixing/src/main/java/org/apache/commons/math3/optimization/linear/SimplexTableau.java\n--- data/changesInfo//Math_28/properties/modified_classes/inducing/src/main/java/org/apache/commons/math3/optimization/linear/SimplexTableau.java\t2023-08-25 13:54:27.747406707 +0800\n+++ data/changesInfo//Math_28/cleaned/fixing/src/main/java/org/apache/commons/math3/optimization/linear/SimplexTableau.java\t2023-08-02 20:56:34.685000000 +0800\n@@ -27,7 +27,7 @@\n import java.util.List;\n import java.util.Set;\n \n-import odk.lang.FastMath;\n+//import odk.lang.FastMath;\n \n import org.apache.commons.math3.linear.Array2DRowRealMatrix;\n import org.apache.commons.math3.linear.MatrixUtils;\n@@ -461,7 +461,7 @@\n         for (int i \u003d 0; i \u003c getWidth(); i++) {\n             double result \u003d tableau.getEntry(minuendRow, i) - tableau.getEntry(subtrahendRow, i) * multiple;\n             // cut-off values smaller than the CUTOFF_THRESHOLD, otherwise may lead to numerical instabilities\n-            if (FastMath.abs(result) \u003c CUTOFF_THRESHOLD) {\n+            if (Math.abs(result) \u003c CUTOFF_THRESHOLD) {\n                 result \u003d 0.0;\n             }\n             tableau.setEntry(minuendRow, i, result);\n",
+      "operations": [
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1114,1139]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

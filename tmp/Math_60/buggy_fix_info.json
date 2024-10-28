@@ -1,0 +1,123 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math.distribution.NormalDistributionTest::testExtremeValues",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math.distribution.NormalDistributionImpl",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "60",
+  "workingDir": "../bugs/Math_60_tmp",
+  "bug_name": "Math_60",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math.distribution.NormalDistributionTest",
+      "test_function": "testExtremeValues",
+      "assertion_line": "174",
+      "exception": "org.apache.commons.math.ConvergenceException",
+      "message": "Continued fraction diverged to NaN for value ∞"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/distribution/NormalDistributionImpl.java",
+        "src/main/java/org/apache/commons/math/distribution/NormalDistributionImpl.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.distribution.NormalDistributionImpl:cumulativeProbability:[double x]:double"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.distribution.NormalDistributionImpl:cumulativeProbability:[double x]:double"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "126",
+            "127",
+            "128"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "126",
+            "129",
+            "130",
+            "131",
+            "132",
+            "133",
+            "134",
+            "135",
+            "136",
+            "137"
+          ],
+          "num": 10
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/distribution/NormalDistributionImpl.java b/src/main/java/org/apache/commons/math/distribution/NormalDistributionImpl.java\nindex 0d7ce7d..0e124d8 100644\n--- a/src/main/java/org/apache/commons/math/distribution/NormalDistributionImpl.java\n+++ b/src/main/java/org/apache/commons/math/distribution/NormalDistributionImpl.java\n@@ -123,11 +123,18 @@\n      */\n     public double cumulativeProbability(double x) throws MathException {\n         final double dev \u003d x - mean;\n-        if (FastMath.abs(dev) \u003e 40 * standardDeviation) { \n-            return dev \u003c 0 ? 0.0d : 1.0d;\n-        }\n+        try {\n         return 0.5 * (1.0 + Erf.erf((dev) /\n                     (standardDeviation * FastMath.sqrt(2.0))));\n+        } catch (MaxIterationsExceededException ex) {\n+            if (x \u003c (mean - 20 * standardDeviation)) { // JDK 1.5 blows at 38\n+                return 0;\n+            } else if (x \u003e (mean + 20 * standardDeviation)) {\n+                return 1;\n+            } else {\n+                throw ex;\n+            }\n+        }\n     }\n \n     /**\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TryStatement [4427,4857]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [4431,4550]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "CatchClause [4551,4857]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [4427,4529]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,145 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.lang3.text.translate.LookupTranslatorTest::testLang882",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.lang3.text.translate.LookupTranslator",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Lang",
+  "id": "4",
+  "workingDir": "../bugs/Lang_4_tmp",
+  "bug_name": "Lang_4",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.lang3.text.translate.LookupTranslatorTest",
+      "test_function": "testLang882",
+      "assertion_line": "48",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Incorrect codepoint consumption expected:\u003c3\u003e but was:\u003c0\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/lang3/text/translate/LookupTranslator.java",
+        "src/main/java/org/apache/commons/lang3/text/translate/LookupTranslator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.lang3.text.translate.LookupTranslator:translate:[final CharSequence input, final int index, final Writer out]:int",
+            "org.apache.commons.lang3.text.translate.LookupTranslator:LookupTranslator:[final CharSequence[]... lookup]:null"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.lang3.text.translate.LookupTranslator:LookupTranslator:[final CharSequence[]... lookup]:null",
+            "org.apache.commons.lang3.text.translate.LookupTranslator:translate:[final CharSequence input, final int index, final Writer out]:int"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "31",
+            "46",
+            "51",
+            "77"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "31",
+            "46",
+            "51",
+            "77"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/lang3/text/translate/LookupTranslator.java b/src/main/java/org/apache/commons/lang3/text/translate/LookupTranslator.java\nindex 9cf45f8..8ed51bc 100644\n--- a/src/main/java/org/apache/commons/lang3/text/translate/LookupTranslator.java\n+++ b/src/main/java/org/apache/commons/lang3/text/translate/LookupTranslator.java\n@@ -28,7 +28,7 @@\n  */\n public class LookupTranslator extends CharSequenceTranslator {\n \n-    private final HashMap\u003cString, CharSequence\u003e lookupMap;\n+    private final HashMap\u003cCharSequence, CharSequence\u003e lookupMap;\n     private final int shortest;\n     private final int longest;\n \n@@ -43,12 +43,12 @@\n      * @param lookup CharSequence[][] table of size [*][2]\n      */\n     public LookupTranslator(final CharSequence[]... lookup) {\n-        lookupMap \u003d new HashMap\u003cString, CharSequence\u003e();\n+        lookupMap \u003d new HashMap\u003cCharSequence, CharSequence\u003e();\n         int _shortest \u003d Integer.MAX_VALUE;\n         int _longest \u003d 0;\n         if (lookup !\u003d null) {\n             for (final CharSequence[] seq : lookup) {\n-                this.lookupMap.put(seq[0].toString(), seq[1]);\n+                this.lookupMap.put(seq[0], seq[1]);\n                 final int sz \u003d seq[0].length();\n                 if (sz \u003c _shortest) {\n                     _shortest \u003d sz;\n@@ -74,7 +74,7 @@\n         // descend so as to get a greedy algorithm\n         for (int i \u003d max; i \u003e\u003d shortest; i--) {\n             final CharSequence subSeq \u003d input.subSequence(index, index + i);\n-            final CharSequence result \u003d lookupMap.get(subSeq.toString());\n+            final CharSequence result \u003d lookupMap.get(subSeq);\n             if (result !\u003d null) {\n                 out.write(result.toString());\n                 return i;\n",
+      "operations": [
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_RECEIVER [1961,1967]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: toString [1968,1976]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [1961,1978]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_RECEIVER [2823,2829]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: toString [2830,2838]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [2823,2840]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

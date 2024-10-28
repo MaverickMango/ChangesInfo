@@ -1,0 +1,125 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.compress.archivers.zip.ZipArchiveInputStreamTest::properlyMarksEntriesAsUnreadableIfUncompressedSizeIsUnknown",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.compress.archivers.zip.ZipArchiveInputStream",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Compress",
+  "id": "47",
+  "workingDir": "../bugs/Compress_47_tmp",
+  "bug_name": "Compress_47",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.compress.archivers.zip.ZipArchiveInputStreamTest",
+      "test_function": "properlyMarksEntriesAsUnreadableIfUncompressedSizeIsUnknown",
+      "assertion_line": "339",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveInputStream.java",
+        "src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveInputStream.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.zip.ZipArchiveInputStream:read:[final byte[] buffer, final int offset, final int length]:int",
+            "org.apache.commons.compress.archivers.zip.ZipArchiveInputStream:supportsCompressedSizeFor:[final ZipArchiveEntry entry]:boolean",
+            "org.apache.commons.compress.archivers.zip.ZipArchiveInputStream:canReadEntryData:[final ArchiveEntry ae]:boolean"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.zip.ZipArchiveInputStream:readStoredEntry:[]:void",
+            "org.apache.commons.compress.archivers.zip.ZipArchiveInputStream:canReadEntryData:[final ArchiveEntry ae]:boolean",
+            "org.apache.commons.compress.archivers.zip.ZipArchiveInputStream:read:[final byte[] buffer, final int offset, final int length]:int"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "415",
+            "416",
+            "441",
+            "442",
+            "443",
+            "444",
+            "814",
+            "815",
+            "816",
+            "817",
+            "818",
+            "819",
+            "820",
+            "821"
+          ],
+          "num": 14
+        },
+        {
+          "qualified_names": [
+            "415",
+            "441",
+            "818"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveInputStream.java b/src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveInputStream.java\nindex 41e6940..dd845b8 100644\n--- a/src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveInputStream.java\n+++ b/src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveInputStream.java\n@@ -412,8 +412,7 @@\n         if (ae instanceof ZipArchiveEntry) {\n             final ZipArchiveEntry ze \u003d (ZipArchiveEntry) ae;\n             return ZipUtil.canHandleEntryData(ze)\n-                \u0026\u0026 supportsDataDescriptorFor(ze)\n-                \u0026\u0026 supportsCompressedSizeFor(ze);\n+                \u0026\u0026 supportsDataDescriptorFor(ze);\n         }\n         return false;\n     }\n@@ -438,10 +437,6 @@\n             throw new UnsupportedZipFeatureException(UnsupportedZipFeatureException.Feature.DATA_DESCRIPTOR,\n                     current.entry);\n         }\n-        if (!supportsCompressedSizeFor(current.entry)) {\n-            throw new UnsupportedZipFeatureException(UnsupportedZipFeatureException.Feature.UNKNOWN_COMPRESSED_SIZE,\n-                    current.entry);\n-        }\n \n         int read;\n         if (current.entry.getMethod() \u003d\u003d ZipArchiveOutputStream.STORED) {\n@@ -811,14 +806,6 @@\n      * Whether the compressed size for the entry is either known or\n      * not required by the compression method being used.\n      */\n-    private boolean supportsCompressedSizeFor(final ZipArchiveEntry entry) {\n-        return entry.getCompressedSize() !\u003d ArchiveEntry.SIZE_UNKNOWN\n-            || entry.getMethod() \u003d\u003d ZipEntry.DEFLATED\n-            || entry.getMethod() \u003d\u003d ZipMethod.ENHANCED_DEFLATED.getCode()\n-            || (entry.getGeneralPurposeBit().usesDataDescriptor()\n-                \u0026\u0026 allowStoredEntriesWithDataDescriptor\n-                \u0026\u0026 entry.getMethod() \u003d\u003d ZipEntry.STORED);\n-    }\n \n     /**\n      * Caches a stored entry that uses the data descriptor.\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [16286,16315]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [17117,17328]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [30897,31495]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.apache.commons.compress.archivers.zip.ZipArchiveInputStream:readStoredEntry:[]:void"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.apache.commons.compress.archivers.zip.ZipArchiveInputStream:supportsCompressedSizeFor:[final ZipArchiveEntry entry]:boolean"
+      ],
+      "num": 1
+    }
+  }
+}

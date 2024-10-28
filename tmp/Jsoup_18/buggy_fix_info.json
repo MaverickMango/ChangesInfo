@@ -1,0 +1,130 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.jsoup.parser.CharacterReaderTest::handleCarriageReturnAsLineFeed,org.jsoup.parser.CharacterReaderTest::consumeToEnd,org.jsoup.parser.ParserTest::handlesNewlinesAndWhitespaceInTag",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.jsoup.parser.CharacterReader",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Jsoup",
+  "id": "18",
+  "workingDir": "../bugs/Jsoup_18_tmp",
+  "bug_name": "Jsoup_18",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.jsoup.parser.CharacterReaderTest",
+      "test_function": "handleCarriageReturnAsLineFeed",
+      "assertion_line": "69",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003cone []\u003e but was:\u003cone ["
+    },
+    {
+      "test_class": "org.jsoup.parser.CharacterReaderTest",
+      "test_function": "consumeToEnd",
+      "assertion_line": "77",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003cone two thre[e]\u003e but was:\u003cone two thre[]\u003e"
+    },
+    {
+      "test_class": "org.jsoup.parser.ParserTest",
+      "test_function": "handlesNewlinesAndWhitespaceInTag",
+      "assertion_line": "619",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c\u003ca href\u003d\"one\" []id\u003d\"two\"\u003e\u003c/a\u003e\u003e but was:\u003c\u003ca href\u003d\"one\" [\u003d\"\" ]id\u003d\"two\"\u003e\u003c/a\u003e\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/parser/CharacterReader.java",
+        "src/main/java/org/jsoup/parser/CharacterReader.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.parser.CharacterReader:CharacterReader:[String input]:null",
+            "org.jsoup.parser.CharacterReader:consumeToEnd:[]:String"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.jsoup.parser.CharacterReader:CharacterReader:[String input]:null",
+            "org.jsoup.parser.CharacterReader:consumeToEnd:[]:String"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "18",
+            "100"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "17",
+            "99"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/parser/CharacterReader.java b/src/main/java/org/jsoup/parser/CharacterReader.java\nindex d05c3cd..a9a2683 100644\n--- a/src/main/java/org/jsoup/parser/CharacterReader.java\n+++ b/src/main/java/org/jsoup/parser/CharacterReader.java\n@@ -15,7 +15,6 @@\n \n     CharacterReader(String input) {\n         Validate.notNull(input);\n-        input \u003d input.replaceAll(\"\\r\\n?\", \"\\n\"); // normalise carriage returns to newlines\n \n         this.input \u003d input;\n         this.length \u003d input.length();\n@@ -97,7 +96,7 @@\n     }\n \n     String consumeToEnd() {\n-        String data \u003d input.substring(pos, input.length());\n+        String data \u003d input.substring(pos, input.length() - 1);\n         pos \u003d input.length();\n         return data;\n     }\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [2069,2087]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: - [2084,2085]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NumberLiteral: 1 [2086,2087]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [402,442]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

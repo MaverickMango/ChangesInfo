@@ -1,0 +1,109 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.csv.CSVPrinterTest::testDontQuoteEuroFirstChar",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.csv.CSVFormat",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Csv",
+  "id": "15",
+  "workingDir": "../bugs/Csv_15_tmp",
+  "bug_name": "Csv_15",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.csv.CSVPrinterTest",
+      "test_function": "testDontQuoteEuroFirstChar",
+      "assertion_line": "1040",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c[€],Deux"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/csv/CSVFormat.java",
+        "src/main/java/org/apache/commons/csv/CSVFormat.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.csv.CSVFormat:printAndQuote:[final Object object, final CharSequence value, final int offset, final int len, final Appendable out, final boolean newRecord]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.csv.CSVFormat:printAndQuote:[final Object object, final CharSequence value, final int offset, final int len, final Appendable out, final boolean newRecord]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1189"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "1189",
+            "1190",
+            "1191"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/csv/CSVFormat.java b/src/main/java/org/apache/commons/csv/CSVFormat.java\nindex dc7588b..35c2ad1 100644\n--- a/src/main/java/org/apache/commons/csv/CSVFormat.java\n+++ b/src/main/java/org/apache/commons/csv/CSVFormat.java\n@@ -1186,7 +1186,9 @@\n             } else {\n                 char c \u003d value.charAt(pos);\n \n-                if (c \u003c\u003d COMMENT) {\n+                if (newRecord \u0026\u0026 (c \u003c 0x20 || c \u003e 0x21 \u0026\u0026 c \u003c 0x23 || c \u003e 0x2B \u0026\u0026 c \u003c 0x2D || c \u003e 0x7E)) {\n+                    quote \u003d true;\n+                } else if (c \u003c\u003d COMMENT) {\n                     // Some other chars at the start of a value caused the parser to fail, so for now\n                     // encapsulate if we start in anything less than \u0027#\u0027. We are being conservative\n                     // by including the default comment char too.\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [37423,38682]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [37427,37510]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Block [37512,37565]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

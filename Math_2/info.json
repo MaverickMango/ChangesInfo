@@ -1,0 +1,2376 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Math",
+  "id": "2",
+  "workingDir": "../bugs/Math_2_buggy",
+  "inducingCommit": "711d6b94a120d413e9d8bd21bb26ec7d0aeecc39",
+  "originalCommit": "f6fddf94c74502469c013ed94599bbd7fa2d89e7",
+  "bug_name": "Math_2",
+  "derive": "defects4j",
+  "original_fixing_commit": "c0b655ace5665c0cd32e3f5e5b46edad4d223125",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/distribution/AbstractIntegerDistribution.java",
+        "src/main/java/org/apache/commons/math/distribution/AbstractIntegerDistribution.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "getDomainUpperBound",
+            "cumulativeProbability",
+            "getDomainLowerBound",
+            "inverseCumulativeProbability"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "cumulativeProbability",
+            "inverseCumulativeProbability",
+            "solveInverseCumulativeProbability"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "23",
+            "52",
+            "54",
+            "56",
+            "57",
+            "58",
+            "60",
+            "63",
+            "64",
+            "65",
+            "69",
+            "70",
+            "71",
+            "72",
+            "73",
+            "74",
+            "75",
+            "76",
+            "77",
+            "78",
+            "79",
+            "80",
+            "81",
+            "82",
+            "83",
+            "84",
+            "85",
+            "86",
+            "87",
+            "88",
+            "89",
+            "90",
+            "91",
+            "92",
+            "93",
+            "94",
+            "95",
+            "96",
+            "100",
+            "101",
+            "102",
+            "103",
+            "104",
+            "105",
+            "106",
+            "107",
+            "111",
+            "112",
+            "113",
+            "115",
+            "116",
+            "117",
+            "119",
+            "121",
+            "122",
+            "123",
+            "124",
+            "125",
+            "126",
+            "127",
+            "128",
+            "129",
+            "130"
+          ],
+          "num": 63
+        },
+        {
+          "qualified_names": [
+            "23",
+            "27",
+            "53",
+            "55",
+            "57",
+            "58",
+            "60",
+            "63",
+            "64",
+            "65",
+            "66",
+            "67",
+            "68",
+            "69",
+            "70",
+            "71",
+            "72",
+            "73",
+            "74",
+            "75",
+            "79",
+            "80",
+            "81",
+            "82",
+            "83",
+            "84",
+            "85",
+            "86",
+            "87",
+            "88",
+            "89",
+            "90",
+            "91",
+            "92",
+            "93",
+            "94",
+            "95",
+            "96",
+            "97",
+            "98",
+            "99",
+            "100",
+            "101",
+            "102",
+            "103",
+            "104",
+            "105",
+            "106",
+            "107",
+            "108",
+            "109",
+            "110",
+            "111",
+            "112",
+            "116",
+            "120",
+            "121",
+            "122",
+            "123",
+            "124",
+            "126",
+            "127",
+            "128",
+            "129",
+            "131",
+            "132",
+            "133",
+            "134",
+            "135",
+            "136",
+            "137",
+            "138",
+            "139",
+            "140",
+            "141",
+            "143",
+            "144",
+            "145",
+            "146",
+            "147",
+            "148",
+            "149",
+            "150",
+            "151"
+          ],
+          "num": 84
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/distribution/AbstractIntegerDistribution.java b/src/main/java/org/apache/commons/math/distribution/AbstractIntegerDistribution.java\nindex 793f72b..7f87f36 100644\n--- a/src/main/java/org/apache/commons/math/distribution/AbstractIntegerDistribution.java\n+++ b/src/main/java/org/apache/commons/math/distribution/AbstractIntegerDistribution.java\n@@ -20,10 +20,11 @@\n \n import org.apache.commons.math.exception.MathInternalError;\n import org.apache.commons.math.exception.NotStrictlyPositiveException;\n-import org.apache.commons.math.exception.NumberIsTooSmallException;\n+import org.apache.commons.math.exception.NumberIsTooLargeException;\n import org.apache.commons.math.exception.OutOfRangeException;\n import org.apache.commons.math.exception.util.LocalizedFormats;\n import org.apache.commons.math.random.RandomDataImpl;\n+import org.apache.commons.math.util.FastMath;\n \n /**\n  * Base class for integer-valued discrete distributions.  Default\n@@ -49,85 +50,105 @@\n      * {@inheritDoc}\n      *\n      * The default implementation uses the identity\n-     * \u003cp\u003e{@code P(x0 \u003c\u003d X \u003c\u003d x1) \u003d P(X \u003c\u003d x1) - P(X \u003c\u003d x0 - 1)}\u003c/p\u003e\n+     * \u003cp\u003e{@code P(x0 \u003c X \u003c\u003d x1) \u003d P(X \u003c\u003d x1) - P(X \u003c\u003d x0)}\u003c/p\u003e\n      */\n-    public double cumulativeProbability(int x0, int x1) {\n+    public double cumulativeProbability(int x0, int x1) throws NumberIsTooLargeException {\n         if (x1 \u003c x0) {\n-            throw new NumberIsTooSmallException(\n-                    LocalizedFormats.LOWER_ENDPOINT_ABOVE_UPPER_ENDPOINT,\n-                    x1, x0, true);\n+            throw new NumberIsTooLargeException(LocalizedFormats.LOWER_ENDPOINT_ABOVE_UPPER_ENDPOINT,\n+                    x0, x1, true);\n         }\n-        return cumulativeProbability(x1) - cumulativeProbability(x0 - 1);\n+        return cumulativeProbability(x1) - cumulativeProbability(x0);\n     }\n \n-    /** {@inheritDoc} */\n-    public int inverseCumulativeProbability(final double p) {\n-        if (p \u003c 0 || p \u003e 1) {\n+    /**\n+     * {@inheritDoc}\n+     *\n+     * The default implementation returns\n+     * \u003cul\u003e\n+     * \u003cli\u003e{@link #getSupportLowerBound()} for {@code p \u003d 0},\u003c/li\u003e\n+     * \u003cli\u003e{@link #getSupportUpperBound()} for {@code p \u003d 1}, and\u003c/li\u003e\n+     * \u003cli\u003e{@link #solveInverseCumulativeProbability(double, int, int)} for\n+     *     {@code 0 \u003c p \u003c 1}.\u003c/li\u003e\n+     * \u003c/ul\u003e\n+     */\n+    public int inverseCumulativeProbability(final double p) throws OutOfRangeException {\n+        if (p \u003c 0.0 || p \u003e 1.0) {\n             throw new OutOfRangeException(p, 0, 1);\n         }\n \n-        // by default, do simple bisection.\n-        // subclasses can override if there is a better method.\n-        int x0 \u003d getDomainLowerBound(p);\n-        int x1 \u003d getDomainUpperBound(p);\n-        double pm;\n-        while (x0 \u003c x1) {\n-            int xm \u003d x0 + (x1 - x0) / 2;\n-            pm \u003d checkedCumulativeProbability(xm);\n-            if (pm \u003e p) {\n-                // update x1\n-                if (xm \u003d\u003d x1) {\n-                    // this can happen with integer division\n-                    // simply decrement x1\n-                    --x1;\n-                } else {\n-                    // update x1 normally\n-                    x1 \u003d xm;\n-                }\n-            } else {\n-                // update x0\n-                if (xm \u003d\u003d x0) {\n-                    // this can happen with integer division\n-                    // simply increment x0\n-                    ++x0;\n-                } else {\n-                    // update x0 normally\n-                    x0 \u003d xm;\n-                }\n+        int lower \u003d getSupportLowerBound();\n+        if (p \u003d\u003d 0.0) {\n+            return lower;\n+        }\n+        if (lower \u003d\u003d Integer.MIN_VALUE) {\n+            if (checkedCumulativeProbability(lower) \u003e\u003d p) {\n+                return lower;\n+            }\n+        } else {\n+            lower -\u003d 1; // this ensures cumulativeProbability(lower) \u003c p, which\n+                        // is important for the solving step\n+        }\n+\n+        int upper \u003d getSupportUpperBound();\n+        if (p \u003d\u003d 1.0) {\n+            return upper;\n+        }\n+\n+        // use the one-sided Chebyshev inequality to narrow the bracket\n+        // cf. AbstractRealDistribution.inverseCumulativeProbability(double)\n+        final double mu \u003d getNumericalMean();\n+        final double sigma \u003d FastMath.sqrt(getNumericalVariance());\n+        final boolean chebyshevApplies \u003d !(Double.isInfinite(mu) || Double.isNaN(mu) ||\n+                Double.isInfinite(sigma) || Double.isNaN(sigma) || sigma \u003d\u003d 0.0);\n+        if (chebyshevApplies) {\n+            double k \u003d FastMath.sqrt((1.0 - p) / p);\n+            double tmp \u003d mu - k * sigma;\n+            if (tmp \u003e lower) {\n+                lower \u003d ((int) Math.ceil(tmp)) - 1;\n+            }\n+            k \u003d 1.0 / k;\n+            tmp \u003d mu + k * sigma;\n+            if (tmp \u003c upper) {\n+                upper \u003d ((int) Math.ceil(tmp)) - 1;\n             }\n         }\n \n-        // insure x0 is the correct critical point\n-        pm \u003d checkedCumulativeProbability(x0);\n-        while (pm \u003e p) {\n-            --x0;\n-            pm \u003d checkedCumulativeProbability(x0);\n-        }\n-\n-        return x0;\n+        return solveInverseCumulativeProbability(p, lower, upper);\n     }\n \n     /**\n-     * Access the domain value lower bound, based on {@code p}, used to\n-     * bracket a CDF root. This method is used by\n-     * {@link #inverseCumulativeProbability(double)} to find critical values.\n+     * This is a utility function used by {@link\n+     * #inverseCumulativeProbability(double)}. It assumes {@code 0 \u003c p \u003c 1} and\n+     * that the inverse cumulative probability lies in the bracket {@code\n+     * (lower, upper]}. The implementation does simple bisection to find the\n+     * smallest {@code p}-quantile \u003ccode\u003einf{x in Z | P(X\u003c\u003dx) \u003e\u003d p}\u003c/code\u003e.\n      *\n-     * @param p the desired probability for the critical value ({@code 0 \u003c p \u003c 1})\n-     * @return a domain value lower bound, i.e. a value {@code x} such that\n-     * {@code P(X \u003c\u003d x) \u003c p}\n+     * @param p the cumulative probability\n+     * @param lower a value satisfying {@code cumulativeProbability(lower) \u003c p}\n+     * @param upper a value satisfying {@code p \u003c\u003d cumulativeProbability(upper)}\n+     * @return the smallest {@code p}-quantile of this distribution\n      */\n-    protected abstract int getDomainLowerBound(double p);\n+    protected int solveInverseCumulativeProbability(final double p, int lower, int upper) {\n+        while (lower + 1 \u003c upper) {\n+            int xm \u003d (lower + upper) / 2;\n+            if (xm \u003c lower || xm \u003e upper) {\n+                /*\n+                 * Overflow.\n+                 * There will never be an overflow in both calculation methods\n+                 * for xm at the same time\n+                 */\n+                xm \u003d lower + (upper - lower) / 2;\n+            }\n \n-    /**\n-     * Access the domain value upper bound, based on {@code p}, used to\n-     * bracket a CDF root. This method is used by\n-     * {@link #inverseCumulativeProbability(double)} to find critical values.\n-     *\n-     * @param p the desired probability for the critical value ({@code 0 \u003c p \u003c 1})\n-     * @return a domain value upper bound, i.e. a value {@code x} such that\n-     * {@code P(X \u003c\u003d x) \u003e\u003d p}\n-     */\n-    protected abstract int getDomainUpperBound(double p);\n+            double pm \u003d checkedCumulativeProbability(xm);\n+            if (pm \u003e\u003d p) {\n+                upper \u003d xm;\n+            } else {\n+                lower \u003d xm;\n+            }\n+        }\n+        return upper;\n+    }\n \n     /** {@inheritDoc} */\n     public void reseedRandomGenerator(long seed) {\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [1011,1078]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [1259,1304]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodDeclaration [4436,5765]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [2190,2215]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Javadoc [2469,2824]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [2892,2911]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [4436,5082]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: protected [5087,5096]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrimitiveType: int [5097,5100]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: solveInverseCumulativeProbability [5101,5134]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [5135,5149]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [5151,5160]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [5162,5171]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [5173,5765]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TagElement [2480,2816]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [3019,3054]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [3063,3114]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [3123,3428]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [3438,3473]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [3482,3533]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [3692,3729]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [3738,3797]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [3806,3967]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [3976,4356]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [4366,4424]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [5746,5759]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: The default implementation returns [2508,2542]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003cul\u003e [2550,2554]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003cli\u003e [2562,2566]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [2566,2597]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement:  for  [2597,2602]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [2602,2615]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: ,\u003c/li\u003e [2615,2621]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003cli\u003e [2629,2633]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [2633,2664]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement:  for  [2664,2669]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [2669,2682]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: , and\u003c/li\u003e [2682,2692]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003cli\u003e [2700,2704]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [2704,2764]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement:  for [2764,2768]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [2780,2797]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: .\u003c/li\u003e [2797,2803]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003c/ul\u003e [2811,2816]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [3067,3075]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [3077,3114]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [5190,5199]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [5223,5252]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [5265,5550]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [5564,5609]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [5269,5293]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrimitiveType: double [5564,5570]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [5571,5608]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ExpressionStatement [5503,5536]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [5653,5664]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Assignment [5503,5535]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ASSIGNMENT_OPERATOR: \u003d [5506,5507]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1011,1078]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: - [2403,2404]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NumberLiteral: 1 [2405,2406]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [2400,2406]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement:   [2437,2438]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TagElement [2424,2438]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Javadoc [2420,2440]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [2712,2744]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [2753,2785]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [2794,2804]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [3664,3702]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "WhileStatement [3711,3806]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: x1 [2825,2827]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [3227,3235]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PrimitiveType: int [2843,2846]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [2847,2870]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [2843,2871]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ASSIGNMENT_OPERATOR: \u003d [2887,2888]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Assignment [2884,2921]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ExpressionStatement [2884,2922]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [2998,3006]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [3008,3157]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [2994,3253]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [3324,3332]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [3334,3483]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [3489,3579]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [3320,3579]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [3838,4302]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [4308,4773]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/distribution/BinomialDistribution.java",
+        "src/main/java/org/apache/commons/math/distribution/BinomialDistribution.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "getDomainUpperBound",
+            "inverseCumulativeProbability",
+            "getSupportLowerBound",
+            "getSupportUpperBound",
+            "cumulativeProbability",
+            "getNumericalVariance",
+            "getDomainLowerBound",
+            "getNumericalMean"
+          ],
+          "num": 8
+        },
+        {
+          "qualified_names": [
+            "getNumericalMean",
+            "cumulativeProbability",
+            "getNumericalVariance",
+            "getSupportUpperBound",
+            "getSupportLowerBound"
+          ],
+          "num": 5
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "101",
+            "110",
+            "111",
+            "112",
+            "113",
+            "114",
+            "115",
+            "116",
+            "117",
+            "118",
+            "119",
+            "120",
+            "121",
+            "122",
+            "123",
+            "124",
+            "125",
+            "126",
+            "127",
+            "128",
+            "129",
+            "130",
+            "131",
+            "132",
+            "133",
+            "134",
+            "135",
+            "136",
+            "137",
+            "138",
+            "139",
+            "140",
+            "141",
+            "146",
+            "156",
+            "157",
+            "163",
+            "164",
+            "166",
+            "169",
+            "175",
+            "177",
+            "180"
+          ],
+          "num": 43
+        },
+        {
+          "qualified_names": [
+            "101",
+            "114",
+            "124",
+            "125",
+            "131",
+            "132",
+            "134",
+            "137",
+            "143",
+            "144",
+            "146",
+            "149"
+          ],
+          "num": 12
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/distribution/BinomialDistribution.java b/src/main/java/org/apache/commons/math/distribution/BinomialDistribution.java\nindex 3d6cc39..906592b 100644\n--- a/src/main/java/org/apache/commons/math/distribution/BinomialDistribution.java\n+++ b/src/main/java/org/apache/commons/math/distribution/BinomialDistribution.java\n@@ -98,7 +98,7 @@\n         } else if (x \u003e\u003d numberOfTrials) {\n             ret \u003d 1.0;\n         } else {\n-            ret \u003d 1.0 - Beta.regularizedBeta(getProbabilityOfSuccess(),\n+            ret \u003d 1.0 - Beta.regularizedBeta(probabilityOfSuccess,\n                     x + 1.0, numberOfTrials - x);\n         }\n         return ret;\n@@ -107,43 +107,11 @@\n     /**\n      * {@inheritDoc}\n      *\n-     * This implementation return -1 when {@code p \u003d\u003d 0} and\n-     * {@code Integer.MAX_VALUE} when {@code p \u003d\u003d 1}.\n-     */\n-    @Override\n-    public int inverseCumulativeProbability(final double p) {\n-        // handle extreme values explicitly\n-        if (p \u003d\u003d 0) {\n-            return -1;\n-        }\n-        if (p \u003d\u003d 1) {\n-            return Integer.MAX_VALUE;\n-        }\n-\n-        // use default bisection impl\n-        return super.inverseCumulativeProbability(p);\n-    }\n-\n-    /** {@inheritDoc} */\n-    @Override\n-    protected int getDomainLowerBound(double p) {\n-        return -1;\n-    }\n-\n-    /** {@inheritDoc} */\n-    @Override\n-    protected int getDomainUpperBound(double p) {\n-        return numberOfTrials;\n-    }\n-\n-    /**\n-     * {@inheritDoc}\n-     *\n      * For {@code n} trials and probability parameter {@code p}, the mean is\n      * {@code n * p}.\n      */\n     public double getNumericalMean() {\n-        return getNumberOfTrials() * getProbabilityOfSuccess();\n+        return numberOfTrials * probabilityOfSuccess;\n     }\n \n     /**\n@@ -153,31 +121,32 @@\n      * {@code n * p * (1 - p)}.\n      */\n     public double getNumericalVariance() {\n-        final double p \u003d getProbabilityOfSuccess();\n-        return getNumberOfTrials() * p * (1 - p);\n+        final double p \u003d probabilityOfSuccess;\n+        return numberOfTrials * p * (1 - p);\n     }\n \n     /**\n      * {@inheritDoc}\n      *\n-     * The lower bound of the support is always 0 no matter the number of trials\n-     * and probability parameter.\n+     * The lower bound of the support is always 0 except for the probability\n+     * parameter {@code p \u003d 1}.\n      *\n-     * @return lower bound of the support (always 0)\n+     * @return lower bound of the support (0 or the number of trials)\n      */\n     public int getSupportLowerBound() {\n-        return 0;\n+        return probabilityOfSuccess \u003c 1.0 ? 0 : numberOfTrials;\n     }\n \n     /**\n      * {@inheritDoc}\n      *\n-     * The upper bound of the support is the number of trials.\n+     * The upper bound of the support is the number of trials except for the\n+     * probability parameter {@code p \u003d 0}.\n      *\n-     * @return upper bound of the support (equal to number of trials)\n+     * @return upper bound of the support (number of trials or 0)\n      */\n     public int getSupportUpperBound() {\n-        return getNumberOfTrials();\n+        return probabilityOfSuccess \u003e 0.0 ? numberOfTrials : 0;\n     }\n \n     /**\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Javadoc [4218,4443]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Javadoc [4559,4792]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [4123,4161]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TagElement [4229,4358]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [4373,4435]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TagElement [4570,4711]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [4726,4784]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [4841,4896]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: The lower bound of the support is always 0 except for the probability [4257,4326]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: parameter  [4334,4344]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [4344,4357]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: . [4357,4358]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ConditionalExpression [4499,4546]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: The upper bound of the support is the number of trials except for the [4598,4667]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: probability parameter  [4675,4697]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [4697,4710]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: . [4710,4711]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: numberOfTrials [3869,3883]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: probabilityOfSuccess [3886,3906]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: numberOfTrials [4177,4191]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [4499,4525]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: numberOfTrials [4532,4546]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: probabilityOfSuccess [3563,3583]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [3563,3588]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [3681,4179]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [4185,4294]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [4300,4421]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [4620,4639]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [4642,4667]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [4884,4927]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [4943,4962]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: The lower bound of the support is always 0 no matter the number of trials [5028,5101]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: and probability parameter. [5109,5135]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TagElement [5000,5135]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [5150,5195]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Javadoc [4989,5203]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: The upper bound of the support is the number of trials. [5312,5367]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TagElement [5284,5367]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [5382,5444]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Javadoc [5273,5452]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [5501,5528]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/distribution/HypergeometricDistribution.java",
+        "src/main/java/org/apache/commons/math/distribution/HypergeometricDistribution.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "getDomainUpperBound",
+            "getDomainLowerBound"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "124",
+            "125",
+            "126",
+            "127",
+            "128",
+            "129",
+            "130",
+            "131",
+            "132",
+            "133",
+            "134",
+            "135"
+          ],
+          "num": 12
+        },
+        {
+          "qualified_names": [
+            "123"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/distribution/HypergeometricDistribution.java b/src/main/java/org/apache/commons/math/distribution/HypergeometricDistribution.java\nindex 99cb892..0217c96 100644\n--- a/src/main/java/org/apache/commons/math/distribution/HypergeometricDistribution.java\n+++ b/src/main/java/org/apache/commons/math/distribution/HypergeometricDistribution.java\n@@ -121,18 +121,6 @@\n         return new int[] { getLowerDomain(n, m, k), getUpperDomain(m, k) };\n     }\n \n-    /** {@inheritDoc} */\n-    @Override\n-    protected int getDomainLowerBound(double p) {\n-        return getLowerDomain(populationSize, numberOfSuccesses, sampleSize);\n-    }\n-\n-    /** {@inheritDoc} */\n-    @Override\n-    protected int getDomainUpperBound(double p) {\n-        return getUpperDomain(sampleSize, numberOfSuccesses);\n-    }\n-\n     /**\n      * Return the lowest domain value for the given hypergeometric distribution\n      * parameters.\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [5164,5332]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [5338,5490]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/distribution/IntegerDistribution.java",
+        "src/main/java/org/apache/commons/math/distribution/IntegerDistribution.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "cumulativeProbability",
+            "getSupportUpperBound",
+            "cumulativeProbability",
+            "getSupportLowerBound",
+            "probability",
+            "inverseCumulativeProbability"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "getSupportLowerBound",
+            "inverseCumulativeProbability",
+            "cumulativeProbability",
+            "getSupportUpperBound",
+            "cumulativeProbability",
+            "probability"
+          ],
+          "num": 6
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "18",
+            "28",
+            "29",
+            "31",
+            "32",
+            "39",
+            "40",
+            "42",
+            "43",
+            "49",
+            "51",
+            "53",
+            "54",
+            "56",
+            "59",
+            "60",
+            "61",
+            "62",
+            "64",
+            "65",
+            "66",
+            "67",
+            "68",
+            "69",
+            "70",
+            "71",
+            "72",
+            "73",
+            "74",
+            "78",
+            "79",
+            "80",
+            "82",
+            "102",
+            "110"
+          ],
+          "num": 35
+        },
+        {
+          "qualified_names": [
+            "19",
+            "20",
+            "21",
+            "31",
+            "32",
+            "34",
+            "35",
+            "42",
+            "43",
+            "45",
+            "46",
+            "47",
+            "53",
+            "55",
+            "57",
+            "58",
+            "59",
+            "60",
+            "62",
+            "65",
+            "66",
+            "67",
+            "69",
+            "70",
+            "72",
+            "73",
+            "76",
+            "77",
+            "78",
+            "80",
+            "100",
+            "101",
+            "102",
+            "103",
+            "111",
+            "112",
+            "113",
+            "114"
+          ],
+          "num": 38
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/distribution/IntegerDistribution.java b/src/main/java/org/apache/commons/math/distribution/IntegerDistribution.java\nindex b0d9c66..c18d381 100644\n--- a/src/main/java/org/apache/commons/math/distribution/IntegerDistribution.java\n+++ b/src/main/java/org/apache/commons/math/distribution/IntegerDistribution.java\n@@ -16,6 +16,9 @@\n  */\n package org.apache.commons.math.distribution;\n \n+import org.apache.commons.math.exception.NumberIsTooLargeException;\n+import org.apache.commons.math.exception.OutOfRangeException;\n+\n /**\n  * Interface for distributions on the integers.\n  *\n@@ -25,61 +28,56 @@\n     /**\n      * For a random variable {@code X} whose values are distributed according\n      * to this distribution, this method returns {@code P(X \u003d x)}. In other\n-     * words, this method represents the probability mass function for the\n-     * distribution.\n+     * words, this method represents the probability mass function (PMF)\n+     * for the distribution.\n      *\n-     * @param x the point at which the probability density function is evaluated.\n-     * @return the value of the probability density function at {@code x}\n+     * @param x the point at which the PMF is evaluated\n+     * @return the value of the probability mass function at {@code x}\n      */\n     double probability(int x);\n \n     /**\n      * For a random variable {@code X} whose values are distributed according\n      * to this distribution, this method returns {@code P(X \u003c\u003d x)}.  In other\n-     * words, this method represents the probability distribution function, or\n-     * PDF for the distribution.\n+     * words, this method represents the (cumulative) distribution function\n+     * (CDF) for this distribution.\n      *\n-     * @param x the point at which the PDF is evaluated\n-     * @return PDF for this distribution.\n+     * @param x the point at which the CDF is evaluated\n+     * @return the probability that a random variable with this\n+     * distribution takes a value less than or equal to {@code x}\n      */\n     double cumulativeProbability(int x);\n \n     /**\n      * For a random variable {@code X} whose values are distributed according\n-     * to this distribution, this method returns {@code P(x0 \u003c\u003d X \u003c\u003d x1)}.\n+     * to this distribution, this method returns {@code P(x0 \u003c X \u003c\u003d x1)}.\n      *\n-     * @param x0 the inclusive lower bound\n+     * @param x0 the exclusive lower bound\n      * @param x1 the inclusive upper bound\n-     * @return the cumulative probability\n-     * @throws IllegalArgumentException if {@code x0 \u003e x1}\n+     * @return the probability that a random variable with this distribution\n+     * will take a value between {@code x0} and {@code x1},\n+     * excluding the lower and including the upper endpoint\n+     * @throws NumberIsTooLargeException if {@code x0 \u003e x1}\n      */\n-    double cumulativeProbability(int x0, int x1);\n+    double cumulativeProbability(int x0, int x1) throws NumberIsTooLargeException;\n \n     /**\n-     * For this distribution, {@code X}, this method returns the largest\n-     * {@code x} such that {@code P(X \u003c\u003d x) \u003c\u003d p}.\n-     * \u003cbr/\u003e\n-     * Note that this definition implies:\n+     * Computes the quantile function of this distribution.\n+     * For a random variable {@code X} distributed according to this distribution,\n+     * the returned value is\n      * \u003cul\u003e\n-     *  \u003cli\u003e If there is a minimum value, {@code m}, with positive\n-     *   probability under (the density of) {@code X}, then {@code m - 1} is\n-     *   returned by {@code inverseCumulativeProbability(0).}  If there is\n-     *   no such value {@code m},  {@code Integer.MIN_VALUE} is returned.\n-     *  \u003c/li\u003e\n-     *  \u003cli\u003e If there is a maximum value, {@code M}, such that\n-     *   {@code P(X \u003c\u003d M) \u003d 1}, then {@code M} is returned by\n-     *   {@code inverseCumulativeProbability(1)}.\n-     *   If there is no such value, {@code M}, {@code Integer.MAX_VALUE} is\n-     *   returned.\n-     *  \u003c/li\u003e\n+     * \u003cli\u003e\u003ccode\u003einf{x in Z | P(X\u003c\u003dx) \u003e\u003d p}\u003c/code\u003e for {@code 0 \u003c p \u003c\u003d 1},\u003c/li\u003e\n+     * \u003cli\u003e\u003ccode\u003einf{x in Z | P(X\u003c\u003dx) \u003e 0}\u003c/code\u003e for {@code p \u003d 0}.\u003c/li\u003e\n      * \u003c/ul\u003e\n+     * If the result exceeds the range of the data type {@code int},\n+     * then {@code Integer.MIN_VALUE} or {@code Integer.MAX_VALUE} is returned.\n      *\n      * @param p the cumulative probability\n-     * @return the largest {@code x} such that {@code P(X \u003c x) \u003c\u003d p}\n-     * @throws IllegalArgumentException if {@code p} is not between 0 and 1\n-     * (inclusive)\n+     * @return the smallest {@code p}-quantile of this distribution\n+     * (largest 0-quantile for {@code p \u003d 0})\n+     * @throws OutOfRangeException if {@code p \u003c 0} or {@code p \u003e 1}\n      */\n-    int inverseCumulativeProbability(double p);\n+    int inverseCumulativeProbability(double p) throws OutOfRangeException;\n \n     /**\n      * Use this method to get the numerical value of the mean of this\n@@ -99,7 +97,10 @@\n     double getNumericalVariance();\n \n     /**\n-     * Access the lower bound of the support.\n+     * Access the lower bound of the support. This method must return the same\n+     * value as {@code inverseCumulativeProbability(0)}. In other words, this\n+     * method must return\n+     * \u003cp\u003e\u003ccode\u003einf {x in Z | P(X \u003c\u003d x) \u003e 0}\u003c/code\u003e.\u003c/p\u003e\n      *\n      * @return lower bound of the support ({@code Integer.MIN_VALUE}\n      * for negative infinity)\n@@ -107,7 +108,10 @@\n     int getSupportLowerBound();\n \n     /**\n-     * Access the upper bound of the support.\n+     * Access the upper bound of the support. This method must return the same\n+     * value as {@code inverseCumulativeProbability(1)}. In other words, this\n+     * method must return\n+     * \u003cp\u003e\u003ccode\u003einf {x in R | P(X \u003c\u003d x) \u003d 1}\u003c/code\u003e.\u003c/p\u003e\n      *\n      * @return upper bound of the support ({@code Integer.MAX_VALUE}\n      * for positive infinity)\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [850,917]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [918,979]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [2627,2652]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Javadoc [2659,3403]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [3458,3477]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TagElement [2670,3162]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TagElement [3220,3326]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TagElement [3334,3395]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: distribution takes a value less than or equal to  [1944,1993]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [1993,2002]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: will take a value between  [2390,2416]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [2416,2426]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement:  and  [2426,2431]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [2431,2441]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: , [2441,2442]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: excluding the lower and including the upper endpoint [2450,2502]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: Computes the quantile function of this distribution. [2670,2722]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: For a random variable  [2730,2752]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement:  distributed according to this distribution, [2761,2805]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: the returned value is [2813,2834]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003cli\u003e\u003ccode\u003einf{x in Z | P(X\u003c\u003dx) \u003e\u003d p}\u003c/code\u003e for  [2854,2902]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [2902,2920]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: ,\u003c/li\u003e [2920,2926]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003cli\u003e\u003ccode\u003einf{x in Z | P(X\u003c\u003dx) \u003e 0}\u003c/code\u003e for  [2934,2981]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [2981,2994]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: .\u003c/li\u003e [2994,3000]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: If the result exceeds the range of the data type  [3021,3070]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [3070,3081]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: , [3081,3082]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: then  [3090,3095]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement:  or  [3120,3124]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement:  the smallest  [3227,3241]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: -quantile of this distribution [3250,3280]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: (largest 0-quantile for  [3288,3312]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [3312,3325]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: ) [3325,3326]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: OutOfRangeException [3342,3361]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [3365,3378]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement:  or  [3378,3382]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [3382,3395]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: value as  [4063,4072]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [4072,4111]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: . In other words, this [4111,4133]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: method must return [4141,4159]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003cp\u003e\u003ccode\u003einf {x in Z | P(X \u003c\u003d x) \u003e 0}\u003c/code\u003e.\u003c/p\u003e [4167,4216]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: value as  [4458,4467]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [4467,4506]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: . In other words, this [4506,4528]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: method must return [4536,4554]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003cp\u003e\u003ccode\u003einf {x in R | P(X \u003c\u003d x) \u003d 1}\u003c/code\u003e.\u003c/p\u003e [4562,4611]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: For this distribution,  [2286,2309]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: , this method returns the largest [2318,2351]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [2359,2368]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement:  such that  [2368,2379]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [2379,2401]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: . [2401,2402]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: \u003cbr/\u003e [2410,2415]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: Note that this definition implies: [2423,2457]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: \u003cli\u003e If there is a minimum value,  [2478,2512]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [2512,2521]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: , with positive [2521,2536]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: probability under (the density of)  [2546,2581]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [2581,2590]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: , then  [2590,2597]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [2597,2610]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement:  is [2610,2613]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: returned by  [2623,2635]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [2635,2675]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement:   If there is [2675,2688]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: no such value  [2698,2712]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [2712,2721]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: ,   [2721,2724]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: \u003c/li\u003e [2771,2776]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: \u003cli\u003e If there is a maximum value,  [2785,2819]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [2819,2828]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: , such that [2828,2839]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [2849,2870]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: , then  [2870,2877]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [2877,2886]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement:  is returned by [2886,2901]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [2911,2950]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: . [2950,2951]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: If there is no such value,  [2961,2988]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [2988,2997]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: ,  [2997,2999]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement:  is [3024,3027]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: returned. [3037,3046]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: \u003c/li\u003e [3055,3060]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TagElement [2286,3073]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [3131,3192]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: IllegalArgumentException [3208,3232]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement:  is not between 0 and 1 [3245,3268]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: (inclusive) [3276,3287]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TagElement [3200,3287]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Javadoc [2275,3295]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/distribution/PascalDistribution.java",
+        "src/main/java/org/apache/commons/math/distribution/PascalDistribution.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "PascalDistribution",
+            "inverseCumulativeProbability",
+            "getDomainUpperBound",
+            "getSupportUpperBound",
+            "getNumericalMean",
+            "getDomainLowerBound"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "PascalDistribution",
+            "getNumericalMean",
+            "getSupportUpperBound"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "20",
+            "71",
+            "76",
+            "81",
+            "82",
+            "83",
+            "141",
+            "142",
+            "143",
+            "144",
+            "145",
+            "146",
+            "147",
+            "148",
+            "149",
+            "150",
+            "151",
+            "152",
+            "153",
+            "154",
+            "155",
+            "156",
+            "157",
+            "158",
+            "159",
+            "160",
+            "161",
+            "162",
+            "163",
+            "164",
+            "165",
+            "166",
+            "167",
+            "168",
+            "169",
+            "170",
+            "171",
+            "172",
+            "173",
+            "174",
+            "175",
+            "212"
+          ],
+          "num": 42
+        },
+        {
+          "qualified_names": [
+            "19",
+            "71",
+            "76",
+            "81",
+            "82",
+            "83",
+            "140",
+            "177"
+          ],
+          "num": 8
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/distribution/PascalDistribution.java b/src/main/java/org/apache/commons/math/distribution/PascalDistribution.java\nindex 3170b57..57d79f7 100644\n--- a/src/main/java/org/apache/commons/math/distribution/PascalDistribution.java\n+++ b/src/main/java/org/apache/commons/math/distribution/PascalDistribution.java\n@@ -16,8 +16,8 @@\n  */\n package org.apache.commons.math.distribution;\n \n+import org.apache.commons.math.exception.NotStrictlyPositiveException;\n import org.apache.commons.math.exception.OutOfRangeException;\n-import org.apache.commons.math.exception.NotPositiveException;\n import org.apache.commons.math.exception.util.LocalizedFormats;\n import org.apache.commons.math.special.Beta;\n import org.apache.commons.math.util.ArithmeticUtils;\n@@ -68,19 +68,19 @@\n     private final double probabilityOfSuccess;\n \n     /**\n-     * Create a Pascal distribution with the given number of trials and\n+     * Create a Pascal distribution with the given number of successes and\n      * probability of success.\n      *\n      * @param r Number of successes.\n      * @param p Probability of success.\n-     * @throws NotPositiveException if the number of successes is not positive\n+     * @throws NotStrictlyPositiveException if the number of successes is not positive\n      * @throws OutOfRangeException if the probability of success is not in the\n      * range [0, 1]\n      */\n     public PascalDistribution(int r, double p)\n-        throws NotPositiveException, OutOfRangeException {\n-        if (r \u003c 0) {\n-            throw new NotPositiveException(LocalizedFormats.NUMBER_OF_SUCCESSES,\n+        throws NotStrictlyPositiveException, OutOfRangeException {\n+        if (r \u003c\u003d 0) {\n+            throw new NotStrictlyPositiveException(LocalizedFormats.NUMBER_OF_SUCCESSES,\n                                            r);\n         }\n         if (p \u003c 0 || p \u003e 1) {\n@@ -138,41 +138,6 @@\n     /**\n      * {@inheritDoc}\n      *\n-     * Returns {@code -1} when {@code p \u003d\u003d 0} and\n-     * {@code Integer.MAX_VALUE} when {@code p \u003d\u003d 1}.\n-     */\n-    @Override\n-    public int inverseCumulativeProbability(final double p) {\n-        int ret;\n-\n-        // handle extreme values explicitly\n-        if (p \u003d\u003d 0) {\n-            ret \u003d -1;\n-        } else if (p \u003d\u003d 1) {\n-            ret \u003d Integer.MAX_VALUE;\n-        } else {\n-            ret \u003d super.inverseCumulativeProbability(p);\n-        }\n-\n-        return ret;\n-    }\n-\n-    /** {@inheritDoc} */\n-    @Override\n-    protected int getDomainLowerBound(double p) {\n-        return -1;\n-    }\n-\n-    /** {@inheritDoc} */\n-    @Override\n-    protected int getDomainUpperBound(double p) {\n-        // use MAX - 1 because MAX causes loop\n-        return Integer.MAX_VALUE - 1;\n-    }\n-\n-    /**\n-     * {@inheritDoc}\n-     *\n      * For number of successes {@code r} and probability of success {@code p},\n      * the mean is {@code r * (1 - p) / p}.\n      */\n@@ -209,7 +174,7 @@\n      * {@inheritDoc}\n      *\n      * The upper bound of the support is always positive infinity no matter the\n-     * parameters. Positive infinity is symbolised by {@code Integer.MAX_VALUE}.\n+     * parameters. Positive infinity is symbolized by {@code Integer.MAX_VALUE}.\n      *\n      * @return upper bound of the support (always {@code Integer.MAX_VALUE}\n      * for positive infinity)\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [850,920]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [3747,3775]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [912,974]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [3728,3748]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [5274,5776]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [5782,5891]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [5897,6072]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/distribution/PoissonDistribution.java",
+        "src/main/java/org/apache/commons/math/distribution/PoissonDistribution.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "getDomainUpperBound",
+            "getDomainLowerBound"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "177",
+            "178",
+            "179",
+            "180",
+            "181",
+            "182",
+            "183",
+            "184",
+            "185",
+            "186",
+            "187",
+            "188"
+          ],
+          "num": 12
+        },
+        {
+          "qualified_names": [
+            "176"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/distribution/PoissonDistribution.java b/src/main/java/org/apache/commons/math/distribution/PoissonDistribution.java\nindex 7353448..0fafe65 100644\n--- a/src/main/java/org/apache/commons/math/distribution/PoissonDistribution.java\n+++ b/src/main/java/org/apache/commons/math/distribution/PoissonDistribution.java\n@@ -174,18 +174,6 @@\n         return normal.cumulativeProbability(x + 0.5);\n     }\n \n-    /** {@inheritDoc} */\n-    @Override\n-    protected int getDomainLowerBound(double p) {\n-        return 0;\n-    }\n-\n-    /** {@inheritDoc} */\n-    @Override\n-    protected int getDomainUpperBound(double p) {\n-        return Integer.MAX_VALUE;\n-    }\n-\n     /**\n      * {@inheritDoc}\n      *\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [6201,6309]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [6315,6439]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/distribution/ZipfDistribution.java",
+        "src/main/java/org/apache/commons/math/distribution/ZipfDistribution.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "calculateNumericalVariance",
+            "getDomainLowerBound",
+            "getDomainUpperBound"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "calculateNumericalVariance"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "114",
+            "115",
+            "116",
+            "117",
+            "118",
+            "119",
+            "120",
+            "121",
+            "122",
+            "123",
+            "124",
+            "125",
+            "179"
+          ],
+          "num": 13
+        },
+        {
+          "qualified_names": [
+            "113",
+            "167"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/distribution/ZipfDistribution.java b/src/main/java/org/apache/commons/math/distribution/ZipfDistribution.java\nindex ea12588..dfa3441 100644\n--- a/src/main/java/org/apache/commons/math/distribution/ZipfDistribution.java\n+++ b/src/main/java/org/apache/commons/math/distribution/ZipfDistribution.java\n@@ -111,18 +111,6 @@\n         return generalizedHarmonic(x, exponent) / generalizedHarmonic(numberOfElements, exponent);\n     }\n \n-    /** {@inheritDoc} */\n-    @Override\n-    protected int getDomainLowerBound(final double p) {\n-        return 0;\n-    }\n-\n-    /** {@inheritDoc} */\n-    @Override\n-    protected int getDomainUpperBound(final double p) {\n-        return numberOfElements;\n-    }\n-\n     /**\n      * {@inheritDoc}\n      *\n@@ -176,7 +164,7 @@\n     }\n \n     /**\n-     * used by {@link #getNumericalVariance()}\n+     * Used by {@link #getNumericalVariance()}.\n      *\n      * @return the variance of this distribution\n      */\n",
+      "operations": [
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: . [5429,5430]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [3838,3952]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [3958,4087]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/random/RandomDataImpl.java",
+        "src/main/java/org/apache/commons/math/random/RandomDataImpl.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "nextInversionDeviate"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "nextInversionDeviate"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1079",
+            "1080",
+            "1081",
+            "1082",
+            "1083",
+            "1084",
+            "1085"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "1079"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/random/RandomDataImpl.java b/src/main/java/org/apache/commons/math/random/RandomDataImpl.java\nindex 908c47d..237e923 100644\n--- a/src/main/java/org/apache/commons/math/random/RandomDataImpl.java\n+++ b/src/main/java/org/apache/commons/math/random/RandomDataImpl.java\n@@ -1076,13 +1076,7 @@\n      * @since 2.2\n      */\n     public int nextInversionDeviate(IntegerDistribution distribution) {\n-        final double target \u003d nextUniform(0, 1);\n-        final int glb \u003d distribution.inverseCumulativeProbability(target);\n-        if (distribution.cumulativeProbability(glb) \u003d\u003d 1.0d) { // No mass above\n-            return glb;\n-        } else {\n-            return glb + 1;\n-        }\n+        return distribution.inverseCumulativeProbability(nextUniform(0, 1));\n     }\n \n     // ------------------------Private methods----------------------------------\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: static [6287,6293]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [6257,6274]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ReturnStatement [40438,40506]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [6257,6274]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: static [6287,6293]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: target [40545,40551]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: final [40438,40443]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PrimitiveType: double [40444,40450]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: target [40451,40457]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [40451,40477]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [40438,40478]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: final [40487,40492]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PrimitiveType: int [40493,40496]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: glb [40497,40500]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [40497,40552]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [40487,40553]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [40562,40712]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "solveInverseCumulativeProbability"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "getDomainUpperBound",
+        "getDomainLowerBound"
+      ],
+      "num": 2
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math.optimization.direct.BOBYQAOptimizerTest",
+      "test_function": "testAckley",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c0.0\u003e but was:\u003c1.047765607609108E-8\u003e"
+    },
+    {
+      "test_class": "org.apache.commons.math.optimization.direct.BOBYQAOptimizerTest",
+      "test_function": "testDiffPow",
+      "exception": "org.apache.commons.math.exception.TooManyEvaluationsException",
+      "message": "illegal state: maximal count (12,000) exceeded: evaluations"
+    },
+    {
+      "test_class": "org.apache.commons.math.util.FastMathTest",
+      "test_function": "checkMissingFastMathClasses",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "FastMath should implement all StrictMath methods"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/distribution/HypergeometricDistribution.java",
+        "src/main/java/org/apache/commons/math/distribution/HypergeometricDistribution.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "getNumericalMean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "getNumericalMean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "271"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "271"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Math_2/properties/modified_classes/inducing/src/main/java/org/apache/commons/math/distribution/HypergeometricDistribution.java data/changesInfo//Math_2/cleaned/fixing/src/main/java/org/apache/commons/math/distribution/HypergeometricDistribution.java\n--- data/changesInfo//Math_2/properties/modified_classes/inducing/src/main/java/org/apache/commons/math/distribution/HypergeometricDistribution.java\t2023-08-25 13:40:57.342439850 +0800\n+++ data/changesInfo//Math_2/cleaned/fixing/src/main/java/org/apache/commons/math/distribution/HypergeometricDistribution.java\t2023-06-20 22:07:10.875931352 +0800\n@@ -268,7 +268,7 @@\n      * size {@code n}, the mean is {@code n * m / N}.\n      */\n     public double getNumericalMean() {\n-        return (double) (getSampleSize() * getNumberOfSuccesses()) / (double) getPopulationSize();\n+        return getSampleSize() * (getNumberOfSuccesses() / (double) getPopulationSize());\n     }\n \n     /**\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [9932,10013]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [9932,10022]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

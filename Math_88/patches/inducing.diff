@@ -1,0 +1,51 @@
+diff --git a/src/java/org/apache/commons/math/optimization/linear/SimplexTableau.java b/src/java/org/apache/commons/math/optimization/linear/SimplexTableau.java
+index fd7b24b..5a9a38d 100644
+--- a/src/java/org/apache/commons/math/optimization/linear/SimplexTableau.java
++++ b/src/java/org/apache/commons/math/optimization/linear/SimplexTableau.java
+@@ -327,9 +327,20 @@
+      * @return The value of the given decision variable.
+      */
+     protected double getDecisionVariableValue(final int decisionVariable) {
+-        Integer basicRow = getBasicRow(getNumObjectiveFunctions() + decisionVariable);
+-        return basicRow == null ? 0 : getEntry(basicRow, getRhsOffset()); 
+-    }
++      int col = getNumObjectiveFunctions() + decisionVariable;  
++      Integer basicRow = getBasicRow(col);
++      if (basicRow == null) {
++          return 0;
++      }
++      // if there are multiple variables that can take the value on the RHS
++      // then we'll give the first variable that value
++      for (int i = getNumObjectiveFunctions(); i < col; i++) {
++          if (tableau.getEntry(basicRow, i) == 1) {
++              return 0;
++          }
++      }
++      return getEntry(basicRow, getRhsOffset()); 
++  }
+ 
+     /**
+      * Subtracts a multiple of one row from another.
+diff --git a/src/test/org/apache/commons/math/optimization/linear/SimplexSolverTest.java b/src/test/org/apache/commons/math/optimization/linear/SimplexSolverTest.java
+index cada299..963eb4d 100644
+--- a/src/test/org/apache/commons/math/optimization/linear/SimplexSolverTest.java
++++ b/src/test/org/apache/commons/math/optimization/linear/SimplexSolverTest.java
+@@ -143,7 +143,7 @@
+         assertEquals(1438556.7491409, solution.getValue(), .0000001);
+     }
+ 
+-    public void testSomething() throws OptimizationException {
++    public void testTrivialModel() throws OptimizationException {
+         LinearObjectiveFunction f = new LinearObjectiveFunction(new double[] { 1, 1 }, 0);
+         Collection<LinearConstraint> constraints = new ArrayList<LinearConstraint>();
+         constraints.add(new LinearConstraint(new double[] { 1, 1 }, Relationship.EQ,  0));
+@@ -276,8 +276,7 @@
+ 
+         SimplexSolver solver = new SimplexSolver();
+         RealPointValuePair solution = solver.optimize(f, constraints, GoalType.MINIMIZE, true);
+-        assertEquals(13366.0, solution.getValue(), .0000001);
+-        //assertEquals(7518.0, solution.getValue(), .0000001);
++        assertEquals(7518.0, solution.getValue(), .0000001);
+     }
+     
+     /**

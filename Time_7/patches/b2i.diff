@@ -1,0 +1,288 @@
+diff -r -u buggy/src/main/java/org/joda/time/format/DateTimeFormatter.java inducing/src/main/java/org/joda/time/format/DateTimeFormatter.java
+--- buggy/src/main/java/org/joda/time/format/DateTimeFormatter.java	2023-06-12 11:34:54.542733391 +0800
++++ inducing/src/main/java/org/joda/time/format/DateTimeFormatter.java	2023-06-12 11:34:54.762737403 +0800
+@@ -1,5 +1,5 @@
+ /*
+- *  Copyright 2001-2011 Stephen Colebourne
++ *  Copyright 2001-2009 Stephen Colebourne
+  *
+  *  Licensed under the Apache License, Version 2.0 (the "License");
+  *  you may not use this file except in compliance with the License.
+@@ -54,8 +54,6 @@
+  * <li>{@link #withZone(DateTimeZone)} - returns a new formatter that uses the specified time zone</li>
+  * <li>{@link #withChronology(Chronology)} - returns a new formatter that uses the specified chronology</li>
+  * <li>{@link #withOffsetParsed()} - returns a new formatter that returns the parsed time zone offset</li>
+- * <li>{@link #withPivotYear(int)} - returns a new formatter with the specified pivot year</li>
+- * <li>{@link #withDefaultYear(int)} - returns a new formatter with the specified default year</li>
+  * </ul>
+  * Each of these returns a new formatter (instances of this class are immutable).
+  * <p>
+@@ -276,7 +274,6 @@
+      * @return the chronology to use as an override
+      * @deprecated Use the method with the correct spelling
+      */
+-    @Deprecated
+     public Chronology getChronolgy() {
+         return iChrono;
+     }
+@@ -402,7 +399,7 @@
+      * @since 1.1
+      */
+     public DateTimeFormatter withPivotYear(int pivotYear) {
+-        return withPivotYear(Integer.valueOf(pivotYear));
++        return withPivotYear(new Integer(pivotYear));
+     }
+ 
+     /**
+@@ -681,9 +678,6 @@
+      * modified. To determine the position where the parse failed, apply the
+      * one's complement operator (~) on the return value.
+      * <p>
+-     * This parse method ignores the {@link #getDefaultYear() default year} and
+-     * parses using the year from the supplied instant as the default.
+-     * <p>
+      * The parse will use the chronology of the instant.
+      *
+      * @param instant  an instant that will be modified, not null
+@@ -707,20 +701,15 @@
+         chrono = selectChronology(chrono);
+         
+         DateTimeParserBucket bucket = new DateTimeParserBucket(
+-            instantLocal, chrono, iLocale, iPivotYear, chrono.year().get(instantLocal));
++            instantLocal, chrono, iLocale, iPivotYear, iDefaultYear);
+         int newPos = parser.parseInto(bucket, text, position);
+         instant.setMillis(bucket.computeMillis(false, text));
+-        if (iOffsetParsed && bucket.getOffsetInteger() != null) {
+-            int parsedOffset = bucket.getOffsetInteger();
++        if (iOffsetParsed && bucket.getZone() == null) {
++            int parsedOffset = bucket.getOffset();
+             DateTimeZone parsedZone = DateTimeZone.forOffsetMillis(parsedOffset);
+             chrono = chrono.withZone(parsedZone);
+-        } else if (bucket.getZone() != null) {
+-            chrono = chrono.withZone(bucket.getZone());
+         }
+         instant.setChronology(chrono);
+-        if (iZone != null) {
+-            instant.setZone(iZone);
+-        }
+         return newPos;
+     }
+ 
+@@ -771,7 +760,7 @@
+     }
+ 
+     /**
+-     * Parses only the local time from the given text, returning a new LocalTime.
++     * Parses only the local time from the given text, returning a new LocalDate.
+      * <p>
+      * This will parse the text fully according to the formatter, using the UTC zone.
+      * Once parsed, only the local time will be used.
+@@ -789,7 +778,7 @@
+     }
+ 
+     /**
+-     * Parses only the local date-time from the given text, returning a new LocalDateTime.
++     * Parses only the local date-time from the given text, returning a new LocalDate.
+      * <p>
+      * This will parse the text fully according to the formatter, using the UTC zone.
+      * Once parsed, only the local date-time will be used.
+@@ -811,12 +800,10 @@
+         if (newPos >= 0) {
+             if (newPos >= text.length()) {
+                 long millis = bucket.computeMillis(true, text);
+-                if (bucket.getOffsetInteger() != null) {  // treat withOffsetParsed() as being true
+-                    int parsedOffset = bucket.getOffsetInteger();
++                if (bucket.getZone() == null) {  // treat withOffsetParsed() as being true
++                    int parsedOffset = bucket.getOffset();
+                     DateTimeZone parsedZone = DateTimeZone.forOffsetMillis(parsedOffset);
+                     chrono = chrono.withZone(parsedZone);
+-                } else if (bucket.getZone() != null) {
+-                    chrono = chrono.withZone(bucket.getZone());
+                 }
+                 return new LocalDateTime(millis, chrono);
+             }
+@@ -852,18 +839,12 @@
+         if (newPos >= 0) {
+             if (newPos >= text.length()) {
+                 long millis = bucket.computeMillis(true, text);
+-                if (iOffsetParsed && bucket.getOffsetInteger() != null) {
+-                    int parsedOffset = bucket.getOffsetInteger();
++                if (iOffsetParsed && bucket.getZone() == null) {
++                    int parsedOffset = bucket.getOffset();
+                     DateTimeZone parsedZone = DateTimeZone.forOffsetMillis(parsedOffset);
+                     chrono = chrono.withZone(parsedZone);
+-                } else if (bucket.getZone() != null) {
+-                    chrono = chrono.withZone(bucket.getZone());
+                 }
+-                DateTime dt = new DateTime(millis, chrono);
+-                if (iZone != null) {
+-                    dt = dt.withZone(iZone);
+-                }
+-                return dt;
++                return new DateTime(millis, chrono);
+             }
+         } else {
+             newPos = ~newPos;
+@@ -897,18 +878,12 @@
+         if (newPos >= 0) {
+             if (newPos >= text.length()) {
+                 long millis = bucket.computeMillis(true, text);
+-                if (iOffsetParsed && bucket.getOffsetInteger() != null) {
+-                    int parsedOffset = bucket.getOffsetInteger();
++                if (iOffsetParsed && bucket.getZone() == null) {
++                    int parsedOffset = bucket.getOffset();
+                     DateTimeZone parsedZone = DateTimeZone.forOffsetMillis(parsedOffset);
+                     chrono = chrono.withZone(parsedZone);
+-                } else if (bucket.getZone() != null) {
+-                    chrono = chrono.withZone(bucket.getZone());
+-                }
+-                MutableDateTime dt = new MutableDateTime(millis, chrono);
+-                if (iZone != null) {
+-                    dt.setZone(iZone);
+                 }
+-                return dt;
++                return new MutableDateTime(millis, chrono);
+             }
+         } else {
+             newPos = ~newPos;
+diff -r -u buggy/src/test/java/org/joda/time/format/TestDateTimeFormatter.java inducing/src/test/java/org/joda/time/format/TestDateTimeFormatter.java
+--- buggy/src/test/java/org/joda/time/format/TestDateTimeFormatter.java	2023-06-12 11:34:54.570733902 +0800
++++ inducing/src/test/java/org/joda/time/format/TestDateTimeFormatter.java	2023-06-12 11:34:54.786737842 +0800
+@@ -1,5 +1,5 @@
+ /*
+- *  Copyright 2001-2011 Stephen Colebourne
++ *  Copyright 2001-2009 Stephen Colebourne
+  *
+  *  Licensed under the Apache License, Version 2.0 (the "License");
+  *  you may not use this file except in compliance with the License.
+@@ -422,74 +422,6 @@
+         assertEquals(new LocalDate(2012, 2, 29, chrono), f.parseLocalDate("2 29"));
+     }
+ 
+-    public void testParseLocalDate_weekyear_month_week_2010() {
+-        Chronology chrono = GJChronology.getInstanceUTC();
+-        DateTimeFormatter f = DateTimeFormat.forPattern("xxxx-MM-ww").withChronology(chrono);
+-        assertEquals(new LocalDate(2010, 1, 4, chrono), f.parseLocalDate("2010-01-01"));
+-    }
+-
+-    public void testParseLocalDate_weekyear_month_week_2011() {
+-        Chronology chrono = GJChronology.getInstanceUTC();
+-        DateTimeFormatter f = DateTimeFormat.forPattern("xxxx-MM-ww").withChronology(chrono);
+-        assertEquals(new LocalDate(2011, 1, 3, chrono), f.parseLocalDate("2011-01-01"));
+-    }
+-
+-    public void testParseLocalDate_weekyear_month_week_2012() {
+-        Chronology chrono = GJChronology.getInstanceUTC();
+-        DateTimeFormatter f = DateTimeFormat.forPattern("xxxx-MM-ww").withChronology(chrono);
+-        assertEquals(new LocalDate(2012, 1, 2, chrono), f.parseLocalDate("2012-01-01"));
+-    }
+-
+-// This test fails, but since more related tests pass with the extra loop in DateTimeParserBucket
+-// I'm going to leave the change in and ignore this test
+-//    public void testParseLocalDate_weekyear_month_week_2013() {
+-//        Chronology chrono = GJChronology.getInstanceUTC();
+-//        DateTimeFormatter f = DateTimeFormat.forPattern("xxxx-MM-ww").withChronology(chrono);
+-//        assertEquals(new LocalDate(2012, 12, 31, chrono), f.parseLocalDate("2013-01-01"));
+-//    }
+-
+-    public void testParseLocalDate_year_month_week_2010() {
+-        Chronology chrono = GJChronology.getInstanceUTC();
+-        DateTimeFormatter f = DateTimeFormat.forPattern("yyyy-MM-ww").withChronology(chrono);
+-        assertEquals(new LocalDate(2010, 1, 4, chrono), f.parseLocalDate("2010-01-01"));
+-    }
+-
+-    public void testParseLocalDate_year_month_week_2011() {
+-        Chronology chrono = GJChronology.getInstanceUTC();
+-        DateTimeFormatter f = DateTimeFormat.forPattern("yyyy-MM-ww").withChronology(chrono);
+-        assertEquals(new LocalDate(2011, 1, 3, chrono), f.parseLocalDate("2011-01-01"));
+-    }
+-
+-    public void testParseLocalDate_year_month_week_2012() {
+-        Chronology chrono = GJChronology.getInstanceUTC();
+-        DateTimeFormatter f = DateTimeFormat.forPattern("yyyy-MM-ww").withChronology(chrono);
+-        assertEquals(new LocalDate(2012, 1, 2, chrono), f.parseLocalDate("2012-01-01"));
+-    }
+-
+-    public void testParseLocalDate_year_month_week_2013() {
+-        Chronology chrono = GJChronology.getInstanceUTC();
+-        DateTimeFormatter f = DateTimeFormat.forPattern("yyyy-MM-ww").withChronology(chrono);
+-        assertEquals(new LocalDate(2012, 12, 31, chrono), f.parseLocalDate("2013-01-01"));  // 2013-01-01 would be better, but this is OK
+-    }
+-
+-    public void testParseLocalDate_year_month_week_2014() {
+-        Chronology chrono = GJChronology.getInstanceUTC();
+-        DateTimeFormatter f = DateTimeFormat.forPattern("yyyy-MM-ww").withChronology(chrono);
+-        assertEquals(new LocalDate(2013, 12, 30, chrono), f.parseLocalDate("2014-01-01"));  // 2014-01-01 would be better, but this is OK
+-    }
+-
+-    public void testParseLocalDate_year_month_week_2015() {
+-        Chronology chrono = GJChronology.getInstanceUTC();
+-        DateTimeFormatter f = DateTimeFormat.forPattern("yyyy-MM-ww").withChronology(chrono);
+-        assertEquals(new LocalDate(2014, 12, 29, chrono), f.parseLocalDate("2015-01-01"));  // 2015-01-01 would be better, but this is OK
+-    }
+-
+-    public void testParseLocalDate_year_month_week_2016() {
+-        Chronology chrono = GJChronology.getInstanceUTC();
+-        DateTimeFormatter f = DateTimeFormat.forPattern("yyyy-MM-ww").withChronology(chrono);
+-        assertEquals(new LocalDate(2016, 1, 4, chrono), f.parseLocalDate("2016-01-01"));
+-    }
+-
+     //-----------------------------------------------------------------------
+     public void testParseLocalTime_simple() {
+         assertEquals(new LocalTime(10, 20, 30), g.parseLocalTime("2004-06-09T10:20:30Z"));
+@@ -863,55 +795,6 @@
+         assertEquals(expect, result);
+     }
+ 
+-    public void testParseInto_monthOnly() {
+-        DateTimeFormatter f = DateTimeFormat.forPattern("M").withLocale(Locale.UK);
+-        MutableDateTime result = new MutableDateTime(2004, 1, 9, 12, 20, 30, 0, LONDON);
+-        assertEquals(1, f.parseInto(result, "5", 0));
+-        assertEquals(new MutableDateTime(2004, 5, 9, 12, 20, 30, 0, LONDON), result);
+-    }
+-
+-    public void testParseInto_monthOnly_baseStartYear() {
+-        DateTimeFormatter f = DateTimeFormat.forPattern("M").withLocale(Locale.UK);
+-        MutableDateTime result = new MutableDateTime(2004, 1, 1, 12, 20, 30, 0, TOKYO);
+-        assertEquals(1, f.parseInto(result, "5", 0));
+-        assertEquals(new MutableDateTime(2004, 5, 1, 12, 20, 30, 0, TOKYO), result);
+-    }
+-
+-    public void testParseInto_monthOnly_parseStartYear() {
+-        DateTimeFormatter f = DateTimeFormat.forPattern("M").withLocale(Locale.UK);
+-        MutableDateTime result = new MutableDateTime(2004, 2, 1, 12, 20, 30, 0, TOKYO);
+-        assertEquals(1, f.parseInto(result, "1", 0));
+-        assertEquals(new MutableDateTime(2004, 1, 1, 12, 20, 30, 0, TOKYO), result);
+-    }
+-
+-    public void testParseInto_monthOnly_baseEndYear() {
+-        DateTimeFormatter f = DateTimeFormat.forPattern("M").withLocale(Locale.UK);
+-        MutableDateTime result = new MutableDateTime(2004, 12, 31, 12, 20, 30, 0, TOKYO);
+-        assertEquals(1, f.parseInto(result, "5", 0));
+-        assertEquals(new MutableDateTime(2004, 5, 31, 12, 20, 30, 0, TOKYO), result);
+-   }
+-
+-    public void testParseInto_monthOnly_parseEndYear() {
+-        DateTimeFormatter f = DateTimeFormat.forPattern("M").withLocale(Locale.UK);
+-        MutableDateTime result = new MutableDateTime(2004, 1, 31, 12, 20, 30, 0,TOKYO);
+-        assertEquals(2, f.parseInto(result, "12", 0));
+-        assertEquals(new MutableDateTime(2004, 12, 31, 12, 20, 30, 0, TOKYO), result);
+-    }
+-
+-    public void testParseInto_monthDay_feb29() {
+-        DateTimeFormatter f = DateTimeFormat.forPattern("M d").withLocale(Locale.UK);
+-        MutableDateTime result = new MutableDateTime(2004, 1, 9, 12, 20, 30, 0, LONDON);
+-        assertEquals(4, f.parseInto(result, "2 29", 0));
+-        assertEquals(new MutableDateTime(2004, 2, 29, 12, 20, 30, 0, LONDON), result);
+-    }
+-
+-    public void testParseInto_monthDay_withDefaultYear_feb29() {
+-        DateTimeFormatter f = DateTimeFormat.forPattern("M d").withDefaultYear(2012);
+-        MutableDateTime result = new MutableDateTime(2004, 1, 9, 12, 20, 30, 0, LONDON);
+-        assertEquals(4, f.parseInto(result, "2 29", 0));
+-        assertEquals(new MutableDateTime(2004, 2, 29, 12, 20, 30, 0, LONDON), result);
+-    }
+-
+     public void testParseMillis_fractionOfSecondLong() {
+         DateTimeFormatter f = new DateTimeFormatterBuilder()
+             .appendSecondOfDay(2).appendLiteral('.').appendFractionOfSecond(1, 9)

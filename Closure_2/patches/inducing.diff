@@ -1,0 +1,725 @@
+diff --git a/src/com/google/javascript/jscomp/TypeCheck.java b/src/com/google/javascript/jscomp/TypeCheck.java
+index 57b6981..cda80fd 100644
+--- a/src/com/google/javascript/jscomp/TypeCheck.java
++++ b/src/com/google/javascript/jscomp/TypeCheck.java
+@@ -1538,7 +1538,8 @@
+       String functionName, HashMap<String, ObjectType> properties,
+       HashMap<String, ObjectType> currentProperties,
+       ObjectType interfaceType) {
+-    Set<String> currentPropertyNames = interfaceType.getPropertyNames();
++    Set<String> currentPropertyNames =
++        interfaceType.getImplicitPrototype().getOwnPropertyNames();
+     for (String name : currentPropertyNames) {
+       ObjectType oType = properties.get(name);
+       if (oType != null) {
+diff --git a/src/com/google/javascript/jscomp/TypedScopeCreator.java b/src/com/google/javascript/jscomp/TypedScopeCreator.java
+index c25af5a..461cddc 100644
+--- a/src/com/google/javascript/jscomp/TypedScopeCreator.java
++++ b/src/com/google/javascript/jscomp/TypedScopeCreator.java
+@@ -72,6 +72,7 @@
+ import com.google.javascript.rhino.jstype.JSTypeNative;
+ import com.google.javascript.rhino.jstype.JSTypeRegistry;
+ import com.google.javascript.rhino.jstype.ObjectType;
++import com.google.javascript.rhino.jstype.Property;
+ 
+ import java.util.Iterator;
+ import java.util.List;
+@@ -1207,7 +1208,7 @@
+         Scope scopeToDeclareIn, CompilerInput input, Var newVar) {
+       // Declare var.prototype in the scope chain.
+       FunctionType superClassCtor = fnType.getSuperClassConstructor();
+-      ObjectType.Property prototypeSlot = fnType.getSlot("prototype");
++      Property prototypeSlot = fnType.getSlot("prototype");
+ 
+       // When we declare the function prototype implicitly, we
+       // want to make sure that the function and its prototype
+diff --git a/src/com/google/javascript/rhino/jstype/ObjectType.java b/src/com/google/javascript/rhino/jstype/ObjectType.java
+index ebd78e7..320c151 100644
+--- a/src/com/google/javascript/rhino/jstype/ObjectType.java
++++ b/src/com/google/javascript/rhino/jstype/ObjectType.java
+@@ -47,10 +47,8 @@
+ import com.google.common.collect.Sets;
+ import com.google.javascript.rhino.JSDocInfo;
+ import com.google.javascript.rhino.Node;
+-import com.google.javascript.rhino.jstype.StaticReference;
+ import com.google.javascript.rhino.jstype.StaticSlot;
+ 
+-import java.io.Serializable;
+ import java.util.Set;
+ 
+ /**
+@@ -103,6 +101,13 @@
+     return getImplicitPrototype();
+   }
+ 
++  /**
++   * Returns the property map that manages the set of properties for an object.
++   */
++  PropertyMap getPropertyMap() {
++    return null;
++  }
++
+   @Override
+   public abstract Property getSlot(String name);
+ 
+@@ -586,96 +591,4 @@
+   public Iterable<ObjectType> getCtorExtendedInterfaces() {
+     return ImmutableSet.of();
+   }
+-
+-  public static final class Property
+-      implements Serializable, StaticSlot<JSType>, StaticReference<JSType> {
+-    private static final long serialVersionUID = 1L;
+-
+-    /**
+-     * Property's name.
+-     */
+-    private final String name;
+-
+-    /**
+-     * Property's type.
+-     */
+-    private JSType type;
+-
+-    /**
+-     * Whether the property's type is inferred.
+-     */
+-    private final boolean inferred;
+-
+-    /**
+-     * The node corresponding to this property, e.g., a GETPROP node that
+-     * declares this property.
+-     */
+-    private Node propertyNode;
+-
+-    /**  The JSDocInfo for this property. */
+-    private JSDocInfo docInfo = null;
+-
+-    Property(String name, JSType type, boolean inferred,
+-        Node propertyNode) {
+-      this.name = name;
+-      this.type = type;
+-      this.inferred = inferred;
+-      this.propertyNode = propertyNode;
+-    }
+-
+-    @Override
+-    public String getName() {
+-      return name;
+-    }
+-
+-    @Override
+-    public Node getNode() {
+-      return propertyNode;
+-    }
+-
+-    @Override
+-    public StaticSourceFile getSourceFile() {
+-      return propertyNode == null ? null : propertyNode.getStaticSourceFile();
+-    }
+-
+-    @Override
+-    public Property getSymbol() {
+-      return this;
+-    }
+-
+-    @Override
+-    public Property getDeclaration() {
+-      return propertyNode == null ? null : this;
+-    }
+-
+-    @Override
+-    public JSType getType() {
+-      return type;
+-    }
+-
+-    @Override
+-    public boolean isTypeInferred() {
+-      return inferred;
+-    }
+-
+-    boolean isFromExterns() {
+-      return propertyNode == null ? false : propertyNode.isFromExterns();
+-    }
+-
+-    void setType(JSType type) {
+-      this.type = type;
+-    }
+-
+-    @Override public JSDocInfo getJSDocInfo() {
+-      return this.docInfo;
+-    }
+-
+-    void setJSDocInfo(JSDocInfo info) {
+-      this.docInfo = info;
+-    }
+-
+-    public void setNode(Node n) {
+-      this.propertyNode = n;
+-    }
+-  }
+ }
+diff --git a/src/com/google/javascript/rhino/jstype/Property.java b/src/com/google/javascript/rhino/jstype/Property.java
+new file mode 100644
+index 0000000..699512a
+--- /dev/null
++++ b/src/com/google/javascript/rhino/jstype/Property.java
+@@ -0,0 +1,141 @@
++/*
++ *
++ * ***** BEGIN LICENSE BLOCK *****
++ * Version: MPL 1.1/GPL 2.0
++ *
++ * The contents of this file are subject to the Mozilla Public License Version
++ * 1.1 (the "License"); you may not use this file except in compliance with
++ * the License. You may obtain a copy of the License at
++ * http://www.mozilla.org/MPL/
++ *
++ * Software distributed under the License is distributed on an "AS IS" basis,
++ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
++ * for the specific language governing rights and limitations under the
++ * License.
++ *
++ * The Original Code is Rhino code, released
++ * May 6, 1999.
++ *
++ * The Initial Developer of the Original Code is
++ * Netscape Communications Corporation.
++ * Portions created by the Initial Developer are Copyright (C) 1997-1999
++ * the Initial Developer. All Rights Reserved.
++ *
++ * Contributor(s):
++ *   Nick Santos
++ *   Google Inc.
++ *
++ * Alternatively, the contents of this file may be used under the terms of
++ * the GNU General Public License Version 2 or later (the "GPL"), in which
++ * case the provisions of the GPL are applicable instead of those above. If
++ * you wish to allow use of your version of this file only under the terms of
++ * the GPL and not to allow others to use your version of this file under the
++ * MPL, indicate your decision by deleting the provisions above and replacing
++ * them with the notice and other provisions required by the GPL. If you do
++ * not delete the provisions above, a recipient may use your version of this
++ * file under either the MPL or the GPL.
++ *
++ * ***** END LICENSE BLOCK ***** */
++
++package com.google.javascript.rhino.jstype;
++
++import com.google.javascript.rhino.JSDocInfo;
++import com.google.javascript.rhino.Node;
++
++import java.io.Serializable;
++
++/**
++ * A property slot of an object.
++ * @author nicksantos@google.com (Nick Santos)
++ */
++public final class Property
++    implements Serializable, StaticSlot<JSType>, StaticReference<JSType> {
++  private static final long serialVersionUID = 1L;
++
++  /**
++   * Property's name.
++   */
++  private final String name;
++
++  /**
++   * Property's type.
++   */
++  private JSType type;
++
++  /**
++   * Whether the property's type is inferred.
++   */
++  private final boolean inferred;
++
++  /**
++   * The node corresponding to this property, e.g., a GETPROP node that
++   * declares this property.
++   */
++  private Node propertyNode;
++
++  /**  The JSDocInfo for this property. */
++  private JSDocInfo docInfo = null;
++
++  Property(String name, JSType type, boolean inferred,
++      Node propertyNode) {
++    this.name = name;
++    this.type = type;
++    this.inferred = inferred;
++    this.propertyNode = propertyNode;
++  }
++
++  @Override
++      public String getName() {
++    return name;
++  }
++
++  @Override
++      public Node getNode() {
++    return propertyNode;
++  }
++
++  @Override
++      public StaticSourceFile getSourceFile() {
++    return propertyNode == null ? null : propertyNode.getStaticSourceFile();
++  }
++
++  @Override
++      public Property getSymbol() {
++    return this;
++  }
++
++  @Override
++      public Property getDeclaration() {
++    return propertyNode == null ? null : this;
++  }
++
++  @Override
++      public JSType getType() {
++    return type;
++  }
++
++  @Override
++      public boolean isTypeInferred() {
++    return inferred;
++  }
++
++  boolean isFromExterns() {
++    return propertyNode == null ? false : propertyNode.isFromExterns();
++  }
++
++  void setType(JSType type) {
++    this.type = type;
++  }
++
++  @Override public JSDocInfo getJSDocInfo() {
++    return this.docInfo;
++  }
++
++  void setJSDocInfo(JSDocInfo info) {
++    this.docInfo = info;
++  }
++
++  public void setNode(Node n) {
++    this.propertyNode = n;
++  }
++}
+diff --git a/src/com/google/javascript/rhino/jstype/PropertyMap.java b/src/com/google/javascript/rhino/jstype/PropertyMap.java
+new file mode 100644
+index 0000000..bea31e9
+--- /dev/null
++++ b/src/com/google/javascript/rhino/jstype/PropertyMap.java
+@@ -0,0 +1,183 @@
++/*
++ *
++ * ***** BEGIN LICENSE BLOCK *****
++ * Version: MPL 1.1/GPL 2.0
++ *
++ * The contents of this file are subject to the Mozilla Public License Version
++ * 1.1 (the "License"); you may not use this file except in compliance with
++ * the License. You may obtain a copy of the License at
++ * http://www.mozilla.org/MPL/
++ *
++ * Software distributed under the License is distributed on an "AS IS" basis,
++ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
++ * for the specific language governing rights and limitations under the
++ * License.
++ *
++ * The Original Code is Rhino code, released
++ * May 6, 1999.
++ *
++ * The Initial Developer of the Original Code is
++ * Netscape Communications Corporation.
++ * Portions created by the Initial Developer are Copyright (C) 1997-1999
++ * the Initial Developer. All Rights Reserved.
++ *
++ * Contributor(s):
++ *   Nick Santos
++ *   Google Inc.
++ *
++ * Alternatively, the contents of this file may be used under the terms of
++ * the GNU General Public License Version 2 or later (the "GPL"), in which
++ * case the provisions of the GPL are applicable instead of those above. If
++ * you wish to allow use of your version of this file only under the terms of
++ * the GPL and not to allow others to use your version of this file under the
++ * MPL, indicate your decision by deleting the provisions above and replacing
++ * them with the notice and other provisions required by the GPL. If you do
++ * not delete the provisions above, a recipient may use your version of this
++ * file under either the MPL or the GPL.
++ *
++ * ***** END LICENSE BLOCK ***** */
++
++package com.google.javascript.rhino.jstype;
++
++import com.google.common.base.Function;
++import com.google.common.collect.ImmutableList;
++import com.google.common.collect.Iterables;
++import com.google.common.collect.Maps;
++import com.google.common.collect.Sets;
++
++import java.io.Serializable;
++import java.util.Map;
++import java.util.Set;
++
++/**
++ * Representation for a collection of properties on an object.
++ * @author nicksantos@google.com (Nick Santos)
++ */
++class PropertyMap implements Serializable {
++  private static final Function<ObjectType, PropertyMap> PROP_MAP_FROM_TYPE =
++      new Function<ObjectType, PropertyMap>() {
++    @Override public PropertyMap apply(ObjectType t) {
++      return t.getPropertyMap();
++    }
++  };
++
++  // A place to get the inheritance structure.
++  // Because the extended interfaces are resolved dynamically, this gets
++  // messy :(. If type-resolution was more well-defined, we could
++  // just reference primary parents and secondary parents directly.
++  private ObjectType parentSource = null;
++
++  // The map of our own properties.
++  private final Map<String, Property> properties;
++
++  PropertyMap() {
++    this.properties = Maps.newTreeMap();
++  }
++
++  void setParentSource(ObjectType ownerType) {
++    this.parentSource = ownerType;
++  }
++
++  /** Returns the direct parent of this property map. */
++  PropertyMap getPrimaryParent() {
++    ObjectType iProto = parentSource.getImplicitPrototype();
++    return iProto == null ? null : iProto.getPropertyMap();
++  }
++
++  /**
++   * Returns the secondary parents of this property map, for interfaces that
++   * need multiple inheritance.
++   */
++  Iterable<PropertyMap> getSecondaryParents() {
++    Iterable<ObjectType> extendedInterfaces =
++        parentSource.getCtorExtendedInterfaces();
++
++    // Most of the time, this will be empty.
++    if (Iterables.isEmpty(extendedInterfaces)) {
++      return ImmutableList.of();
++    }
++
++    return Iterables.transform(extendedInterfaces, PROP_MAP_FROM_TYPE);
++  }
++
++  Property getSlot(String name) {
++    if (properties.containsKey(name)) {
++      return properties.get(name);
++    }
++    PropertyMap primaryParent = getPrimaryParent();
++    if (primaryParent != null) {
++      Property prop = primaryParent.getSlot(name);
++      if (prop != null) {
++        return prop;
++      }
++    }
++    for (PropertyMap p : getSecondaryParents()) {
++      if (p != null) {
++        Property prop = p.getSlot(name);
++        if (prop != null) {
++          return prop;
++        }
++      }
++    }
++    return null;
++  }
++
++  Property getOwnProperty(String propertyName) {
++    return properties.get(propertyName);
++  }
++
++  int getPropertiesCount() {
++    PropertyMap primaryParent = getPrimaryParent();
++    if (primaryParent == null) {
++      return this.properties.size();
++    }
++    Set<String> props = Sets.newHashSet();
++    collectPropertyNames(props);
++    return props.size();
++  }
++
++  boolean hasOwnProperty(String propertyName) {
++    return properties.get(propertyName) != null;
++  }
++
++  boolean hasProperty(String propertyName) {
++    return getSlot(propertyName) != null;
++  }
++
++  Set<String> getOwnPropertyNames() {
++    return properties.keySet();
++  }
++
++  void collectPropertyNames(Set<String> props) {
++    for (String prop : properties.keySet()) {
++      props.add(prop);
++    }
++    PropertyMap primaryParent = getPrimaryParent();
++    if (primaryParent != null) {
++      primaryParent.collectPropertyNames(props);
++    }
++    for (PropertyMap p : getSecondaryParents()) {
++      if (p != null) {
++        p.collectPropertyNames(props);
++      }
++    }
++  }
++
++  boolean removeProperty(String name) {
++    return properties.remove(name) != null;
++  }
++
++  void putProperty(String name, Property newProp) {
++    Property oldProp = properties.get(name);
++    if (oldProp != null) {
++      // This is to keep previously inferred JsDoc info, e.g., in a
++      // replaceScript scenario.
++      newProp.setJSDocInfo(oldProp.getJSDocInfo());
++    }
++    properties.put(name, newProp);
++  }
++
++  Iterable<Property> values() {
++    return properties.values();
++  }
++}
+diff --git a/src/com/google/javascript/rhino/jstype/PrototypeObjectType.java b/src/com/google/javascript/rhino/jstype/PrototypeObjectType.java
+index 15ab883..c0f925c 100644
+--- a/src/com/google/javascript/rhino/jstype/PrototypeObjectType.java
++++ b/src/com/google/javascript/rhino/jstype/PrototypeObjectType.java
+@@ -40,15 +40,14 @@
+ package com.google.javascript.rhino.jstype;
+ 
+ import static com.google.common.base.Preconditions.checkState;
++
+ import com.google.common.base.Preconditions;
+ import com.google.common.collect.ImmutableList;
+-import com.google.common.collect.Maps;
+ import com.google.common.collect.Sets;
+ import com.google.javascript.rhino.ErrorReporter;
+ import com.google.javascript.rhino.JSDocInfo;
+ import com.google.javascript.rhino.Node;
+ 
+-import java.util.Map;
+ import java.util.Set;
+ 
+ /**
+@@ -71,7 +70,7 @@
+   private static final long serialVersionUID = 1L;
+ 
+   private final String className;
+-  private final Map<String, Property> properties;
++  private final PropertyMap properties;
+   private final boolean nativeType;
+ 
+   // NOTE(nicksantos): The implicit prototype can change over time.
+@@ -115,7 +114,9 @@
+       ImmutableList<String> templateKeys,
+       ImmutableList<JSType> templatizedTypes) {
+     super(registry, templateKeys, templatizedTypes);
+-    this.properties = Maps.newTreeMap();
++    this.properties = new PropertyMap();
++    this.properties.setParentSource(this);
++
+     this.className = className;
+     this.nativeType = nativeType;
+     if (nativeType || implicitPrototype != null) {
+@@ -127,24 +128,13 @@
+   }
+ 
+   @Override
++  PropertyMap getPropertyMap() {
++    return properties;
++  }
++
++  @Override
+   public Property getSlot(String name) {
+-    if (properties.containsKey(name)) {
+-      return properties.get(name);
+-    }
+-    ObjectType implicitPrototype = getImplicitPrototype();
+-    if (implicitPrototype != null) {
+-      Property prop = implicitPrototype.getSlot(name);
+-      if (prop != null) {
+-        return prop;
+-      }
+-    }
+-    for (ObjectType interfaceType : getCtorExtendedInterfaces()) {
+-      Property prop = interfaceType.getSlot(name);
+-      if (prop != null) {
+-        return prop;
+-      }
+-    }
+-    return null;
++    return properties.getSlot(name);
+   }
+ 
+   /**
+@@ -152,17 +142,7 @@
+    */
+   @Override
+   public int getPropertiesCount() {
+-    ObjectType implicitPrototype = getImplicitPrototype();
+-    if (implicitPrototype == null) {
+-      return this.properties.size();
+-    }
+-    int localCount = 0;
+-    for (String property : properties.keySet()) {
+-      if (!implicitPrototype.hasProperty(property)) {
+-        localCount++;
+-      }
+-    }
+-    return implicitPrototype.getPropertiesCount() + localCount;
++    return properties.getPropertiesCount();
+   }
+ 
+   @Override
+@@ -173,12 +153,12 @@
+ 
+   @Override
+   public boolean hasOwnProperty(String propertyName) {
+-    return properties.get(propertyName) != null;
++    return properties.hasOwnProperty(propertyName);
+   }
+ 
+   @Override
+   public Set<String> getOwnPropertyNames() {
+-    return properties.keySet();
++    return properties.getOwnPropertyNames();
+   }
+ 
+   @Override
+@@ -192,13 +172,7 @@
+ 
+   @Override
+   void collectPropertyNames(Set<String> props) {
+-    for (String prop : properties.keySet()) {
+-      props.add(prop);
+-    }
+-    ObjectType implicitPrototype = getImplicitPrototype();
+-    if (implicitPrototype != null) {
+-      implicitPrototype.collectPropertyNames(props);
+-    }
++    properties.collectPropertyNames(props);
+   }
+ 
+   @Override
+@@ -221,14 +195,10 @@
+ 
+   @Override
+   public boolean isPropertyInExterns(String propertyName) {
+-    Property p = properties.get(propertyName);
++    Property p = getSlot(propertyName);
+     if (p != null) {
+       return p.isFromExterns();
+     }
+-    ObjectType implicitPrototype = getImplicitPrototype();
+-    if (implicitPrototype != null) {
+-      return implicitPrototype.isPropertyInExterns(propertyName);
+-    }
+     return false;
+   }
+ 
+@@ -240,37 +210,27 @@
+     }
+     Property newProp = new Property(
+         name, type, inferred, propertyNode);
+-    Property oldProp = properties.get(name);
+-    if (oldProp != null) {
+-      // This is to keep previously inferred JsDoc info, e.g., in a
+-      // replaceScript scenario.
+-      newProp.setJSDocInfo(oldProp.getJSDocInfo());
+-    }
+-    properties.put(name, newProp);
++    properties.putProperty(name, newProp);
+     return true;
+   }
+ 
+   @Override
+   public boolean removeProperty(String name) {
+-    return properties.remove(name) != null;
++    return properties.removeProperty(name);
+   }
+ 
+   @Override
+   public Node getPropertyNode(String propertyName) {
+-    Property p = properties.get(propertyName);
++    Property p = getSlot(propertyName);
+     if (p != null) {
+       return p.getNode();
+     }
+-    ObjectType implicitPrototype = getImplicitPrototype();
+-    if (implicitPrototype != null) {
+-      return implicitPrototype.getPropertyNode(propertyName);
+-    }
+     return null;
+   }
+ 
+   @Override
+   public JSDocInfo getOwnPropertyJSDocInfo(String propertyName) {
+-    Property p = properties.get(propertyName);
++    Property p = properties.getOwnProperty(propertyName);
+     if (p != null) {
+       return p.getJSDocInfo();
+     }
+@@ -280,7 +240,7 @@
+   @Override
+   public void setPropertyJSDocInfo(String propertyName, JSDocInfo info) {
+     if (info != null) {
+-      if (!properties.containsKey(propertyName)) {
++      if (properties.getOwnProperty(propertyName) == null) {
+         // If docInfo was attached, but the type of the property
+         // was not defined anywhere, then we consider this an explicit
+         // declaration of the property.
+@@ -290,7 +250,7 @@
+ 
+       // The prototype property is not represented as a normal Property.
+       // We probably don't want to attach any JSDoc to it anyway.
+-      Property property = properties.get(propertyName);
++      Property property = properties.getOwnProperty(propertyName);
+       if (property != null) {
+         property.setJSDocInfo(info);
+       }
+diff --git a/src/com/google/javascript/rhino/jstype/ProxyObjectType.java b/src/com/google/javascript/rhino/jstype/ProxyObjectType.java
+index 2fd2c8f..883e751 100644
+--- a/src/com/google/javascript/rhino/jstype/ProxyObjectType.java
++++ b/src/com/google/javascript/rhino/jstype/ProxyObjectType.java
+@@ -66,6 +66,12 @@
+   }
+ 
+   @Override
++  PropertyMap getPropertyMap() {
++    return referencedObjType == null
++        ? null : referencedObjType.getPropertyMap();
++  }
++
++  @Override
+   public Property getSlot(String name) {
+     if (referencedObjType != null) {
+       return referencedObjType.getSlot(name);
+diff --git a/test/com/google/javascript/rhino/jstype/FunctionTypeTest.java b/test/com/google/javascript/rhino/jstype/FunctionTypeTest.java
+index 80cb094..80e86ec 100644
+--- a/test/com/google/javascript/rhino/jstype/FunctionTypeTest.java
++++ b/test/com/google/javascript/rhino/jstype/FunctionTypeTest.java
+@@ -187,8 +187,7 @@
+     assertTrue(ctor.isPropertyTypeInferred("prototype"));
+     assertTrue(ctor.getPropertyType("prototype").isUnknownType());
+ 
+-    // The node is not recorded.
+-    assertNull(ctor.getPropertyNode("prototype"));
++    assertEquals(node, ctor.getPropertyNode("prototype"));
+   }
+ 
+   public void testEmptyFunctionTypes() {

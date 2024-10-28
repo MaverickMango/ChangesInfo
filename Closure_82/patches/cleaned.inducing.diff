@@ -1,0 +1,155 @@
+Only in data/changesInfo//Closure_82/properties/modified_classes/inducing/: src
+diff -u -r data/changesInfo//Closure_82/properties/modified_classes/inducing/test/com/google/javascript/jscomp/TypeCheckTest.java data/changesInfo//Closure_82/cleaned/inducing/test/com/google/javascript/jscomp/TypeCheckTest.java
+--- data/changesInfo//Closure_82/properties/modified_classes/inducing/test/com/google/javascript/jscomp/TypeCheckTest.java	2023-08-10 05:44:55.260564233 -0700
++++ data/changesInfo//Closure_82/cleaned/inducing/test/com/google/javascript/jscomp/TypeCheckTest.java	2023-06-14 19:38:34.899471149 -0700
+@@ -4654,6 +4654,14 @@
+         "required: number");
+   }
+ 
++  public void testIssue301() throws Exception {
++    testTypes(
++            "Array.indexOf = function() {};" +
++                    "var s = 'hello';" +
++                    "alert(s.toLowerCase.indexOf('1'));",
++            "Property indexOf never defined on String.prototype.toLowerCase");
++  }
++
+   /**
+    * Tests that the || operator is type checked correctly, that is of
+    * the type of the first argument or of the second argument. See
+diff -u -r data/changesInfo//Closure_82/properties/modified_classes/inducing/test/com/google/javascript/rhino/jstype/FunctionTypeTest.java data/changesInfo//Closure_82/cleaned/inducing/test/com/google/javascript/rhino/jstype/FunctionTypeTest.java
+--- data/changesInfo//Closure_82/properties/modified_classes/inducing/test/com/google/javascript/rhino/jstype/FunctionTypeTest.java	2023-08-10 05:44:55.260564233 -0700
++++ data/changesInfo//Closure_82/cleaned/inducing/test/com/google/javascript/rhino/jstype/FunctionTypeTest.java	2023-12-20 06:42:01.265530107 -0800
+@@ -46,128 +46,11 @@
+  * @author nicksantos@google.com (Nick Santos)
+  */
+ public class FunctionTypeTest extends BaseJSTypeTestCase {
+-  public void testDefaultReturnType() {
+-    FunctionType f = new FunctionBuilder(registry).build();
+-    assertEquals(UNKNOWN_TYPE, f.getReturnType());
+-  }
+-
+-  public void testSupAndInfOfReturnTypes() {
+-    FunctionType retString = new FunctionBuilder(registry)
+-        .withParamsNode(registry.createParameters())
+-        .withInferredReturnType(STRING_TYPE).build();
+-    FunctionType retNumber = new FunctionBuilder(registry)
+-        .withParamsNode(registry.createParameters())
+-        .withReturnType(NUMBER_TYPE).build();
+-
+-    assertLeastSupertype(
+-        "function (): (number|string)", retString, retNumber);
+-    assertGreatestSubtype(
+-        "function (): None", retString, retNumber);
+-
+-    assertTrue(retString.isReturnTypeInferred());
+-    assertFalse(retNumber.isReturnTypeInferred());
+-    assertTrue(
+-        ((FunctionType) retString.getLeastSupertype(retNumber))
+-        .isReturnTypeInferred());
+-    assertTrue(
+-        ((FunctionType) retString.getGreatestSubtype(retString))
+-        .isReturnTypeInferred());
+-  }
+-
+-  public void testSupAndInfOfReturnTypesWithDifferentParams() {
+-    FunctionType retString = new FunctionBuilder(registry)
+-        .withParamsNode(registry.createParameters(NUMBER_TYPE))
+-        .withInferredReturnType(STRING_TYPE).build();
+-    FunctionType retNumber = new FunctionBuilder(registry)
+-        .withParamsNode(registry.createParameters())
+-        .withReturnType(NUMBER_TYPE).build();
+-
+-    assertLeastSupertype(
+-        "Function", retString, retNumber);
+-    assertGreatestSubtype(
+-        "function (...[*]): None", retString, retNumber);
+-  }
+-
+-  public void testSupAndInfWithDifferentParams() {
+-    FunctionType retString = new FunctionBuilder(registry)
+-        .withParamsNode(registry.createParameters(NUMBER_TYPE))
+-        .withReturnType(STRING_TYPE).build();
+-    FunctionType retNumber = new FunctionBuilder(registry)
+-        .withParamsNode(registry.createParameters(STRING_TYPE))
+-        .withReturnType(NUMBER_TYPE).build();
+-
+-    assertLeastSupertype(
+-        "Function", retString, retNumber);
+-    assertGreatestSubtype(
+-        "function (...[*]): None", retString, retNumber);
+-  }
+ 
+-  public void testSupAndInfWithDifferentThisTypes() {
+-    FunctionType retString = new FunctionBuilder(registry)
+-        .withParamsNode(registry.createParameters())
+-        .withTypeOfThis(OBJECT_TYPE)
+-        .withReturnType(STRING_TYPE).build();
+-    FunctionType retNumber = new FunctionBuilder(registry)
+-        .withParamsNode(registry.createParameters())
+-        .withTypeOfThis(DATE_TYPE)
+-        .withReturnType(NUMBER_TYPE).build();
+ 
+-    assertLeastSupertype(
+-        "function (this:Object): (number|string)", retString, retNumber);
+-    assertGreatestSubtype(
+-        "function (this:Date): None", retString, retNumber);
++  public void testEmptyFunctionTypes() {
++    assertTrue(LEAST_FUNCTION_TYPE.isEmptyType());
++    assertFalse(GREATEST_FUNCTION_TYPE.isEmptyType());
+   }
+ 
+-  public void testSupAndInfWithDifferentThisTypes2() {
+-    FunctionType retString = new FunctionBuilder(registry)
+-        .withParamsNode(registry.createParameters())
+-        .withTypeOfThis(ARRAY_TYPE)
+-        .withReturnType(STRING_TYPE).build();
+-    FunctionType retNumber = new FunctionBuilder(registry)
+-        .withParamsNode(registry.createParameters())
+-        .withTypeOfThis(DATE_TYPE)
+-        .withReturnType(NUMBER_TYPE).build();
+-
+-    assertLeastSupertype(
+-        "function (this:Object): (number|string)", retString, retNumber);
+-    assertGreatestSubtype(
+-        "function (this:NoObject): None", retString, retNumber);
+-  }
+-
+-  public void testSupAndInfOfReturnTypesWithNumOfParams() {
+-    FunctionType twoNumbers = new FunctionBuilder(registry)
+-        .withParamsNode(registry.createParameters(NUMBER_TYPE, NUMBER_TYPE))
+-        .withReturnType(BOOLEAN_TYPE).build();
+-    FunctionType oneNumber = new FunctionBuilder(registry)
+-        .withParamsNode(registry.createParameters(NUMBER_TYPE))
+-        .withReturnType(BOOLEAN_TYPE).build();
+-
+-    assertLeastSupertype(
+-        "Function", twoNumbers, oneNumber);
+-    assertGreatestSubtype(
+-        "function (...[*]): None", twoNumbers, oneNumber);
+-  }
+-
+-  public void testSubtypeWithInterfaceThisType() {
+-    FunctionType iface = registry.createInterfaceType("I", null);
+-    FunctionType ifaceReturnBoolean = new FunctionBuilder(registry)
+-        .withParamsNode(registry.createParameters())
+-        .withTypeOfThis(iface.getInstanceType())
+-        .withReturnType(BOOLEAN_TYPE).build();
+-    FunctionType objReturnBoolean = new FunctionBuilder(registry)
+-        .withParamsNode(registry.createParameters())
+-        .withTypeOfThis(OBJECT_TYPE)
+-        .withReturnType(BOOLEAN_TYPE).build();
+-    assertTrue(objReturnBoolean.canAssignTo(ifaceReturnBoolean));
+-  }
+-
+-  private void assertLeastSupertype(String s, JSType t1, JSType t2) {
+-    assertEquals(s, t1.getLeastSupertype(t2).toString());
+-    assertEquals(s, t2.getLeastSupertype(t1).toString());
+-  }
+-
+-  private void assertGreatestSubtype(String s, JSType t1, JSType t2) {
+-    assertEquals(s, t1.getGreatestSubtype(t2).toString());
+-    assertEquals(s, t2.getGreatestSubtype(t1).toString());
+-  }
+ }
+Only in data/changesInfo//Closure_82/properties/modified_classes/inducing/test/com/google/javascript/rhino/jstype: JSTypeTest.java

@@ -1,0 +1,47 @@
+Only in data/changesInfo//Closure_60/properties/modified_classes/inducing/src/com/google/javascript/jscomp: MarkNoSideEffectCalls.java
+diff -u -r data/changesInfo//Closure_60/properties/modified_classes/inducing/src/com/google/javascript/jscomp/NodeUtil.java data/changesInfo//Closure_60/cleaned/fixing/src/com/google/javascript/jscomp/NodeUtil.java
+--- data/changesInfo//Closure_60/properties/modified_classes/inducing/src/com/google/javascript/jscomp/NodeUtil.java	2023-12-27 22:38:49.993447859 -0800
++++ data/changesInfo//Closure_60/cleaned/fixing/src/com/google/javascript/jscomp/NodeUtil.java	2023-06-27 00:48:02.937625245 -0700
+@@ -94,6 +94,8 @@
+           return TernaryValue.UNKNOWN;
+         }
+       }
++      case Token.VOID:
++        return TernaryValue.UNKNOWN;
+       default:
+         return getBooleanValue(n);
+     }
+@@ -113,9 +115,14 @@
+ 
+       case Token.NULL:
+       case Token.FALSE:
+-      case Token.VOID:
+         return TernaryValue.FALSE;
+ 
++      case Token.VOID:
++        if (!mayHaveSideEffects(n.getFirstChild())) {
++          return TernaryValue.FALSE;
++        }
++        break;
++
+       case Token.NAME:
+         String name = n.getString();
+         if ("undefined".equals(name)
+@@ -632,14 +639,6 @@
+   }
+ 
+   /**
+-   * @return Whether the call has a local result.
+-   */
+-  static boolean callHasLocalResult(Node n) {
+-    Preconditions.checkState(n.getType() == Token.CALL);
+-    return (n.getSideEffectFlags() & Node.FLAG_LOCAL_RESULTS) > 0;
+-  }
+-
+-  /**
+    * Returns true if the current node's type implies side effects.
+    *
+    * This is a non-recursive version of the may have side effects
+Only in data/changesInfo//Closure_60/properties/modified_classes/inducing/src/com/google/javascript/jscomp: PureFunctionIdentifier.java
+Only in data/changesInfo//Closure_60/properties/modified_classes/inducing/src/com/google/javascript: rhino
+Only in data/changesInfo//Closure_60/properties/modified_classes/inducing/: test

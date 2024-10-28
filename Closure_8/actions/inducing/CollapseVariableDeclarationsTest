@@ -1,0 +1,66 @@
+===
+insert-tree
+---
+MethodDeclaration [1492,2066]
+    Modifier: public [1492,1498]
+    PrimitiveType: void [1499,1503]
+    SimpleName: testAggressiveRedeclaration [1504,1531]
+    Block [1534,2066]
+        ExpressionStatement [1540,1642]
+            MethodInvocation [1540,1641]
+                SimpleName: test [1540,1544]
+                METHOD_INVOCATION_ARGUMENTS [1545,1640]
+                    StringLiteral: "var x = 2; foo(x);     x = 3; var y = 2;" [1545,1587]
+                    StringLiteral: "var x = 2; foo(x); var x = 3,     y = 2;" [1598,1640]
+        ExpressionStatement [1648,1764]
+            MethodInvocation [1648,1763]
+                SimpleName: test [1648,1652]
+                METHOD_INVOCATION_ARGUMENTS [1653,1762]
+                    StringLiteral: "var x = 2; foo(x);     x = 3; x = 1; var y = 2;" [1653,1702]
+                    StringLiteral: "var x = 2; foo(x); var x = 3, x = 1,     y = 2;" [1713,1762]
+        ExpressionStatement [1770,1906]
+            MethodInvocation [1770,1905]
+                SimpleName: test [1770,1774]
+                METHOD_INVOCATION_ARGUMENTS [1775,1904]
+                    StringLiteral: "var x = 2; foo(x);     x = 3; x = 1; var y = 2; var z = 4" [1775,1834]
+                    StringLiteral: "var x = 2; foo(x); var x = 3, x = 1,     y = 2,     z = 4" [1845,1904]
+        ExpressionStatement [1912,2062]
+            MethodInvocation [1912,2061]
+                SimpleName: test [1912,1916]
+                METHOD_INVOCATION_ARGUMENTS [1917,2060]
+                    StringLiteral: "var x = 2; foo(x);     x = 3; x = 1; var y = 2; var z = 4; x = 5" [1917,1983]
+                    StringLiteral: "var x = 2; foo(x); var x = 3, x = 1,     y = 2,     z = 4, x = 5" [1994,2060]
+to
+TypeDeclaration [653,1621]
+at 7
+===
+insert-tree
+---
+MethodDeclaration [2070,2291]
+    Modifier: public [2070,2076]
+    PrimitiveType: void [2077,2081]
+    SimpleName: testAggressiveRedeclarationInFor [2082,2114]
+    Block [2117,2291]
+        ExpressionStatement [2123,2172]
+            MethodInvocation [2123,2171]
+                SimpleName: testSame [2123,2131]
+                METHOD_INVOCATION_ARGUMENTS [2132,2170]
+                    StringLiteral: "for(var x = 1; x = 2; x = 3) {x = 4}" [2132,2170]
+        ExpressionStatement [2177,2230]
+            MethodInvocation [2177,2229]
+                SimpleName: testSame [2177,2185]
+                METHOD_INVOCATION_ARGUMENTS [2186,2228]
+                    StringLiteral: "for(var x = 1; y = 2; z = 3) {var a = 4}" [2186,2228]
+        ExpressionStatement [2235,2287]
+            MethodInvocation [2235,2286]
+                SimpleName: testSame [2235,2243]
+                METHOD_INVOCATION_ARGUMENTS [2244,2285]
+                    StringLiteral: "var x; for(x = 1; x = 2; z = 3) {x = 4}" [2244,2285]
+to
+TypeDeclaration [653,1621]
+at 8
+===
+update-node
+---
+StringLiteral: "if (x) var a = 1; else var a = 2;" [1447,1482]
+replace "if (x) var a = 1; else var a = 2;" by "if (x) var a = 1; else var b = 2;"

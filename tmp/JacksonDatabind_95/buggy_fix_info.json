@@ -1,0 +1,171 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.type.TestTypeFactory::testCanonicalNames",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.type.TypeFactory,com.fasterxml.jackson.databind.type.TypeParser",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "95",
+  "workingDir": "../bugs/JacksonDatabind_95_tmp",
+  "bug_name": "JacksonDatabind_95",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.type.TestTypeFactory",
+      "test_function": "testCanonicalNames",
+      "assertion_line": "237",
+      "exception": "java.lang.NullPointerException",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/type/TypeFactory.java",
+        "src/main/java/com/fasterxml/jackson/databind/type/TypeFactory.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.type.TypeFactory:constructSpecializedType:[JavaType baseType, Class\u003c?\u003e subclass]:JavaType",
+            "com.fasterxml.jackson.databind.type.TypeFactory:constructParametricType:[Class\u003c?\u003e parametrized, Class\u003c?\u003e... parameterClasses]:JavaType"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.type.TypeFactory:constructParametricType:[Class\u003c?\u003e parametrized, Class\u003c?\u003e... parameterClasses]:JavaType",
+            "com.fasterxml.jackson.databind.type.TypeFactory:constructSpecializedType:[JavaType baseType, Class\u003c?\u003e subclass]:JavaType"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "355",
+            "366",
+            "896"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "355",
+            "366",
+            "896"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/type/TypeFactory.java b/src/main/java/com/fasterxml/jackson/databind/type/TypeFactory.java\nindex 46910eb..41ffafb 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/type/TypeFactory.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/type/TypeFactory.java\n@@ -352,7 +352,7 @@\n         // also: if we start from untyped, not much to save\n         do { // bogus loop to be able to break\n             if (rawBase \u003d\u003d Object.class) {\n-                newType \u003d _fromClass(null, subclass, EMPTY_BINDINGS);\n+                newType \u003d _fromClass(null, subclass, TypeBindings.emptyBindings());\n                 break;\n             }\n             if (!rawBase.isAssignableFrom(subclass)) {\n@@ -363,7 +363,7 @@\n \n             // (1) Original target type has no generics -- just resolve subtype\n             if (baseType.getBindings().isEmpty()) {\n-                newType \u003d _fromClass(null, subclass, EMPTY_BINDINGS);     \n+                newType \u003d _fromClass(null, subclass, TypeBindings.emptyBindings());     \n                 break;\n             }\n             // (2) A small set of \"well-known\" List/Map subtypes where can take a short-cut\n@@ -893,7 +893,7 @@\n         int len \u003d parameterClasses.length;\n         JavaType[] pt \u003d new JavaType[len];\n         for (int i \u003d 0; i \u003c len; ++i) {\n-            pt[i] \u003d _fromClass(null, parameterClasses[i], EMPTY_BINDINGS);\n+            pt[i] \u003d _fromClass(null, parameterClasses[i], null);\n         }\n         return constructParametricType(parametrized, pt);\n     }\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NullLiteral [35078,35082]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [12738,12766]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [13280,13308]"
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: EMPTY_BINDINGS [12738,12752]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: EMPTY_BINDINGS [13266,13280]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: EMPTY_BINDINGS [35050,35064]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java",
+        "src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.type.TypeParser:parseType:[MyTokenizer tokens]:JavaType"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.type.TypeParser:parseType:[MyTokenizer tokens]:JavaType"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "59"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "59"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java b/src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java\nindex 1817e0a..c3697f5 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/type/TypeParser.java\n@@ -56,7 +56,7 @@\n             // can be comma that separates types, or closing \u0027\u003e\u0027\n             tokens.pushBack(token);\n         }\n-        return _factory._fromClass(null, base, TypeBindings.emptyBindings());\n+        return _factory._fromClass(null, base, null);\n     }\n \n     protected List\u003cJavaType\u003e parseTypes(MyTokenizer tokens)\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NullLiteral [1839,1843]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [1839,1867]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

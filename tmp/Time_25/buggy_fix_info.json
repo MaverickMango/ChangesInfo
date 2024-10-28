@@ -1,0 +1,114 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.joda.time.TestDateTimeZoneCutover::test_DateTime_constructor_Moscow_Autumn,org.joda.time.TestDateTimeZoneCutover::test_getOffsetFromLocal_Moscow_Autumn_overlap_mins,org.joda.time.TestDateTimeZoneCutover::test_getOffsetFromLocal_Moscow_Autumn",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.joda.time.DateTimeZone",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Time",
+  "id": "25",
+  "workingDir": "../bugs/Time_25_tmp",
+  "bug_name": "Time_25",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.joda.time.TestDateTimeZoneCutover",
+      "test_function": "test_DateTime_constructor_Moscow_Autumn",
+      "assertion_line": "922",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c...10-28T02:30:00.000+0[4]:00\u003e but was:\u003c...10-28T02:30:00.000+0[3]:00\u003e"
+    },
+    {
+      "test_class": "org.joda.time.TestDateTimeZoneCutover",
+      "test_function": "test_getOffsetFromLocal_Moscow_Autumn_overlap_mins",
+      "assertion_line": "1217",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "2007-10-28T02:00:00.000+03:00 expected:\u003c...10-28T02:00:00.000+0[4]:00\u003e but was:\u003c...10-28T02:00:00.000+0[3]:00\u003e"
+    },
+    {
+      "test_class": "org.joda.time.TestDateTimeZoneCutover",
+      "test_function": "test_getOffsetFromLocal_Moscow_Autumn",
+      "assertion_line": "1217",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "2007-10-28T02:00:00.000+03:00 expected:\u003c...10-28T02:00:00.000+0[4]:00\u003e but was:\u003c...10-28T02:00:00.000+0[3]:00\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/joda/time/DateTimeZone.java",
+        "src/main/java/org/joda/time/DateTimeZone.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.joda.time.DateTimeZone:getOffsetFromLocal:[long instantLocal]:int"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.joda.time.DateTimeZone:getOffsetFromLocal:[long instantLocal]:int"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "899",
+            "900",
+            "901",
+            "902",
+            "903",
+            "904",
+            "905",
+            "906",
+            "907"
+          ],
+          "num": 9
+        },
+        {
+          "qualified_names": [
+            "898"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/joda/time/DateTimeZone.java b/src/main/java/org/joda/time/DateTimeZone.java\nindex 81f5872..a320022 100644\n--- a/src/main/java/org/joda/time/DateTimeZone.java\n+++ b/src/main/java/org/joda/time/DateTimeZone.java\n@@ -896,15 +896,6 @@\n                     return offsetLocal;\n                 }\n             }\n-        } else if (offsetLocal \u003e 0) {\n-            long prev \u003d previousTransition(instantAdjusted);\n-            if (prev \u003c instantAdjusted) {\n-                int offsetPrev \u003d getOffset(prev);\n-                int diff \u003d offsetPrev - offsetLocal;\n-                if (instantAdjusted - prev \u003c\u003d diff) {\n-                    return offsetPrev;\n-                }\n-            }\n         }\n         return offsetAdjusted;\n     }\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [34049,34412]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

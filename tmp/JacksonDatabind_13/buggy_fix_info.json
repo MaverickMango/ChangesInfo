@@ -1,0 +1,139 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.struct.TestObjectIdDeserialization::testNullObjectId",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.deser.DefaultDeserializationContext,com.fasterxml.jackson.databind.deser.impl.ObjectIdValueProperty",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "13",
+  "workingDir": "../bugs/JacksonDatabind_13_tmp",
+  "bug_name": "JacksonDatabind_13",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.struct.TestObjectIdDeserialization",
+      "test_function": "testNullObjectId",
+      "assertion_line": "464",
+      "exception": "com.fasterxml.jackson.databind.JsonMappingException",
+      "message": "(was java.lang.NullPointerException) (through reference chain: com.fasterxml.jackson.databind.struct.Identifiable[\"id\"])"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/deser/DefaultDeserializationContext.java",
+        "src/main/java/com/fasterxml/jackson/databind/deser/DefaultDeserializationContext.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.DefaultDeserializationContext:findObjectId:[Object id, ObjectIdGenerator\u003c?\u003e gen, ObjectIdResolver resolverType]:ReadableObjectId"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.DefaultDeserializationContext:findObjectId:[Object id, ObjectIdGenerator\u003c?\u003e gen, ObjectIdResolver resolverType]:ReadableObjectId"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "87",
+            "88",
+            "89"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "86"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/DefaultDeserializationContext.java b/src/main/java/com/fasterxml/jackson/databind/deser/DefaultDeserializationContext.java\nindex 8132018..373ac89 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/deser/DefaultDeserializationContext.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/deser/DefaultDeserializationContext.java\n@@ -84,9 +84,6 @@\n         /* 02-Apr-2015, tatu: As per [databind#742] should allow \u0027null\u0027, similar to how\n          *   missing id already works.\n          */\n-        if (id \u003d\u003d null) {\n-            return null;\n-        }\n \n         final ObjectIdGenerator.IdKey key \u003d gen.key(id);\n \n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [3243,3295]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/deser/impl/ObjectIdValueProperty.java",
+        "src/main/java/com/fasterxml/jackson/databind/deser/impl/ObjectIdValueProperty.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.impl.ObjectIdValueProperty:deserializeSetAndReturn:[JsonParser jp, DeserializationContext ctxt, Object instance]:Object"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.impl.ObjectIdValueProperty:deserializeSetAndReturn:[JsonParser jp, DeserializationContext ctxt, Object instance]:Object"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "92",
+            "93",
+            "94"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "91"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/impl/ObjectIdValueProperty.java b/src/main/java/com/fasterxml/jackson/databind/deser/impl/ObjectIdValueProperty.java\nindex 594d85f..921904f 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/deser/impl/ObjectIdValueProperty.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/deser/impl/ObjectIdValueProperty.java\n@@ -89,9 +89,6 @@\n          *  will be generated externally, at a later point, and is not available\n          *  quite yet. Typical use case is with DB inserts.\n          */\n-        if (id \u003d\u003d null) {\n-            return null;\n-        }\n         \n         ReadableObjectId roid \u003d ctxt.findObjectId(id, _objectIdReader.generator, _objectIdReader.resolver);\n         roid.bindItem(instance);\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [3029,3081]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

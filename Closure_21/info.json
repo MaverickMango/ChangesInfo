@@ -1,0 +1,749 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Closure",
+  "id": "21",
+  "workingDir": "../bugs/Closure_21_buggy",
+  "inducingCommit": "dbf6ea95477810188582b9e9ac6c9645717cbe95",
+  "originalCommit": "32a12bad27bf2989a4e6eaf39c84779a39991f2b",
+  "bug_name": "Closure_21",
+  "derive": "defects4j",
+  "original_fixing_commit": "1787d7b2cff83a0f177dd958033c53e4502406d2",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CheckSideEffects.java",
+        "src/com/google/javascript/jscomp/CheckSideEffects.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "visit"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "visit"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "98",
+            "99",
+            "100",
+            "101",
+            "102",
+            "105",
+            "106",
+            "107",
+            "108",
+            "109",
+            "110",
+            "111",
+            "113",
+            "114"
+          ],
+          "num": 14
+        },
+        {
+          "qualified_names": [
+            "98",
+            "99",
+            "100",
+            "101",
+            "102",
+            "103",
+            "104",
+            "105",
+            "106",
+            "107",
+            "108",
+            "109",
+            "110",
+            "111",
+            "112",
+            "113",
+            "114",
+            "115",
+            "116",
+            "117",
+            "118",
+            "119",
+            "120",
+            "121",
+            "122",
+            "123",
+            "124",
+            "125",
+            "126",
+            "127",
+            "128",
+            "129",
+            "130",
+            "131",
+            "132",
+            "133",
+            "134",
+            "135",
+            "139",
+            "140",
+            "141",
+            "142",
+            "143",
+            "144",
+            "145",
+            "146",
+            "147",
+            "148",
+            "149"
+          ],
+          "num": 49
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/CheckSideEffects.java b/src/com/google/javascript/jscomp/CheckSideEffects.java\nindex 722d225..ee0fc6d 100644\n--- a/src/com/google/javascript/jscomp/CheckSideEffects.java\n+++ b/src/com/google/javascript/jscomp/CheckSideEffects.java\n@@ -95,23 +95,58 @@\n       return;\n     }\n \n-    // Do not try to remove a block or an expr result. We already handle\n-    // these cases when we visit the child, and the peephole passes will\n-    // fix up the tree in more clever ways when these are removed.\n-    if (n.isExprResult() || n.isBlock()) {\n-      return;\n+    int pt \u003d parent.getType();\n+    if (pt \u003d\u003d Token.COMMA) {\n+      Node gramps \u003d parent.getParent();\n+      if (gramps.isCall() \u0026\u0026\n+          parent \u003d\u003d gramps.getFirstChild()) {\n+        // Semantically, a direct call to eval is different from an indirect\n+        // call to an eval. See ECMA-262 S15.1.2.1. So it\u0027s OK for the first\n+        // expression to a comma to be a no-op if it\u0027s used to indirect\n+        // an eval.\n+        if (n \u003d\u003d parent.getFirstChild() \u0026\u0026\n+            parent.getChildCount() \u003d\u003d 2 \u0026\u0026\n+            n.getNext().isName() \u0026\u0026\n+            \"eval\".equals(n.getNext().getString())) {\n+          return;\n+        }\n+      }\n+\n+      if (n \u003d\u003d parent.getLastChild()) {\n+        for (Node an : parent.getAncestors()) {\n+          int ancestorType \u003d an.getType();\n+          if (ancestorType \u003d\u003d Token.COMMA)\n+            continue;\n+          if (ancestorType !\u003d Token.EXPR_RESULT \u0026\u0026\n+              ancestorType !\u003d Token.BLOCK)\n+            return;\n+          else\n+            break;\n+        }\n+      }\n+    } else if (pt !\u003d Token.EXPR_RESULT \u0026\u0026 pt !\u003d Token.BLOCK) {\n+      if (pt \u003d\u003d Token.FOR \u0026\u0026 parent.getChildCount() \u003d\u003d 4 \u0026\u0026\n+          (n \u003d\u003d parent.getFirstChild() ||\n+           n \u003d\u003d parent.getFirstChild().getNext().getNext())) {\n+        // Fall through and look for warnings for the 1st and 3rd child\n+        // of a for.\n+      } else {\n+        return;  // it might be OK to not have a side-effect\n+      }\n     }\n \n-    // This no-op statement was there so that JSDoc information could\n-    // be attached to the name. This check should not complain about it.\n-    if (n.isQualifiedName() \u0026\u0026 n.getJSDocInfo() !\u003d null) {\n-      return;\n-    }\n-\n-    boolean isResultUsed \u003d NodeUtil.isExpressionResultUsed(n);\n     boolean isSimpleOp \u003d NodeUtil.isSimpleOperatorType(n.getType());\n-    if (!isResultUsed \u0026\u0026\n-        (isSimpleOp || !NodeUtil.mayHaveSideEffects(n, t.getCompiler()))) {\n+    if (isSimpleOp ||\n+        !NodeUtil.mayHaveSideEffects(n, t.getCompiler())) {\n+      if (n.isQualifiedName() \u0026\u0026 n.getJSDocInfo() !\u003d null) {\n+        // This no-op statement was there so that JSDoc information could\n+        // be attached to the name. This check should not complain about it.\n+        return;\n+      } else if (n.isExprResult()) {\n+        // we already reported the problem when we visited the child.\n+        return;\n+      }\n+\n       String msg \u003d \"This code lacks side-effects. Is there a bug?\";\n       if (n.isString()) {\n         msg \u003d \"Is there a missing \u0027+\u0027 on the previous line?\";\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [3088,3114]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [3119,4490]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [4884,5001]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [4888,4904]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [4906,5001]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [3305,3336]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [3338,3359]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [3301,3359]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [3588,3646]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "PrefixExpression [3724,3737]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [3738,3740]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ParenthesizedExpression [3749,3813]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [3724,3813]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/NodeUtil.java",
+        "src/com/google/javascript/jscomp/NodeUtil.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "isExpressionResultUsed"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "isExpressionResultUsed"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "3114",
+            "3123",
+            "3124",
+            "3125",
+            "3126",
+            "3127",
+            "3128",
+            "3129",
+            "3130",
+            "3131",
+            "3132",
+            "3133",
+            "3134",
+            "3135",
+            "3136",
+            "3137"
+          ],
+          "num": 16
+        },
+        {
+          "qualified_names": [
+            "3113",
+            "3123"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/NodeUtil.java b/src/com/google/javascript/jscomp/NodeUtil.java\nindex 00e31e0..5de1e6f 100644\n--- a/src/com/google/javascript/jscomp/NodeUtil.java\n+++ b/src/com/google/javascript/jscomp/NodeUtil.java\n@@ -3111,7 +3111,6 @@\n     // TODO(johnlenz): consider sharing some code with trySimpleUnusedResult.\n     Node parent \u003d expr.getParent();\n     switch (parent.getType()) {\n-      case Token.BLOCK:\n       case Token.EXPR_RESULT:\n         return false;\n       case Token.HOOK:\n@@ -3120,21 +3119,6 @@\n         return (expr \u003d\u003d parent.getFirstChild())\n             ? true : isExpressionResultUsed(parent);\n       case Token.COMMA:\n-        Node gramps \u003d parent.getParent();\n-        if (gramps.isCall() \u0026\u0026\n-            parent \u003d\u003d gramps.getFirstChild()) {\n-          // Semantically, a direct call to eval is different from an indirect\n-          // call to an eval. See ECMA-262 S15.1.2.1. So it\u0027s OK for the first\n-          // expression to a comma to be a no-op if it\u0027s used to indirect\n-          // an eval. This we pretend that this is \"used\".\n-          if (expr \u003d\u003d parent.getFirstChild() \u0026\u0026\n-              parent.getChildCount() \u003d\u003d 2 \u0026\u0026\n-              expr.getNext().isName() \u0026\u0026\n-              \"eval\".equals(expr.getNext().getString())) {\n-            return true;\n-          }\n-        }\n-\n         return (expr \u003d\u003d parent.getFirstChild())\n             ? false : isExpressionResultUsed(parent);\n       case Token.FOR:\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [91820,91837]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [92089,92122]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [92131,92732]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/NodeUtil.java",
+        "src/com/google/javascript/jscomp/NodeUtil.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "getImpureBooleanValue",
+            "getPureBooleanValue",
+            "isExpressionResultUsed"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "getImpureBooleanValue",
+            "isExpressionResultUsed"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "98",
+            "99",
+            "100",
+            "101",
+            "102",
+            "103",
+            "104",
+            "105",
+            "106",
+            "107",
+            "108",
+            "109",
+            "110",
+            "111",
+            "112",
+            "113",
+            "115",
+            "116",
+            "117",
+            "118",
+            "119",
+            "120",
+            "121",
+            "122",
+            "123",
+            "124",
+            "125",
+            "126",
+            "127",
+            "128",
+            "129",
+            "130",
+            "131",
+            "132",
+            "133",
+            "134",
+            "135",
+            "139",
+            "140",
+            "3113",
+            "3121"
+          ],
+          "num": 41
+        },
+        {
+          "qualified_names": [
+            "98",
+            "99",
+            "100",
+            "101",
+            "102",
+            "103",
+            "105",
+            "106",
+            "107",
+            "108",
+            "111",
+            "113",
+            "114",
+            "3114",
+            "3123",
+            "3124",
+            "3125",
+            "3126",
+            "3127",
+            "3128",
+            "3129",
+            "3130",
+            "3131",
+            "3132",
+            "3133",
+            "3134",
+            "3135",
+            "3136",
+            "3137"
+          ],
+          "num": 29
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Closure_21/properties/modified_classes/inducing/src/com/google/javascript/jscomp/CheckSideEffects.java data/changesInfo//Closure_21/cleaned/fixing/src/com/google/javascript/jscomp/CheckSideEffects.java\n--- data/changesInfo//Closure_21/properties/modified_classes/inducing/src/com/google/javascript/jscomp/CheckSideEffects.java\t2023-08-25 13:06:13.658293800 +0800\n+++ data/changesInfo//Closure_21/cleaned/fixing/src/com/google/javascript/jscomp/CheckSideEffects.java\t2023-06-20 20:01:41.197664527 +0800\n@@ -95,49 +95,23 @@\n       return;\n     }\n \n-    int pt \u003d parent.getType();\n-    if (pt \u003d\u003d Token.COMMA) {\n-      Node gramps \u003d parent.getParent();\n-      if (gramps.isCall() \u0026\u0026\n-          parent \u003d\u003d gramps.getFirstChild()) {\n-        // Semantically, a direct call to eval is different from an indirect\n-        // call to an eval. See ECMA-262 S15.1.2.1. So it\u0027s OK for the first\n-        // expression to a comma to be a no-op if it\u0027s used to indirect\n-        // an eval.\n-        if (n \u003d\u003d parent.getFirstChild() \u0026\u0026\n-            parent.getChildCount() \u003d\u003d 2 \u0026\u0026\n-            n.getNext().isName() \u0026\u0026\n-            \"eval\".equals(n.getNext().getString())) {\n-          return;\n-        }\n-      }\n+    // Do not try to remove a block or an expr result. We already handle\n+    // these cases when we visit the child, and the peephole passes will\n+    // fix up the tree in more clever ways when these are removed.\n+    if (n.isExprResult() || n.isBlock()) {\n+      return;\n+    }\n \n-      if (n \u003d\u003d parent.getLastChild()) {\n-        for (Node an : parent.getAncestors()) {\n-          int ancestorType \u003d an.getType();\n-          if (ancestorType \u003d\u003d Token.COMMA)\n-            continue;\n-          if (ancestorType !\u003d Token.EXPR_RESULT \u0026\u0026\n-              ancestorType !\u003d Token.BLOCK)\n-            return;\n-          else\n-            break;\n-        }\n-      }\n-    } else if (pt !\u003d Token.EXPR_RESULT \u0026\u0026 pt !\u003d Token.BLOCK) {\n-      if (pt \u003d\u003d Token.FOR \u0026\u0026 parent.getChildCount() \u003d\u003d 4 \u0026\u0026\n-          (n \u003d\u003d parent.getFirstChild() ||\n-           n \u003d\u003d parent.getFirstChild().getNext().getNext())) {\n-        // Fall through and look for warnings for the 1st and 3rd child\n-        // of a for.\n-      } else {\n-        return;  // it might be OK to not have a side-effect\n-      }\n+    // This no-op statement was there so that JSDoc information could\n+    // be attached to the name. This check should not complain about it.\n+    if (n.isQualifiedName() \u0026\u0026 n.getJSDocInfo() !\u003d null) {\n+      return;\n     }\n \n+    boolean isResultUsed \u003d NodeUtil.isExpressionResultUsed(n);\n     boolean isSimpleOp \u003d NodeUtil.isSimpleOperatorType(n.getType());\n-    if (isSimpleOp ||\n-        !NodeUtil.mayHaveSideEffects(n, t.getCompiler())) {\n+    if (!isResultUsed \u0026\u0026\n+        (isSimpleOp || !NodeUtil.mayHaveSideEffects(n, t.getCompiler()))) {\n       if (n.isQualifiedName() \u0026\u0026 n.getJSDocInfo() !\u003d null) {\n         // This no-op statement was there so that JSDoc information could\n         // be attached to the name. This check should not complain about it.\ndiff -u -r data/changesInfo//Closure_21/properties/modified_classes/inducing/src/com/google/javascript/jscomp/NodeUtil.java data/changesInfo//Closure_21/cleaned/fixing/src/com/google/javascript/jscomp/NodeUtil.java\n--- data/changesInfo//Closure_21/properties/modified_classes/inducing/src/com/google/javascript/jscomp/NodeUtil.java\t2023-08-25 13:06:13.658293800 +0800\n+++ data/changesInfo//Closure_21/cleaned/fixing/src/com/google/javascript/jscomp/NodeUtil.java\t2023-06-20 20:02:57.258771805 +0800\n@@ -3111,6 +3111,7 @@\n     // TODO(johnlenz): consider sharing some code with trySimpleUnusedResult.\n     Node parent \u003d expr.getParent();\n     switch (parent.getType()) {\n+      case Token.BLOCK:\n       case Token.EXPR_RESULT:\n         return false;\n       case Token.HOOK:\n@@ -3119,6 +3120,21 @@\n         return (expr \u003d\u003d parent.getFirstChild())\n             ? true : isExpressionResultUsed(parent);\n       case Token.COMMA:\n+        Node gramps \u003d parent.getParent();\n+        if (gramps.isCall() \u0026\u0026\n+            parent \u003d\u003d gramps.getFirstChild()) {\n+          // Semantically, a direct call to eval is different from an indirect\n+          // call to an eval. See ECMA-262 S15.1.2.1. So it\u0027s OK for the first\n+          // expression to a comma to be a no-op if it\u0027s used to indirect\n+          // an eval. This we pretend that this is \"used\".\n+          if (expr \u003d\u003d parent.getFirstChild() \u0026\u0026\n+              parent.getChildCount() \u003d\u003d 2 \u0026\u0026\n+              expr.getNext().isName() \u0026\u0026\n+              \"eval\".equals(expr.getNext().getString())) {\n+            return true;\n+          }\n+        }\n+\n         return (expr \u003d\u003d parent.getFirstChild())\n             ? false : isExpressionResultUsed(parent);\n       case Token.FOR:\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SwitchCase [91820,91837]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [92089,92122]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [92131,92732]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CheckSideEffects.java",
+        "src/com/google/javascript/jscomp/CheckSideEffects.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "visit"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "visit"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "98",
+            "99",
+            "100",
+            "101",
+            "102",
+            "103",
+            "104",
+            "105",
+            "106",
+            "107",
+            "108",
+            "109",
+            "110",
+            "111",
+            "112",
+            "113",
+            "115",
+            "116",
+            "117",
+            "118",
+            "119",
+            "120",
+            "121",
+            "122",
+            "123",
+            "124",
+            "125",
+            "126",
+            "127",
+            "128",
+            "129",
+            "130",
+            "131",
+            "132",
+            "133",
+            "134",
+            "135",
+            "139",
+            "140",
+            "3113",
+            "3121"
+          ],
+          "num": 41
+        },
+        {
+          "qualified_names": [
+            "98",
+            "99",
+            "100",
+            "101",
+            "102",
+            "103",
+            "105",
+            "106",
+            "107",
+            "108",
+            "111",
+            "113",
+            "114",
+            "3114",
+            "3123",
+            "3124",
+            "3125",
+            "3126",
+            "3127",
+            "3128",
+            "3129",
+            "3130",
+            "3131",
+            "3132",
+            "3133",
+            "3134",
+            "3135",
+            "3136",
+            "3137"
+          ],
+          "num": 29
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Closure_21/properties/modified_classes/inducing/src/com/google/javascript/jscomp/CheckSideEffects.java data/changesInfo//Closure_21/cleaned/fixing/src/com/google/javascript/jscomp/CheckSideEffects.java\n--- data/changesInfo//Closure_21/properties/modified_classes/inducing/src/com/google/javascript/jscomp/CheckSideEffects.java\t2023-08-25 13:06:13.658293800 +0800\n+++ data/changesInfo//Closure_21/cleaned/fixing/src/com/google/javascript/jscomp/CheckSideEffects.java\t2023-06-20 20:01:41.197664527 +0800\n@@ -95,49 +95,23 @@\n       return;\n     }\n \n-    int pt \u003d parent.getType();\n-    if (pt \u003d\u003d Token.COMMA) {\n-      Node gramps \u003d parent.getParent();\n-      if (gramps.isCall() \u0026\u0026\n-          parent \u003d\u003d gramps.getFirstChild()) {\n-        // Semantically, a direct call to eval is different from an indirect\n-        // call to an eval. See ECMA-262 S15.1.2.1. So it\u0027s OK for the first\n-        // expression to a comma to be a no-op if it\u0027s used to indirect\n-        // an eval.\n-        if (n \u003d\u003d parent.getFirstChild() \u0026\u0026\n-            parent.getChildCount() \u003d\u003d 2 \u0026\u0026\n-            n.getNext().isName() \u0026\u0026\n-            \"eval\".equals(n.getNext().getString())) {\n-          return;\n-        }\n-      }\n+    // Do not try to remove a block or an expr result. We already handle\n+    // these cases when we visit the child, and the peephole passes will\n+    // fix up the tree in more clever ways when these are removed.\n+    if (n.isExprResult() || n.isBlock()) {\n+      return;\n+    }\n \n-      if (n \u003d\u003d parent.getLastChild()) {\n-        for (Node an : parent.getAncestors()) {\n-          int ancestorType \u003d an.getType();\n-          if (ancestorType \u003d\u003d Token.COMMA)\n-            continue;\n-          if (ancestorType !\u003d Token.EXPR_RESULT \u0026\u0026\n-              ancestorType !\u003d Token.BLOCK)\n-            return;\n-          else\n-            break;\n-        }\n-      }\n-    } else if (pt !\u003d Token.EXPR_RESULT \u0026\u0026 pt !\u003d Token.BLOCK) {\n-      if (pt \u003d\u003d Token.FOR \u0026\u0026 parent.getChildCount() \u003d\u003d 4 \u0026\u0026\n-          (n \u003d\u003d parent.getFirstChild() ||\n-           n \u003d\u003d parent.getFirstChild().getNext().getNext())) {\n-        // Fall through and look for warnings for the 1st and 3rd child\n-        // of a for.\n-      } else {\n-        return;  // it might be OK to not have a side-effect\n-      }\n+    // This no-op statement was there so that JSDoc information could\n+    // be attached to the name. This check should not complain about it.\n+    if (n.isQualifiedName() \u0026\u0026 n.getJSDocInfo() !\u003d null) {\n+      return;\n     }\n \n+    boolean isResultUsed \u003d NodeUtil.isExpressionResultUsed(n);\n     boolean isSimpleOp \u003d NodeUtil.isSimpleOperatorType(n.getType());\n-    if (isSimpleOp ||\n-        !NodeUtil.mayHaveSideEffects(n, t.getCompiler())) {\n+    if (!isResultUsed \u0026\u0026\n+        (isSimpleOp || !NodeUtil.mayHaveSideEffects(n, t.getCompiler()))) {\n       if (n.isQualifiedName() \u0026\u0026 n.getJSDocInfo() !\u003d null) {\n         // This no-op statement was there so that JSDoc information could\n         // be attached to the name. This check should not complain about it.\ndiff -u -r data/changesInfo//Closure_21/properties/modified_classes/inducing/src/com/google/javascript/jscomp/NodeUtil.java data/changesInfo//Closure_21/cleaned/fixing/src/com/google/javascript/jscomp/NodeUtil.java\n--- data/changesInfo//Closure_21/properties/modified_classes/inducing/src/com/google/javascript/jscomp/NodeUtil.java\t2023-08-25 13:06:13.658293800 +0800\n+++ data/changesInfo//Closure_21/cleaned/fixing/src/com/google/javascript/jscomp/NodeUtil.java\t2023-06-20 20:02:57.258771805 +0800\n@@ -3111,6 +3111,7 @@\n     // TODO(johnlenz): consider sharing some code with trySimpleUnusedResult.\n     Node parent \u003d expr.getParent();\n     switch (parent.getType()) {\n+      case Token.BLOCK:\n       case Token.EXPR_RESULT:\n         return false;\n       case Token.HOOK:\n@@ -3119,6 +3120,21 @@\n         return (expr \u003d\u003d parent.getFirstChild())\n             ? true : isExpressionResultUsed(parent);\n       case Token.COMMA:\n+        Node gramps \u003d parent.getParent();\n+        if (gramps.isCall() \u0026\u0026\n+            parent \u003d\u003d gramps.getFirstChild()) {\n+          // Semantically, a direct call to eval is different from an indirect\n+          // call to an eval. See ECMA-262 S15.1.2.1. So it\u0027s OK for the first\n+          // expression to a comma to be a no-op if it\u0027s used to indirect\n+          // an eval. This we pretend that this is \"used\".\n+          if (expr \u003d\u003d parent.getFirstChild() \u0026\u0026\n+              parent.getChildCount() \u003d\u003d 2 \u0026\u0026\n+              expr.getNext().isName() \u0026\u0026\n+              \"eval\".equals(expr.getNext().getString())) {\n+            return true;\n+          }\n+        }\n+\n         return (expr \u003d\u003d parent.getFirstChild())\n             ? false : isExpressionResultUsed(parent);\n       case Token.FOR:\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [3301,3359]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [3588,3646]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [3305,3336]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [3338,3359]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [3724,3813]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PrefixExpression [3724,3737]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [3738,3740]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ParenthesizedExpression [3749,3813]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [3827,3846]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [3850,3874]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [3850,3866]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NullLiteral [3870,3874]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [3088,3114]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [3123,3140]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [3150,3183]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [3194,3255]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [3517,3677]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [3679,3708]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [3513,3708]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [3257,3716]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [3190,3716]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [3724,4079]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [3142,4085]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [3119,4490]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [4095,4118]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: pt [4122,4124]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "QualifiedName: Token.BLOCK [4128,4139]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [4122,4139]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [4153,4304]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [4306,4408]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [4149,4484]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [4141,4490]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "getPureBooleanValue"
+      ],
+      "num": 1
+    }
+  }
+}

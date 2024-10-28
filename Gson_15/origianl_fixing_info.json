@@ -1,0 +1,153 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "/home/liumengjiao/Desktop/CI/Benchmark/data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.gson.stream.JsonWriterTest::testNonFiniteDoublesWhenLenient",
+    "test.dir": "gson/src/test/java",
+    "clz.modified": "com.google.gson.stream.JsonWriter",
+    "src.dir": "gson/src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Gson",
+  "id": "15",
+  "workingDir": "../bugs/Gson_15_buggy",
+  "buggyCommit": "0aaef0fd1bb1b9729543dc40168adfb829eb75a4",
+  "inducingCommit": "765a9f1ecdfaf96f3587f488385111c9d6a4927e",
+  "originalCommit": "5bffa1f6790b2a5e8bc0996240c1b12317793324",
+  "bug_name": "Gson_15",
+  "derive": "defects4j",
+  "original_fixing_commit": "ada597e69a78b8b99f79f79493cbf51e16045202",
+  "buildFiles_changed": false,
+  "regression": false,
+  "inducing_changes": [],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [
+        "gson/src/main/java/com/google/gson/stream/JsonReader.java",
+        "gson/src/main/java/com/google/gson/stream/JsonScope.java",
+        "gson/src/main/java/com/google/gson/stream/JsonToken.java",
+        "gson/src/main/java/com/google/gson/stream/JsonWriter.java"
+      ],
+      "num": 4
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "com.google.gson.stream.JsonWriterTest",
+      "test_function": "testNonFiniteDoublesWhenLenient",
+      "assertion_line": "222",
+      "exception": "java.lang.IllegalArgumentException",
+      "message": "Numeric values must be finite, but was NaN"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "gson/src/main/java/com/google/gson/stream/JsonWriter.java",
+        "gson/src/main/java/com/google/gson/stream/JsonWriter.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.gson.stream.JsonWriter:value:[double value]:JsonWriter"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.gson.stream.JsonWriter:value:[double value]:JsonWriter"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "494",
+            "497"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "494",
+            "495"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/gson/src/main/java/com/google/gson/stream/JsonWriter.java b/gson/src/main/java/com/google/gson/stream/JsonWriter.java\nindex e2fc196..8148816 100644\n--- a/gson/src/main/java/com/google/gson/stream/JsonWriter.java\n+++ b/gson/src/main/java/com/google/gson/stream/JsonWriter.java\n@@ -491,10 +491,10 @@\n    * @return this writer.\n    */\n   public JsonWriter value(double value) throws IOException {\n-    if (Double.isNaN(value) || Double.isInfinite(value)) {\n+    writeDeferredName();\n+    if (!lenient \u0026\u0026 (Double.isNaN(value) || Double.isInfinite(value))) {\n       throw new IllegalArgumentException(\"Numeric values must be finite, but was \" + value);\n     }\n-    writeDeferredName();\n     beforeValue();\n     out.append(Double.toString(value));\n     return this;\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [14624,14685]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PrefixExpression [14624,14632]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [14633,14635]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ParenthesizedExpression [14636,14685]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "patch_changed_mths": {
+    "qualified_names": [],
+    "num": 0
+  }
+}

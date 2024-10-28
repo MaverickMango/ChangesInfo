@@ -1,0 +1,121 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.ProcessCommonJSModulesTest::testGuessModuleName",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.ProcessCommonJSModules",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "9",
+  "workingDir": "../bugs/Closure_9_tmp",
+  "bug_name": "Closure_9",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.ProcessCommonJSModulesTest",
+      "test_function": "testGuessModuleName",
+      "assertion_line": "132",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003cmodule$[]baz\u003e but was:\u003cmodule$[foo\\]baz\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/ProcessCommonJSModules.java",
+        "src/com/google/javascript/jscomp/ProcessCommonJSModules.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.ProcessCommonJSModules:normalizeSourceName:[String filename]:String",
+            "com.google.javascript.jscomp.ProcessCommonJSModules\\$ProcessCommonJsModulesCallback:visitScript:[NodeTraversal t, Node script]:void"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.ProcessCommonJSModules:normalizeSourceName:[String filename]:String",
+            "com.google.javascript.jscomp.ProcessCommonJSModules\\$ProcessCommonJsModulesCallback:visitScript:[NodeTraversal t, Node script]:void"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "119",
+            "184"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "118",
+            "183"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/ProcessCommonJSModules.java b/src/com/google/javascript/jscomp/ProcessCommonJSModules.java\nindex 6777957..2987bda 100644\n--- a/src/com/google/javascript/jscomp/ProcessCommonJSModules.java\n+++ b/src/com/google/javascript/jscomp/ProcessCommonJSModules.java\n@@ -116,7 +116,6 @@\n   private String normalizeSourceName(String filename) {\n     // The DOS command shell will normalize \"/\" to \"\\\", so we have to\n     // wrestle it back.\n-    filename \u003d filename.replace(\"\\\\\", \"/\");\n \n     if (filename.indexOf(filenamePrefix) \u003d\u003d 0) {\n       filename \u003d filename.substring(filenamePrefix.length());\n@@ -181,7 +180,7 @@\n       Preconditions.checkArgument(scriptNodeCount \u003d\u003d 1,\n           \"ProcessCommonJSModules supports only one invocation per \" +\n           \"CompilerInput / script node\");\n-      String moduleName \u003d guessCJSModuleName(script.getSourceFileName());\n+      String moduleName \u003d guessCJSModuleName(normalizeSourceName(script.getSourceFileName()));\n       script.addChildToFront(IR.var(IR.name(moduleName), IR.objectlit())\n           .copyInformationFromForTree(script));\n       if (reportDependencies) {\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [6451,6518]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [6470,6517]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: normalizeSourceName [6470,6489]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [4272,4311]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

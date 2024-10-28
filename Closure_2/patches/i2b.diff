@@ -1,0 +1,713 @@
+diff -r -u inducing/src/com/google/javascript/jscomp/TypeCheck.java buggy/src/com/google/javascript/jscomp/TypeCheck.java
+--- inducing/src/com/google/javascript/jscomp/TypeCheck.java	2023-06-12 11:40:15.963204680 +0800
++++ buggy/src/com/google/javascript/jscomp/TypeCheck.java	2023-06-12 11:40:15.875208837 +0800
+@@ -238,6 +238,11 @@
+                              "Cannot add a property to a struct instance " +
+                              "after it is constructed.");
+ 
++  static final DiagnosticType ILLEGAL_OBJLIT_KEY =
++      DiagnosticType.warning(
++          "ILLEGAL_OBJLIT_KEY",
++          "Illegal key, the object literal is a {0}");
++
+   static final DiagnosticGroup ALL_DIAGNOSTICS = new DiagnosticGroup(
+       DETERMINISTIC_TEST,
+       DETERMINISTIC_TEST_NO_RESULT,
+@@ -269,6 +274,7 @@
+       EXPECTED_THIS_TYPE,
+       IN_USED_WITH_STRUCT,
+       ILLEGAL_PROPERTY_CREATION,
++      ILLEGAL_OBJLIT_KEY,
+       RhinoErrorReporter.TYPE_PARSE_ERROR,
+       TypedScopeCreator.UNKNOWN_LENDS,
+       TypedScopeCreator.LENDS_ON_NON_OBJECT,
+@@ -476,6 +482,19 @@
+     boolean typeable = true;
+ 
+     switch (n.getType()) {
++      case Token.CAST:
++        Node expr = n.getFirstChild();
++        ensureTyped(t, n, getJSType(expr));
++
++        // If the cast, tightens the type apply it, so it is available post
++        // normalization.
++        JSType castType = getJSType(n);
++        JSType exprType = getJSType(expr);
++        if (castType.isSubtype(exprType)) {
++          expr.setJSType(castType);
++        }
++        break;
++
+       case Token.NAME:
+         typeable = visitName(t, n, parent);
+         break;
+@@ -810,8 +829,9 @@
+           }
+         }
+         if (n.isObjectLit()) {
++          JSType typ = getJSType(n);
+           for (Node key : n.children()) {
+-            visitObjLitKey(t, key, n);
++            visitObjLitKey(t, key, n, typ);
+           }
+         }
+         break;
+@@ -1035,7 +1055,8 @@
+    * @param t the traversal
+    * @param key the assign node
+    */
+-  private void visitObjLitKey(NodeTraversal t, Node key, Node objlit) {
++  private void visitObjLitKey(
++      NodeTraversal t, Node key, Node objlit, JSType litType) {
+     // Do not validate object lit value types in externs. We don't really care,
+     // and it makes it easier to generate externs.
+     if (objlit.isFromExterns()) {
+@@ -1043,6 +1064,13 @@
+       return;
+     }
+ 
++    // Structs must have unquoted keys and dicts must have quoted keys
++    if (litType.isStruct() && key.isQuotedString()) {
++      report(t, key, ILLEGAL_OBJLIT_KEY, "struct");
++    } else if (litType.isDict() && !key.isQuotedString()) {
++      report(t, key, ILLEGAL_OBJLIT_KEY, "dict");
++    }
++
+     // TODO(johnlenz): Validate get and set function declarations are valid
+     // as is the functions can have "extraneous" bits.
+ 
+@@ -1936,8 +1964,11 @@
+     JSDocInfo info = n.getJSDocInfo();
+     if (info != null) {
+       if (info.hasType()) {
++        // TODO(johnlenz): Change this so that we only look for casts on CAST
++        // nodes one the misplaced type annotation warning is on by default and
++        // people have been given a chance to fix them.  As is, this is here
++        // simply for legacy casts.
+         JSType infoType = info.getType().evaluate(t.getScope(), typeRegistry);
+-        // remove cast check here.
+         validator.expectCanCast(t, n, infoType, type);
+         type = infoType;
+       }
+diff -r -u inducing/test/com/google/javascript/jscomp/TypeCheckTest.java buggy/test/com/google/javascript/jscomp/TypeCheckTest.java
+--- inducing/test/com/google/javascript/jscomp/TypeCheckTest.java	2023-06-12 11:40:15.967204492 +0800
++++ buggy/test/com/google/javascript/jscomp/TypeCheckTest.java	2023-06-12 11:40:15.879208648 +0800
+@@ -79,6 +79,14 @@
+         s.getVar("URIError").getType());
+   }
+ 
++  public void testPrivateType() throws Exception {
++    testTypes(
++        "/** @private {number} */ var x = false;",
++        "initializing variable\n" +
++        "found   : boolean\n" +
++        "required: number");
++  }
++
+   public void testTypeCheck1() throws Exception {
+     testTypes("/**@return {void}*/function foo(){ if (foo()) return; }");
+   }
+@@ -648,6 +656,22 @@
+         "}", null);
+   }
+ 
++  public void testTypeOfReduction16() throws Exception {
++    testClosureTypes(
++        CLOSURE_DEFS +
++        "/** @interface */ function I() {}\n" +
++        "/**\n" +
++        " * @param {*} x\n" +
++        " * @return {I}\n" +
++        " */\n" +
++        "function f(x) { " +
++        "  if(goog.isObject(x)) {" +
++        "    return /** @type {I} */(x);" +
++        "  }" +
++        "  return null;" +
++        "}", null);
++  }
++
+   public void testQualifiedNameReduction1() throws Exception {
+     testTypes("var x = {}; /** @type {string?} */ x.a = 'a';\n" +
+         "/** @return {string} */ var f = function() {\n" +
+@@ -839,6 +863,15 @@
+         "required: function (): number");
+   }
+ 
++  public void testObjLitDef6() throws Exception {
++    testTypes("var lit = /** @struct */ { 'x': 1 };",
++        "Illegal key, the object literal is a struct");
++  }
++
++  public void testObjLitDef7() throws Exception {
++    testTypes("var lit = /** @dict */ { x: 1 };",
++        "Illegal key, the object literal is a dict");
++  }
+ 
+   public void testInstanceOfReduction1() throws Exception {
+     testTypes("/** @constructor */ var T = function() {};\n" +
+@@ -4154,7 +4187,7 @@
+   }
+ 
+   public void testGetpropDict7() throws Exception {
+-    testTypes("(/** @dict */ {x: 123}).x = 321;",
++    testTypes("(/** @dict */ {'x': 123}).x = 321;",
+               "Cannot do '.' access on a dict");
+   }
+ 
+@@ -5151,6 +5184,16 @@
+         "required: string");
+   }
+ 
++  public void testInferredParam7() throws Exception {
++    testTypes(
++        "/** @param {string} x */ function f(x) {}" +
++        "var bar = /** @type {function(number=,number=)} */ (" +
++        "    function(x, y) { f(y); });",
++        "actual parameter 1 of f does not match formal parameter\n" +
++        "found   : (number|undefined)\n" +
++        "required: string");
++  }
++
+   public void testOverriddenParams1() throws Exception {
+     testTypes(
+         "/** @constructor */ function Foo() {}" +
+@@ -6723,6 +6766,26 @@
+         "function foo(x) { return x.index; }");
+   }
+ 
++  public void testBug7701884() throws Exception {
++    testTypes(
++        "/**\n" +
++        " * @param {Array.<T>} x\n" +
++        " * @param {function(T)} y\n" +
++        " * @template T\n" +
++        " */\n" +
++        "var forEach = function(x, y) {\n" +
++        "  for (var i = 0; i < x.length; i++) y(x[i]);\n" +
++        "};" +
++        "/** @param {number} x */" +
++        "function f(x) {}" +
++        "/** @param {?} x */" +
++        "function h(x) {" +
++        "  var top = null;" +
++        "  forEach(x, function(z) { top = z; });" +
++        "  if (top) f(top);" +
++        "}");
++  }
++
+   public void testScopedConstructors1() throws Exception {
+     testTypes(
+         "function foo1() { " +
+@@ -7416,6 +7479,17 @@
+         "required: derived");
+   }
+ 
++  public void testCast3a() throws Exception {
++    // cannot downcast
++    testTypes("/** @constructor */function Base() {}\n" +
++        "/** @constructor @extends {Base} */function Derived() {}\n" +
++        "var baseInstance = new Base();" +
++        "/** @type {!Derived} */ var baz = baseInstance;\n",
++        "initializing variable\n" +
++        "found   : Base\n" +
++        "required: Derived");
++  }
++
+   public void testCast4() throws Exception {
+     // downcast must be explicit
+     testTypes("/** @constructor */function base() {}\n" +
+@@ -7434,6 +7508,17 @@
+         "to  : foo");
+   }
+ 
++  public void testCast5a() throws Exception {
++    // cannot explicitly cast to an unrelated type
++    testTypes("/** @constructor */function foo() {}\n" +
++        "/** @constructor */function bar() {}\n" +
++        "var barInstance = new bar;\n" +
++        "var baz = /** @type {!foo} */(barInstance);\n",
++        "invalid cast - must be a subtype or supertype\n" +
++        "from: bar\n" +
++        "to  : foo");
++  }
++
+   public void testCast6() throws Exception {
+     // can explicitly cast to a subtype or supertype
+     testTypes("/** @constructor */function foo() {}\n" +
+@@ -7531,14 +7616,16 @@
+         "required: string");
+   }
+ 
+-  public void testCast17() throws Exception {
++  public void testCast17a() throws Exception {
+     // Mostly verifying that rhino actually understands these JsDocs.
+     testTypes("/** @constructor */ function Foo() {} \n" +
+         "/** @type {Foo} */ var x = /** @type {Foo} */ (y)");
+ 
+     testTypes("/** @constructor */ function Foo() {} \n" +
+         "/** @type {Foo} */ var x = (/** @type {Foo} */ y)");
++  }
+ 
++  public void testCast17b() throws Exception {
+     // Mostly verifying that rhino actually understands these JsDocs.
+     testTypes("/** @constructor */ function Foo() {} \n" +
+         "/** @type {Foo} */ var x = /** @type {Foo} */ ({})");
+@@ -7559,6 +7646,195 @@
+         "Are you missing parentheses?");
+   }
+ 
++  public void testCast19() throws Exception {
++    testTypes(
++        "var x = 'string';\n" +
++        "/** @type {number} */\n" +
++        "var y = /** @type {number} */(x);",
++        "invalid cast - must be a subtype or supertype\n" +
++        "from: string\n" +
++        "to  : number");
++  }
++
++  public void testCast20() throws Exception {
++    testTypes(
++        "/** @enum {boolean|null} */\n" +
++        "var X = {" +
++        "  AA: true," +
++        "  BB: false," +
++        "  CC: null" +
++        "};\n" +
++        "var y = /** @type {X} */(true);");
++  }
++
++  public void testCast21() throws Exception {
++    testTypes(
++        "/** @enum {boolean|null} */\n" +
++        "var X = {" +
++        "  AA: true," +
++        "  BB: false," +
++        "  CC: null" +
++        "};\n" +
++        "var value = true;\n" +
++        "var y = /** @type {X} */(value);");
++  }
++
++  public void testCast22() throws Exception {
++    testTypes(
++        "var x = null;\n" +
++        "var y = /** @type {number} */(x);",
++        "invalid cast - must be a subtype or supertype\n" +
++        "from: null\n" +
++        "to  : number");
++  }
++
++  public void testCast23() throws Exception {
++    testTypes(
++        "var x = null;\n" +
++        "var y = /** @type {Number} */(x);");
++  }
++
++  public void testCast24() throws Exception {
++    testTypes(
++        "var x = undefined;\n" +
++        "var y = /** @type {number} */(x);",
++        "invalid cast - must be a subtype or supertype\n" +
++        "from: undefined\n" +
++        "to  : number");
++  }
++
++  public void testCast25() throws Exception {
++    testTypes(
++        "var x = undefined;\n" +
++        "var y = /** @type {number|undefined} */(x);");
++  }
++
++  public void testCast26() throws Exception {
++    testTypes(
++        "function fn(dir) {\n" +
++        "  var node = dir ? 1 : 2;\n" +
++        "  fn(/** @type {number} */ (node));\n" +
++        "}");
++  }
++
++  public void testCast27() throws Exception {
++    // C doesn't implement I but a subtype might.
++    testTypes(
++        "/** @interface */ function I() {}\n" +
++        "/** @constructor */ function C() {}\n" +
++        "var x = new C();\n" +
++        "var y = /** @type {I} */(x);");
++  }
++
++  public void testCast27a() throws Exception {
++    // C doesn't implement I but a subtype might.
++    testTypes(
++        "/** @interface */ function I() {}\n" +
++        "/** @constructor */ function C() {}\n" +
++        "/** @type {C} */ var x ;\n" +
++        "var y = /** @type {I} */(x);");
++  }
++
++  public void testCast28() throws Exception {
++    // C doesn't implement I but a subtype might.
++    testTypes(
++        "/** @interface */ function I() {}\n" +
++        "/** @constructor */ function C() {}\n" +
++        "/** @type {!I} */ var x;\n" +
++        "var y = /** @type {C} */(x);");
++  }
++
++  public void testCast28a() throws Exception {
++    // C doesn't implement I but a subtype might.
++    testTypes(
++        "/** @interface */ function I() {}\n" +
++        "/** @constructor */ function C() {}\n" +
++        "/** @type {I} */ var x;\n" +
++        "var y = /** @type {C} */(x);");
++  }
++
++  public void testCast29a() throws Exception {
++    // C doesn't implement the record type but a subtype might.
++    testTypes(
++        "/** @constructor */ function C() {}\n" +
++        "var x = new C();\n" +
++        "var y = /** @type {{remoteJids: Array, sessionId: string}} */(x);");
++  }
++
++  public void testCast29b() throws Exception {
++    // C doesn't implement the record type but a subtype might.
++    testTypes(
++        "/** @constructor */ function C() {}\n" +
++        "/** @type {C} */ var x;\n" +
++        "var y = /** @type {{prop1: Array, prop2: string}} */(x);");
++  }
++
++  public void testCast29c() throws Exception {
++    // C doesn't implement the record type but a subtype might.
++    testTypes(
++        "/** @constructor */ function C() {}\n" +
++        "/** @type {{remoteJids: Array, sessionId: string}} */ var x ;\n" +
++        "var y = /** @type {C} */(x);");
++  }
++
++  public void testCast30() throws Exception {
++    // Should be able to cast to a looser return type
++    testTypes(
++        "/** @constructor */ function C() {}\n" +
++        "/** @type {function():string} */ var x ;\n" +
++        "var y = /** @type {function():?} */(x);");
++  }
++
++  public void testCast31() throws Exception {
++    // Should be able to cast to a tighter parameter type
++    testTypes(
++        "/** @constructor */ function C() {}\n" +
++        "/** @type {function(*)} */ var x ;\n" +
++        "var y = /** @type {function(string)} */(x);");
++  }
++
++  public void testCast32() throws Exception {
++    testTypes(
++        "/** @constructor */ function C() {}\n" +
++        "/** @type {Object} */ var x ;\n" +
++        "var y = /** @type {null|{length:number}} */(x);");
++  }
++
++  public void testCast33() throws Exception {
++    // null and void should be assignable to any type that accepts one or the
++    // other or both.
++    testTypes(
++        "/** @constructor */ function C() {}\n" +
++        "/** @type {null|undefined} */ var x ;\n" +
++        "var y = /** @type {string?|undefined} */(x);");
++    testTypes(
++        "/** @constructor */ function C() {}\n" +
++        "/** @type {null|undefined} */ var x ;\n" +
++        "var y = /** @type {string|undefined} */(x);");
++    testTypes(
++        "/** @constructor */ function C() {}\n" +
++        "/** @type {null|undefined} */ var x ;\n" +
++        "var y = /** @type {string?} */(x);");
++    testTypes(
++        "/** @constructor */ function C() {}\n" +
++        "/** @type {null|undefined} */ var x ;\n" +
++        "var y = /** @type {null} */(x);");
++  }
++
++  public void testCast34a() throws Exception {
++    testTypes(
++        "/** @constructor */ function C() {}\n" +
++        "/** @type {Object} */ var x ;\n" +
++        "var y = /** @type {Function} */(x);");
++  }
++
++  public void testCast34b() throws Exception {
++    testTypes(
++        "/** @constructor */ function C() {}\n" +
++        "/** @type {Function} */ var x ;\n" +
++        "var y = /** @type {Object} */(x);");
++  }
++
+   public void testNestedCasts() throws Exception {
+     testTypes("/** @constructor */var T = function() {};\n" +
+         "/** @constructor */var V = function() {};\n" +
+@@ -8952,6 +9228,52 @@
+             "Could not resolve type in @extends tag of T"));
+   }
+ 
++  public void testImplementsLoop() throws Exception {
++    testClosureTypesMultipleWarnings(
++        suppressMissingProperty("foo") +
++        "/** @constructor \n * @implements {T} */var T = function() {};" +
++        "alert((new T).foo);",
++        Lists.newArrayList(
++            "Parse error. Cycle detected in inheritance chain of type T"));
++  }
++
++  public void testImplementsExtendsLoop() throws Exception {
++    testClosureTypesMultipleWarnings(
++        suppressMissingProperty("foo") +
++            "/** @constructor \n * @implements {F} */var G = function() {};" +
++            "/** @constructor \n * @extends {G} */var F = function() {};" +
++        "alert((new F).foo);",
++        Lists.newArrayList(
++            "Parse error. Cycle detected in inheritance chain of type F"));
++  }
++
++  public void testInterfaceExtendsLoop() throws Exception {
++    // TODO(user): This should give a cycle in inheritance graph error,
++    // not a cannot resolve error.
++    testClosureTypesMultipleWarnings(
++        suppressMissingProperty("foo") +
++            "/** @interface \n * @extends {F} */var G = function() {};" +
++            "/** @interface \n * @extends {G} */var F = function() {};",
++        Lists.newArrayList(
++            "Could not resolve type in @extends tag of G"));
++  }
++
++  public void testConversionFromInterfaceToRecursiveConstructor()
++      throws Exception {
++    testClosureTypesMultipleWarnings(
++        suppressMissingProperty("foo") +
++            "/** @interface */ var OtherType = function() {}\n" +
++            "/** @implements {MyType} \n * @constructor */\n" +
++            "var MyType = function() {}\n" +
++            "/** @type {MyType} */\n" +
++            "var x = /** @type {!OtherType} */ (new Object());",
++        Lists.newArrayList(
++            "Parse error. Cycle detected in inheritance chain of type MyType",
++            "initializing variable\n" +
++            "found   : OtherType\n" +
++            "required: (MyType|null)"));
++  }
++
+   public void testDirectPrototypeAssign() throws Exception {
+     // For now, we just ignore @type annotations on the prototype.
+     testTypes(
+@@ -10247,6 +10569,38 @@
+         "required: string");
+   }
+ 
++  public void testTemplateType4() throws Exception {
++    testTypes(
++        "/**" +
++        " * @param {...T} p\n" +
++        " * @return {T} \n" +
++        " * @template T\n" +
++        " */\n" +
++        "function fn(p) { return p; }\n" +
++        "/** @type {!Object} */ var x;" +
++        "x = fn(3, null);",
++        "assignment\n" +
++        "found   : (null|number)\n" +
++        "required: Object");
++  }
++
++  public void testTemplateType5() throws Exception {
++    testTypes(
++        "/**" +
++        " * @param {Array.<T>} arr \n" +
++        " * @param {?function(T)} f \n" +
++        " * @return {T} \n" +
++        " * @template T\n" +
++        " */\n" +
++        "function fn(arr, f) { return arr[0]; }\n" +
++        "/** @param {Array.<number>} arr */ function g(arr) {" +
++        "  /** @type {!Object} */ var x = fn.call(null, arr, null);" +
++        "}",
++        "initializing variable\n" +
++        "found   : number\n" +
++        "required: Object");
++  }
++
+   public void disable_testBadTemplateType4() throws Exception {
+     // TODO(johnlenz): Add a check for useless of template types.
+     // Unless there are at least two references to a Template type in
+@@ -10772,21 +11126,89 @@
+         "required: string");
+   }
+ 
+-  public void disable_testBackwardsInferenceGoogArrayFilter1()
++  public void testFilter0()
++      throws Exception {
++    testTypes(
++        "/**\n" +
++        " * @param {T} arr\n" +
++        " * @return {T}\n" +
++        " * @template T\n" +
++        " */\n" +
++        "var filter = function(arr){};\n" +
++
++        "/** @type {!Array.<string>} */" +
++        "var arr;\n" +
++        "/** @type {!Array.<string>} */" +
++        "var result = filter(arr);");
++  }
++
++  public void testFilter1()
++      throws Exception {
++    testTypes(
++        "/**\n" +
++        " * @param {!Array.<T>} arr\n" +
++        " * @return {!Array.<T>}\n" +
++        " * @template T\n" +
++        " */\n" +
++        "var filter = function(arr){};\n" +
++
++        "/** @type {!Array.<string>} */" +
++        "var arr;\n" +
++        "/** @type {!Array.<string>} */" +
++        "var result = filter(arr);");
++  }
++
++  public void testFilter2()
++      throws Exception {
++    testTypes(
++        "/**\n" +
++        " * @param {!Array.<T>} arr\n" +
++        " * @return {!Array.<T>}\n" +
++        " * @template T\n" +
++        " */\n" +
++        "var filter = function(arr){};\n" +
++
++        "/** @type {!Array.<string>} */" +
++        "var arr;\n" +
++        "/** @type {!Array.<number>} */" +
++        "var result = filter(arr);",
++        "initializing variable\n" +
++        "found   : Array.<string>\n" +
++        "required: Array.<number>");
++  }
++
++  public void testFilter3()
++      throws Exception {
++    testTypes(
++        "/**\n" +
++        " * @param {Array.<T>} arr\n" +
++        " * @return {Array.<T>}\n" +
++        " * @template T\n" +
++        " */\n" +
++        "var filter = function(arr){};\n" +
++
++        "/** @type {Array.<string>} */" +
++        "var arr;\n" +
++        "/** @type {Array.<number>} */" +
++        "var result = filter(arr);",
++        "initializing variable\n" +
++        "found   : (Array.<string>|null)\n" +
++        "required: (Array.<number>|null)");
++  }
++
++  public void testBackwardsInferenceGoogArrayFilter1()
+       throws Exception {
+-    // TODO(johnlenz): this doesn't fail because any Array is regarded as
+-    // a subtype of any other array regardless of the type parameter.
+     testClosureTypes(
+         CLOSURE_DEFS +
+         "/** @type {Array.<string>} */" +
+         "var arr;\n" +
+-        "/** @type {Array.<number>} */" +
++        "/** @type {!Array.<number>} */" +
+         "var result = goog.array.filter(" +
+         "   arr," +
+         "   function(item,index,src) {return false;});",
+-        "assignment\n" +
+-        "found   : string\n" +
+-        "required: number");
++        "initializing variable\n" +
++        "found   : Array.<string>\n" +
++        "required: Array.<number>");
+   }
+ 
+   public void testBackwardsInferenceGoogArrayFilter2() throws Exception {
+@@ -10863,6 +11285,72 @@
+         "}\n");
+   }
+ 
++  public void testParameterized1() throws Exception {
++    testTypes(
++        "/** @type {!Array.<string>} */" +
++        "var arr1 = [];\n" +
++        "/** @type {!Array.<number>} */" +
++        "var arr2 = [];\n" +
++        "arr1 = arr2;",
++        "assignment\n" +
++        "found   : Array.<number>\n" +
++        "required: Array.<string>");
++  }
++
++  public void testParameterized2() throws Exception {
++    testTypes(
++        "/** @type {!Array.<string>} */" +
++        "var arr1 = /** @type {!Array.<number>} */([]);\n",
++        "initializing variable\n" +
++        "found   : Array.<number>\n" +
++        "required: Array.<string>");
++  }
++
++  public void testParameterized3() throws Exception {
++    testTypes(
++        "/** @type {Array.<string>} */" +
++        "var arr1 = /** @type {!Array.<number>} */([]);\n",
++        "initializing variable\n" +
++        "found   : Array.<number>\n" +
++        "required: (Array.<string>|null)");
++  }
++
++  public void testParameterized4() throws Exception {
++    testTypes(
++        "/** @type {Array.<string>} */" +
++        "var arr1 = [];\n" +
++        "/** @type {Array.<number>} */" +
++        "var arr2 = arr1;\n",
++        "initializing variable\n" +
++        "found   : (Array.<string>|null)\n" +
++        "required: (Array.<number>|null)");
++  }
++
++  public void testParameterized5() throws Exception {
++    testTypes(
++        "/**\n" +
++        " * @param {Object.<T>} obj\n" +
++        " * @return {boolean|undefined}\n" +
++        " * @template T\n" +
++        " */\n" +
++        "var some = function(obj) {" +
++        "  for (var key in obj) if (obj[key]) return true;" +
++        "};" +
++        "/** @return {!Array} */ function f() { return []; }" +
++        "/** @return {!Array.<string>} */ function g() { return []; }" +
++        "some(f());\n" +
++        "some(g());\n");
++  }
++
++  public void testParameterizedTypeSubtypes2() throws Exception {
++    JSType arrayOfNumber = createParameterizedType(
++        ARRAY_TYPE, NUMBER_TYPE);
++    JSType arrayOfString = createParameterizedType(
++        ARRAY_TYPE, STRING_TYPE);
++    assertFalse(arrayOfString.isSubtype(createUnionType(arrayOfNumber, NULL_VOID)));
++
++  }
++
+   private void testTypes(String js) throws Exception {
+     testTypes(js, (String) null);
+   }

@@ -1,0 +1,28 @@
+Only in data/changesInfo//Closure_153/properties/modified_classes/inducing/: src
+diff -u -r data/changesInfo//Closure_153/properties/modified_classes/inducing/test/com/google/javascript/jscomp/NormalizeTest.java data/changesInfo//Closure_153/cleaned/inducing/test/com/google/javascript/jscomp/NormalizeTest.java
+--- data/changesInfo//Closure_153/properties/modified_classes/inducing/test/com/google/javascript/jscomp/NormalizeTest.java	2023-12-27 22:52:23.535603681 -0800
++++ data/changesInfo//Closure_153/cleaned/inducing/test/com/google/javascript/jscomp/NormalizeTest.java	2023-07-27 05:48:39.295000000 -0700
+@@ -89,7 +89,7 @@
+ 
+   public void testDuplicateVarInExterns() {
+     test("var extern;",
+-         "/** @suppress {duplicate} */ var extern = 3;", "extern = 3;",
++         "/** @suppress {duplicate} */ var extern = 3;", "var extern = 3;",
+          null, null);
+   }
+ 
+@@ -231,8 +231,12 @@
+     test("try { } catch(e) {e; try { } catch(e) {e;}};",
+          "try { } catch(e) {e; try { } catch(e$$1) {e$$1;} }; ");
+ 
+-    // Verify global redefinition of extern definition is removed.
+-    test("/** @suppress {duplicate} */\nvar window;", "");
++    // Verify the 1st global redefinition of extern definition is not removed.
++    test("/** @suppress {duplicate} */\nvar window;", "var window;");
++
++    // Verify the 2nd global redefinition of extern definition is removed.
++    test("/** @suppress {duplicate} */\nvar window;" +
++            "/** @suppress {duplicate} */\nvar window;", "var window;");
+ 
+     // Verify local masking extern made unique.
+     test("function f() {var window}",

@@ -1,0 +1,351 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.jfree.chart.renderer.category.junit.StatisticalBarRendererTests::testDrawWithNullMeanVertical,org.jfree.chart.renderer.category.junit.StatisticalBarRendererTests::testDrawWithNullDeviationVertical,org.jfree.chart.renderer.category.junit.StatisticalBarRendererTests::testDrawWithNullMeanHorizontal,org.jfree.chart.renderer.category.junit.StatisticalBarRendererTests::testDrawWithNullDeviationHorizontal",
+    "test.dir": "tests",
+    "clz.modified": "org.jfree.chart.renderer.category.StatisticalBarRenderer",
+    "src.dir": "source"
+  },
+  "timeoutSecond": 100,
+  "proj": "Chart",
+  "id": "25",
+  "workingDir": "../bugs/Chart_25_tmp",
+  "bug_name": "Chart_25",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.jfree.chart.renderer.category.junit.StatisticalBarRendererTests",
+      "test_function": "testDrawWithNullMeanVertical",
+      "assertion_line": "208",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    },
+    {
+      "test_class": "org.jfree.chart.renderer.category.junit.StatisticalBarRendererTests",
+      "test_function": "testDrawWithNullDeviationVertical",
+      "assertion_line": "263",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    },
+    {
+      "test_class": "org.jfree.chart.renderer.category.junit.StatisticalBarRendererTests",
+      "test_function": "testDrawWithNullMeanHorizontal",
+      "assertion_line": "236",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    },
+    {
+      "test_class": "org.jfree.chart.renderer.category.junit.StatisticalBarRendererTests",
+      "test_function": "testDrawWithNullDeviationHorizontal",
+      "assertion_line": "291",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "source/org/jfree/chart/renderer/category/StatisticalBarRenderer.java",
+        "source/org/jfree/chart/renderer/category/StatisticalBarRenderer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jfree.chart.renderer.category.StatisticalBarRenderer:drawVerticalItem:[Graphics2D g2, CategoryItemRendererState state, Rectangle2D dataArea, CategoryPlot plot, CategoryAxis domainAxis, ValueAxis rangeAxis, StatisticalCategoryDataset dataset, int row, int column]:void",
+            "org.jfree.chart.renderer.category.StatisticalBarRenderer:drawHorizontalItem:[Graphics2D g2, CategoryItemRendererState state, Rectangle2D dataArea, CategoryPlot plot, CategoryAxis domainAxis, ValueAxis rangeAxis, StatisticalCategoryDataset dataset, int row, int column]:void"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.jfree.chart.renderer.category.StatisticalBarRenderer:equals:[Object obj]:boolean",
+            "org.jfree.chart.renderer.category.StatisticalBarRenderer:drawHorizontalItem:[Graphics2D g2, CategoryItemRendererState state, Rectangle2D dataArea, CategoryPlot plot, CategoryAxis domainAxis, ValueAxis rangeAxis, StatisticalCategoryDataset dataset, int row, int column]:void",
+            "org.jfree.chart.renderer.category.StatisticalBarRenderer:drawVerticalItem:[Graphics2D g2, CategoryItemRendererState state, Rectangle2D dataArea, CategoryPlot plot, CategoryAxis domainAxis, ValueAxis rangeAxis, StatisticalCategoryDataset dataset, int row, int column]:void"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "259",
+            "260",
+            "261",
+            "318",
+            "319",
+            "320",
+            "349",
+            "409",
+            "410",
+            "411",
+            "468",
+            "469",
+            "470",
+            "498"
+          ],
+          "num": 14
+        },
+        {
+          "qualified_names": [
+            "258",
+            "315",
+            "353",
+            "414",
+            "459",
+            "508"
+          ],
+          "num": 6
+        }
+      ],
+      "diff": "diff --git a/source/org/jfree/chart/renderer/category/StatisticalBarRenderer.java b/source/org/jfree/chart/renderer/category/StatisticalBarRenderer.java\nindex 6ff5e36..ab65ba3 100644\n--- a/source/org/jfree/chart/renderer/category/StatisticalBarRenderer.java\n+++ b/source/org/jfree/chart/renderer/category/StatisticalBarRenderer.java\n@@ -256,9 +256,6 @@\n \r\n         // BAR X\r\n         Number meanValue \u003d dataset.getMeanValue(row, column);\r\n-        if (meanValue \u003d\u003d null) {\r\n-            return;\r\n-        }\r\n \r\n         double value \u003d meanValue.doubleValue();\r\n         double base \u003d 0.0;\r\n@@ -315,9 +312,7 @@\n         }\r\n \r\n         // standard deviation lines\r\n-        Number n \u003d dataset.getStdDevValue(row, column);\r\n-        if (n !\u003d null) {\r\n-            double valueDelta \u003d n.doubleValue();\r\n+            double valueDelta \u003d dataset.getStdDevValue(row, column).doubleValue();\r\n             double highVal \u003d rangeAxis.valueToJava2D(meanValue.doubleValue() \r\n                     + valueDelta, dataArea, yAxisLocation);\r\n             double lowVal \u003d rangeAxis.valueToJava2D(meanValue.doubleValue() \r\n@@ -346,7 +341,6 @@\n             line \u003d new Line2D.Double(lowVal, rectY + rectHeight * 0.25, \r\n                                      lowVal, rectY + rectHeight * 0.75);\r\n             g2.draw(line);\r\n-        }\r\n         \r\n         CategoryItemLabelGenerator generator \u003d getItemLabelGenerator(row, \r\n                 column);\r\n@@ -406,9 +400,6 @@\n \r\n         // BAR Y\r\n         Number meanValue \u003d dataset.getMeanValue(row, column);\r\n-        if (meanValue \u003d\u003d null) {\r\n-            return;\r\n-        }\r\n \r\n         double value \u003d meanValue.doubleValue();\r\n         double base \u003d 0.0;\r\n@@ -465,9 +456,7 @@\n         }\r\n \r\n         // standard deviation lines\r\n-        Number n \u003d dataset.getStdDevValue(row, column);\r\n-        if (n !\u003d null) {\r\n-            double valueDelta \u003d n.doubleValue();\r\n+            double valueDelta \u003d dataset.getStdDevValue(row, column).doubleValue();\r\n             double highVal \u003d rangeAxis.valueToJava2D(meanValue.doubleValue() \r\n                     + valueDelta, dataArea, yAxisLocation);\r\n             double lowVal \u003d rangeAxis.valueToJava2D(meanValue.doubleValue() \r\n@@ -495,7 +484,6 @@\n             line \u003d new Line2D.Double(rectX + rectWidth / 2.0d - 5.0d, lowVal,\r\n                                      rectX + rectWidth / 2.0d + 5.0d, lowVal);\r\n             g2.draw(line);\r\n-        }\r\n         \r\n         CategoryItemLabelGenerator generator \u003d getItemLabelGenerator(row, \r\n                 column);\r\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [9956,10012]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: n [11992,11993]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [11885,11891]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: n [11892,11893]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [11892,11931]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [11885,11932]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [11946,11955]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [11957,13330]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [11942,13330]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [15674,15730]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: n [17710,17711]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [17603,17609]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: n [17610,17611]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [17610,17649]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [17603,17650]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [17664,17673]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [17675,19057]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [17660,19057]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.jfree.chart.renderer.category.StatisticalBarRenderer:equals:[Object obj]:boolean"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

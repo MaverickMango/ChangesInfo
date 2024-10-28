@@ -1,0 +1,1191 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "/home/liumengjiao/Desktop/CI/Benchmark/data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.TypeCheckTest::testBadInterfaceExtendsNonExistentInterfaces",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.TypeCheck",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "2",
+  "workingDir": "../bugs/Closure_2_buggy",
+  "buggyCommit": "61095090415cff7cae4f3645fa76ee7cdd3ee23d",
+  "inducingCommit": "b2430d29987b54e977a5e5e8db9242f4486c750b",
+  "originalCommit": "05920e53098c1e924113a5143b01bd8a9b7df980",
+  "bug_name": "Closure_2",
+  "derive": "defects4j",
+  "original_fixing_commit": "d1cfe67977d8f3aaa85ec20c262171da394d5977",
+  "buildFiles_changed": false,
+  "regression": true,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/TypeCheck.java",
+        "src/com/google/javascript/jscomp/TypeCheck.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypeCheck:checkInterfaceConflictProperties:[NodeTraversal t, Node n, String functionName, HashMap\u003cString,ObjectType\u003e properties, HashMap\u003cString,ObjectType\u003e currentProperties, ObjectType interfaceType]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypeCheck:checkInterfaceConflictProperties:[NodeTraversal t, Node n, String functionName, HashMap\u003cString,ObjectType\u003e properties, HashMap\u003cString,ObjectType\u003e currentProperties, ObjectType interfaceType]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1541"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "1541",
+            "1542"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/TypeCheck.java b/src/com/google/javascript/jscomp/TypeCheck.java\nindex 57b6981..cda80fd 100644\n--- a/src/com/google/javascript/jscomp/TypeCheck.java\n+++ b/src/com/google/javascript/jscomp/TypeCheck.java\n@@ -1538,7 +1538,8 @@\n       String functionName, HashMap\u003cString, ObjectType\u003e properties,\n       HashMap\u003cString, ObjectType\u003e currentProperties,\n       ObjectType interfaceType) {\n-    Set\u003cString\u003e currentPropertyNames \u003d interfaceType.getPropertyNames();\n+    Set\u003cString\u003e currentPropertyNames \u003d\n+        interfaceType.getImplicitPrototype().getOwnPropertyNames();\n     for (String name : currentPropertyNames) {\n       ObjectType oType \u003d properties.get(name);\n       if (oType !\u003d null) {\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [53505,53563]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [53505,53541]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: getOwnPropertyNames [53542,53561]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/TypedScopeCreator.java",
+        "src/com/google/javascript/jscomp/TypedScopeCreator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypedScopeCreator\\$AbstractScopeBuilder:finishConstructorDefinition:[Node n, String variableName, FunctionType fnType, Scope scopeToDeclareIn, CompilerInput input, Var newVar]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypedScopeCreator\\$AbstractScopeBuilder:finishConstructorDefinition:[Node n, String variableName, FunctionType fnType, Scope scopeToDeclareIn, CompilerInput input, Var newVar]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "74",
+            "1210"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "75",
+            "1211"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/TypedScopeCreator.java b/src/com/google/javascript/jscomp/TypedScopeCreator.java\nindex c25af5a..461cddc 100644\n--- a/src/com/google/javascript/jscomp/TypedScopeCreator.java\n+++ b/src/com/google/javascript/jscomp/TypedScopeCreator.java\n@@ -72,6 +72,7 @@\n import com.google.javascript.rhino.jstype.JSTypeNative;\n import com.google.javascript.rhino.jstype.JSTypeRegistry;\n import com.google.javascript.rhino.jstype.ObjectType;\n+import com.google.javascript.rhino.jstype.Property;\n \n import java.util.Iterator;\n import java.util.List;\n@@ -1207,7 +1208,7 @@\n         Scope scopeToDeclareIn, CompilerInput input, Var newVar) {\n       // Declare var.prototype in the scope chain.\n       FunctionType superClassCtor \u003d fnType.getSuperClassConstructor();\n-      ObjectType.Property prototypeSlot \u003d fnType.getSlot(\"prototype\");\n+      Property prototypeSlot \u003d fnType.getSlot(\"prototype\");\n \n       // When we declare the function prototype implicitly, we\n       // want to make sure that the function and its prototype\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [4477,4528]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: Property [45295,45303]"
+        },
+        {
+          "type": "delete-node",
+          "from": "QualifiedName: ObjectType.Property [45243,45262]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/ObjectType.java",
+        "src/com/google/javascript/rhino/jstype/ObjectType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.jstype.ObjectType\\$Property:getType:[]:JSType",
+            "com.google.javascript.rhino.jstype.ObjectType\\$Property:setNode:[Node n]:void",
+            "com.google.javascript.rhino.jstype.ObjectType\\$Property:getSourceFile:[]:StaticSourceFile",
+            "com.google.javascript.rhino.jstype.ObjectType\\$Property:getName:[]:String",
+            "com.google.javascript.rhino.jstype.ObjectType\\$Property:getNode:[]:Node",
+            "com.google.javascript.rhino.jstype.ObjectType\\$Property:isTypeInferred:[]:boolean",
+            "com.google.javascript.rhino.jstype.ObjectType\\$Property:Property:[String name, JSType type, boolean inferred, Node propertyNode]:null",
+            "com.google.javascript.rhino.jstype.ObjectType\\$Property:setJSDocInfo:[JSDocInfo info]:void",
+            "com.google.javascript.rhino.jstype.ObjectType\\$Property:getSymbol:[]:Property",
+            "com.google.javascript.rhino.jstype.ObjectType\\$Property:getJSDocInfo:[]:JSDocInfo",
+            "com.google.javascript.rhino.jstype.ObjectType\\$Property:getDeclaration:[]:Property",
+            "com.google.javascript.rhino.jstype.ObjectType\\$Property:isFromExterns:[]:boolean",
+            "com.google.javascript.rhino.jstype.ObjectType\\$Property:setType:[JSType type]:void"
+          ],
+          "num": 13
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.jstype.ObjectType:getPropertyMap:[]:PropertyMap",
+            "com.google.javascript.rhino.jstype.ObjectType:getCtorImplementedInterfaces:[]:Iterable\u003cObjectType\u003e"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "50",
+            "53",
+            "105",
+            "589",
+            "590",
+            "591",
+            "592",
+            "593",
+            "594",
+            "595",
+            "596",
+            "597",
+            "598",
+            "599",
+            "600",
+            "601",
+            "602",
+            "603",
+            "604",
+            "605",
+            "606",
+            "607",
+            "608",
+            "609",
+            "610",
+            "611",
+            "612",
+            "613",
+            "614",
+            "615",
+            "616",
+            "617",
+            "618",
+            "619",
+            "620",
+            "621",
+            "622",
+            "623",
+            "624",
+            "625",
+            "626",
+            "627",
+            "628",
+            "629",
+            "630",
+            "631",
+            "632",
+            "633",
+            "634",
+            "635",
+            "636",
+            "637",
+            "638",
+            "639",
+            "640",
+            "641",
+            "642",
+            "643",
+            "644",
+            "645",
+            "646",
+            "647",
+            "648",
+            "649",
+            "650",
+            "651",
+            "652",
+            "653",
+            "654",
+            "655",
+            "656",
+            "657",
+            "658",
+            "659",
+            "660",
+            "661",
+            "662",
+            "663",
+            "664",
+            "665",
+            "666",
+            "667",
+            "668",
+            "669",
+            "670",
+            "671",
+            "672",
+            "673",
+            "674",
+            "675",
+            "676",
+            "677",
+            "678",
+            "679",
+            "680"
+          ],
+          "num": 95
+        },
+        {
+          "qualified_names": [
+            "49",
+            "104",
+            "105",
+            "106",
+            "107",
+            "108",
+            "109",
+            "110",
+            "583"
+          ],
+          "num": 9
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/ObjectType.java b/src/com/google/javascript/rhino/jstype/ObjectType.java\nindex ebd78e7..320c151 100644\n--- a/src/com/google/javascript/rhino/jstype/ObjectType.java\n+++ b/src/com/google/javascript/rhino/jstype/ObjectType.java\n@@ -47,10 +47,8 @@\n import com.google.common.collect.Sets;\n import com.google.javascript.rhino.JSDocInfo;\n import com.google.javascript.rhino.Node;\n-import com.google.javascript.rhino.jstype.StaticReference;\n import com.google.javascript.rhino.jstype.StaticSlot;\n \n-import java.io.Serializable;\n import java.util.Set;\n \n /**\n@@ -103,6 +101,13 @@\n     return getImplicitPrototype();\n   }\n \n+  /**\n+   * Returns the property map that manages the set of properties for an object.\n+   */\n+  PropertyMap getPropertyMap() {\n+    return null;\n+  }\n+\n   @Override\n   public abstract Property getSlot(String name);\n \n@@ -586,96 +591,4 @@\n   public Iterable\u003cObjectType\u003e getCtorExtendedInterfaces() {\n     return ImmutableSet.of();\n   }\n-\n-  public static final class Property\n-      implements Serializable, StaticSlot\u003cJSType\u003e, StaticReference\u003cJSType\u003e {\n-    private static final long serialVersionUID \u003d 1L;\n-\n-    /**\n-     * Property\u0027s name.\n-     */\n-    private final String name;\n-\n-    /**\n-     * Property\u0027s type.\n-     */\n-    private JSType type;\n-\n-    /**\n-     * Whether the property\u0027s type is inferred.\n-     */\n-    private final boolean inferred;\n-\n-    /**\n-     * The node corresponding to this property, e.g., a GETPROP node that\n-     * declares this property.\n-     */\n-    private Node propertyNode;\n-\n-    /**  The JSDocInfo for this property. */\n-    private JSDocInfo docInfo \u003d null;\n-\n-    Property(String name, JSType type, boolean inferred,\n-        Node propertyNode) {\n-      this.name \u003d name;\n-      this.type \u003d type;\n-      this.inferred \u003d inferred;\n-      this.propertyNode \u003d propertyNode;\n-    }\n-\n-    @Override\n-    public String getName() {\n-      return name;\n-    }\n-\n-    @Override\n-    public Node getNode() {\n-      return propertyNode;\n-    }\n-\n-    @Override\n-    public StaticSourceFile getSourceFile() {\n-      return propertyNode \u003d\u003d null ? null : propertyNode.getStaticSourceFile();\n-    }\n-\n-    @Override\n-    public Property getSymbol() {\n-      return this;\n-    }\n-\n-    @Override\n-    public Property getDeclaration() {\n-      return propertyNode \u003d\u003d null ? null : this;\n-    }\n-\n-    @Override\n-    public JSType getType() {\n-      return type;\n-    }\n-\n-    @Override\n-    public boolean isTypeInferred() {\n-      return inferred;\n-    }\n-\n-    boolean isFromExterns() {\n-      return propertyNode \u003d\u003d null ? false : propertyNode.isFromExterns();\n-    }\n-\n-    void setType(JSType type) {\n-      this.type \u003d type;\n-    }\n-\n-    @Override public JSDocInfo getJSDocInfo() {\n-      return this.docInfo;\n-    }\n-\n-    void setJSDocInfo(JSDocInfo info) {\n-      this.docInfo \u003d info;\n-    }\n-\n-    public void setNode(Node n) {\n-      this.propertyNode \u003d n;\n-    }\n-  }\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [3555,3698]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1990,2048]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [2104,2132]",
+          "to": ""
+        },
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: static [18274,18280]",
+          "to": ""
+        },
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/PrototypeObjectType.java",
+        "src/com/google/javascript/rhino/jstype/PrototypeObjectType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.jstype.PrototypeObjectType:removeProperty:[String name]:boolean",
+            "com.google.javascript.rhino.jstype.PrototypeObjectType:getOwnPropertyJSDocInfo:[String propertyName]:JSDocInfo",
+            "com.google.javascript.rhino.jstype.PrototypeObjectType:hasOwnProperty:[String propertyName]:boolean",
+            "com.google.javascript.rhino.jstype.PrototypeObjectType:PrototypeObjectType:[JSTypeRegistry registry, String className, ObjectType implicitPrototype, boolean nativeType, ImmutableList\u003cString\u003e templateKeys, ImmutableList\u003cJSType\u003e templatizedTypes]:null",
+            "com.google.javascript.rhino.jstype.PrototypeObjectType:getPropertiesCount:[]:int",
+            "com.google.javascript.rhino.jstype.PrototypeObjectType:isPropertyInExterns:[String propertyName]:boolean",
+            "com.google.javascript.rhino.jstype.PrototypeObjectType:setPropertyJSDocInfo:[String propertyName, JSDocInfo info]:void",
+            "com.google.javascript.rhino.jstype.PrototypeObjectType:getOwnPropertyNames:[]:Set\u003cString\u003e",
+            "com.google.javascript.rhino.jstype.PrototypeObjectType:getSlot:[String name]:Property",
+            "com.google.javascript.rhino.jstype.PrototypeObjectType:defineProperty:[String name, JSType type, boolean inferred, Node propertyNode]:boolean",
+            "com.google.javascript.rhino.jstype.PrototypeObjectType:collectPropertyNames:[Set\u003cString\u003e props]:void",
+            "com.google.javascript.rhino.jstype.PrototypeObjectType:getPropertyNode:[String propertyName]:Node"
+          ],
+          "num": 12
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.jstype.PrototypeObjectType:getSlot:[String name]:Property",
+            "com.google.javascript.rhino.jstype.PrototypeObjectType:collectPropertyNames:[Set\u003cString\u003e props]:void",
+            "com.google.javascript.rhino.jstype.PrototypeObjectType:getPropertyNode:[String propertyName]:Node",
+            "com.google.javascript.rhino.jstype.PrototypeObjectType:getOwnPropertyJSDocInfo:[String propertyName]:JSDocInfo",
+            "com.google.javascript.rhino.jstype.PrototypeObjectType:PrototypeObjectType:[JSTypeRegistry registry, String className, ObjectType implicitPrototype, boolean nativeType, ImmutableList\u003cString\u003e templateKeys, ImmutableList\u003cJSType\u003e templatizedTypes]:null",
+            "com.google.javascript.rhino.jstype.PrototypeObjectType:hasOwnProperty:[String propertyName]:boolean",
+            "com.google.javascript.rhino.jstype.PrototypeObjectType:isPropertyInExterns:[String propertyName]:boolean",
+            "com.google.javascript.rhino.jstype.PrototypeObjectType:getOwnPropertyNames:[]:Set\u003cString\u003e",
+            "com.google.javascript.rhino.jstype.PrototypeObjectType:getPropertiesCount:[]:int",
+            "com.google.javascript.rhino.jstype.PrototypeObjectType:removeProperty:[String name]:boolean",
+            "com.google.javascript.rhino.jstype.PrototypeObjectType:setPropertyJSDocInfo:[String propertyName, JSDocInfo info]:void",
+            "com.google.javascript.rhino.jstype.PrototypeObjectType:getPropertyMap:[]:PropertyMap",
+            "com.google.javascript.rhino.jstype.PrototypeObjectType:defineProperty:[String name, JSType type, boolean inferred, Node propertyNode]:boolean"
+          ],
+          "num": 13
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "45",
+            "51",
+            "74",
+            "118",
+            "131",
+            "132",
+            "133",
+            "134",
+            "135",
+            "136",
+            "137",
+            "138",
+            "139",
+            "140",
+            "141",
+            "142",
+            "143",
+            "144",
+            "145",
+            "146",
+            "147",
+            "155",
+            "156",
+            "157",
+            "158",
+            "159",
+            "160",
+            "161",
+            "162",
+            "163",
+            "164",
+            "165",
+            "176",
+            "181",
+            "195",
+            "196",
+            "197",
+            "198",
+            "199",
+            "200",
+            "201",
+            "224",
+            "228",
+            "229",
+            "230",
+            "231",
+            "243",
+            "244",
+            "245",
+            "246",
+            "247",
+            "248",
+            "249",
+            "255",
+            "260",
+            "264",
+            "265",
+            "266",
+            "267",
+            "273",
+            "283",
+            "293"
+          ],
+          "num": 62
+        },
+        {
+          "qualified_names": [
+            "43",
+            "73",
+            "117",
+            "118",
+            "119",
+            "131",
+            "132",
+            "133",
+            "134",
+            "135",
+            "137",
+            "145",
+            "156",
+            "161",
+            "175",
+            "198",
+            "213",
+            "219",
+            "224",
+            "233",
+            "243",
+            "253"
+          ],
+          "num": 22
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/PrototypeObjectType.java b/src/com/google/javascript/rhino/jstype/PrototypeObjectType.java\nindex 15ab883..c0f925c 100644\n--- a/src/com/google/javascript/rhino/jstype/PrototypeObjectType.java\n+++ b/src/com/google/javascript/rhino/jstype/PrototypeObjectType.java\n@@ -40,15 +40,14 @@\n package com.google.javascript.rhino.jstype;\n \n import static com.google.common.base.Preconditions.checkState;\n+\n import com.google.common.base.Preconditions;\n import com.google.common.collect.ImmutableList;\n-import com.google.common.collect.Maps;\n import com.google.common.collect.Sets;\n import com.google.javascript.rhino.ErrorReporter;\n import com.google.javascript.rhino.JSDocInfo;\n import com.google.javascript.rhino.Node;\n \n-import java.util.Map;\n import java.util.Set;\n \n /**\n@@ -71,7 +70,7 @@\n   private static final long serialVersionUID \u003d 1L;\n \n   private final String className;\n-  private final Map\u003cString, Property\u003e properties;\n+  private final PropertyMap properties;\n   private final boolean nativeType;\n \n   // NOTE(nicksantos): The implicit prototype can change over time.\n@@ -115,7 +114,9 @@\n       ImmutableList\u003cString\u003e templateKeys,\n       ImmutableList\u003cJSType\u003e templatizedTypes) {\n     super(registry, templateKeys, templatizedTypes);\n-    this.properties \u003d Maps.newTreeMap();\n+    this.properties \u003d new PropertyMap();\n+    this.properties.setParentSource(this);\n+\n     this.className \u003d className;\n     this.nativeType \u003d nativeType;\n     if (nativeType || implicitPrototype !\u003d null) {\n@@ -127,24 +128,13 @@\n   }\n \n   @Override\n+  PropertyMap getPropertyMap() {\n+    return properties;\n+  }\n+\n+  @Override\n   public Property getSlot(String name) {\n-    if (properties.containsKey(name)) {\n-      return properties.get(name);\n-    }\n-    ObjectType implicitPrototype \u003d getImplicitPrototype();\n-    if (implicitPrototype !\u003d null) {\n-      Property prop \u003d implicitPrototype.getSlot(name);\n-      if (prop !\u003d null) {\n-        return prop;\n-      }\n-    }\n-    for (ObjectType interfaceType : getCtorExtendedInterfaces()) {\n-      Property prop \u003d interfaceType.getSlot(name);\n-      if (prop !\u003d null) {\n-        return prop;\n-      }\n-    }\n-    return null;\n+    return properties.getSlot(name);\n   }\n \n   /**\n@@ -152,17 +142,7 @@\n    */\n   @Override\n   public int getPropertiesCount() {\n-    ObjectType implicitPrototype \u003d getImplicitPrototype();\n-    if (implicitPrototype \u003d\u003d null) {\n-      return this.properties.size();\n-    }\n-    int localCount \u003d 0;\n-    for (String property : properties.keySet()) {\n-      if (!implicitPrototype.hasProperty(property)) {\n-        localCount++;\n-      }\n-    }\n-    return implicitPrototype.getPropertiesCount() + localCount;\n+    return properties.getPropertiesCount();\n   }\n \n   @Override\n@@ -173,12 +153,12 @@\n \n   @Override\n   public boolean hasOwnProperty(String propertyName) {\n-    return properties.get(propertyName) !\u003d null;\n+    return properties.hasOwnProperty(propertyName);\n   }\n \n   @Override\n   public Set\u003cString\u003e getOwnPropertyNames() {\n-    return properties.keySet();\n+    return properties.getOwnPropertyNames();\n   }\n \n   @Override\n@@ -192,13 +172,7 @@\n \n   @Override\n   void collectPropertyNames(Set\u003cString\u003e props) {\n-    for (String prop : properties.keySet()) {\n-      props.add(prop);\n-    }\n-    ObjectType implicitPrototype \u003d getImplicitPrototype();\n-    if (implicitPrototype !\u003d null) {\n-      implicitPrototype.collectPropertyNames(props);\n-    }\n+    properties.collectPropertyNames(props);\n   }\n \n   @Override\n@@ -221,14 +195,10 @@\n \n   @Override\n   public boolean isPropertyInExterns(String propertyName) {\n-    Property p \u003d properties.get(propertyName);\n+    Property p \u003d getSlot(propertyName);\n     if (p !\u003d null) {\n       return p.isFromExterns();\n     }\n-    ObjectType implicitPrototype \u003d getImplicitPrototype();\n-    if (implicitPrototype !\u003d null) {\n-      return implicitPrototype.isPropertyInExterns(propertyName);\n-    }\n     return false;\n   }\n \n@@ -240,37 +210,27 @@\n     }\n     Property newProp \u003d new Property(\n         name, type, inferred, propertyNode);\n-    Property oldProp \u003d properties.get(name);\n-    if (oldProp !\u003d null) {\n-      // This is to keep previously inferred JsDoc info, e.g., in a\n-      // replaceScript scenario.\n-      newProp.setJSDocInfo(oldProp.getJSDocInfo());\n-    }\n-    properties.put(name, newProp);\n+    properties.putProperty(name, newProp);\n     return true;\n   }\n \n   @Override\n   public boolean removeProperty(String name) {\n-    return properties.remove(name) !\u003d null;\n+    return properties.removeProperty(name);\n   }\n \n   @Override\n   public Node getPropertyNode(String propertyName) {\n-    Property p \u003d properties.get(propertyName);\n+    Property p \u003d getSlot(propertyName);\n     if (p !\u003d null) {\n       return p.getNode();\n     }\n-    ObjectType implicitPrototype \u003d getImplicitPrototype();\n-    if (implicitPrototype !\u003d null) {\n-      return implicitPrototype.getPropertyNode(propertyName);\n-    }\n     return null;\n   }\n \n   @Override\n   public JSDocInfo getOwnPropertyJSDocInfo(String propertyName) {\n-    Property p \u003d properties.get(propertyName);\n+    Property p \u003d properties.getOwnProperty(propertyName);\n     if (p !\u003d null) {\n       return p.getJSDocInfo();\n     }\n@@ -280,7 +240,7 @@\n   @Override\n   public void setPropertyJSDocInfo(String propertyName, JSDocInfo info) {\n     if (info !\u003d null) {\n-      if (!properties.containsKey(propertyName)) {\n+      if (properties.getOwnProperty(propertyName) \u003d\u003d null) {\n         // If docInfo was attached, but the type of the property\n         // was not defined anywhere, then we consider this an explicit\n         // declaration of the property.\n@@ -290,7 +250,7 @@\n \n       // The prototype property is not represented as a normal Property.\n       // We probably don\u0027t want to attach any JSDoc to it anyway.\n-      Property property \u003d properties.get(propertyName);\n+      Property property \u003d properties.getOwnProperty(propertyName);\n       if (property !\u003d null) {\n         property.setJSDocInfo(info);\n       }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [5023,5092]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [2840,2851]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [4657,4693]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [4698,4736]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [5592,5639]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [6586,6621]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [7088,7127]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [7202,7237]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [5311,5342]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [5311,5321]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [7649,7696]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: \u003d\u003d [7689,7691]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NullLiteral [7692,7696]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1784,1822]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [2000,2021]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ParameterizedType [2900,2921]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [4727,4763]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [5108,5136]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [5138,5180]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [5104,5180]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [5185,5239]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [5244,5392]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "EnhancedForStatement [5397,5571]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [5576,5588]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [5709,5763]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [5768,5843]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [5848,5867]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "EnhancedForStatement [5872,6007]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_RECEIVER [6019,6036]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [6019,6057]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: + [6058,6059]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: localCount [6060,6070]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [6019,6070]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [6320,6364]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "EnhancedForStatement [6739,6809]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [6814,6868]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [6877,6902]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [6904,6964]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [6873,6964]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [7484,7526]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [7590,7644]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [7649,7753]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [8037,8077]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [8082,8263]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [8384,8423]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [8498,8540]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [8598,8652]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [8657,8757]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PREFIX_EXPRESSION_OPERATOR: ! [9105,9106]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PrefixExpression [9105,9142]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/ProxyObjectType.java",
+        "src/com/google/javascript/rhino/jstype/ProxyObjectType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.jstype.ProxyObjectType:getSlot:[String name]:Property"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.jstype.ProxyObjectType:getPropertyMap:[]:PropertyMap",
+            "com.google.javascript.rhino.jstype.ProxyObjectType:getSlot:[String name]:Property"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "68"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "69",
+            "70",
+            "71",
+            "72",
+            "73",
+            "74"
+          ],
+          "num": 6
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/ProxyObjectType.java b/src/com/google/javascript/rhino/jstype/ProxyObjectType.java\nindex 2fd2c8f..883e751 100644\n--- a/src/com/google/javascript/rhino/jstype/ProxyObjectType.java\n+++ b/src/com/google/javascript/rhino/jstype/ProxyObjectType.java\n@@ -66,6 +66,12 @@\n   }\n \n   @Override\n+  PropertyMap getPropertyMap() {\n+    return referencedObjType \u003d\u003d null\n+        ? null : referencedObjType.getPropertyMap();\n+  }\n+\n+  @Override\n   public Property getSlot(String name) {\n     if (referencedObjType !\u003d null) {\n       return referencedObjType.getSlot(name);\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [2292,2428]"
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [
+        "src/com/google/javascript/rhino/jstype/Property.java",
+        "src/com/google/javascript/rhino/jstype/PropertyMap.java"
+      ],
+      "num": 2
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.google.javascript.rhino.jstype.ObjectType:getPropertyMap:[]:PropertyMap",
+        "com.google.javascript.rhino.jstype.ProxyObjectType:getPropertyMap:[]:PropertyMap",
+        "com.google.javascript.rhino.jstype.ObjectType:getCtorImplementedInterfaces:[]:Iterable\u003cObjectType\u003e",
+        "com.google.javascript.rhino.jstype.PrototypeObjectType:getPropertyMap:[]:PropertyMap"
+      ],
+      "num": 4
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.javascript.rhino.jstype.ObjectType\\$Property:getSymbol:[]:Property",
+        "com.google.javascript.rhino.jstype.ObjectType\\$Property:setType:[JSType type]:void",
+        "com.google.javascript.rhino.jstype.ObjectType\\$Property:setNode:[Node n]:void",
+        "com.google.javascript.rhino.jstype.ObjectType\\$Property:getSourceFile:[]:StaticSourceFile",
+        "com.google.javascript.rhino.jstype.ObjectType\\$Property:setJSDocInfo:[JSDocInfo info]:void",
+        "com.google.javascript.rhino.jstype.ObjectType\\$Property:getType:[]:JSType",
+        "com.google.javascript.rhino.jstype.ObjectType\\$Property:Property:[String name, JSType type, boolean inferred, Node propertyNode]:null",
+        "com.google.javascript.rhino.jstype.ObjectType\\$Property:getDeclaration:[]:Property",
+        "com.google.javascript.rhino.jstype.ObjectType\\$Property:getName:[]:String",
+        "com.google.javascript.rhino.jstype.ObjectType\\$Property:getNode:[]:Node",
+        "com.google.javascript.rhino.jstype.ObjectType\\$Property:isFromExterns:[]:boolean",
+        "com.google.javascript.rhino.jstype.ObjectType\\$Property:isTypeInferred:[]:boolean",
+        "com.google.javascript.rhino.jstype.ObjectType\\$Property:getJSDocInfo:[]:JSDocInfo"
+      ],
+      "num": 13
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testBadInterfaceExtendsNonExistentInterfaces",
+      "assertion_line": "3780",
+      "exception": "java.lang.NullPointerException",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/TypeCheck.java",
+        "src/com/google/javascript/jscomp/TypeCheck.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypeCheck:checkInterfaceConflictProperties:[NodeTraversal t, Node n, String functionName, HashMap\u003cString,ObjectType\u003e properties, HashMap\u003cString,ObjectType\u003e currentProperties, ObjectType interfaceType]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypeCheck:checkInterfaceConflictProperties:[NodeTraversal t, Node n, String functionName, HashMap\u003cString,ObjectType\u003e properties, HashMap\u003cString,ObjectType\u003e currentProperties, ObjectType interfaceType]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "30",
+            "1569",
+            "1570"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "31",
+            "1570",
+            "1571",
+            "1572",
+            "1573",
+            "1574",
+            "1575",
+            "1576",
+            "1577",
+            "1578"
+          ],
+          "num": 10
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/TypeCheck.java b/src/com/google/javascript/jscomp/TypeCheck.java\nindex 07ecdfa..96f256d 100644\n--- a/src/com/google/javascript/jscomp/TypeCheck.java\n+++ b/src/com/google/javascript/jscomp/TypeCheck.java\n@@ -28,6 +28,7 @@\n import static com.google.javascript.rhino.jstype.JSTypeNative.VOID_TYPE;\n \n import com.google.common.base.Preconditions;\n+import com.google.common.collect.ImmutableSet;\n import com.google.javascript.jscomp.CheckLevel;\n import com.google.javascript.jscomp.Scope.Var;\n import com.google.javascript.jscomp.type.ReverseAbstractInterpreter;\n@@ -1566,8 +1567,15 @@\n       String functionName, HashMap\u003cString, ObjectType\u003e properties,\n       HashMap\u003cString, ObjectType\u003e currentProperties,\n       ObjectType interfaceType) {\n-    Set\u003cString\u003e currentPropertyNames \u003d\n-        interfaceType.getImplicitPrototype().getOwnPropertyNames();\n+    ObjectType implicitProto \u003d interfaceType.getImplicitPrototype();\n+    Set\u003cString\u003e currentPropertyNames;\n+    if (implicitProto \u003d\u003d null) {\n+      // This can be the case if interfaceType is proxy to a non-existent\n+      // object (which is a bad type annotation, but shouldn\u0027t crash).\n+      currentPropertyNames \u003d ImmutableSet.of();\n+    } else {\n+      currentPropertyNames \u003d implicitProto.getOwnPropertyNames();\n+    }\n     for (String name : currentPropertyNames) {\n       ObjectType oType \u003d properties.get(name);\n       if (oType !\u003d null) {\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [1455,1501]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [54461,54525]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [54530,54563]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [54568,54874]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [54461,54471]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [54472,54524]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [54572,54593]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Block [54595,54795]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [54801,54874]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: implicitProto [54472,54485]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ExpressionStatement [54809,54868]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Assignment [54809,54867]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ASSIGNMENT_OPERATOR: \u003d [54830,54831]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [54832,54867]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [54832,54845]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ParameterizedType [54414,54425]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_RECEIVER [54457,54493]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [54457,54515]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [54426,54515]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [54414,54516]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "patch_changed_mths": {
+    "qualified_names": [
+      "com.google.javascript.jscomp.TypeCheck:checkInterfaceConflictProperties(Lcom/google/javascript/jscomp/NodeTraversal;Lcom/google/javascript/rhino/Node;Ljava/lang/String;Ljava/util/HashMap;Ljava/util/HashMap;Lcom/google/javascript/rhino/jstype/ObjectType;)V:regression"
+    ],
+    "num": 1
+  }
+}

@@ -1,0 +1,202 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.jsoup.select.SelectorTest::handlesCommasInSelector,org.jsoup.select.SelectorTest::mixCombinatorGroup",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.jsoup.select.CombiningEvaluator,org.jsoup.select.QueryParser",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Jsoup",
+  "id": "21",
+  "workingDir": "../bugs/Jsoup_21_tmp",
+  "bug_name": "Jsoup_21",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.jsoup.select.SelectorTest",
+      "test_function": "handlesCommasInSelector",
+      "assertion_line": "594",
+      "exception": "java.util.regex.PatternSyntaxException",
+      "message": "Unclosed character class near index 3"
+    },
+    {
+      "test_class": "org.jsoup.select.SelectorTest",
+      "test_function": "mixCombinatorGroup",
+      "assertion_line": "329",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c2\u003e but was:\u003c3\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/select/CombiningEvaluator.java",
+        "src/main/java/org/jsoup/select/CombiningEvaluator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.select.CombiningEvaluator\\$Or:Or:[]:null"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "64",
+            "65",
+            "66"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "63"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/select/CombiningEvaluator.java b/src/main/java/org/jsoup/select/CombiningEvaluator.java\nindex 781acc6..bd8460a 100644\n--- a/src/main/java/org/jsoup/select/CombiningEvaluator.java\n+++ b/src/main/java/org/jsoup/select/CombiningEvaluator.java\n@@ -61,9 +61,6 @@\n                 this.evaluators.addAll(evaluators);\n         }\n \n-        Or() {\n-            super();\n-        }\n \n         public void add(Evaluator e) {\n             evaluators.add(e);\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [1736,1773]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/select/QueryParser.java",
+        "src/main/java/org/jsoup/select/QueryParser.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.select.QueryParser:parse:[]:Evaluator",
+            "org.jsoup.select.QueryParser:combinator:[char combinator]:void"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.jsoup.select.QueryParser:parse:[]:Evaluator",
+            "org.jsoup.select.QueryParser:combinator:[char combinator]:void"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "58",
+            "93",
+            "94",
+            "95",
+            "96",
+            "97",
+            "98",
+            "99",
+            "100",
+            "101",
+            "102",
+            "103",
+            "104"
+          ],
+          "num": 13
+        },
+        {
+          "qualified_names": [
+            "58",
+            "59",
+            "60",
+            "61",
+            "62",
+            "63",
+            "64",
+            "65",
+            "66",
+            "84"
+          ],
+          "num": 10
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/select/QueryParser.java b/src/main/java/org/jsoup/select/QueryParser.java\nindex 417cb22..9ff43ba 100644\n--- a/src/main/java/org/jsoup/select/QueryParser.java\n+++ b/src/main/java/org/jsoup/select/QueryParser.java\n@@ -55,7 +55,15 @@\n             // hierarchy and extras\n             boolean seenWhite \u003d tq.consumeWhitespace();\n \n-            if (tq.matchesAny(combinators)) {\n+            if (tq.matchChomp(\",\")) {\n+                CombiningEvaluator.Or or \u003d new CombiningEvaluator.Or(evals);\n+                evals.clear();\n+                evals.add(or);\n+                while (!tq.isEmpty()) {\n+                    String subQuery \u003d tq.chompTo(\",\");\n+                    or.add(parse(subQuery));\n+                }\n+            } else if (tq.matchesAny(combinators)) {\n                 combinator(tq.consume());\n             } else if (seenWhite) {\n                 combinator(\u0027 \u0027);\n@@ -90,18 +98,6 @@\n             evals.add(new CombiningEvaluator.And(f, new StructuralEvaluator.ImmediatePreviousSibling(e)));\n         else if (combinator \u003d\u003d \u0027~\u0027)\n             evals.add(new CombiningEvaluator.And(f, new StructuralEvaluator.PreviousSibling(e)));\n-        else if (combinator \u003d\u003d \u0027,\u0027) { // group or\n-            CombiningEvaluator.Or or;\n-            if (e instanceof CombiningEvaluator.Or) {\n-                or \u003d (CombiningEvaluator.Or) e;\n-                or.add(f);\n-            } else {\n-                or \u003d new CombiningEvaluator.Or();\n-                or.add(e);\n-                or.add(f);\n-            }\n-            evals.add(or);\n-        }\n         else\n             throw new Selector.SelectorParseException(\"Unknown combinator: \" + combinator);\n     }\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [1432,2054]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [1436,1454]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Block [1456,1768]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [2754,2771]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [2773,3129]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [2750,3234]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.jsoup.select.CombiningEvaluator\\$Or:Or:[]:null"
+      ],
+      "num": 1
+    }
+  }
+}

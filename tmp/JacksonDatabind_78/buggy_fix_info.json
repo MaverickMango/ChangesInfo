@@ -1,0 +1,144 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.interop.IllegalTypesCheckTest::testIssue1599",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.deser.BeanDeserializerFactory",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "78",
+  "workingDir": "../bugs/JacksonDatabind_78_tmp",
+  "bug_name": "JacksonDatabind_78",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.interop.IllegalTypesCheckTest",
+      "test_function": "testIssue1599",
+      "assertion_line": "35",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected an exception with one of substrings ([Illegal type]): got one with message \"N/A"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java",
+        "src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.BeanDeserializerFactory:createBeanDeserializer:[DeserializationContext ctxt, JavaType type, BeanDescription beanDesc]:JsonDeserializer\u003cObject\u003e",
+            "com.fasterxml.jackson.databind.deser.BeanDeserializerFactory:checkIllegalTypes:[DeserializationContext ctxt, JavaType type, BeanDescription beanDesc]:void"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.BeanDeserializerFactory:findStdDeserializer:[DeserializationContext ctxt, JavaType type, BeanDescription beanDesc]:JsonDeserializer\u003c?\u003e"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "48",
+            "49",
+            "50",
+            "53",
+            "54",
+            "55",
+            "56",
+            "57",
+            "58",
+            "59",
+            "60",
+            "61",
+            "62",
+            "69",
+            "170",
+            "893",
+            "894",
+            "895",
+            "896",
+            "899",
+            "901",
+            "902",
+            "903",
+            "904",
+            "905"
+          ],
+          "num": 25
+        },
+        {
+          "qualified_names": [
+            "47",
+            "183",
+            "907"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java\nindex afe24aa..4a9d863 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java\n@@ -45,28 +45,14 @@\n      *\n      * @since 2.8.9\n      */\n-    protected final static Set\u003cString\u003e DEFAULT_NO_DESER_CLASS_NAMES;\n-    static {\n-        Set\u003cString\u003e s \u003d new HashSet\u003c\u003e();\n         // Courtesy of [https://github.com/kantega/notsoserial]:\n         // (and wrt [databind#1599]\n-        s.add(\"org.apache.commons.collections.functors.InvokerTransformer\");\n-        s.add(\"org.apache.commons.collections.functors.InstantiateTransformer\");\n-        s.add(\"org.apache.commons.collections4.functors.InvokerTransformer\");\n-        s.add(\"org.apache.commons.collections4.functors.InstantiateTransformer\");\n-        s.add(\"org.codehaus.groovy.runtime.ConvertedClosure\");\n-        s.add(\"org.codehaus.groovy.runtime.MethodClosure\");\n-        s.add(\"org.springframework.beans.factory.ObjectFactory\");\n-        s.add(\"com.sun.org.apache.xalan.internal.xsltc.trax.TemplatesImpl\");\n-        DEFAULT_NO_DESER_CLASS_NAMES \u003d Collections.unmodifiableSet(s);\n-    }\n \n     /**\n      * Set of class names of types that are never to be deserialized.\n      *\n      * @since 2.8.9\n      */\n-    protected Set\u003cString\u003e _cfgIllegalClassNames \u003d DEFAULT_NO_DESER_CLASS_NAMES;\n \n     /*\n     /**********************************************************\n@@ -167,7 +153,6 @@\n             return null;\n         }\n         // For checks like [databind#1599]\n-        checkIllegalTypes(ctxt, type, beanDesc);\n         // Use generic bean introspection to build deserializer\n         return buildBeanDeserializer(ctxt, type, beanDesc);\n     }\n@@ -890,17 +875,7 @@\n     /**\n      * @since 2.8.9\n      */\n-    protected void checkIllegalTypes(DeserializationContext ctxt, JavaType type,\n-            BeanDescription beanDesc)\n-        throws JsonMappingException\n-    {\n         // There are certain nasty classes that could cause problems, mostly\n         // via default typing -- catch them here.\n-        String full \u003d type.getRawClass().getName();\n \n-        if (_cfgIllegalClassNames.contains(full)) {\n-            ctxt.reportBadTypeDefinition(beanDesc,\n-                    \"Illegal type (%s) to deserialize: prevented for security reasons\", full);\n-        }\n-    }\n }\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [1647,1894]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Initializer [1899,2710]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [2716,2904]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [7177,7217]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [40933,41519]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.deser.BeanDeserializerFactory:findStdDeserializer:[DeserializationContext ctxt, JavaType type, BeanDescription beanDesc]:JsonDeserializer\u003c?\u003e"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.deser.BeanDeserializerFactory:createBeanDeserializer:[DeserializationContext ctxt, JavaType type, BeanDescription beanDesc]:JsonDeserializer\u003cObject\u003e",
+        "com.fasterxml.jackson.databind.deser.BeanDeserializerFactory:checkIllegalTypes:[DeserializationContext ctxt, JavaType type, BeanDescription beanDesc]:void"
+      ],
+      "num": 2
+    }
+  }
+}

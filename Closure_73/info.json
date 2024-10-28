@@ -1,0 +1,2308 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Closure",
+  "id": "73",
+  "workingDir": "../bugs/Closure_73_buggy",
+  "inducingCommit": "847b296c23a63aa0a0b38cc3e63883e1688288e3",
+  "originalCommit": "845f5ff65858fd0d1829f3d2f16f758725e8028f",
+  "bug_name": "Closure_73",
+  "derive": "defects4j",
+  "original_fixing_commit": "ee8344091722c28c9351e78dcb4155fbfddfd1af",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/AbstractCompilerRunner.java",
+        "src/com/google/javascript/jscomp/AbstractCompilerRunner.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "createInputs",
+            "openSourceMapStream",
+            "setRunOptions",
+            "doRun"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "createInputs",
+            "openSourceMapStream",
+            "setRunOptions",
+            "getInputCharset",
+            "doRun"
+          ],
+          "num": 5
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "19",
+            "34",
+            "210",
+            "266",
+            "287",
+            "341",
+            "594",
+            "595",
+            "706",
+            "772"
+          ],
+          "num": 10
+        },
+        {
+          "qualified_names": [
+            "20",
+            "36",
+            "213",
+            "214",
+            "215",
+            "220",
+            "221",
+            "273",
+            "274",
+            "296",
+            "297",
+            "351",
+            "352",
+            "605",
+            "606",
+            "607",
+            "608",
+            "609",
+            "610",
+            "611",
+            "612",
+            "613",
+            "614",
+            "615",
+            "616",
+            "728",
+            "729",
+            "730",
+            "731",
+            "732",
+            "733",
+            "734",
+            "735",
+            "736",
+            "737",
+            "738",
+            "739",
+            "740",
+            "741",
+            "742",
+            "743",
+            "744",
+            "745",
+            "746",
+            "812"
+          ],
+          "num": 45
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/AbstractCompilerRunner.java b/src/com/google/javascript/jscomp/AbstractCompilerRunner.java\nindex e509b96..d51da80 100644\n--- a/src/com/google/javascript/jscomp/AbstractCompilerRunner.java\n+++ b/src/com/google/javascript/jscomp/AbstractCompilerRunner.java\n@@ -17,6 +17,7 @@\n package com.google.javascript.jscomp;\n \n import com.google.common.annotations.VisibleForTesting;\n+import com.google.common.base.Charsets;\n import com.google.common.base.Preconditions;\n import com.google.common.collect.ImmutableList;\n import com.google.common.collect.Maps;\n@@ -32,6 +33,7 @@\n import java.io.FileOutputStream;\n import java.io.IOException;\n import java.io.PrintStream;\n+import java.nio.charset.Charset;\n import java.util.ArrayList;\n import java.util.Collections;\n import java.util.List;\n@@ -208,10 +210,15 @@\n       \"the variable is marked true.\")\n   public static final Flag\u003cList\u003cString\u003e\u003e FLAG_define \u003d Flag.stringCollector();\n \n+  @FlagSpec(help \u003d \"Input charset for all files.\")\n+  static final Flag\u003cString\u003e FLAG_charset \u003d Flag.value(\"\");\n+\n   private PrintStream out;\n   private final PrintStream err;\n   private A compiler;\n \n+  private static Charset inputCharset;\n+\n   public AbstractCompilerRunner(String[] args) {\n     this(args, System.out, System.err);\n   }\n@@ -263,7 +270,8 @@\n     return compiler;\n   }\n \n-  final protected void setRunOptions(B options) throws IOException {\n+  final protected void setRunOptions(B options)\n+      throws IOException, FlagUsageException {\n     if (FLAG_js_output_file.get().length() \u003e 0) {\n       options.jsOutputFile \u003d FLAG_js_output_file.get();\n     }\n@@ -285,6 +293,8 @@\n     if (FLAG_third_party.get()) {\n       options.setCodingConvention(new DefaultCodingConvention());\n     }\n+\n+    inputCharset \u003d getInputCharset();\n   }\n \n   /**\n@@ -338,7 +348,8 @@\n     boolean usingStdin \u003d false;\n     for (String filename : files) {\n       if (!\"-\".equals(filename)) {\n-        inputs.add(JSSourceFile.fromFile(filename));\n+        JSSourceFile newFile \u003d JSSourceFile.fromFile(filename, inputCharset);\n+        inputs.add(newFile);\n       } else {\n         if (!allowStdIn) {\n           throw new FlagUsageException(\"Can\u0027t specify stdin.\");\n@@ -591,8 +602,18 @@\n \n     setRunOptions(options);\n \n-    if (!options.jsOutputFile.equals(\"\")) {\n-      out \u003d new PrintStream(options.jsOutputFile);\n+    // Let the outputCharset be the same as the input charset... except if\n+    // we\u0027re reading in UTF-8 by default.  By tradition, we\u0027ve always\n+    // output ASCII to avoid various hiccups with different browsers,\n+    // proxies and firewalls.\n+    if (inputCharset \u003d\u003d Charsets.UTF_8) {\n+      options.outputCharset \u003d Charsets.US_ASCII;\n+    } else {\n+      options.outputCharset \u003d inputCharset;\n+    }\n+\n+    if (!options.jsOutputFile.isEmpty()) {\n+      out \u003d new PrintStream(options.jsOutputFile, inputCharset.name());\n     }\n \n     ((PrintStreamErrorManager) compiler.getErrorManager())\n@@ -704,6 +725,25 @@\n     return Math.min(result.errors.length, 0x7f);\n   }\n \n+  /**\n+   * Query the flag for the charset, and return a Charset object representing\n+   * the selection.  Keep this in a separate function\n+   * so it can be called both in static and normal methods.\n+   *\n+   * @return Charset to use when reading inputs\n+   * @throws FlagUsageException if flag is not a valid Charset name.\n+   */\n+  private static Charset getInputCharset() throws FlagUsageException {\n+    if (!FLAG_charset.get().isEmpty()) {\n+      if (!Charset.isSupported(FLAG_charset.get())) {\n+        throw new FlagUsageException(FLAG_charset.get() +\n+            \" is not a valid charset name.\");\n+      }\n+      return Charset.forName(FLAG_charset.get());\n+    }\n+    return Charsets.UTF_8;\n+  }\n+\n   protected List\u003cJSSourceFile\u003e createExterns() throws FlagUsageException,\n       IOException {\n     return createExternInputs(FLAG_externs.get());\n@@ -769,7 +809,7 @@\n \n     String mapPath \u003d null;\n \n-    if (sourceMapPath.contains(File.separator)) {\n+    if (sourceMapPath.contains(\"/\") || sourceMapPath.contains(\"\\\\\")) {\n       mapPath \u003d sourceMapPath;\n     } else {\n       File outputFile \u003d new File(path);\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [691,730]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [1266,1298]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [8838,8945]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [9032,9068]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [25094,25782]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [10617,10635]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [11352,11385]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [21350,21499]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [27938,27997]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: || [27966,27968]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [27969,27997]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [12848,12917]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [12926,12946]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "StringLiteral: \"/\" [27961,27964]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [12848,12860]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [12861,12916]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [21594,21613]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: newFile [12861,12868]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: inputCharset [12903,12915]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_RECEIVER [12559,12565]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: add [12566,12569]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [12570,12601]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [12559,12602]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ExpressionStatement [12559,12603]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_ARGUMENTS [20795,20797]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "QualifiedName: File.separator [26506,26520]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CodeGenerator.java",
+        "src/com/google/javascript/jscomp/CodeGenerator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "regexpEscape",
+            "add",
+            "jsString",
+            "CodeGenerator",
+            "identifierEscape",
+            "strEscape"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "jsString",
+            "regexpEscape",
+            "strEscape",
+            "CodeGenerator",
+            "CodeGenerator",
+            "add",
+            "regexpEscape",
+            "identifierEscape"
+          ],
+          "num": 8
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "18",
+            "37",
+            "224",
+            "498",
+            "733",
+            "758",
+            "763",
+            "770",
+            "801",
+            "802",
+            "803",
+            "804",
+            "806",
+            "807",
+            "808",
+            "809",
+            "827"
+          ],
+          "num": 17
+        },
+        {
+          "qualified_names": [
+            "19",
+            "26",
+            "27",
+            "40",
+            "41",
+            "42",
+            "44",
+            "45",
+            "46",
+            "47",
+            "48",
+            "49",
+            "50",
+            "51",
+            "52",
+            "53",
+            "54",
+            "55",
+            "56",
+            "242",
+            "516",
+            "751",
+            "776",
+            "777",
+            "781",
+            "782",
+            "783",
+            "784",
+            "785",
+            "786",
+            "787",
+            "789",
+            "796",
+            "797",
+            "828",
+            "829",
+            "830",
+            "831",
+            "832",
+            "833",
+            "834",
+            "835",
+            "836",
+            "838",
+            "839",
+            "840",
+            "841",
+            "842",
+            "843",
+            "844",
+            "845",
+            "846",
+            "847",
+            "848",
+            "866",
+            "867",
+            "868"
+          ],
+          "num": 57
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/CodeGenerator.java b/src/com/google/javascript/jscomp/CodeGenerator.java\nindex d9496d7..3c97fc4 100644\n--- a/src/com/google/javascript/jscomp/CodeGenerator.java\n+++ b/src/com/google/javascript/jscomp/CodeGenerator.java\n@@ -16,12 +16,15 @@\n \n package com.google.javascript.jscomp;\n \n+import com.google.common.base.Charsets;\n import com.google.common.base.Preconditions;\n import com.google.common.base.StringUtil;\n import com.google.javascript.rhino.Node;\n import com.google.javascript.rhino.Token;\n import com.google.javascript.rhino.TokenStream;\n \n+import java.nio.charset.Charset;\n+import java.nio.charset.CharsetEncoder;\n \n /**\n  * CodeGenerator generates codes from a parse tree, sending it to the specified\n@@ -34,8 +37,23 @@\n \n   private final CodeConsumer cc;\n \n-  CodeGenerator(CodeConsumer consumer) {\n+  private final CharsetEncoder outputCharsetEncoder;\n+\n+  CodeGenerator(CodeConsumer consumer, Charset outputCharset) {\n     cc \u003d consumer;\n+    if (outputCharset \u003d\u003d null || outputCharset \u003d\u003d Charsets.US_ASCII) {\n+      // If we want our default (pretending to be UTF-8, but escaping anything\n+      // outside of straight ASCII), then don\u0027t use the encoder, but\n+      // just special-case the code.  This keeps the normal path through\n+      // the code identical to how it\u0027s been for years.\n+      this.outputCharsetEncoder \u003d null;\n+    } else {\n+      this.outputCharsetEncoder \u003d outputCharset.newEncoder();\n+    }\n+  }\n+\n+  CodeGenerator(CodeConsumer consumer) {\n+    this(consumer, null);\n   }\n \n   void add(String str) {\n@@ -221,7 +239,7 @@\n           throw new Error(\"Expected children to be strings\");\n         }\n \n-        String regexp \u003d regexpEscape(first.getString());\n+        String regexp \u003d regexpEscape(first.getString(), outputCharsetEncoder);\n \n         // I only use one .add because whitespace matters\n         if (childCount \u003d\u003d 2) {\n@@ -495,7 +513,7 @@\n \n       case Token.STRING:\n         Preconditions.checkState(childCount \u003d\u003d 0);\n-        add(jsString(n.getString()));\n+        add(jsString(n.getString(), outputCharsetEncoder));\n         break;\n \n       case Token.DELPROP:\n@@ -730,7 +748,7 @@\n   }\n \n   /** Outputs a js string, using the optimal (single/double) quote character */\n-  static String jsString(String s) {\n+  static String jsString(String s, CharsetEncoder outputCharsetEncoder) {\n     int singleq \u003d 0, doubleq \u003d 0;\n \n     // could count the quotes and pick the optimal quote character\n@@ -755,19 +773,28 @@\n       singlequote \u003d \"\\\u0027\";\n     }\n \n-    return strEscape(s, quote, doublequote, singlequote, \"\\\\\\\\\");\n+    return strEscape(s, quote, doublequote, singlequote, \"\\\\\\\\\",\n+        outputCharsetEncoder);\n   }\n \n   /** Escapes regular expression */\n+  static String regexpEscape(String s, CharsetEncoder outputCharsetEncoder) {\n+    return strEscape(s, \u0027/\u0027, \"\\\"\", \"\u0027\", \"\\\\\", outputCharsetEncoder);\n+  }\n+\n+  /* If the user doesn\u0027t want to specify an output charset encoder, assume\n+     they want Latin/ASCII characters only.\n+   */\n   static String regexpEscape(String s) {\n-    return strEscape(s, \u0027/\u0027, \"\\\"\", \"\u0027\", \"\\\\\");\n+    return regexpEscape(s, null);\n   }\n \n   /** Helper to escape javascript string as well as regular expression */\n   static String strEscape(String s, char quote,\n                           String doublequoteEscape,\n                           String singlequoteEscape,\n-                          String backslashEscape) {\n+                          String backslashEscape,\n+                          CharsetEncoder outputCharsetEncoder) {\n     StringBuilder sb \u003d new StringBuilder();\n     sb.append(quote);\n     for (int i \u003d 0; i \u003c s.length(); i++) {\n@@ -798,15 +825,27 @@\n           }\n           break;\n         default:\n-          // Please keep in sync with the same code in identifierEscape().\n-          if (c \u003e 0x1F \u0026\u0026 c \u003c 0x7F) {\n-            // Non-control ASCII characters are safe to transmit\n-            sb.append(c);\n+          // If we\u0027re given an outputCharsetEncoder, then check if the\n+          //  character can be represented in this character set.\n+          if (outputCharsetEncoder !\u003d null) {\n+            if (outputCharsetEncoder.canEncode(c)) {\n+              sb.append(c);\n+            } else {\n+              // Unicode-escape the character.\n+              StringUtil.appendHexJavaScriptRepresentation(sb, c);\n+            }\n           } else {\n-            // Other characters can be misinterpreted by some js parsers,\n-            // or perhaps mangled by proxies along the way,\n-            // so we play it safe and unicode escape them.\n-            StringUtil.appendHexJavaScriptRepresentation(sb, c);\n+            // No charsetEncoder provided - pass straight latin characters\n+            // through, and escape the rest.  Doing the explicit character\n+            // check is measurably faster than using the CharsetEncoder.\n+            if (c \u003e 0x1f \u0026\u0026 c \u003c\u003d 0x7f) {\n+              sb.append(c);\n+            } else {\n+              // Other characters can be misinterpreted by some js parsers,\n+              // or perhaps mangled by proxies along the way,\n+              // so we play it safe and unicode escape them.\n+              StringUtil.appendHexJavaScriptRepresentation(sb, c);\n+            }\n           }\n       }\n     }\n@@ -824,7 +863,9 @@\n     StringBuilder sb \u003d new StringBuilder();\n     for (int i \u003d 0; i \u003c s.length(); i++) {\n       char c \u003d s.charAt(i);\n-      // See comments for the same code in strEscape(). Please keep in sync.\n+      // Identifiers should always go to Latin1/ ASCII characters because\n+      // different browser\u0027s rules for valid identifier characters are\n+      // crazy.\n       if (c \u003e 0x1F \u0026\u0026 c \u003c 0x7F) {\n         sb.append(c);\n       } else {\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [635,674]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [894,926]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [927,966]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [1139,1189]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [1193,1746]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodDeclaration [22559,22743]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [21799,21834]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [22559,22592]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: static [22595,22601]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [22602,22608]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: regexpEscape [22609,22621]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [22622,22630]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [22632,22667]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [22669,22743]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [23252,23287]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ConstructorInvocation [1793,1814]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [22915,22944]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: outputCharsetEncoder [22529,22549]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: outputCharsetEncoder [22717,22737]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [24576,25465]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [24580,24608]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Block [24610,24853]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [24859,25465]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: outputCharsetEncoder [6991,7011]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: outputCharsetEncoder [14726,14746]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [1069,1083]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Javadoc [21717,21750]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CodePrinter.java",
+        "src/com/google/javascript/jscomp/CodePrinter.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "build",
+            "toSource"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "setOutputCharset",
+            "toSource",
+            "build"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "21",
+            "483",
+            "541",
+            "558",
+            "573",
+            "582",
+            "583"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "22",
+            "485",
+            "486",
+            "487",
+            "546",
+            "547",
+            "548",
+            "549",
+            "550",
+            "567",
+            "582",
+            "583",
+            "592",
+            "593"
+          ],
+          "num": 14
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/CodePrinter.java b/src/com/google/javascript/jscomp/CodePrinter.java\nindex 7afa86d..5e4211a 100644\n--- a/src/com/google/javascript/jscomp/CodePrinter.java\n+++ b/src/com/google/javascript/jscomp/CodePrinter.java\n@@ -19,6 +19,7 @@\n import com.google.common.base.Preconditions;\n import com.google.javascript.rhino.Node;\n \n+import java.nio.charset.Charset;\n import java.util.ArrayList;\n import java.util.List;\n import java.util.Stack;\n@@ -481,6 +482,9 @@\n     private boolean outputTypes \u003d false;\n     private int lineLengthThreshold \u003d DEFAULT_LINE_LENGTH_THRESHOLD;\n     private SourceMap sourceMap \u003d null;\n+    // Specify a charset to use when outputting source code.  If null,\n+    // then just output ASCII.\n+    private Charset outputCharset \u003d null;\n \n     /**\n      * Sets the root node from which to generate the source code.\n@@ -539,6 +543,11 @@\n       return this;\n     }\n \n+    Builder setOutputCharset(Charset outCharset) {\n+      this.outputCharset \u003d outCharset;\n+      return this;\n+    }\n+\n     /**\n      * Generates the source code and returns it.\n      */\n@@ -555,7 +564,7 @@\n               : Format.COMPACT;\n \n       return toSource(root, outputFormat, lineBreak, lineLengthThreshold,\n-          sourceMap);\n+          sourceMap, outputCharset);\n     }\n   }\n \n@@ -570,7 +579,8 @@\n    */\n   private static String toSource(Node root, Format outputFormat,\n                                  boolean lineBreak,  int lineLengthThreshold,\n-                                 SourceMap sourceMap) {\n+                                 SourceMap sourceMap,\n+                                 Charset outputCharset) {\n     boolean createSourceMap \u003d (sourceMap !\u003d null);\n     CodeConsumer cp \u003d\n         outputFormat \u003d\u003d Format.COMPACT\n@@ -579,8 +589,8 @@\n         : new PrettyCodePrinter(lineLengthThreshold, createSourceMap);\n     CodeGenerator cg \u003d\n         outputFormat \u003d\u003d Format.TYPED\n-        ? new TypedCodeGenerator(cp)\n-        : new CodeGenerator(cp);\n+        ? new TypedCodeGenerator(cp, outputCharset)\n+        : new CodeGenerator(cp, outputCharset);\n     cg.add(root);\n \n     String code \u003d ((HasGetCode) cp).getCode();\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [722,754]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [13538,13575]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [15104,15214]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [16045,16066]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: outputCharset [15688,15701]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: outputCharset [16445,16458]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: outputCharset [16492,16505]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/Compiler.java",
+        "src/com/google/javascript/jscomp/Compiler.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "parseInputs",
+            "toSource",
+            "maybeSanityCheck",
+            "compileInternal",
+            "endPass"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "compileInternal",
+            "runSanityCheck",
+            "toSource",
+            "parseInputs",
+            "endPass",
+            "maybeSanityCheck"
+          ],
+          "num": 6
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "543",
+            "658",
+            "660",
+            "728",
+            "972",
+            "1197"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "544",
+            "545",
+            "546",
+            "547",
+            "662",
+            "664",
+            "668",
+            "669",
+            "670",
+            "671",
+            "736",
+            "980",
+            "1206"
+          ],
+          "num": 13
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/Compiler.java b/src/com/google/javascript/jscomp/Compiler.java\nindex c2d49c2..db51587 100644\n--- a/src/com/google/javascript/jscomp/Compiler.java\n+++ b/src/com/google/javascript/jscomp/Compiler.java\n@@ -541,6 +541,10 @@\n     if (options_.recordFunctionInformation) {\n       recordFunctionInformation();\n     }\n+\n+    if (options_.devMode \u003d\u003d DevMode.START_AND_END) {\n+      runSanityCheck();\n+    }\n   }\n \n   public void parse() {\n@@ -655,12 +659,16 @@\n     }\n   };\n \n-  private void maybeSanityCheck(String passName) {\n+  private void maybeSanityCheck() {\n     if (options_.devMode \u003d\u003d DevMode.EVERY_PASS) {\n-      sanityCheck.create(this).process(null, jsRoot);\n+      runSanityCheck();\n     }\n   }\n \n+  private void runSanityCheck() {\n+    sanityCheck.create(this).process(null, jsRoot);\n+  }\n+\n   /**\n    * Removes try/catch/finally statements for easier debugging.\n    */\n@@ -725,7 +733,7 @@\n     currentPassName \u003d null;\n     currentTracer \u003d null;\n \n-    maybeSanityCheck(passToCheck);\n+    maybeSanityCheck();\n   }\n \n   /**\n@@ -969,7 +977,7 @@\n         }\n \n         if (devMode) {\n-          sanityCheck.create(this).process(null, n);\n+          runSanityCheck();\n           if (hasErrors()) {\n             return null;\n           }\n@@ -1195,6 +1203,7 @@\n     builder.setPrettyPrint(options_.prettyPrint);\n     builder.setLineBreak(options_.lineBreak);\n     builder.setSourceMap(sourceMap_);\n+    builder.setOutputCharset(options_.outputCharset);\n     return builder.build();\n   }\n \n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodDeclaration [19636,19723]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: private [19636,19643]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrimitiveType: void [19644,19648]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: runSanityCheck [19649,19663]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [19666,19723]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [16173,16251]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [34943,34992]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [19605,19622]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [27915,27932]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [19461,19476]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_ARGUMENTS [21446,21457]",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CompilerOptions.java",
+        "src/com/google/javascript/jscomp/CompilerOptions.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "26",
+            "529",
+            "848"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "27",
+            "531",
+            "532",
+            "533",
+            "534",
+            "854",
+            "855",
+            "856",
+            "857",
+            "858"
+          ],
+          "num": 10
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/CompilerOptions.java b/src/com/google/javascript/jscomp/CompilerOptions.java\nindex 76b1739..f834bf2 100644\n--- a/src/com/google/javascript/jscomp/CompilerOptions.java\n+++ b/src/com/google/javascript/jscomp/CompilerOptions.java\n@@ -24,6 +24,7 @@\n import com.google.javascript.rhino.Token;\n \n import java.io.Serializable;\n+import java.nio.charset.Charset;\n import java.util.Collections;\n import java.util.Map;\n import java.util.Set;\n@@ -527,6 +528,10 @@\n   /** The output path for the source map. */\n   public String sourceMapOutputPath;\n \n+  /**\n+   * Charset to use when generating code.  If null, then output ASCII.\n+   */\n+  public Charset outputCharset;\n \n   /**\n    * Initializes compiler options. All options are disabled by default.\n@@ -846,6 +851,11 @@\n     START,\n \n     /**\n+     * At the start and at the end of all optimizations.\n+     */\n+    START_AND_END,\n+\n+    /**\n      * After every pass\n      */\n     EVERY_PASS\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [914,946]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [15639,15751]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "EnumConstantDeclaration [25348,25434]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CompilerRunner.java",
+        "src/com/google/javascript/jscomp/CompilerRunner.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "66"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "66"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/CompilerRunner.java b/src/com/google/javascript/jscomp/CompilerRunner.java\nindex bef9df5..ffe7deb 100644\n--- a/src/com/google/javascript/jscomp/CompilerRunner.java\n+++ b/src/com/google/javascript/jscomp/CompilerRunner.java\n@@ -63,7 +63,7 @@\n       \u003d Flag.value(WarningLevel.DEFAULT);\n \n   @FlagSpec(help \u003d \"Specifies whether the default externs should be excluded.\")\n-  private static final Flag\u003cBoolean\u003e FLAG_use_only_custom_externs\n+  static final Flag\u003cBoolean\u003e FLAG_use_only_custom_externs\n       \u003d Flag.value(false);\n \n   /**\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "NormalAnnotation [2240,2317]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "NormalAnnotation [2240,2317]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: private [2320,2327]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/ControlFlowAnalysis.java",
+        "src/com/google/javascript/jscomp/ControlFlowAnalysis.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "22",
+            "37",
+            "127"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "20",
+            "36",
+            "126"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/ControlFlowAnalysis.java b/src/com/google/javascript/jscomp/ControlFlowAnalysis.java\nindex 2121474..d5bcabe 100644\n--- a/src/com/google/javascript/jscomp/ControlFlowAnalysis.java\n+++ b/src/com/google/javascript/jscomp/ControlFlowAnalysis.java\n@@ -17,9 +17,9 @@\n package com.google.javascript.jscomp;\n \n import com.google.common.base.Preconditions;\n+import com.google.common.collect.HashMultimap;\n import com.google.common.collect.Maps;\n import com.google.common.collect.Multimap;\n-import com.google.common.collect.Multimaps;\n import com.google.javascript.jscomp.ControlFlowGraph.Branch;\n import com.google.javascript.jscomp.NodeTraversal.Callback;\n import com.google.javascript.jscomp.graph.DiGraph.DiGraphNode;\n@@ -34,7 +34,6 @@\n import java.util.Map;\n import java.util.PriorityQueue;\n \n-\n /**\n  * This is a compiler pass that computes a control flow graph.\n  *\n@@ -124,7 +123,7 @@\n    *   foo() -\u003e bar()\n    *   bar() -\u003e END\n    */\n-  private final Multimap\u003cNode, Node\u003e finallyMap \u003d Multimaps.newHashMultimap();\n+  private final Multimap\u003cNode, Node\u003e finallyMap \u003d HashMultimap.create();\n \n   /**\n    * Constructor.\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [680,726]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [762,805]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/DisambiguateProperties.java",
+        "src/com/google/javascript/jscomp/DisambiguateProperties.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "getRenamedTypesForTesting"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "getRenamedTypesForTesting"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "23",
+            "31",
+            "46",
+            "542"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "19",
+            "32",
+            "49",
+            "542"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/DisambiguateProperties.java b/src/com/google/javascript/jscomp/DisambiguateProperties.java\nindex fd46fcf..a5a8184 100644\n--- a/src/com/google/javascript/jscomp/DisambiguateProperties.java\n+++ b/src/com/google/javascript/jscomp/DisambiguateProperties.java\n@@ -16,11 +16,11 @@\n package com.google.javascript.jscomp;\n \n import static com.google.common.base.Preconditions.checkState;\n+import com.google.common.collect.HashMultimap;\n import com.google.common.collect.ImmutableSet;\n import com.google.common.collect.Lists;\n import com.google.common.collect.Maps;\n import com.google.common.collect.Multimap;\n-import com.google.common.collect.Multimaps;\n import com.google.common.collect.Sets;\n import com.google.javascript.jscomp.ConcreteType.ConcreteFunctionType;\n import com.google.javascript.jscomp.ConcreteType.ConcreteInstanceType;\n@@ -28,8 +28,8 @@\n import com.google.javascript.jscomp.ConcreteType.ConcreteUniqueType;\n import com.google.javascript.jscomp.NodeTraversal.ScopedCallback;\n import com.google.javascript.jscomp.TypeValidator.TypeMismatch;\n-import com.google.javascript.jscomp.graph.UnionFind;\n import com.google.javascript.jscomp.graph.StandardUnionFind;\n+import com.google.javascript.jscomp.graph.UnionFind;\n import com.google.javascript.rhino.Node;\n import com.google.javascript.rhino.Token;\n import com.google.javascript.rhino.jstype.FunctionPrototypeType;\n@@ -43,10 +43,10 @@\n \n import java.util.Collection;\n import java.util.List;\n-import java.util.logging.Logger;\n import java.util.Map;\n import java.util.Set;\n import java.util.Stack;\n+import java.util.logging.Logger;\n \n /**\n  * DisambiguateProperties renames properties to disambiguate between unrelated\n@@ -539,7 +539,7 @@\n \n   /** Returns a map from field name to types for which it will be renamed. */\n   Multimap\u003cString, Collection\u003cT\u003e\u003e getRenamedTypesForTesting() {\n-    Multimap\u003cString, Collection\u003cT\u003e\u003e ret \u003d Multimaps.newHashMultimap();\n+    Multimap\u003cString, Collection\u003cT\u003e\u003e ret \u003d HashMultimap.create();\n     for (Map.Entry\u003cString, Property\u003e entry: properties.entrySet()) {\n       Property prop \u003d entry.getValue();\n       if (!prop.skipRenaming) {\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [697,743]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [866,909]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/FunctionRewriter.java",
+        "src/com/google/javascript/jscomp/FunctionRewriter.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "process"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "process"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "21",
+            "65"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "19",
+            "65"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/FunctionRewriter.java b/src/com/google/javascript/jscomp/FunctionRewriter.java\nindex 5980b7d..7e2bd8f 100644\n--- a/src/com/google/javascript/jscomp/FunctionRewriter.java\n+++ b/src/com/google/javascript/jscomp/FunctionRewriter.java\n@@ -16,9 +16,9 @@\n \n package com.google.javascript.jscomp;\n \n+import com.google.common.collect.HashMultimap;\n import com.google.common.collect.ImmutableList;\n import com.google.common.collect.Multimap;\n-import com.google.common.collect.Multimaps;\n import com.google.javascript.jscomp.NodeTraversal.Callback;\n import com.google.javascript.rhino.Node;\n import com.google.javascript.rhino.Token;\n@@ -62,7 +62,7 @@\n                                               new EmptyFunctionReducer(),\n                                               new IdentityReducer());\n \n-    Multimap\u003cReducer, Reduction\u003e reductionMap \u003d Multimaps.newHashMultimap();\n+    Multimap\u003cReducer, Reduction\u003e reductionMap \u003d HashMultimap.create();\n \n     // Accumulate possible reductions in the reduction multi map.  They\n     // will be applied in the loop below.\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [635,681]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [726,769]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/JSSourceFile.java",
+        "src/com/google/javascript/jscomp/JSSourceFile.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "fromFile",
+            "fromFile"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "fromFile",
+            "fromFile",
+            "fromFile",
+            "fromFile"
+          ],
+          "num": 4
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "20",
+            "37",
+            "41"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "21",
+            "26",
+            "38",
+            "39",
+            "40",
+            "41",
+            "43",
+            "44",
+            "45",
+            "46",
+            "47",
+            "51"
+          ],
+          "num": 12
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/JSSourceFile.java b/src/com/google/javascript/jscomp/JSSourceFile.java\nindex 7af6969..92f04dd 100644\n--- a/src/com/google/javascript/jscomp/JSSourceFile.java\n+++ b/src/com/google/javascript/jscomp/JSSourceFile.java\n@@ -18,10 +18,12 @@\n \n \n import com.google.common.annotations.VisibleForTesting;\n+import com.google.common.base.Charsets;\n \n import java.io.File;\n import java.io.IOException;\n import java.io.InputStream;\n+import java.nio.charset.Charset;\n \n \n /**\n@@ -33,12 +35,20 @@\n  */\n public class JSSourceFile extends SourceFile {\n \n+  public static JSSourceFile fromFile(String fileName, Charset charSet) {\n+    return new JSSourceFile(SourceFile.fromFile(fileName, charSet));\n+  }\n+\n   public static JSSourceFile fromFile(String fileName) {\n-    return new JSSourceFile(SourceFile.fromFile(fileName));\n+    return new JSSourceFile(SourceFile.fromFile(fileName, Charsets.UTF_8));\n+  }\n+\n+  public static JSSourceFile fromFile(File file, Charset charSet) {\n+    return new JSSourceFile(SourceFile.fromFile(file, charSet));\n   }\n \n   public static JSSourceFile fromFile(File file) {\n-    return new JSSourceFile(SourceFile.fromFile(file));\n+    return new JSSourceFile(SourceFile.fromFile(file, Charsets.UTF_8));\n   }\n \n   public static JSSourceFile fromCode(String fileName, String code) {\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [692,731]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [810,842]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodDeclaration [996,1140]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodDeclaration [1282,1416]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: public [996,1002]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: static [1003,1009]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [1010,1022]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: fromFile [1023,1031]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [1032,1047]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [1049,1064]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [1066,1140]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: public [1282,1288]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: static [1289,1295]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [1296,1308]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: fromFile [1309,1317]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [1318,1327]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [1329,1344]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [1346,1416]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [1096,1134]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [1376,1410]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "QualifiedName: Charsets.UTF_8 [1257,1271]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "QualifiedName: Charsets.UTF_8 [1523,1537]"
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/MethodCheck.java",
+        "src/com/google/javascript/jscomp/MethodCheck.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "20",
+            "27",
+            "50"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "19",
+            "49"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/MethodCheck.java b/src/com/google/javascript/jscomp/MethodCheck.java\nindex 188c327..4a24013 100644\n--- a/src/com/google/javascript/jscomp/MethodCheck.java\n+++ b/src/com/google/javascript/jscomp/MethodCheck.java\n@@ -16,15 +16,14 @@\n \n package com.google.javascript.jscomp;\n \n+import com.google.common.collect.HashMultimap;\n import com.google.common.collect.Multimap;\n-import com.google.common.collect.Multimaps;\n import com.google.javascript.jscomp.FunctionCheck.FunctionInfo;\n import com.google.javascript.jscomp.NodeTraversal.Callback;\n import com.google.javascript.rhino.Node;\n \n import java.util.Collection;\n \n-\n /**\n  * Checks method arity. Looks for the following ways of defining methods:\n  *\n@@ -47,7 +46,7 @@\n \n   /** Map from method names to possible signatures */\n   final Multimap\u003cString,FunctionInfo\u003e methodSignatures \u003d\n-      Multimaps.newHashMultimap();\n+      HashMultimap.create();\n \n   final MethodCompilerPass.SignatureStore signatureCallback \u003d new Store();\n \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [635,681]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [678,721]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/MethodCompilerPass.java",
+        "src/com/google/javascript/jscomp/MethodCompilerPass.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "21",
+            "49"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "19",
+            "49"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/MethodCompilerPass.java b/src/com/google/javascript/jscomp/MethodCompilerPass.java\nindex 9595272..94fca01 100644\n--- a/src/com/google/javascript/jscomp/MethodCompilerPass.java\n+++ b/src/com/google/javascript/jscomp/MethodCompilerPass.java\n@@ -16,9 +16,9 @@\n \n package com.google.javascript.jscomp;\n \n+import com.google.common.collect.HashMultimap;\n import com.google.common.collect.Lists;\n import com.google.common.collect.Multimap;\n-import com.google.common.collect.Multimaps;\n import com.google.common.collect.Sets;\n import com.google.javascript.jscomp.NodeTraversal.AbstractPostOrderCallback;\n import com.google.javascript.jscomp.NodeTraversal.Callback;\n@@ -46,7 +46,7 @@\n   final Set\u003cString\u003e nonMethodProperties \u003d Sets.newHashSet();\n \n   final Multimap\u003cString, Node\u003e methodDefinitions \u003d\n-      Multimaps.newHashMultimap();\n+      HashMultimap.create();\n \n   final AbstractCompiler compiler;\n \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [635,681]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [718,761]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/NameReferenceGraph.java",
+        "src/com/google/javascript/jscomp/NameReferenceGraph.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "23",
+            "28",
+            "69"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "20",
+            "29",
+            "69"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/NameReferenceGraph.java b/src/com/google/javascript/jscomp/NameReferenceGraph.java\nindex 7c257d6..7813a14 100644\n--- a/src/com/google/javascript/jscomp/NameReferenceGraph.java\n+++ b/src/com/google/javascript/jscomp/NameReferenceGraph.java\n@@ -17,16 +17,16 @@\n package com.google.javascript.jscomp;\n \n import com.google.common.base.Preconditions;\n+import com.google.common.collect.HashMultimap;\n import com.google.common.collect.Lists;\n import com.google.common.collect.Maps;\n import com.google.common.collect.Multimap;\n-import com.google.common.collect.Multimaps;\n import com.google.javascript.jscomp.DefinitionsRemover.AssignmentDefinition;\n import com.google.javascript.jscomp.DefinitionsRemover.Definition;\n import com.google.javascript.jscomp.DefinitionsRemover.NamedFunctionDefinition;\n import com.google.javascript.jscomp.DefinitionsRemover.UnknownDefinition;\n-import com.google.javascript.jscomp.graph.LinkedDirectedGraph;\n import com.google.javascript.jscomp.graph.GraphNode;\n+import com.google.javascript.jscomp.graph.LinkedDirectedGraph;\n import com.google.javascript.rhino.Node;\n import com.google.javascript.rhino.jstype.JSType;\n import com.google.javascript.rhino.jstype.JSTypeNative;\n@@ -66,7 +66,7 @@\n   // will give us the Reference edges. For example a CALL node will map to a\n   // list of possible call edge.\n   private final Multimap\u003cNode, DiGraphEdge\u003cName, Reference\u003e\u003e\n-      referenceMap \u003d Multimaps.newHashMultimap();\n+      referenceMap \u003d HashMultimap.create();\n \n   // Given a qualified name, provides the Name object.\n   private Map\u003cString, Name\u003e nameMap \u003d Maps.newHashMap();\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [680,726]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [802,845]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/NameReferenceGraphConstruction.java",
+        "src/com/google/javascript/jscomp/NameReferenceGraphConstruction.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "19",
+            "23",
+            "39",
+            "58"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "21",
+            "39",
+            "40",
+            "59"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/NameReferenceGraphConstruction.java b/src/com/google/javascript/jscomp/NameReferenceGraphConstruction.java\nindex aef9ba8..e46eee1 100644\n--- a/src/com/google/javascript/jscomp/NameReferenceGraphConstruction.java\n+++ b/src/com/google/javascript/jscomp/NameReferenceGraphConstruction.java\n@@ -16,11 +16,10 @@\n \n package com.google.javascript.jscomp;\n \n-import javax.annotation.Nullable;\n import com.google.common.base.Pair;\n import com.google.common.base.Preconditions;\n+import com.google.common.collect.HashMultimap;\n import com.google.common.collect.Multimap;\n-import com.google.common.collect.Multimaps;\n import com.google.javascript.jscomp.NameReferenceGraph.Name;\n import com.google.javascript.jscomp.NameReferenceGraph.Reference;\n import com.google.javascript.jscomp.NodeTraversal.ScopedCallback;\n@@ -37,6 +36,8 @@\n import java.util.ArrayList;\n import java.util.Collection;\n \n+import javax.annotation.Nullable;\n+\n /**\n  * Constructs a name reference graph.\n  *\n@@ -55,7 +56,7 @@\n   // The accuracy of the analysis will depend heavily on eliminating the need\n   // to resort to this map.\n   private final Multimap\u003cString, Pair\u003cName, Reference\u003e\u003e unknownNameUse \u003d\n-      Multimaps.newHashMultimap();\n+      HashMultimap.create();\n \n   // Should we continue even if we found a type checker bug.\n   private static final boolean CONSERVATIVE \u003d false;\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [716,762]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [793,836]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/SimpleDefinitionFinder.java",
+        "src/com/google/javascript/jscomp/SimpleDefinitionFinder.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "SimpleDefinitionFinder"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "SimpleDefinitionFinder"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "22",
+            "54",
+            "55"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "20",
+            "54",
+            "55"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/SimpleDefinitionFinder.java b/src/com/google/javascript/jscomp/SimpleDefinitionFinder.java\nindex a8eae1f..fccddb2 100644\n--- a/src/com/google/javascript/jscomp/SimpleDefinitionFinder.java\n+++ b/src/com/google/javascript/jscomp/SimpleDefinitionFinder.java\n@@ -17,9 +17,9 @@\n package com.google.javascript.jscomp;\n \n import com.google.common.base.Preconditions;\n+import com.google.common.collect.HashMultimap;\n import com.google.common.collect.Maps;\n import com.google.common.collect.Multimap;\n-import com.google.common.collect.Multimaps;\n import com.google.javascript.jscomp.DefinitionsRemover.Definition;\n import com.google.javascript.jscomp.DefinitionsRemover.ExternalNameOnlyDefinition;\n import com.google.javascript.jscomp.DefinitionsRemover.UnknownDefinition;\n@@ -51,8 +51,8 @@\n   public SimpleDefinitionFinder(AbstractCompiler compiler) {\n     this.compiler \u003d compiler;\n     this.definitionSiteMap \u003d Maps.newHashMap();\n-    this.nameDefinitionMultimap \u003d Multimaps.newHashMultimap();\n-    this.nameUseSiteMultimap \u003d Multimaps.newHashMultimap();\n+    this.nameDefinitionMultimap \u003d HashMultimap.create();\n+    this.nameUseSiteMultimap \u003d HashMultimap.create();\n   }\n \n   /**\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [680,726]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [762,805]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/SourceFile.java",
+        "src/com/google/javascript/jscomp/SourceFile.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "OnDisk",
+            "getCode",
+            "clearCachedSource"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "fromFile",
+            "getCode",
+            "OnDisk",
+            "setCharset",
+            "OnDisk",
+            "getCharset",
+            "fromFile"
+          ],
+          "num": 7
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "29",
+            "206",
+            "292",
+            "300",
+            "311"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "30",
+            "208",
+            "209",
+            "210",
+            "211",
+            "216",
+            "217",
+            "218",
+            "219",
+            "299",
+            "300",
+            "301",
+            "302",
+            "303",
+            "304",
+            "305",
+            "306",
+            "307",
+            "308",
+            "309",
+            "310",
+            "311",
+            "314",
+            "322",
+            "334",
+            "335",
+            "336",
+            "337",
+            "338",
+            "339",
+            "340",
+            "341",
+            "342",
+            "343",
+            "344",
+            "345",
+            "346",
+            "347",
+            "348",
+            "349",
+            "350",
+            "351",
+            "352",
+            "353"
+          ],
+          "num": 44
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/SourceFile.java b/src/com/google/javascript/jscomp/SourceFile.java\nindex 6d66078..770db00 100644\n--- a/src/com/google/javascript/jscomp/SourceFile.java\n+++ b/src/com/google/javascript/jscomp/SourceFile.java\n@@ -27,6 +27,7 @@\n import java.io.InputStream;\n import java.io.InputStreamReader;\n import java.io.Reader;\n+import java.nio.charset.Charset;\n \n /**\n  * An abstract representation of a source file that provides access to\n@@ -204,10 +205,18 @@\n     }\n   }\n \n+  public static SourceFile fromFile(String fileName, Charset c) {\n+    return fromFile(new File(fileName), c);\n+  }\n+\n   public static SourceFile fromFile(String fileName) {\n     return fromFile(new File(fileName));\n   }\n \n+  public static SourceFile fromFile(File file, Charset c) {\n+    return new OnDisk(file, c);\n+  }\n+\n   public static SourceFile fromFile(File file) {\n     return new OnDisk(file);\n   }\n@@ -287,9 +296,22 @@\n   static class OnDisk extends SourceFile {\n     private final File file;\n \n+    // This is stored as a String, but passed in and out as a Charset so that\n+    // we can serialize the class.\n+    // Default input file format for JSCompiler has always been UTF_8.\n+    protected String inputCharset \u003d Charsets.UTF_8.name();\n+\n+    OnDisk(File file, Charset c) {\n+      this(file);\n+      if (c !\u003d null) {\n+        this.setCharset(c);\n+      }\n+    }\n+\n+    // No Charset provided?\n     OnDisk(File file) {\n       super(file.getPath());\n-      this.file \u003d file;\n+      this.file \u003d file;     \n     }\n \n     @Override\n@@ -297,7 +319,7 @@\n       String cachedCode \u003d super.getCode();\n \n       if (cachedCode \u003d\u003d null) {\n-        cachedCode \u003d Files.toString(file, Charsets.UTF_8);\n+        cachedCode \u003d Files.toString(file, this.getCharset());\n         super.setCode(cachedCode);\n       }\n       return cachedCode;\n@@ -309,5 +331,25 @@\n     public void clearCachedSource() {\n       super.setCode(null);\n     }\n+\n+    /**\n+     * Store the Charset specification as the string version of the name,\n+     * rather than the Charset itself.  This allows us to serialize the\n+     * SourceFile class.\n+     * @param c charset to use when reading the input.\n+     */\n+    public void setCharset(Charset c) {\n+      inputCharset \u003d c.name();\n+    }\n+\n+    /**\n+     * Get the Charset specifying how we\u0027re supposed to read the file\n+     * in off disk and into UTF-16.  This is stored as a strong to allow\n+     * SourceFile to be serialized.\n+     * @return Charset object representing charset to use.\n+     */\n+    public Charset getCharset() {\n+      return Charset.forName(inputCharset);\n+    }    \n   }\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [943,975]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [6145,6256]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [6361,6454]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [8764,8818]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [8824,8937]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [9535,9849]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [9855,10188]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [9250,9267]"
+        },
+        {
+          "type": "delete-node",
+          "from": "QualifiedName: Charsets.UTF_8 [8609,8623]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/TypedCodeGenerator.java",
+        "src/com/google/javascript/jscomp/TypedCodeGenerator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "TypedCodeGenerator"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "TypedCodeGenerator"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "24",
+            "32",
+            "33"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "25",
+            "26",
+            "34",
+            "35"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/TypedCodeGenerator.java b/src/com/google/javascript/jscomp/TypedCodeGenerator.java\nindex d9e0a00..3342fd9 100644\n--- a/src/com/google/javascript/jscomp/TypedCodeGenerator.java\n+++ b/src/com/google/javascript/jscomp/TypedCodeGenerator.java\n@@ -22,6 +22,8 @@\n import com.google.javascript.rhino.jstype.JSType;\n import com.google.javascript.rhino.jstype.ObjectType;\n \n+import java.nio.charset.Charset;\n+\n \n /**\n  * A code generator that outputs type annotations for functions and\n@@ -29,8 +31,8 @@\n *\n  */\n class TypedCodeGenerator extends CodeGenerator {\n-  TypedCodeGenerator(CodeConsumer consumer) {\n-    super(consumer);\n+  TypedCodeGenerator(CodeConsumer consumer, Charset outputCharset) {\n+    super(consumer, outputCharset);\n   }\n \n   @Override\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [879,911]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [1102,1123]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: outputCharset [1147,1160]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/WarningLevel.java",
+        "src/com/google/javascript/jscomp/WarningLevel.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "60"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "61"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/WarningLevel.java b/src/com/google/javascript/jscomp/WarningLevel.java\nindex d7b3800..1cdb833 100644\n--- a/src/com/google/javascript/jscomp/WarningLevel.java\n+++ b/src/com/google/javascript/jscomp/WarningLevel.java\n@@ -58,6 +58,7 @@\n     options.checkUndefinedProperties \u003d CheckLevel.OFF;\n     options.checkUnusedPropertiesEarly \u003d false;\n     options.checkUnreachableCode \u003d CheckLevel.WARNING;\n+    options.checkControlStructures \u003d true;\n   }\n \n   /**\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [1778,1816]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/parsing/IRFactory.java",
+        "src/com/google/javascript/jscomp/parsing/IRFactory.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "processAstRoot",
+            "processFunctionNode"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "parseDirectives",
+            "processFunctionNode",
+            "processAstRoot",
+            "isDirective"
+          ],
+          "num": 4
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "22",
+            "23",
+            "24",
+            "25",
+            "26",
+            "27",
+            "28",
+            "73",
+            "93",
+            "365",
+            "531"
+          ],
+          "num": 11
+        },
+        {
+          "qualified_names": [
+            "22",
+            "23",
+            "67",
+            "68",
+            "69",
+            "70",
+            "71",
+            "73",
+            "94",
+            "95",
+            "96",
+            "369",
+            "373",
+            "374",
+            "375",
+            "376",
+            "377",
+            "378",
+            "379",
+            "380",
+            "381",
+            "382",
+            "383",
+            "384",
+            "385",
+            "386",
+            "387",
+            "388",
+            "389",
+            "390",
+            "391",
+            "392",
+            "393",
+            "394",
+            "395",
+            "396",
+            "397",
+            "398",
+            "399",
+            "400",
+            "401",
+            "402",
+            "403",
+            "404",
+            "405",
+            "406",
+            "407",
+            "570",
+            "571",
+            "572",
+            "573"
+          ],
+          "num": 51
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/parsing/IRFactory.java b/src/com/google/javascript/jscomp/parsing/IRFactory.java\nindex a97fc79..e80fef8 100644\n--- a/src/com/google/javascript/jscomp/parsing/IRFactory.java\n+++ b/src/com/google/javascript/jscomp/parsing/IRFactory.java\n@@ -19,13 +19,8 @@\n import static com.google.javascript.jscomp.mozilla.rhino.Token.CommentType.JSDOC;\n \n import com.google.common.base.Preconditions;\n-\n-import com.google.javascript.rhino.JSDocInfo;\n-import com.google.javascript.rhino.jstype.JSTypeRegistry;\n-import com.google.javascript.rhino.Node;\n-import com.google.javascript.rhino.ScriptOrFnNode;\n-import com.google.javascript.rhino.Token;\n-\n+import com.google.common.collect.Sets;\n+import com.google.javascript.jscomp.mozilla.rhino.ErrorReporter;\n import com.google.javascript.jscomp.mozilla.rhino.ast.ArrayLiteral;\n import com.google.javascript.jscomp.mozilla.rhino.ast.Assignment;\n import com.google.javascript.jscomp.mozilla.rhino.ast.AstNode;\n@@ -69,8 +64,13 @@\n import com.google.javascript.jscomp.mozilla.rhino.ast.VariableInitializer;\n import com.google.javascript.jscomp.mozilla.rhino.ast.WhileLoop;\n import com.google.javascript.jscomp.mozilla.rhino.ast.WithStatement;\n+import com.google.javascript.rhino.JSDocInfo;\n+import com.google.javascript.rhino.Node;\n+import com.google.javascript.rhino.ScriptOrFnNode;\n+import com.google.javascript.rhino.Token;\n+import com.google.javascript.rhino.jstype.JSTypeRegistry;\n \n-import com.google.javascript.jscomp.mozilla.rhino.ErrorReporter;\n+import java.util.Set;\n \n /**\n  * IRFactory transforms the new AST to the old AST.\n@@ -91,6 +91,9 @@\n   private final ErrorReporter errorReporter;\n   private final TransformDispatcher transformDispatcher;\n \n+  // non-static for thread safety\n+  private final Set\u003cString\u003e ALLOWED_DIRECTIVES \u003d Sets.newHashSet(\"use strict\");\n+\n   private IRFactory(String sourceString,\n                     String sourceName,\n                     Config config,\n@@ -363,9 +366,45 @@\n       for (com.google.javascript.jscomp.mozilla.rhino.Node child : rootNode) {\n         node.addChildToBack(transform((AstNode)child));\n       }\n+      parseDirectives(node);\n       return node;\n     }\n \n+    /**\n+     * Parse the directives, encode them in the AST, and remove their nodes.\n+     *\n+     * For information on ES5 directives, see section 14.1 of\n+     * Ecma-262, Edition 5.\n+     *\n+     * It would be nice if Rhino would eventually take care of this for\n+     * us, but right now their directive-processing is a one-off.\n+     */\n+    private void parseDirectives(Node node) {\n+      // Remove all the directives, and encode them in the AST.\n+      Set\u003cString\u003e directives \u003d null;\n+      while (isDirective(node.getFirstChild())) {\n+        String directive \u003d node.removeFirstChild().getFirstChild().getString();\n+        if (directives \u003d\u003d null) {\n+          directives \u003d Sets.newHashSet(directive);\n+        } else {\n+          directives.add(directive);\n+        }\n+      }\n+\n+      if (directives !\u003d null) {\n+        node.setDirectives(directives);\n+      }\n+    }\n+\n+    private boolean isDirective(Node n) {\n+      if (n \u003d\u003d null) return false;\n+\n+      int nType \u003d n.getType();\n+      return (nType \u003d\u003d Token.EXPR_RESULT || nType \u003d\u003d Token.EXPR_VOID) \u0026\u0026\n+          n.getFirstChild().getType() \u003d\u003d Token.STRING \u0026\u0026\n+          ALLOWED_DIRECTIVES.contains(n.getFirstChild().getString());\n+    }\n+\n     @Override\n     Node processBlock(Block blockNode) {\n       return processGeneric(blockNode);\n@@ -528,7 +567,10 @@\n         lp.addChildToBack(transform(param));\n       }\n       node.addChildToBack(lp);\n-      node.addChildToBack(transform(functionNode.getBody()));\n+\n+      Node bodyNode \u003d transform(functionNode.getBody());\n+      parseDirectives(bodyNode);\n+      node.addChildToBack(bodyNode);\n      return node;\n     }\n \n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [771,809]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [4047,4068]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [4634,4711]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [15079,15930]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [15936,16246]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [15026,15048]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [21930,21980]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [21987,22013]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [21930,21934]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [21935,21979]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: bodyNode [21935,21943]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: bodyNode [22040,22048]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/Node.java",
+        "src/com/google/javascript/rhino/Node.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "setWasEmptyNode"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "setDirectives",
+            "getDirectives",
+            "setWasEmptyNode"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "43",
+            "52",
+            "149",
+            "1911"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "45",
+            "53",
+            "150",
+            "151",
+            "1914",
+            "1915",
+            "1916",
+            "1917",
+            "1918",
+            "1919",
+            "1920",
+            "1921",
+            "1922",
+            "1923",
+            "1924",
+            "1925",
+            "1926",
+            "1927"
+          ],
+          "num": 18
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/Node.java b/src/com/google/javascript/rhino/Node.java\nindex 361551c..7f57485 100644\n--- a/src/com/google/javascript/rhino/Node.java\n+++ b/src/com/google/javascript/rhino/Node.java\n@@ -40,9 +40,9 @@\n \n package com.google.javascript.rhino;\n \n-import com.google.javascript.rhino.jstype.JSType;\n import com.google.common.base.Pair;\n import com.google.common.base.Preconditions;\n+import com.google.javascript.rhino.jstype.JSType;\n \n import java.io.IOException;\n import java.io.Serializable;\n@@ -50,6 +50,7 @@\n import java.util.Collections;\n import java.util.Iterator;\n import java.util.NoSuchElementException;\n+import java.util.Set;\n \n /**\n  * This class implements the root of the intermediate representation.\n@@ -146,7 +147,8 @@\n                                     // probably generated from Java code, and\n                                     // should be resolved to the proper\n                                     // overload if possible.\n-        LAST_PROP          \u003d 47;\n+        DIRECTIVES         \u003d 48,    // The ES5 directives on this node.\n+        LAST_PROP          \u003d 48;\n \n     // values of ISNUMBER_PROP to specify\n     // which of the children are Number types\n@@ -1909,6 +1911,20 @@\n     }\n \n     /**\n+     * Sets the ES5 directives on this node.\n+     */\n+    public void setDirectives(Set\u003cString\u003e val) {\n+        putProp(DIRECTIVES, val);\n+    }\n+\n+    /**\n+     * Returns the set of ES5 directives for this node.\n+     */\n+    public Set\u003cString\u003e getDirectives() {\n+        return (Set\u003cString\u003e) getProp(DIRECTIVES);\n+    }\n+\n+    /**\n      * Sets whether this is a synthetic block that should not be considered\n      * a real source block.\n      */\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [1954,1975]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [64284,64429]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [64435,64599]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationFragment [6319,6342]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/JSTypeRegistry.java",
+        "src/com/google/javascript/rhino/jstype/JSTypeRegistry.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "45",
+            "125"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "43",
+            "125"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/JSTypeRegistry.java b/src/com/google/javascript/rhino/jstype/JSTypeRegistry.java\nindex 10f5a3d..36e5cb2 100644\n--- a/src/com/google/javascript/rhino/jstype/JSTypeRegistry.java\n+++ b/src/com/google/javascript/rhino/jstype/JSTypeRegistry.java\n@@ -40,9 +40,9 @@\n package com.google.javascript.rhino.jstype;\n \n import com.google.common.collect.ArrayListMultimap;\n+import com.google.common.collect.HashMultimap;\n import com.google.common.collect.Maps;\n import com.google.common.collect.Multimap;\n-import com.google.common.collect.Multimaps;\n import com.google.common.collect.Sets;\n import com.google.javascript.rhino.ErrorReporter;\n import com.google.javascript.rhino.Node;\n@@ -122,7 +122,7 @@\n \n   // A map from interface name to types that implement it.\n   private final Multimap\u003cString, FunctionType\u003e interfaceToImplementors \u003d\n-      Multimaps.newHashMultimap();\n+      HashMultimap.create();\n \n   // All the unresolved named types.\n   private final Multimap\u003cStaticScope\u003cJSType\u003e, NamedType\u003e unresolvedNamedTypes \u003d\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [1680,1726]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1762,1805]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "setDirectives",
+        "setCharset",
+        "getInputCharset",
+        "setOutputCharset",
+        "isDirective",
+        "runSanityCheck",
+        "getDirectives",
+        "getCharset",
+        "parseDirectives"
+      ],
+      "num": 9
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "clearCachedSource"
+      ],
+      "num": 1
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.CompilerRunnerTest",
+      "test_function": "testTypeCheckingOffByDefault",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected no warnings or errors"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.CrossModuleMethodMotionTest",
+      "test_function": "testTwoMethods",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CodeGenerator.java",
+        "src/com/google/javascript/jscomp/CodeGenerator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "strEscape"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "strEscape"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "841"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "841"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Closure_73/properties/modified_classes/inducing/src/com/google/javascript/jscomp/CodeGenerator.java data/changesInfo//Closure_73/cleaned/fixing/src/com/google/javascript/jscomp/CodeGenerator.java\n--- data/changesInfo//Closure_73/properties/modified_classes/inducing/src/com/google/javascript/jscomp/CodeGenerator.java\t2023-08-25 13:18:51.239164703 +0800\n+++ data/changesInfo//Closure_73/cleaned/fixing/src/com/google/javascript/jscomp/CodeGenerator.java\t2023-06-20 20:39:55.057543086 +0800\n@@ -838,7 +838,7 @@\n             // No charsetEncoder provided - pass straight latin characters\n             // through, and escape the rest.  Doing the explicit character\n             // check is measurably faster than using the CharsetEncoder.\n-            if (c \u003e 0x1f \u0026\u0026 c \u003c\u003d 0x7f) {\n+            if (c \u003e 0x1f \u0026\u0026 c \u003c 0x7f) {\n               sb.append(c);\n             } else {\n               // Other characters can be misinterpreted by some js parsers,\n",
+      "operations": [
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

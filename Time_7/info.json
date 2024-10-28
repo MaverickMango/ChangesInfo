@@ -1,0 +1,582 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Time",
+  "id": "7",
+  "workingDir": "../bugs/Time_7_buggy",
+  "inducingCommit": "843d7b8f07f4899ad153ffabc25e09a6c0e897c7",
+  "originalCommit": "e12257524e216a6673ba1e337f8d97e955af7800",
+  "bug_name": "Time_7",
+  "derive": "defects4j",
+  "original_fixing_commit": "1adb1e69863dcd1ff282692bf1452c422528eeb9",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "JodaTime/src/main/java/org/joda/time/format/DateTimeFormatter.java",
+        "JodaTime/src/main/java/org/joda/time/format/DateTimeFormatter.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "withPivotYear",
+            "parseInto",
+            "withLocale",
+            "printTo",
+            "withZone",
+            "parseMillis",
+            "withOffsetParsed",
+            "DateTimeFormatter",
+            "withChronology",
+            "parseDateTime",
+            "parseMutableDateTime",
+            "DateTimeFormatter",
+            "parseLocalDateTime"
+          ],
+          "num": 13
+        },
+        {
+          "qualified_names": [
+            "withZone",
+            "withPivotYear",
+            "parseInto",
+            "DateTimeFormatter",
+            "parseMillis",
+            "parseMutableDateTime",
+            "parseDateTime",
+            "withLocale",
+            "withOffsetParsed",
+            "getDefaultYear",
+            "DateTimeFormatter",
+            "withDefaultYear",
+            "withChronology",
+            "parseLocalDateTime",
+            "printTo"
+          ],
+          "num": 15
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "93",
+            "112",
+            "122",
+            "130",
+            "187",
+            "220",
+            "255",
+            "318",
+            "365",
+            "412",
+            "665",
+            "666",
+            "694",
+            "760",
+            "799",
+            "838"
+          ],
+          "num": 16
+        },
+        {
+          "qualified_names": [
+            "93",
+            "95",
+            "96",
+            "115",
+            "125",
+            "134",
+            "191",
+            "224",
+            "259",
+            "322",
+            "369",
+            "417",
+            "418",
+            "419",
+            "420",
+            "421",
+            "422",
+            "423",
+            "424",
+            "425",
+            "426",
+            "427",
+            "428",
+            "429",
+            "430",
+            "431",
+            "432",
+            "433",
+            "434",
+            "435",
+            "436",
+            "437",
+            "438",
+            "439",
+            "440",
+            "441",
+            "442",
+            "443",
+            "444",
+            "445",
+            "446",
+            "447",
+            "448",
+            "449",
+            "450",
+            "703",
+            "704",
+            "732",
+            "798",
+            "837",
+            "876"
+          ],
+          "num": 51
+        }
+      ],
+      "diff": "diff --git a/JodaTime/src/main/java/org/joda/time/format/DateTimeFormatter.java b/JodaTime/src/main/java/org/joda/time/format/DateTimeFormatter.java\nindex bbb1e5c..c1e1d9b 100644\n--- a/JodaTime/src/main/java/org/joda/time/format/DateTimeFormatter.java\n+++ b/JodaTime/src/main/java/org/joda/time/format/DateTimeFormatter.java\n@@ -90,8 +90,10 @@\n     private final Chronology iChrono;\n     /** The zone to use as an override. */\n     private final DateTimeZone iZone;\n-    /* The pivot year to use for two-digit year parsing. */\n+    /** The pivot year to use for two-digit year parsing. */\n     private final Integer iPivotYear;\n+    /** The default year for parsing month/day without year. */\n+    private final int iDefaultYear;\n \n     /**\n      * Creates a new formatter, however you will normally use the factory\n@@ -110,6 +112,7 @@\n         iChrono \u003d null;\n         iZone \u003d null;\n         iPivotYear \u003d null;\n+        iDefaultYear \u003d 2000;\n     }\n \n     /**\n@@ -119,7 +122,7 @@\n             DateTimePrinter printer, DateTimeParser parser,\n             Locale locale, boolean offsetParsed,\n             Chronology chrono, DateTimeZone zone,\n-            Integer pivotYear) {\n+            Integer pivotYear, int defaultYear) {\n         super();\n         iPrinter \u003d printer;\n         iParser \u003d parser;\n@@ -128,6 +131,7 @@\n         iChrono \u003d chrono;\n         iZone \u003d zone;\n         iPivotYear \u003d pivotYear;\n+        iDefaultYear \u003d defaultYear;\n     }\n \n     //-----------------------------------------------------------------------\n@@ -184,7 +188,7 @@\n             return this;\n         }\n         return new DateTimeFormatter(iPrinter, iParser, locale,\n-                iOffsetParsed, iChrono, iZone, iPivotYear);\n+                iOffsetParsed, iChrono, iZone, iPivotYear, iDefaultYear);\n     }\n \n     /**\n@@ -217,7 +221,7 @@\n             return this;\n         }\n         return new DateTimeFormatter(iPrinter, iParser, iLocale,\n-                true, iChrono, null, iPivotYear);\n+                true, iChrono, null, iPivotYear, iDefaultYear);\n     }\n \n     /**\n@@ -252,7 +256,7 @@\n             return this;\n         }\n         return new DateTimeFormatter(iPrinter, iParser, iLocale,\n-                iOffsetParsed, chrono, iZone, iPivotYear);\n+                iOffsetParsed, chrono, iZone, iPivotYear, iDefaultYear);\n     }\n \n     /**\n@@ -315,7 +319,7 @@\n             return this;\n         }\n         return new DateTimeFormatter(iPrinter, iParser, iLocale,\n-                false, iChrono, zone, iPivotYear);\n+                false, iChrono, zone, iPivotYear, iDefaultYear);\n     }\n \n     /**\n@@ -362,7 +366,7 @@\n             return this;\n         }\n         return new DateTimeFormatter(iPrinter, iParser, iLocale,\n-                iOffsetParsed, iChrono, iZone, pivotYear);\n+                iOffsetParsed, iChrono, iZone, pivotYear, iDefaultYear);\n     }\n \n     /**\n@@ -410,6 +414,40 @@\n \n     //-----------------------------------------------------------------------\n     /**\n+     * Returns a new formatter that will use the specified default year.\n+     * \u003cp\u003e\n+     * The default year is used when parsing in the case where there is a\n+     * month or a day but not a year. Specifically, it is used if there is\n+     * a field parsed with a duration between the length of a month and the\n+     * length of a day inclusive.\n+     * \u003cp\u003e\n+     * This value is typically used to move the year from 1970 to a leap year\n+     * to enable February 29th to be parsed.\n+     * Unless customised, the year 2000 is used.\n+     * \u003cp\u003e\n+     * This setting has no effect when printing.\n+     *\n+     * @param defaultYear  the default year to use\n+     * @return the new formatter, not null\n+     * @since 2.0\n+     */\n+    public DateTimeFormatter withDefaultYear(int defaultYear) {\n+        return new DateTimeFormatter(iPrinter, iParser, iLocale,\n+                iOffsetParsed, iChrono, iZone, iPivotYear, defaultYear);\n+    }\n+\n+    /**\n+     * Gets the default year for parsing months and days.\n+     *\n+     * @return the default year for parsing months and days\n+     * @since 2.0\n+     */\n+    public int getDefaultYear() {\n+      return iDefaultYear;\n+    }\n+\n+    //-----------------------------------------------------------------------\n+    /**\n      * Prints a ReadableInstant, using the chronology supplied by the instant.\n      *\n      * @param buf  the destination to format to, not null\n@@ -662,8 +700,8 @@\n         long instantLocal \u003d instantMillis + chrono.getZone().getOffset(instantMillis);\n         chrono \u003d selectChronology(chrono);\n         \n-        DateTimeParserBucket bucket \u003d new DateTimeParserBucket\n-            (instantLocal, chrono, iLocale, iPivotYear);\n+        DateTimeParserBucket bucket \u003d new DateTimeParserBucket(\n+            instantLocal, chrono, iLocale, iPivotYear, iDefaultYear);\n         int newPos \u003d parser.parseInto(bucket, text, position);\n         instant.setMillis(bucket.computeMillis(false, text));\n         if (iOffsetParsed \u0026\u0026 bucket.getZone() \u003d\u003d null) {\n@@ -691,7 +729,7 @@\n         DateTimeParser parser \u003d requireParser();\n         \n         Chronology chrono \u003d selectChronology(iChrono);\n-        DateTimeParserBucket bucket \u003d new DateTimeParserBucket(0, chrono, iLocale, iPivotYear);\n+        DateTimeParserBucket bucket \u003d new DateTimeParserBucket(0, chrono, iLocale, iPivotYear, iDefaultYear);\n         int newPos \u003d parser.parseInto(bucket, text, 0);\n         if (newPos \u003e\u003d 0) {\n             if (newPos \u003e\u003d text.length()) {\n@@ -757,7 +795,7 @@\n         DateTimeParser parser \u003d requireParser();\n         \n         Chronology chrono \u003d selectChronology(null).withUTC();  // always use UTC, avoiding DST gaps\n-        DateTimeParserBucket bucket \u003d new DateTimeParserBucket(0, chrono, iLocale, iPivotYear);\n+        DateTimeParserBucket bucket \u003d new DateTimeParserBucket(0, chrono, iLocale, iPivotYear, iDefaultYear);\n         int newPos \u003d parser.parseInto(bucket, text, 0);\n         if (newPos \u003e\u003d 0) {\n             if (newPos \u003e\u003d text.length()) {\n@@ -796,7 +834,7 @@\n         DateTimeParser parser \u003d requireParser();\n         \n         Chronology chrono \u003d selectChronology(null);\n-        DateTimeParserBucket bucket \u003d new DateTimeParserBucket(0, chrono, iLocale, iPivotYear);\n+        DateTimeParserBucket bucket \u003d new DateTimeParserBucket(0, chrono, iLocale, iPivotYear, iDefaultYear);\n         int newPos \u003d parser.parseInto(bucket, text, 0);\n         if (newPos \u003e\u003d 0) {\n             if (newPos \u003e\u003d text.length()) {\n@@ -835,7 +873,7 @@\n         DateTimeParser parser \u003d requireParser();\n         \n         Chronology chrono \u003d selectChronology(null);\n-        DateTimeParserBucket bucket \u003d new DateTimeParserBucket(0, chrono, iLocale, iPivotYear);\n+        DateTimeParserBucket bucket \u003d new DateTimeParserBucket(0, chrono, iLocale, iPivotYear, iDefaultYear);\n         int newPos \u003d parser.parseInto(bucket, text, 0);\n         if (newPos \u003e\u003d 0) {\n             if (newPos \u003e\u003d text.length()) {\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [3905,4000]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [15293,16217]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [16223,16444]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [3806,3862]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [4837,4852]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [4552,4572]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [5079,5106]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: iDefaultYear [6833,6845]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: iDefaultYear [8049,8061]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: iDefaultYear [9365,9377]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: iDefaultYear [11511,11523]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: iDefaultYear [13494,13506]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: iDefaultYear [26663,26675]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: iDefaultYear [27943,27955]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: iDefaultYear [30878,30890]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: iDefaultYear [32745,32757]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: iDefaultYear [34602,34614]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "JodaTime/src/main/java/org/joda/time/format/DateTimeParserBucket.java",
+        "JodaTime/src/main/java/org/joda/time/format/DateTimeParserBucket.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "DateTimeParserBucket",
+            "DateTimeParserBucket",
+            "compareReverse",
+            "getPivotYear",
+            "computeMillis"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "computeMillis",
+            "compareReverse",
+            "DateTimeParserBucket",
+            "getPivotYear",
+            "DateTimeParserBucket",
+            "DateTimeParserBucket"
+          ],
+          "num": 6
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "26",
+            "66",
+            "75",
+            "82",
+            "86",
+            "93",
+            "102",
+            "165",
+            "167",
+            "311",
+            "454",
+            "455",
+            "456",
+            "457",
+            "458",
+            "459",
+            "460",
+            "461",
+            "463",
+            "465"
+          ],
+          "num": 20
+        },
+        {
+          "qualified_names": [
+            "27",
+            "68",
+            "69",
+            "78",
+            "83",
+            "85",
+            "87",
+            "91",
+            "99",
+            "101",
+            "103",
+            "104",
+            "105",
+            "106",
+            "107",
+            "108",
+            "109",
+            "110",
+            "111",
+            "112",
+            "113",
+            "114",
+            "115",
+            "116",
+            "117",
+            "125",
+            "188",
+            "190",
+            "191",
+            "192",
+            "193",
+            "194",
+            "339",
+            "340",
+            "341",
+            "342",
+            "343",
+            "344",
+            "345",
+            "346",
+            "347",
+            "348",
+            "491",
+            "492",
+            "493",
+            "494",
+            "496",
+            "498",
+            "500",
+            "501",
+            "502",
+            "503"
+          ],
+          "num": 52
+        }
+      ],
+      "diff": "diff --git a/JodaTime/src/main/java/org/joda/time/format/DateTimeParserBucket.java b/JodaTime/src/main/java/org/joda/time/format/DateTimeParserBucket.java\nindex 2b109f1..44255a6 100644\n--- a/JodaTime/src/main/java/org/joda/time/format/DateTimeParserBucket.java\n+++ b/JodaTime/src/main/java/org/joda/time/format/DateTimeParserBucket.java\n@@ -24,6 +24,7 @@\n import org.joda.time.DateTimeUtils;\n import org.joda.time.DateTimeZone;\n import org.joda.time.DurationField;\n+import org.joda.time.DurationFieldType;\n import org.joda.time.IllegalFieldValueException;\n \n /**\n@@ -64,6 +65,8 @@\n     private Locale iLocale;\n     /** Used for parsing two-digit years. */\n     private Integer iPivotYear;\n+    /** Used for parsing month/day without year. */\n+    private int iDefaultYear;\n \n     private SavedField[] iSavedFields \u003d new SavedField[8];\n     private int iSavedFieldsCount;\n@@ -72,18 +75,20 @@\n     private Object iSavedState;\n \n     /**\n-     * Constucts a bucket.\n+     * Constructs a bucket.\n      * \n      * @param instantLocal  the initial millis from 1970-01-01T00:00:00, local time\n      * @param chrono  the chronology to use\n      * @param locale  the locale to use\n+     * @deprecated Use longer constructor\n      */\n+    @Deprecated\n     public DateTimeParserBucket(long instantLocal, Chronology chrono, Locale locale) {\n-        this(instantLocal, chrono, locale, null);\n+        this(instantLocal, chrono, locale, null, 2000);\n     }\n \n     /**\n-     * Constucts a bucket, with the option of specifying the pivot year for\n+     * Constructs a bucket, with the option of specifying the pivot year for\n      * two-digit year parsing.\n      *\n      * @param instantLocal  the initial millis from 1970-01-01T00:00:00, local time\n@@ -91,8 +96,25 @@\n      * @param locale  the locale to use\n      * @param pivotYear  the pivot year to use when parsing two-digit years\n      * @since 1.1\n+     * @deprecated Use longer constructor\n      */\n+    @Deprecated\n     public DateTimeParserBucket(long instantLocal, Chronology chrono, Locale locale, Integer pivotYear) {\n+        this(instantLocal, chrono, locale, pivotYear, 2000);\n+    }\n+\n+    /**\n+     * Constructs a bucket, with the option of specifying the pivot year for\n+     * two-digit year parsing.\n+     *\n+     * @param instantLocal  the initial millis from 1970-01-01T00:00:00, local time\n+     * @param chrono  the chronology to use\n+     * @param locale  the locale to use\n+     * @param pivotYear  the pivot year to use when parsing two-digit years\n+     * @since 2.0\n+     */\n+    public DateTimeParserBucket(long instantLocal, Chronology chrono,\n+            Locale locale, Integer pivotYear, int defaultYear) {\n         super();\n         chrono \u003d DateTimeUtils.getChronology(chrono);\n         iMillis \u003d instantLocal;\n@@ -100,6 +122,7 @@\n         iLocale \u003d (locale \u003d\u003d null ? Locale.getDefault() : locale);\n         setZone(chrono.getZone());\n         iPivotYear \u003d pivotYear;\n+        iDefaultYear \u003d defaultYear;\n     }\n \n     //-----------------------------------------------------------------------\n@@ -162,9 +185,13 @@\n \n     //-----------------------------------------------------------------------\n     /**\n-     * Returns the pivot year used for parsing two-digit years.\n+     * Returns the default year used when information is incomplete.\n      * \u003cp\u003e\n-     * If null is returned, this indicates default behaviour\n+     * This is used for two-digit years and when the largest parsed field is\n+     * months or days.\n+     * \u003cp\u003e\n+     * A null value for two-digit years means to use the value from DateTimeFormatterBuilder.\n+     * A null value for month/day only parsing will cause the default of 2000 to be used.\n      *\n      * @return Integer value of the pivot year, null if not set\n      * @since 1.1\n@@ -309,6 +336,16 @@\n             iSavedFieldsShared \u003d false;\n         }\n         sort(savedFields, count);\n+        if (count \u003e 0) {\n+            // alter base year for parsing if first field is month or day\n+            DurationField months \u003d DurationFieldType.months().getField(iChrono);\n+            DurationField days \u003d DurationFieldType.days().getField(iChrono);\n+            DurationField first \u003d savedFields[0].iField.getDurationField();\n+            if (compareReverse(first, months) \u003e\u003d 0 \u0026\u0026 compareReverse(first, days) \u003c\u003d 0) {\n+                saveField(DateTimeFieldType.year(), iDefaultYear);\n+                return computeMillis(resetFields, text);\n+            }\n+        }\n \n         long millis \u003d iMillis;\n         try {\n@@ -451,18 +488,18 @@\n             return compareReverse\n                 (iField.getDurationField(), other.getDurationField());\n         }\n-        \n-        private int compareReverse(DurationField a, DurationField b) {\n-            if (a \u003d\u003d null || !a.isSupported()) {\n-                if (b \u003d\u003d null || !b.isSupported()) {\n-                    return 0;\n-                }\n-                return -1;\n-            }\n+    }\n+\n+    static int compareReverse(DurationField a, DurationField b) {\n+        if (a \u003d\u003d null || !a.isSupported()) {\n             if (b \u003d\u003d null || !b.isSupported()) {\n-                return 1;\n+                return 0;\n             }\n-            return -a.compareTo(b);\n+            return -1;\n         }\n+        if (b \u003d\u003d null || !b.isSupported()) {\n+            return 1;\n+        }\n+        return -a.compareTo(b);\n     }\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [915,954]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [2593,2670]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [3901,4739]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MarkerAnnotation [3110,3121]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MarkerAnnotation [3711,3722]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: static [17854,17860]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [3063,3097]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [3664,3698]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ConstructorInvocation [3837,3889]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [11917,12479]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NumberLiteral: 2000 [3258,3262]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: months or days. [6638,6653]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003cp\u003e [6661,6664]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: A null value for two-digit years means to use the value from DateTimeFormatterBuilder. [6672,6758]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: A null value for month/day only parsing will cause the default of 2000 to be used. [6766,6848]"
+        },
+        {
+          "type": "delete-node",
+          "from": "SuperConstructorInvocation [3591,3599]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [3608,3653]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [3662,3685]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [3694,3721]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [3730,3788]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [3797,3823]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [3832,3855]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: private [16172,16179]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "getDefaultYear",
+        "withDefaultYear"
+      ],
+      "num": 2
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "JodaTime/src/main/java/org/joda/time/format/DateTimeFormatter.java",
+        "JodaTime/src/main/java/org/joda/time/format/DateTimeFormatter.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "parseInto"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "parseInto"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "704"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "702",
+            "705"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Time_7/properties/modified_classes/inducing/JodaTime/src/main/java/org/joda/time/format/DateTimeFormatter.java data/changesInfo//Time_7/cleaned/fixing/JodaTime/src/main/java/org/joda/time/format/DateTimeFormatter.java\n--- data/changesInfo//Time_7/properties/modified_classes/inducing/JodaTime/src/main/java/org/joda/time/format/DateTimeFormatter.java\t2023-08-25 14:12:13.692635533 +0800\n+++ data/changesInfo//Time_7/cleaned/fixing/JodaTime/src/main/java/org/joda/time/format/DateTimeFormatter.java\t2023-06-24 18:32:04.051243104 +0800\n@@ -699,9 +699,10 @@\n         Chronology chrono \u003d instant.getChronology();\n         long instantLocal \u003d instantMillis + chrono.getZone().getOffset(instantMillis);\n         chrono \u003d selectChronology(chrono);\n+        int defaultYear \u003d DateTimeUtils.getChronology(chrono).year().get(instantMillis);\n         \n         DateTimeParserBucket bucket \u003d new DateTimeParserBucket(\n-            instantLocal, chrono, iLocale, iPivotYear, iDefaultYear);\n+            instantLocal, chrono, iLocale, iPivotYear, defaultYear);\n         int newPos \u003d parser.parseInto(bucket, text, position);\n         instant.setMillis(bucket.computeMillis(false, text));\n         if (iOffsetParsed \u0026\u0026 bucket.getZone() \u003d\u003d null) {\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [26543,26623]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

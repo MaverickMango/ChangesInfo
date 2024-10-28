@@ -1,0 +1,166 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.gson.functional.MapTest::testConcurrentMap,com.google.gson.functional.MapTest::testConcurrentNavigableMap",
+    "test.dir": "gson/src/test/java",
+    "clz.modified": "com.google.gson.internal.ConstructorConstructor",
+    "src.dir": "gson/src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Gson",
+  "id": "3",
+  "workingDir": "../bugs/Gson_3_tmp",
+  "bug_name": "Gson_3",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.gson.functional.MapTest",
+      "test_function": "testConcurrentMap",
+      "assertion_line": "188",
+      "exception": "java.lang.ClassCastException",
+      "message": "java.util.LinkedHashMap cannot be cast to java.util.concurrent.ConcurrentMap"
+    },
+    {
+      "test_class": "com.google.gson.functional.MapTest",
+      "test_function": "testConcurrentNavigableMap",
+      "assertion_line": "208",
+      "exception": "java.lang.ClassCastException",
+      "message": "java.util.TreeMap cannot be cast to java.util.concurrent.ConcurrentNavigableMap"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "gson/src/main/java/com/google/gson/internal/ConstructorConstructor.java",
+        "gson/src/main/java/com/google/gson/internal/ConstructorConstructor.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.gson.internal.ConstructorConstructor:newDefaultImplementationConstructor:[final Type type, Class\u003c? super T\u003e rawType]:ObjectConstructor\u003cT\u003e"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.gson.internal.ConstructorConstructor:newDefaultImplementationConstructor:[final Type type, Class\u003c? super T\u003e rawType]:ObjectConstructor\u003cT\u003e"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "36",
+            "37",
+            "38",
+            "39",
+            "179",
+            "180",
+            "181",
+            "182",
+            "183",
+            "184",
+            "185",
+            "186",
+            "187",
+            "188",
+            "189",
+            "190",
+            "191"
+          ],
+          "num": 17
+        },
+        {
+          "qualified_names": [
+            "35",
+            "175"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/gson/src/main/java/com/google/gson/internal/ConstructorConstructor.java b/gson/src/main/java/com/google/gson/internal/ConstructorConstructor.java\nindex 6fc9f2d..a0384fa 100644\n--- a/gson/src/main/java/com/google/gson/internal/ConstructorConstructor.java\n+++ b/gson/src/main/java/com/google/gson/internal/ConstructorConstructor.java\n@@ -33,10 +33,6 @@\n import java.util.SortedSet;\n import java.util.TreeMap;\n import java.util.TreeSet;\n-import java.util.concurrent.ConcurrentHashMap;\n-import java.util.concurrent.ConcurrentMap;\n-import java.util.concurrent.ConcurrentNavigableMap;\n-import java.util.concurrent.ConcurrentSkipListMap;\n \n import com.google.gson.InstanceCreator;\n import com.google.gson.JsonIOException;\n@@ -176,19 +172,7 @@\n     }\n \n     if (Map.class.isAssignableFrom(rawType)) {\n-      if (ConcurrentNavigableMap.class.isAssignableFrom(rawType)) {\n-        return new ObjectConstructor\u003cT\u003e() {\n-          @Override public T construct() {\n-            return (T) new ConcurrentSkipListMap\u003cObject, Object\u003e();\n-          }\n-        };\n-      } else if (ConcurrentMap.class.isAssignableFrom(rawType)) {\n-        return new ObjectConstructor\u003cT\u003e() {\n-          @Override public T construct() {\n-            return (T) new ConcurrentHashMap\u003cObject, Object\u003e();\n-          }\n-        };\n-      } else if (SortedMap.class.isAssignableFrom(rawType)) {\n+      if (SortedMap.class.isAssignableFrom(rawType)) {\n         return new ObjectConstructor\u003cT\u003e() {\n           @Override public T construct() {\n             return (T) new TreeMap\u003cObject, Object\u003e();\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1148,1194]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1195,1237]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1238,1289]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1290,1340]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [6323,6377]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [6379,6566]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [6576,6621]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [6623,6806]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [6572,7572]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [6319,7572]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

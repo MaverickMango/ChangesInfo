@@ -1,0 +1,457 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.TypeCheckTest::testIssue783,com.google.javascript.jscomp.TypeCheckTest::testMissingProperty20,com.google.javascript.rhino.jstype.JSTypeTest::testRestrictedTypeGivenToBoolean",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.type.SemanticReverseAbstractInterpreter,com.google.javascript.rhino.jstype.JSType",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "167",
+  "workingDir": "../bugs/Closure_167_tmp",
+  "bug_name": "Closure_167",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testIssue783",
+      "assertion_line": "5997",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected a warning"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testMissingProperty20",
+      "assertion_line": "9115",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected a warning"
+    },
+    {
+      "test_class": "com.google.javascript.rhino.jstype.JSTypeTest",
+      "test_function": "testRestrictedTypeGivenToBoolean",
+      "assertion_line": "5263",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: ??"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/type/SemanticReverseAbstractInterpreter.java",
+        "src/com/google/javascript/jscomp/type/SemanticReverseAbstractInterpreter.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.type.SemanticReverseAbstractInterpreter:caseAndOrNotShortCircuiting:[Node left, Node right, FlowScope blindScope, boolean condition]:FlowScope",
+            "com.google.javascript.jscomp.type.SemanticReverseAbstractInterpreter:caseNameOrGetProp:[Node name, FlowScope blindScope, boolean outcome]:FlowScope",
+            "com.google.javascript.jscomp.type.SemanticReverseAbstractInterpreter:caseEquality:[Node left, Node right, FlowScope blindScope, Function\u003cTypePair,TypePair\u003e merging]:FlowScope",
+            "com.google.javascript.jscomp.type.SemanticReverseAbstractInterpreter:maybeRestrictName:[FlowScope blindScope, Node node, JSType originalType, JSType restrictedType]:FlowScope",
+            "com.google.javascript.jscomp.type.SemanticReverseAbstractInterpreter:maybeRestrictTwoNames:[FlowScope blindScope, Node left, JSType originalLeftType, JSType restrictedLeftType, Node right, JSType originalRightType, JSType restrictedRightType]:FlowScope"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.type.SemanticReverseAbstractInterpreter:maybeRestrictName:[FlowScope blindScope, Node node, JSType originalType, JSType restrictedType]:FlowScope",
+            "com.google.javascript.jscomp.type.SemanticReverseAbstractInterpreter:caseNameOrGetProp:[Node name, FlowScope blindScope, boolean outcome]:FlowScope",
+            "com.google.javascript.jscomp.type.SemanticReverseAbstractInterpreter:caseEquality:[Node left, Node right, FlowScope blindScope, Function\u003cTypePair,TypePair\u003e merging]:FlowScope",
+            "com.google.javascript.jscomp.type.SemanticReverseAbstractInterpreter:caseAndOrNotShortCircuiting:[Node left, Node right, FlowScope blindScope, boolean condition]:FlowScope",
+            "com.google.javascript.jscomp.type.SemanticReverseAbstractInterpreter:maybeRestrictTwoNames:[FlowScope blindScope, Node left, boolean leftIsRefineable, JSType restrictedLeftType, Node right, boolean rightIsRefineable, JSType restrictedRightType]:FlowScope"
+          ],
+          "num": 5
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "301",
+            "302",
+            "348",
+            "349",
+            "394",
+            "407",
+            "408",
+            "410",
+            "412",
+            "430",
+            "431",
+            "432"
+          ],
+          "num": 12
+        },
+        {
+          "qualified_names": [
+            "301",
+            "302",
+            "348",
+            "349",
+            "394",
+            "407",
+            "408",
+            "410",
+            "412",
+            "430",
+            "431",
+            "432",
+            "433",
+            "434"
+          ],
+          "num": 14
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/type/SemanticReverseAbstractInterpreter.java b/src/com/google/javascript/jscomp/type/SemanticReverseAbstractInterpreter.java\nindex 8165840..9e70279 100644\n--- a/src/com/google/javascript/jscomp/type/SemanticReverseAbstractInterpreter.java\n+++ b/src/com/google/javascript/jscomp/type/SemanticReverseAbstractInterpreter.java\n@@ -298,8 +298,8 @@\n     if (merged !\u003d null) {\n       return maybeRestrictTwoNames(\n           blindScope,\n-          left, leftType, leftIsRefineable ? merged.typeA : null,\n-          right, rightType, rightIsRefineable ? merged.typeB : null);\n+          left, leftIsRefineable, merged.typeA,\n+          right, rightIsRefineable, merged.typeB);\n     }\n     return blindScope;\n   }\n@@ -345,8 +345,8 @@\n       // creating new scope\n       return maybeRestrictTwoNames(\n           blindScope,\n-          left, leftType, leftIsRefineable ? restrictedLeftType : null,\n-          right, rightType, rightIsRefineable ? restrictedRightType : null);\n+          left, leftIsRefineable, restrictedLeftType,\n+          right, rightIsRefineable, restrictedRightType);\n     }\n     return blindScope;\n   }\n@@ -391,7 +391,7 @@\n    */\n   private FlowScope maybeRestrictName(\n       FlowScope blindScope, Node node, JSType originalType, JSType restrictedType) {\n-    if (restrictedType !\u003d null \u0026\u0026 restrictedType !\u003d originalType) {\n+    if (restrictedType !\u003d null \u0026\u0026 !restrictedType.equals(originalType)) {\n       FlowScope informed \u003d blindScope.createChildFlowScope();\n       declareNameInScope(informed, node, restrictedType);\n       return informed;\n@@ -404,12 +404,12 @@\n    */\n   private FlowScope maybeRestrictTwoNames(\n       FlowScope blindScope,\n-      Node left, JSType originalLeftType, JSType restrictedLeftType,\n-      Node right, JSType originalRightType, JSType restrictedRightType) {\n+      Node left, boolean leftIsRefineable, JSType restrictedLeftType,\n+      Node right, boolean rightIsRefineable, JSType restrictedRightType) {\n     boolean shouldRefineLeft \u003d\n-        restrictedLeftType !\u003d null \u0026\u0026 restrictedLeftType !\u003d originalLeftType;\n+        leftIsRefineable \u0026\u0026 restrictedLeftType !\u003d null;\n     boolean shouldRefineRight \u003d\n-        restrictedRightType !\u003d null \u0026\u0026 restrictedRightType !\u003d originalRightType;\n+        rightIsRefineable \u0026\u0026 restrictedRightType !\u003d null;\n     if (shouldRefineLeft || shouldRefineRight) {\n       FlowScope informed \u003d blindScope.createChildFlowScope();\n       if (shouldRefineLeft) {\n@@ -427,9 +427,11 @@\n       boolean outcome) {\n     JSType type \u003d getTypeIfRefinable(name, blindScope);\n     if (type !\u003d null) {\n-      return maybeRestrictName(\n-          blindScope, name, type,\n-          type.getRestrictedTypeGivenToBooleanOutcome(outcome));\n+      JSType restrictedType \u003d\n+          type.getRestrictedTypeGivenToBooleanOutcome(outcome);\n+      FlowScope informed \u003d blindScope.createChildFlowScope();\n+      declareNameInScope(informed, name, restrictedType);\n+      return informed;\n     }\n     return blindScope;\n   }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [13441,13465]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [13512,13537]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrefixExpression [13096,13132]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [14303,14390]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [14397,14452]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [14459,14510]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [14517,14533]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PREFIX_EXPRESSION_OPERATOR: ! [13096,13097]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [13097,13132]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: leftIsRefineable [13608,13624]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: rightIsRefineable [13696,13713]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [14303,14309]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [14310,14389]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [13097,13111]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: equals [13112,13118]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [13119,13131]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: restrictedType [14310,14324]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: leftType [9605,9613]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NullLiteral [9649,9653]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ConditionalExpression [9615,9653]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: rightType [9672,9681]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NullLiteral [9718,9722]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ConditionalExpression [9683,9722]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: leftType [11159,11167]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NullLiteral [11209,11213]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ConditionalExpression [11169,11213]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: rightType [11232,11241]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NullLiteral [11285,11289]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ConditionalExpression [11243,11289]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: !\u003d [13185,13187]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [13170,13200]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [13509,13532]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [13579,13603]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [13704,13742]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [13815,13855]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: maybeRestrictName [14421,14438]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: blindScope [14450,14460]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: name [14462,14466]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: type [14468,14472]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [14450,14536]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [14421,14537]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ReturnStatement [14414,14538]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/JSType.java",
+        "src/com/google/javascript/rhino/jstype/JSType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.jstype.JSType:getRestrictedTypeGivenToBooleanOutcome:[boolean outcome]:JSType"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.jstype.JSType:getRestrictedTypeGivenToBooleanOutcome:[boolean outcome]:JSType"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "883",
+            "884",
+            "885"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "882"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/JSType.java b/src/com/google/javascript/rhino/jstype/JSType.java\nindex 44d1e93..8f0a1f6 100644\n--- a/src/com/google/javascript/rhino/jstype/JSType.java\n+++ b/src/com/google/javascript/rhino/jstype/JSType.java\n@@ -880,9 +880,6 @@\n    * method of types to get the restricted type.\n    */\n   public JSType getRestrictedTypeGivenToBooleanOutcome(boolean outcome) {\n-    if (outcome \u0026\u0026 this \u003d\u003d getNativeType(JSTypeNative.UNKNOWN_TYPE)) {\n-      return getNativeType(JSTypeNative.CHECKED_UNKNOWN_TYPE);\n-    }\n \n     BooleanLiteralSet literals \u003d getPossibleToBooleanOutcomes();\n     if (literals.contains(outcome)) {\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [26527,26662]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.type.SemanticReverseAbstractInterpreter:maybeRestrictTwoNames:[FlowScope blindScope, Node left, boolean leftIsRefineable, JSType restrictedLeftType, Node right, boolean rightIsRefineable, JSType restrictedRightType]:FlowScope"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.type.SemanticReverseAbstractInterpreter:maybeRestrictTwoNames:[FlowScope blindScope, Node left, JSType originalLeftType, JSType restrictedLeftType, Node right, JSType originalRightType, JSType restrictedRightType]:FlowScope"
+      ],
+      "num": 1
+    }
+  }
+}

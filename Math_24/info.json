@@ -1,0 +1,317 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Math",
+  "id": "24",
+  "workingDir": "../bugs/Math_24_buggy",
+  "inducingCommit": "36d811b2d4cfe1b867823bd60ccca25abbc80b46",
+  "originalCommit": "b5839871867024885927edc2b087e0c718fb73b3",
+  "bug_name": "Math_24",
+  "derive": "defects4j",
+  "original_fixing_commit": "d5ff460ba69e4261f066d7856e2f90b886924513",
+  "buildFiles_changed": false,
+  "inducing_changes": [],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math3.optimization.direct.BOBYQAOptimizerTest",
+      "test_function": "testAckley",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c0.0\u003e but was:\u003c1.047765607609108E-8\u003e"
+    },
+    {
+      "test_class": "org.apache.commons.math3.optimization.direct.BOBYQAOptimizerTest",
+      "test_function": "testDiffPow",
+      "exception": "org.apache.commons.math3.exception.TooManyEvaluationsException",
+      "message": "illegal state: maximal count (12,000) exceeded: evaluations"
+    },
+    {
+      "test_class": "org.apache.commons.math3.util.FastMathTest",
+      "test_function": "checkMissingFastMathClasses",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "FastMath should implement all StrictMath methods"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java",
+        "src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "doOptimize"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "doOptimize",
+            "best"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "229",
+            "266"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "229",
+            "266",
+            "271",
+            "272",
+            "273",
+            "274",
+            "275",
+            "276",
+            "277",
+            "278",
+            "279",
+            "280",
+            "281",
+            "282",
+            "283",
+            "284",
+            "285",
+            "286",
+            "287",
+            "288",
+            "289",
+            "290",
+            "291",
+            "292",
+            "293",
+            "294",
+            "295",
+            "296",
+            "297"
+          ],
+          "num": 29
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Math_24/properties/modified_classes/inducing/src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java data/changesInfo//Math_24/cleaned/fixing/src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java\n--- data/changesInfo//Math_24/properties/modified_classes/inducing/src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java\t2023-07-25 21:04:57.417141441 +0800\n+++ data/changesInfo//Math_24/cleaned/fixing/src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java\t2023-07-25 21:06:59.786878687 +0800\n@@ -226,7 +226,7 @@\n \n                 if (checker !\u003d null) {\n                     if (checker.converged(iter, previous, current)) {\n-                        return current;\n+                        return best(current, previous, isMinim);\n                     }\n                 }\n \n@@ -263,9 +263,36 @@\n                     }\n                 }\n             } else { // Default termination (Brent\u0027s criterion).\n-                return current;\n+                return best(current, previous, isMinim);\n             }\n             ++iter;\n         }\n     }\n+\n+    /**\n+     * Selects the best of two points.\n+     *\n+     * @param a Point and value.\n+     * @param b Point and value.\n+     * @param isMinim {@code true} if the selected point must be the one with\n+     * the lowest value.\n+     * @return the best point, or {@code null} if {@code a} and {@code b} are\n+     * both {@code null}.\n+     */\n+    private UnivariatePointValuePair best(UnivariatePointValuePair a,\n+                                          UnivariatePointValuePair b,\n+                                          boolean isMinim) {\n+        if (a \u003d\u003d null) {\n+            return b;\n+        }\n+        if (b \u003d\u003d null) {\n+            return a;\n+        }\n+\n+        if (isMinim) {\n+            return a.getValue() \u003c b.getValue() ? a : b;\n+        } else {\n+            return a.getValue() \u003e b.getValue() ? a : b;\n+        }\n+    }\n }\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodDeclaration [9473,10287]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [9473,9803]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: private [9808,9815]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [9816,9840]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: best [9841,9845]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [9846,9872]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [9916,9942]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [9986,10001]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [10003,10287]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [10013,10061]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [10070,10118]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [10128,10281]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [10017,10026]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [10028,10061]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [10074,10083]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [10085,10118]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: a [10106,10107]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ReturnStatement [9377,9417]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [9384,9416]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: best [9384,9388]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [9389,9415]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: previous [9398,9406]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: isMinim [9408,9415]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ReturnStatement [8178,8218]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [8185,8217]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: best [8185,8189]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [8190,8216]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: previous [8199,8207]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: isMinim [8209,8216]"
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "best"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,198 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.deser.ReadOrWriteOnlyTest::testReadOnlyAndWriteOnly,com.fasterxml.jackson.databind.deser.ReadOrWriteOnlyTest::testReadOnly935",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.introspect.POJOPropertiesCollector,com.fasterxml.jackson.databind.introspect.POJOPropertyBuilder",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "73",
+  "workingDir": "../bugs/JacksonDatabind_73_tmp",
+  "bug_name": "JacksonDatabind_73",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.deser.ReadOrWriteOnlyTest",
+      "test_function": "testReadOnlyAndWriteOnly",
+      "assertion_line": "66",
+      "exception": "com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException",
+      "message": "Unrecognized field \"x\" (class com.fasterxml.jackson.databind.deser.ReadOrWriteOnlyTest$ReadXWriteY), not marked as ignorable (one known property: \"y\"])"
+    },
+    {
+      "test_class": "com.fasterxml.jackson.databind.deser.ReadOrWriteOnlyTest",
+      "test_function": "testReadOnly935",
+      "assertion_line": "75",
+      "exception": "com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException",
+      "message": "Unrecognized field \"fullName\" (class com.fasterxml.jackson.databind.deser.ReadOrWriteOnlyTest$Pojo935), not marked as ignorable (2 known properties: \"lastName\", \"firstName\"])"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertiesCollector.java",
+        "src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertiesCollector.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.introspect.POJOPropertiesCollector:_removeUnwantedAccessor:[Map\u003cString,POJOPropertyBuilder\u003e props]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.introspect.POJOPropertiesCollector:_removeUnwantedAccessor:[Map\u003cString,POJOPropertyBuilder\u003e props]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "7",
+            "732",
+            "733",
+            "734",
+            "735"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "6",
+            "731"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertiesCollector.java b/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertiesCollector.java\nindex fd6a613..3d36b0f 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertiesCollector.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertiesCollector.java\n@@ -4,7 +4,6 @@\n import java.util.*;\n \n import com.fasterxml.jackson.annotation.JsonAnySetter;\n-import com.fasterxml.jackson.annotation.JsonProperty.Access;\n import com.fasterxml.jackson.databind.*;\n import com.fasterxml.jackson.databind.cfg.HandlerInstantiator;\n import com.fasterxml.jackson.databind.cfg.MapperConfig;\n@@ -729,10 +728,7 @@\n         while (it.hasNext()) {\n             POJOPropertyBuilder prop \u003d it.next();\n             // 26-Jan-2017, tatu: [databind#935]: need to denote removal of\n-            Access acc \u003d prop.removeNonVisible(inferMutators);\n-            if (!_forSerialization \u0026\u0026 (acc \u003d\u003d Access.READ_ONLY)) {\n-                _collectIgnorals(prop.getName());\n-            }\n+            prop.removeNonVisible(inferMutators);\n         }\n     }\n \n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ExpressionStatement [26449,26486]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [163,223]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [26510,26516]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: acc [26517,26520]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [26517,26559]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [26510,26560]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [26573,26691]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertyBuilder.java",
+        "src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertyBuilder.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.introspect.POJOPropertyBuilder:removeNonVisible:[boolean inferMutators]:JsonProperty.Access"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.introspect.POJOPropertyBuilder:removeNonVisible:[boolean inferMutators]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "644",
+            "683"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "644",
+            "682"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertyBuilder.java b/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertyBuilder.java\nindex b9a403c..954f5dd 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertyBuilder.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/introspect/POJOPropertyBuilder.java\n@@ -641,7 +641,7 @@\n      * @param inferMutators Whether mutators can be \"pulled in\" by visible\n      *    accessors or not. \n      */\n-    public JsonProperty.Access removeNonVisible(boolean inferMutators)\n+    public void removeNonVisible(boolean inferMutators)\n     {\n         /* 07-Jun-2015, tatu: With 2.6, we will allow optional definition\n          *  of explicit access type for property; if not \"AUTO\", it will\n@@ -680,7 +680,6 @@\n                 _setters \u003d _removeNonVisible(_setters);\n             }\n         }\n-        return acc;\n     }\n \n     /**\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrimitiveType: void [21906,21910]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [21906,21925]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [23325,23336]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.introspect.POJOPropertyBuilder:removeNonVisible:[boolean inferMutators]:void"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.introspect.POJOPropertyBuilder:removeNonVisible:[boolean inferMutators]:JsonProperty.Access"
+      ],
+      "num": 1
+    }
+  }
+}

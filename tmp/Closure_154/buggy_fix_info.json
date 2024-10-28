@@ -1,0 +1,205 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.TypeCheckTest::testInterfaceInheritanceCheck12",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.TypeCheck,com.google.javascript.jscomp.TypeValidator",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "154",
+  "workingDir": "../bugs/Closure_154_tmp",
+  "bug_name": "Closure_154",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testInterfaceInheritanceCheck12",
+      "assertion_line": "6717",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected a warning"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/TypeCheck.java",
+        "src/com/google/javascript/jscomp/TypeCheck.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypeCheck:checkDeclaredPropertyInheritance:[NodeTraversal t, Node n, FunctionType ctorType, String propertyName, JSDocInfo info, JSType propertyType]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypeCheck:checkDeclaredPropertyInheritance:[NodeTraversal t, Node n, FunctionType ctorType, String propertyName, JSDocInfo info, JSType propertyType]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "184",
+            "234",
+            "1040"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "185",
+            "186",
+            "187",
+            "188",
+            "189",
+            "190",
+            "191",
+            "242",
+            "1049",
+            "1050",
+            "1051",
+            "1052",
+            "1053",
+            "1054",
+            "1055",
+            "1056",
+            "1057",
+            "1058"
+          ],
+          "num": 18
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/TypeCheck.java b/src/com/google/javascript/jscomp/TypeCheck.java\nindex 41b94e0..a752e76 100644\n--- a/src/com/google/javascript/jscomp/TypeCheck.java\n+++ b/src/com/google/javascript/jscomp/TypeCheck.java\n@@ -182,6 +182,13 @@\n           \"original: {2}\\n\" +\n           \"override: {3}\");\n \n+  static final DiagnosticType HIDDEN_INTERFACE_PROPERTY_MISMATCH \u003d\n+      DiagnosticType.warning(\n+          \"JSC_HIDDEN_INTERFACE_PROPERTY_MISMATCH\",\n+          \"mismatch of the {0} property type and the type \" +\n+          \"of the property it overrides from interface {1}\\n\" +\n+          \"original: {2}\\n\" +\n+          \"override: {3}\");\n   static final DiagnosticType UNKNOWN_OVERRIDE \u003d\n       DiagnosticType.warning(\n           \"JSC_UNKNOWN_OVERRIDE\",\n@@ -232,6 +239,7 @@\n       HIDDEN_SUPERCLASS_PROPERTY,\n       HIDDEN_INTERFACE_PROPERTY,\n       HIDDEN_SUPERCLASS_PROPERTY_MISMATCH,\n+      HIDDEN_INTERFACE_PROPERTY_MISMATCH,\n       UNKNOWN_OVERRIDE,\n       INTERFACE_METHOD_OVERRIDE,\n       UNKNOWN_EXPR_TYPE,\n@@ -1038,6 +1046,16 @@\n               HIDDEN_INTERFACE_PROPERTY, propertyName,\n               interfaceType.getTopMostDefiningType(propertyName).toString()));\n         }\n+        if (interfaceHasProperty) {\n+          JSType interfacePropType \u003d\n+              interfaceType.getPrototype().getPropertyType(propertyName);\n+          if (!propertyType.canAssignTo(interfacePropType)) {\n+            compiler.report(t.makeError(n,\n+                HIDDEN_INTERFACE_PROPERTY_MISMATCH, propertyName,\n+                interfaceType.getTopMostDefiningType(propertyName).toString(),\n+                interfacePropType.toString(), propertyType.toString()));\n+          }\n+        }\n       }\n     }\n \n",
+      "operations": [
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: HIDDEN_INTERFACE_PROPERTY_MISMATCH [9195,9229]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [35427,35910]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/TypeValidator.java",
+        "src/com/google/javascript/jscomp/TypeValidator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypeValidator:expectInterfaceProperty:[NodeTraversal t, Node n, ObjectType instance, ObjectType implementedInterface, String prop]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypeValidator:mismatch:[NodeTraversal t, Node n, String msg, JSType found, JSTypeNative required]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "110",
+            "111",
+            "112",
+            "113",
+            "114",
+            "115",
+            "116",
+            "124",
+            "125",
+            "596",
+            "597",
+            "598",
+            "599",
+            "600",
+            "601",
+            "602",
+            "604",
+            "605",
+            "606",
+            "607",
+            "608",
+            "609",
+            "610",
+            "611",
+            "612",
+            "613"
+          ],
+          "num": 26
+        },
+        {
+          "qualified_names": [
+            "109",
+            "117",
+            "603"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/TypeValidator.java b/src/com/google/javascript/jscomp/TypeValidator.java\nindex 24bf792..1d58522 100644\n--- a/src/com/google/javascript/jscomp/TypeValidator.java\n+++ b/src/com/google/javascript/jscomp/TypeValidator.java\n@@ -107,13 +107,6 @@\n           \"JSC_INTERFACE_METHOD_NOT_IMPLEMENTED\",\n           \"property {0} on interface {1} is not implemented by type {2}\");\n \n-  static final DiagnosticType HIDDEN_INTERFACE_PROPERTY_MISMATCH \u003d\n-      DiagnosticType.warning(\n-        \"JSC_HIDDEN_INTERFACE_PROPERTY_MISMATCH\",\n-        \"mismatch of the {0} property type and the type \" +\n-        \"of the property it overrides from interface {1}\\n\" +\n-        \"original: {2}\\n\" +\n-        \"override: {3}\");\n \n   static final DiagnosticGroup ALL_DIAGNOSTICS \u003d new DiagnosticGroup(\n       INVALID_CAST,\n@@ -121,8 +114,7 @@\n       MISSING_EXTENDS_TAG_WARNING,\n       DUP_VAR_DECLARATION,\n       HIDDEN_PROPERTY_MISMATCH,\n-      INTERFACE_METHOD_NOT_IMPLEMENTED,\n-      HIDDEN_INTERFACE_PROPERTY_MISMATCH);\n+      INTERFACE_METHOD_NOT_IMPLEMENTED);\n \n   TypeValidator(AbstractCompiler compiler) {\n     this.compiler \u003d compiler;\n@@ -593,24 +585,7 @@\n             prop, implementedInterface.toString(), instance.toString()));\n       }\n       registerMismatch(instance, implementedInterface);\n-    } else {\n-      JSType found \u003d instance.getPropertyType(prop);\n-      JSType required\n-        \u003d implementedInterface.getImplicitPrototype().getPropertyType(prop);\n-      found \u003d found.restrictByNotNullOrUndefined();\n-      required \u003d required.restrictByNotNullOrUndefined();\n-      if (!found.canAssignTo(required)) {\n         // Implemented, but not correctly typed\n-        if (shouldReport) {\n-          FunctionType constructor\n-            \u003d implementedInterface.toObjectType().getConstructor();\n-          compiler.report(t.makeError(n,\n-              HIDDEN_INTERFACE_PROPERTY_MISMATCH, prop,\n-              constructor.getTopMostDefiningType(prop).toString(),\n-              required.toString(), found.toString()));\n-        }\n-        registerMismatch(found, required);\n-      }\n     }\n   }\n \n",
+      "operations": [
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: HIDDEN_INTERFACE_PROPERTY_MISMATCH [4989,5023]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [22260,23030]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.TypeValidator:mismatch:[NodeTraversal t, Node n, String msg, JSType found, JSTypeNative required]:void"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.TypeValidator:expectInterfaceProperty:[NodeTraversal t, Node n, ObjectType instance, ObjectType implementedInterface, String prop]:void"
+      ],
+      "num": 1
+    }
+  }
+}

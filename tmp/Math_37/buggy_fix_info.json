@@ -1,0 +1,170 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math.complex.ComplexTest::testTanhInf,org.apache.commons.math.complex.ComplexTest::testTan,org.apache.commons.math.complex.ComplexTest::testTanh,org.apache.commons.math.complex.ComplexTest::testTanInf",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math.complex.Complex",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "37",
+  "workingDir": "../bugs/Math_37_tmp",
+  "bug_name": "Math_37",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math.complex.ComplexTest",
+      "test_function": "testTanhInf",
+      "assertion_line": "1054",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c1.0\u003e but was:\u003cNaN\u003e"
+    },
+    {
+      "test_class": "org.apache.commons.math.complex.ComplexTest",
+      "test_function": "testTan",
+      "assertion_line": "1015",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c1.0\u003e but was:\u003cNaN\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/complex/Complex.java",
+        "src/main/java/org/apache/commons/math/complex/Complex.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.complex.Complex:tan:[]:Complex",
+            "org.apache.commons.math.complex.Complex:tanh:[]:Complex"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.complex.Complex:tan:[]:Complex",
+            "org.apache.commons.math.complex.Complex:tanh:[]:Complex"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1018",
+            "1021",
+            "1022",
+            "1023",
+            "1024",
+            "1025",
+            "1026",
+            "1069",
+            "1072",
+            "1073",
+            "1074",
+            "1075",
+            "1076",
+            "1077"
+          ],
+          "num": 14
+        },
+        {
+          "qualified_names": [
+            "1018",
+            "1063"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/complex/Complex.java b/src/main/java/org/apache/commons/math/complex/Complex.java\nindex ed76a29..8d28c5f 100644\n--- a/src/main/java/org/apache/commons/math/complex/Complex.java\n+++ b/src/main/java/org/apache/commons/math/complex/Complex.java\n@@ -1015,15 +1015,9 @@\n      * @since 1.2\n      */\n     public Complex tan() {\n-        if (isNaN || Double.isInfinite(real)) {\n+        if (isNaN) {\n             return NaN;\n         }\n-        if (imaginary \u003e 20.0) {\n-            return createComplex(0.0, 1.0);\n-        }\n-        if (imaginary \u003c -20.0) {\n-            return createComplex(0.0, -1.0);\n-        }\n \n         double real2 \u003d 2.0 * real;\n         double imaginary2 \u003d 2.0 * imaginary;\n@@ -1066,15 +1060,9 @@\n      * @since 1.2\n      */\n     public Complex tanh() {\n-        if (isNaN || Double.isInfinite(imaginary)) {\n+        if (isNaN) {\n             return NaN;\n         }\n-        if (real \u003e 20.0) {\n-            return createComplex(1.0, 0.0);\n-        }\n-        if (real \u003c -20.0) {\n-            return createComplex(-1.0, 0.0);\n-        }\n         double real2 \u003d 2.0 * real;\n         double imaginary2 \u003d 2.0 * imaginary;\n         double d \u003d FastMath.cosh(real2) + FastMath.cos(imaginary2);\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: || [34351,34353]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [34354,34377]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [34345,34377]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [34423,34500]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [34509,34588]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: || [36075,36077]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [36078,36106]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [36069,36106]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [36152,36224]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [36233,36307]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

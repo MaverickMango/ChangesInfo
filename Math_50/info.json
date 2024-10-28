@@ -1,0 +1,292 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Math",
+  "id": "50",
+  "workingDir": "../bugs/Math_50_buggy",
+  "inducingCommit": "2f066a5b2d2fe8a00a251a3220b0d52446fe392d",
+  "originalCommit": "34fef656d03a5ba75047a55a894f6f72cbe59f2e",
+  "bug_name": "Math_50",
+  "derive": "defects4j",
+  "original_fixing_commit": "39cf5e69259d7560d50553caf028f9229b721013",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/analysis/solvers/BaseSecantSolver.java",
+        "src/main/java/org/apache/commons/math/analysis/solvers/BaseSecantSolver.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "doSolve"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "doSolve"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "172",
+            "173",
+            "177",
+            "178",
+            "181",
+            "182",
+            "184",
+            "185",
+            "188",
+            "189"
+          ],
+          "num": 10
+        },
+        {
+          "qualified_names": [
+            "172",
+            "178",
+            "179",
+            "181",
+            "182",
+            "184",
+            "185",
+            "186",
+            "187",
+            "188",
+            "189",
+            "190",
+            "191",
+            "192",
+            "193",
+            "194",
+            "195",
+            "196",
+            "197",
+            "200",
+            "201",
+            "202"
+          ],
+          "num": 22
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/analysis/solvers/BaseSecantSolver.java b/src/main/java/org/apache/commons/math/analysis/solvers/BaseSecantSolver.java\nindex fde7172..b3a23a1 100644\n--- a/src/main/java/org/apache/commons/math/analysis/solvers/BaseSecantSolver.java\n+++ b/src/main/java/org/apache/commons/math/analysis/solvers/BaseSecantSolver.java\n@@ -169,25 +169,37 @@\n \n             // Update the bounds with the new approximation.\n             if (f1 * fx \u003c 0) {\n-                // We had [x0..x1]. We update it to [x1, x]. Note that the\n-                // value of x1 has switched to the other bound, thus inverting\n+                // The value of x1 has switched to the other bound, thus inverting\n                 // the interval.\n                 x0 \u003d x1;\n                 f0 \u003d f1;\n-                x1 \u003d x;\n-                f1 \u003d fx;\n                 inverted \u003d !inverted;\n             } else {\n-                // We had [x0..x1]. We update it to [x0, x].\n-                if (method \u003d\u003d Method.ILLINOIS) {\n+                switch (method) {\n+                case ILLINOIS:\n                     f0 *\u003d 0.5;\n-                }\n-                if (method \u003d\u003d Method.PEGASUS) {\n+                    break;\n+                case PEGASUS:\n                     f0 *\u003d f1 / (f1 + fx);\n+                    break;\n+                case REGULA_FALSI:\n+                    if (x \u003d\u003d x1) {\n+                        final double delta \u003d FastMath.max(rtol * FastMath.abs(x1),\n+                                                          atol);\n+                        // Update formula cannot make any progress: Update the\n+                        // search interval.\n+                        x0 \u003d 0.5 * (x0 + x1 - delta);\n+                        f0 \u003d computeObjectiveValue(x0);\n+                    }\n+                    break;\n+                default:\n+                    // Should never happen.\n+                    throw new MathInternalError();\n                 }\n-                x1 \u003d x;\n-                f1 \u003d fx;\n             }\n+            // Update from [x0, x1] to [x0, x].\n+            x1 \u003d x;\n+            f1 \u003d fx;\n \n             // If the function value of the last approximation is too small,\n             // given the function value accuracy, then we can\u0027t get closer to\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SwitchStatement [6942,7785]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: method [6950,6956]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SwitchCase [6976,6990]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "BreakStatement [7042,7048]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SwitchCase [7065,7078]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "BreakStatement [7141,7147]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SwitchCase [7164,7182]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [7203,7620]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "BreakStatement [7641,7647]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SwitchCase [7664,7672]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ThrowStatement [7737,7767]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [7127,7152]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [7154,7204]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [7123,7204]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [7225,7249]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [7251,7312]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [7221,7312]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [7329,7336]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [7353,7361]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/analysis/solvers/BaseSecantSolver.java",
+        "src/main/java/org/apache/commons/math/analysis/solvers/BaseSecantSolver.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "doSolve"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "doSolve"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "186",
+            "187",
+            "188",
+            "189",
+            "190",
+            "191",
+            "192",
+            "193"
+          ],
+          "num": 8
+        },
+        {
+          "qualified_names": [
+            "185"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Math_50/properties/modified_classes/inducing/src/main/java/org/apache/commons/math/analysis/solvers/BaseSecantSolver.java data/changesInfo//Math_50/cleaned/fixing/src/main/java/org/apache/commons/math/analysis/solvers/BaseSecantSolver.java\n--- data/changesInfo//Math_50/properties/modified_classes/inducing/src/main/java/org/apache/commons/math/analysis/solvers/BaseSecantSolver.java\t2023-08-25 13:58:34.377171412 +0800\n+++ data/changesInfo//Math_50/cleaned/fixing/src/main/java/org/apache/commons/math/analysis/solvers/BaseSecantSolver.java\t2023-06-21 16:49:44.693224621 +0800\n@@ -183,14 +183,6 @@\n                     f0 *\u003d f1 / (f1 + fx);\n                     break;\n                 case REGULA_FALSI:\n-                    if (x \u003d\u003d x1) {\n-                        final double delta \u003d FastMath.max(rtol * FastMath.abs(x1),\n-                                                          atol);\n-                        // Update formula cannot make any progress: Update the\n-                        // search interval.\n-                        x0 \u003d 0.5 * (x0 + x1 - delta);\n-                        f0 \u003d computeObjectiveValue(x0);\n-                    }\n                     break;\n                 default:\n                     // Should never happen.\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [7203,7620]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

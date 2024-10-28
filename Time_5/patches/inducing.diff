@@ -1,0 +1,304 @@
+diff --git a/JodaTime/RELEASE-NOTES.txt b/JodaTime/RELEASE-NOTES.txt
+index 8c5160d..b26e9f7 100644
+--- a/JodaTime/RELEASE-NOTES.txt
++++ b/JodaTime/RELEASE-NOTES.txt
+@@ -31,6 +31,11 @@
+   - add plus(ReadablePeriod), minus(ReadablePeriod)
+   methods to add and subtract whole periods rather than just single fields
+ 
++- Period
++  - add normalizedStandard(), normalizedStandard(PeriodType)
++  methods to normalize the period back to standard field ranges, such as
++  normalizing 1 year 15 months to 2 years 3 months
++
+ - LocalDate.toLocalDateTime
+   - provide mechanism to create LocalDateTime from LocalDate and LocalTime
+ 
+@@ -90,9 +95,9 @@
+   This problem was exposed when Days.daysBetween() and similar methods
+   failed to give the right results
+ 
+-- Period.plusXxx(), minusXxx()
++- Period.plusXxx(), minusXxx(), withXxx()
+   Fix to throw correct exception as per javadoc (UnsupportedOperationException) when
+-  adding to an unsupported field
++  changing an unsupported field
+ 
+ - ZoneInfoProvider now returns a copy of its internal state on getAvailableIDs
+   This avoids race conditions on some JVMs
+diff --git a/JodaTime/src/java/org/joda/time/Period.java b/JodaTime/src/java/org/joda/time/Period.java
+index 8cb6ee4..d66b44a 100644
+--- a/JodaTime/src/java/org/joda/time/Period.java
++++ b/JodaTime/src/java/org/joda/time/Period.java
+@@ -18,6 +18,7 @@
+ import java.io.Serializable;
+ 
+ import org.joda.time.base.BasePeriod;
++import org.joda.time.chrono.ISOChronology;
+ import org.joda.time.field.FieldUtils;
+ 
+ /**
+@@ -930,7 +931,7 @@
+      * <p>
+      * Each field of the period is added separately. Thus a period of
+      * 2 hours 30 minutes plus 3 hours 40 minutes will produce a result
+-     * of 5 hours 70 minutes.
++     * of 5 hours 70 minutes - see {@link #normalizedStandard()}.
+      * <p>
+      * If the period being added contains a non-zero amount for a field that
+      * is not supported in this period then an exception is thrown.
+@@ -1109,7 +1110,7 @@
+      * <p>
+      * Each field of the period is subtracted separately. Thus a period of
+      * 3 hours 30 minutes minus 2 hours 40 minutes will produce a result
+-     * of 1 hour and -10 minutes.
++     * of 1 hour and -10 minutes - see {@link #normalizedStandard()}.
+      * <p>
+      * If the period being added contains a non-zero amount for a field that
+      * is not supported in this period then an exception is thrown.
+@@ -1441,4 +1442,89 @@
+         }
+     }
+ 
++    //-----------------------------------------------------------------------
++    /**
++     * Normalizes this period using standard rules, assuming a 12 month year,
++     * 7 day week, 24 hour day, 60 minute hour and 60 second minute.
++     * <p>
++     * This method allows you to normalize a period.
++     * However to achieve this it makes the assumption that all years are
++     * 12 months, all weeks are 7 days, all days are 24 hours,
++     * all hours are 60 minutes and all minutes are 60 seconds. This is not
++     * true when daylight savings time is considered, and may also not be true
++     * for some chronologies. However, it is included as it is a useful operation
++     * for many applications and business rules.
++     * <p>
++     * If the period contains years or months, then the months will be
++     * normalized to be between 0 and 11. The days field and below will be
++     * normalized as necessary, however this will not overflow into the months
++     * field. Thus a period of 1 year 15 months will normalize to 2 years 3 months.
++     * But a period of 1 month 40 days will remain as 1 month 40 days.
++     * <p>
++     * The result will always have a <code>PeriodType</code> of standard, thus
++     * days will be grouped into weeks.
++     * 
++     * @return a normalized period equivalent to this period
++     * @throws ArithmeticException if any field is too large to be represented
++     * @since 1.5
++     */
++    public Period normalizedStandard() {
++        return normalizedStandard(PeriodType.standard());
++    }
++
++    //-----------------------------------------------------------------------
++    /**
++     * Normalizes this period using standard rules, assuming a 12 month year,
++     * 7 day week, 24 hour day, 60 minute hour and 60 second minute,
++     * providing control over how the result is split into fields.
++     * <p>
++     * This method allows you to normalize a period.
++     * However to achieve this it makes the assumption that all years are
++     * 12 months, all weeks are 7 days, all days are 24 hours,
++     * all hours are 60 minutes and all minutes are 60 seconds. This is not
++     * true when daylight savings time is considered, and may also not be true
++     * for some chronologies. However, it is included as it is a useful operation
++     * for many applications and business rules.
++     * <p>
++     * If the period contains years or months, then the months will be
++     * normalized to be between 0 and 11. The days field and below will be
++     * normalized as necessary, however this will not overflow into the months
++     * field. Thus a period of 1 year 15 months will normalize to 2 years 3 months.
++     * But a period of 1 month 40 days will remain as 1 month 40 days.
++     * <p>
++     * The PeriodType parameter controls how the result is created. It allows
++     * you to omit certain fields from the result if desired. For example,
++     * you may not want the result to include weeks, in which case you pass
++     * in <code>PeriodType.yearMonthDayTime()</code>.
++     * 
++     * @param type  the period type of the new period, null means standard type
++     * @return a normalized period equivalent to this period
++     * @throws ArithmeticException if any field is too large to be represented
++     * @throws UnsupportedOperationException if this period contains non-zero
++     *  years or months but the specified period type does not support them
++     * @since 1.5
++     */
++    public Period normalizedStandard(PeriodType type) {
++        long millis = getMillis();  // no overflow can happen, even with Integer.MAX_VALUEs
++        millis += (((long) getSeconds()) * ((long) DateTimeConstants.MILLIS_PER_SECOND));
++        millis += (((long) getMinutes()) * ((long) DateTimeConstants.MILLIS_PER_MINUTE));
++        millis += (((long) getHours()) * ((long) DateTimeConstants.MILLIS_PER_HOUR));
++        millis += (((long) getDays()) * ((long) DateTimeConstants.MILLIS_PER_DAY));
++        millis += (((long) getWeeks()) * ((long) DateTimeConstants.MILLIS_PER_WEEK));
++        Period result = new Period(millis, DateTimeUtils.getPeriodType(type), ISOChronology.getInstanceUTC());
++        int years = getYears();
++        int months = getMonths();
++        if (years != 0 || months != 0) {
++            years = FieldUtils.safeAdd(years, months / 12);
++            months = months % 12;
++            if (years != 0) {
++                result = result.withYears(years);
++            }
++            if (months != 0) {
++                result = result.withMonths(months);
++            }
++        }
++        return result;
++    }
++
+ }
+diff --git a/JodaTime/src/java/org/joda/time/PeriodType.java b/JodaTime/src/java/org/joda/time/PeriodType.java
+index e4431f3..94c4118 100644
+--- a/JodaTime/src/java/org/joda/time/PeriodType.java
++++ b/JodaTime/src/java/org/joda/time/PeriodType.java
+@@ -682,12 +682,12 @@
+      * @param index  the index to use
+      * @param values  the array to populate
+      * @param newValue  the value to set
+-     * @throws IllegalArgumentException if not supported
++     * @throws UnsupportedOperationException if not supported
+      */
+     boolean setIndexedField(ReadablePeriod period, int index, int[] values, int newValue) {
+         int realIndex = iIndices[index];
+         if (realIndex == -1) {
+-            throw new IllegalArgumentException("Field is not supported");
++            throw new UnsupportedOperationException("Field is not supported");
+         }
+         values[realIndex] = newValue;
+         return true;
+diff --git a/JodaTime/src/test/org/joda/time/TestPeriod_Basics.java b/JodaTime/src/test/org/joda/time/TestPeriod_Basics.java
+index 0bd925d..60c398b 100644
+--- a/JodaTime/src/test/org/joda/time/TestPeriod_Basics.java
++++ b/JodaTime/src/test/org/joda/time/TestPeriod_Basics.java
+@@ -703,7 +703,7 @@
+         try {
+             test.withYears(1);
+             fail();
+-        } catch (IllegalArgumentException ex) {}
++        } catch (UnsupportedOperationException ex) {}
+     }
+ 
+     //-----------------------------------------------------------------------
+@@ -1320,4 +1320,123 @@
+         assertEquals(0, test.toStandardDuration().getMillis());
+     }
+ 
++    //-----------------------------------------------------------------------
++    public void testNormalizedStandard_yearMonth1() {
++        Period test = new Period(1, 15, 0, 0, 0, 0, 0, 0);
++        Period result = test.normalizedStandard();
++        assertEquals(new Period(1, 15, 0, 0, 0, 0, 0, 0), test);
++        assertEquals(new Period(2, 3, 0, 0, 0, 0, 0, 0), result);
++    }
++
++    public void testNormalizedStandard_yearMonth2() {
++        Period test = new Period(Integer.MAX_VALUE, 15, 0, 0, 0, 0, 0, 0);
++        try {
++            test.normalizedStandard();
++            fail();
++        } catch (ArithmeticException ex) {}
++    }
++
++    public void testNormalizedStandard_weekDay1() {
++        Period test = new Period(0, 0, 1, 12, 0, 0, 0, 0);
++        Period result = test.normalizedStandard();
++        assertEquals(new Period(0, 0, 1, 12, 0, 0, 0, 0), test);
++        assertEquals(new Period(0, 0, 2, 5, 0, 0, 0, 0), result);
++    }
++
++    public void testNormalizedStandard_weekDay2() {
++        Period test = new Period(0, 0, Integer.MAX_VALUE, 7, 0, 0, 0, 0);
++        try {
++            test.normalizedStandard();
++            fail();
++        } catch (ArithmeticException ex) {}
++    }
++
++    public void testNormalizedStandard_yearMonthWeekDay() {
++        Period test = new Period(1, 15, 1, 12, 0, 0, 0, 0);
++        Period result = test.normalizedStandard();
++        assertEquals(new Period(1, 15, 1, 12, 0, 0, 0, 0), test);
++        assertEquals(new Period(2, 3, 2, 5, 0, 0, 0, 0), result);
++    }
++
++    public void testNormalizedStandard_yearMonthDay() {
++        Period test = new Period(1, 15, 0, 36, 0, 0, 0, 0);
++        Period result = test.normalizedStandard();
++        assertEquals(new Period(1, 15, 0, 36, 0, 0, 0, 0), test);
++        assertEquals(new Period(2, 3, 5, 1, 0, 0, 0, 0), result);
++    }
++
++    public void testNormalizedStandard_negative() {
++        Period test = new Period(0, 0, 0, 0, 2, -10, 0, 0);
++        Period result = test.normalizedStandard();
++        assertEquals(new Period(0, 0, 0, 0, 2, -10, 0, 0), test);
++        assertEquals(new Period(0, 0, 0, 0, 1, 50, 0, 0), result);
++    }
++
++    public void testNormalizedStandard_fullNegative() {
++        Period test = new Period(0, 0, 0, 0, 1, -70, 0, 0);
++        Period result = test.normalizedStandard();
++        assertEquals(new Period(0, 0, 0, 0, 1, -70, 0, 0), test);
++        assertEquals(new Period(0, 0, 0, 0, 0, -10, 0, 0), result);
++    }
++
++    //-----------------------------------------------------------------------
++    public void testNormalizedStandard_periodType_yearMonth1() {
++        Period test = new Period(1, 15, 0, 0, 0, 0, 0, 0);
++        Period result = test.normalizedStandard((PeriodType) null);
++        assertEquals(new Period(1, 15, 0, 0, 0, 0, 0, 0), test);
++        assertEquals(new Period(2, 3, 0, 0, 0, 0, 0, 0), result);
++    }
++
++    public void testNormalizedStandard_periodType_yearMonth2() {
++        Period test = new Period(Integer.MAX_VALUE, 15, 0, 0, 0, 0, 0, 0);
++        try {
++            test.normalizedStandard((PeriodType) null);
++            fail();
++        } catch (ArithmeticException ex) {}
++    }
++
++    public void testNormalizedStandard_periodType_yearMonth3() {
++        Period test = new Period(1, 15, 3, 4, 0, 0, 0, 0);
++        try {
++            test.normalizedStandard(PeriodType.dayTime());
++            fail();
++        } catch (UnsupportedOperationException ex) {}
++    }
++
++    public void testNormalizedStandard_periodType_weekDay1() {
++        Period test = new Period(0, 0, 1, 12, 0, 0, 0, 0);
++        Period result = test.normalizedStandard((PeriodType) null);
++        assertEquals(new Period(0, 0, 1, 12, 0, 0, 0, 0), test);
++        assertEquals(new Period(0, 0, 2, 5, 0, 0, 0, 0), result);
++    }
++
++    public void testNormalizedStandard_periodType_weekDay2() {
++        Period test = new Period(0, 0, Integer.MAX_VALUE, 7, 0, 0, 0, 0);
++        try {
++            test.normalizedStandard((PeriodType) null);
++            fail();
++        } catch (ArithmeticException ex) {}
++    }
++
++    public void testNormalizedStandard_periodType_weekDay3() {
++        Period test = new Period(0, 0, 1, 12, 0, 0, 0, 0);
++        Period result = test.normalizedStandard(PeriodType.dayTime());
++        assertEquals(new Period(0, 0, 1, 12, 0, 0, 0, 0), test);
++        assertEquals(new Period(0, 0, 0, 19, 0, 0, 0, 0, PeriodType.dayTime()), result);
++    }
++
++    public void testNormalizedStandard_periodType_yearMonthWeekDay() {
++        Period test = new Period(1, 15, 1, 12, 0, 0, 0, 0);
++        Period result = test.normalizedStandard(PeriodType.yearMonthDayTime());
++        assertEquals(new Period(1, 15, 1, 12, 0, 0, 0, 0), test);
++        assertEquals(new Period(2, 3, 0, 19, 0, 0, 0, 0, PeriodType.yearMonthDayTime()), result);
++    }
++
++    public void testNormalizedStandard_periodType_yearMonthDay() {
++        Period test = new Period(1, 15, 0, 36, 27, 0, 0, 0);
++        Period result = test.normalizedStandard(PeriodType.yearMonthDayTime());
++        assertEquals(new Period(1, 15, 0, 36, 27, 0, 0, 0), test);
++        assertEquals(new Period(2, 3, 0, 37, 3, 0, 0, 0, PeriodType.yearMonthDayTime()), result);
++    }
++
+ }

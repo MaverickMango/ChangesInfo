@@ -1,0 +1,3896 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "/home/liumengjiao/Desktop/CI/Benchmark/data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math.analysis.BrentSolverTest::testRootEndpoints",
+    "test.dir": "src/test",
+    "clz.modified": "org.apache.commons.math.analysis.BrentSolver",
+    "src.dir": "src/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "97",
+  "workingDir": "../bugs/Math_97_buggy",
+  "buggyCommit": "7cf0c980d5d814daf187502bc07da0542ed7a828",
+  "inducingCommit": "6a978ea29f680a87dfc380c760adf2e17b2e7c9c",
+  "originalCommit": "01aa3293c5238d5300300d93f5fe8253a8c668bc",
+  "bug_name": "Math_97",
+  "derive": "defects4j",
+  "original_fixing_commit": "ed492bd0c5c5c3a0258a65cb31cc8723d8f011fd",
+  "buildFiles_changed": true,
+  "regression": true,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/math/analysis/BisectionSolver.java",
+        "src/java/org/apache/commons/math/analysis/BisectionSolver.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.BisectionSolver:solve:[double min, double max]:double",
+            "org.apache.commons.math.analysis.BisectionSolver:solve:[double min, double max, double initial]:double"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.BisectionSolver:solve:[double min, double max, double initial]:double",
+            "org.apache.commons.math.analysis.BisectionSolver:BisectionSolver:[UnivariateRealFunction f]:null",
+            "org.apache.commons.math.analysis.BisectionSolver:solve:[double min, double max]:double"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "18",
+            "19",
+            "20",
+            "23",
+            "24",
+            "26",
+            "28",
+            "47",
+            "48",
+            "51",
+            "52",
+            "58",
+            "59",
+            "61",
+            "62",
+            "64",
+            "66",
+            "74",
+            "75",
+            "94"
+          ],
+          "num": 20
+        },
+        {
+          "qualified_names": [
+            "18",
+            "19",
+            "22",
+            "23",
+            "24",
+            "26",
+            "27",
+            "29",
+            "36",
+            "45",
+            "50",
+            "51",
+            "52",
+            "53",
+            "56",
+            "57",
+            "63",
+            "64",
+            "65",
+            "67",
+            "68",
+            "69",
+            "70",
+            "72",
+            "73",
+            "74",
+            "76",
+            "84",
+            "85",
+            "104",
+            "105"
+          ],
+          "num": 31
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/math/analysis/BisectionSolver.java b/src/java/org/apache/commons/math/analysis/BisectionSolver.java\nindex 9da0931..6b7c484 100644\n--- a/src/java/org/apache/commons/math/analysis/BisectionSolver.java\n+++ b/src/java/org/apache/commons/math/analysis/BisectionSolver.java\n@@ -15,23 +15,25 @@\n  */\n package org.apache.commons.math.analysis;\n \n-import java.io.Serializable;\n-\n-import org.apache.commons.math.MathException;\n+import org.apache.commons.math.FunctionEvaluationException;\n+import org.apache.commons.math.ConvergenceException;\n \n /**\n- * Implements the \u003ca href\u003d\"http://mathworld.wolfram.com/Bisection.html\"\u003ebisection algorithm\u003c/a\u003e\n- *  for finding zeros of univariate real functions.  This algorithm will find only one zero in the given interval.\n+ * Implements the \u003ca href\u003d\"http://mathworld.wolfram.com/Bisection.html\"\u003e\n+ * bisection algorithm\u003c/a\u003e for finding zeros of univariate real functions. \n+ * \u003cp\u003e\n  * The function should be continuous but not necessarily smooth.\n- * @version $Revision: 1.17 $ $Date: 2004/06/23 16:26:14 $\n+ * \n+ * @version $Revision: 1.18 $ $Date: 2004/07/17 21:19:39 $\n  */\n-public class BisectionSolver extends UnivariateRealSolverImpl implements Serializable {\n+public class BisectionSolver extends UnivariateRealSolverImpl {\n     \n     /** Serializable version identifier */\n     static final long serialVersionUID \u003d 7137520585963699578L;\n     \n     /**\n      * Construct a solver for the given function.\n+     * \n      * @param f function to solve.\n      */\n     public BisectionSolver(UnivariateRealFunction f) {\n@@ -40,30 +42,38 @@\n \n     /**\n      * Find a zero in the given interval.\n+     * \n      * @param min the lower bound for the interval.\n      * @param max the upper bound for the interval.\n      * @param initial the start value to use (ignored).\n      * @return the value where the function is zero\n-     * @throws MathException if the iteration count was exceeded or the\n-     *  solver detects convergence problems otherwise.\n+     * @throws ConvergenceException the maximum iteration count is exceeded \n+     * @throws FunctionEvaluationException if an error occurs evaluating\n+     *  the function\n+     * @throws IllegalArgumentException if min is not less than max\n      */\n     public double solve(double min, double max, double initial)\n-        throws MathException {\n-            \n+        throws ConvergenceException, FunctionEvaluationException {\n+          \n         return solve(min, max);\n     }\n     \n     /**\n      * Find a zero root in the given interval.\n-     * @param min the lower bound for the interval.\n-     * @param max the upper bound for the interval.\n+     * \n+     * @param min the lower bound for the interval\n+     * @param max the upper bound for the interval\n      * @return the value where the function is zero\n-     * @throws MathException if the iteration count was exceeded or the\n-     *  solver detects convergence problems otherwise.\n+     * @throws ConvergenceException if the maximum iteration count is exceeded.\n+     * @throws FunctionEvaluationException if an error occurs evaluating the\n+     * function\n+     * @throws IllegalArgumentException if min is not less than max\n      */\n-    public double solve(double min, double max) throws MathException {\n+    public double solve(double min, double max) throws ConvergenceException,\n+        FunctionEvaluationException {\n+        \n         clearResult();\n-\n+        verifyInterval(min,max);\n         double m;\n         double fm;\n         double fmin;\n@@ -71,8 +81,8 @@\n         int i \u003d 0;\n         while (i \u003c maximalIterationCount) {\n             m \u003d UnivariateRealSolverUtils.midpoint(min, max);\n-            fmin \u003d f.value(min);\n-            fm \u003d f.value(m);\n+           fmin \u003d f.value(min);\n+           fm \u003d f.value(m);\n \n             if (fm * fmin \u003e 0.0) {\n                 // max and m bracket the root.\n@@ -91,6 +101,7 @@\n             ++i;\n         }\n         \n-        throw new MathException(\"Maximum number of iterations exceeded\");\n+        throw new ConvergenceException\n+            (\"Maximum number of iterations exceeded: \"  + maximalIterationCount);\n     }\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [664,723]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [724,776]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Javadoc [778,1069]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TagElement [785,1002]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [1010,1065]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [2046,2066]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [2068,2095]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [2673,2693]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [2703,2730]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: Implements the \u003ca href\u003d\"http://mathworld.wolfram.com/Bisection.html\"\u003e [785,854]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: bisection algorithm\u003c/a\u003e for finding zeros of univariate real functions.  [858,930]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003cp\u003e [934,937]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [1727,1796]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [1898,1958]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [2376,2448]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [2549,2609]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [2773,2797]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ThrowStatement [3535,3647]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [664,692]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [694,739]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: Implements the \u003ca href\u003d\"http://mathworld.wolfram.com/Bisection.html\"\u003ebisection algorithm\u003c/a\u003e [748,840]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: for finding zeros of univariate real functions.  This algorithm will find only one zero in the given interval. [845,955]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TagElement [748,1020]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [1024,1079]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Javadoc [741,1083]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [1157,1169]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [1956,1969]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [2429,2442]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ThrowStatement [3208,3273]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/math/analysis/BrentSolver.java",
+        "src/java/org/apache/commons/math/analysis/BrentSolver.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.BrentSolver:solve:[double min, double max]:double",
+            "org.apache.commons.math.analysis.BrentSolver:solve:[double min, double max, double initial]:double"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.BrentSolver:solve:[double min, double max]:double",
+            "org.apache.commons.math.analysis.BrentSolver:BrentSolver:[UnivariateRealFunction f]:null",
+            "org.apache.commons.math.analysis.BrentSolver:solve:[double min, double max, double initial]:double"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "20",
+            "23",
+            "24",
+            "25",
+            "28",
+            "30",
+            "49",
+            "50",
+            "53",
+            "63",
+            "64",
+            "66",
+            "73",
+            "74",
+            "75",
+            "76",
+            "77",
+            "164"
+          ],
+          "num": 18
+        },
+        {
+          "qualified_names": [
+            "20",
+            "21",
+            "24",
+            "25",
+            "26",
+            "29",
+            "31",
+            "38",
+            "47",
+            "48",
+            "49",
+            "50",
+            "55",
+            "56",
+            "57",
+            "58",
+            "61",
+            "68",
+            "69",
+            "70",
+            "71",
+            "72",
+            "76",
+            "77",
+            "78",
+            "79",
+            "80",
+            "82",
+            "83",
+            "84",
+            "86",
+            "87",
+            "93",
+            "94",
+            "95",
+            "96",
+            "97",
+            "184"
+          ],
+          "num": 38
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/math/analysis/BrentSolver.java b/src/java/org/apache/commons/math/analysis/BrentSolver.java\nindex ef2a985..80a48f0 100644\n--- a/src/java/org/apache/commons/math/analysis/BrentSolver.java\n+++ b/src/java/org/apache/commons/math/analysis/BrentSolver.java\n@@ -17,23 +17,25 @@\n \n import java.io.Serializable;\n \n-import org.apache.commons.math.MathException;\n+import org.apache.commons.math.ConvergenceException;\n+import org.apache.commons.math.FunctionEvaluationException;\n \n /**\n- * Implements the \u003ca href\u003d\"http://mathworld.wolfram.com/BrentsMethod.html\"\u003eBrent algorithm\u003c/a\u003e\n- * for  finding zeros of real univariate\n- * functions. This algorithm will find only one zero in the given interval. \n+ * Implements the \u003ca href\u003d\"http://mathworld.wolfram.com/BrentsMethod.html\"\u003e\n+ * Brent algorithm\u003c/a\u003e for  finding zeros of real univariate functions.\n+ * \u003cp\u003e\n  * The function should be continuous but not necessarily smooth.\n  *  \n- * @version $Revision: 1.16 $ $Date: 2004/06/23 16:26:14 $\n+ * @version $Revision: 1.17 $ $Date: 2004/07/17 21:19:39 $\n  */\n-public class BrentSolver extends UnivariateRealSolverImpl implements Serializable {\n+public class BrentSolver extends UnivariateRealSolverImpl {\n     \n     /** Serializable version identifier */\n     static final long serialVersionUID \u003d 3350616277306882875L;\n \n     /**\n      * Construct a solver for the given function.\n+     * \n      * @param f function to solve.\n      */\n     public BrentSolver(UnivariateRealFunction f) {\n@@ -42,39 +44,57 @@\n \n     /**\n      * Find a zero in the given interval.\n+     * \u003cp\u003e\n+     * Throws \u003ccode\u003eConvergenceException\u003c/code\u003e if the values of the function\n+     * at the endpoints of the interval have the same sign.\n+     * \n      * @param min the lower bound for the interval.\n      * @param max the upper bound for the interval.\n      * @param initial the start value to use (ignored).\n      * @return the value where the function is zero\n-     * @throws MathException if the iteration count was exceeded or the\n-     *  solver detects convergence problems otherwise.\n+     * @throws ConvergenceException the maximum iteration count is exceeded \n+     * @throws FunctionEvaluationException if an error occurs evaluating\n+     *  the function\n+     * @throws IllegalArgumentException if initial is not between min and max\n      */\n     public double solve(double min, double max, double initial)\n-        throws MathException {\n+        throws ConvergenceException, FunctionEvaluationException {\n             \n         return solve(min, max);\n     }\n     \n     /**\n      * Find a zero in the given interval.\n+     * \u003cp\u003e\n+     * Requires that the values of the function at the endpoints have opposite\n+     * signs. An \u003ccode\u003eIllegalArgumentException\u003c/code\u003e is thrown if this is not\n+     * the case.\n+     * \n      * @param min the lower bound for the interval.\n      * @param max the upper bound for the interval.\n      * @return the value where the function is zero\n-     * @throws MathException if the iteration count was exceeded or the\n-     *  solver detects convergence problems otherwise.\n+     * @throws ConvergenceException if the maximum iteration count is exceeded\n+     * @throws FunctionEvaluationException if an error occurs evaluating the\n+     * function \n+     * @throws IllegalArgumentException if min is not less than max or the\n+     * signs of the values of the function at the endpoints are not opposites\n      */\n-    public double solve(double min, double max) throws MathException {\n+    public double solve(double min, double max) throws ConvergenceException, \n+        FunctionEvaluationException {\n+        \n         clearResult();\n+        verifyBracketing(min, max, f);\n+        \n         // Index 0 is the old approximation for the root.\n         // Index 1 is the last calculated approximation  for the root.\n         // Index 2 is a bracket for the root with respect to x1.\n         double x0 \u003d min;\n         double x1 \u003d max;\n-        double y0 \u003d f.value(x0);\n-        double y1 \u003d f.value(x1);\n-        if ((y0 \u003e 0) \u003d\u003d (y1 \u003e 0)) {\n-            throw new MathException(\"Interval doesn\u0027t bracket a zero.\");\n-        }\n+        double y0;\n+        double y1;\n+        y0 \u003d f.value(x0);\n+        y1 \u003d f.value(x1);\n+   \n         double x2 \u003d x0;\n         double y2 \u003d y0;\n         double delta \u003d x1 - x0;\n@@ -161,6 +181,6 @@\n             }\n             i++;\n         }\n-        throw new MathException(\"Maximum number of iterations exceeded.\");\n+        throw new ConvergenceException(\"Maximum number of iterations exceeded.\");\n     }\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [694,746]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [747,806]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Javadoc [808,1099]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TagElement [815,1031]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [1040,1095]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [2223,2243]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [2245,2272]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Javadoc [2335,3065]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [3121,3141]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [3152,3179]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: Implements the \u003ca href\u003d\"http://mathworld.wolfram.com/BrentsMethod.html\"\u003e [815,887]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: Brent algorithm\u003c/a\u003e for  finding zeros of real univariate functions. [891,959]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003cp\u003e [963,966]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TagElement [1483,1666]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [1894,1963]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [2065,2135]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TagElement [2346,2567]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [2739,2810]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [2818,2904]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [2912,3057]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [3222,3252]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [3514,3524]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [3533,3543]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ExpressionStatement [3552,3569]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ExpressionStatement [3578,3595]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003cp\u003e [1525,1528]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: Throws \u003ccode\u003eConvergenceException\u003c/code\u003e if the values of the function [1536,1606]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: at the endpoints of the interval have the same sign. [1614,1666]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003cp\u003e [2388,2391]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: Requires that the values of the function at the endpoints have opposite [2399,2470]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: signs. An \u003ccode\u003eIllegalArgumentException\u003c/code\u003e is thrown if this is not [2478,2550]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: the case. [2558,2567]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Assignment [3552,3568]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Assignment [3578,3594]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ASSIGNMENT_OPERATOR: \u003d [3555,3556]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ASSIGNMENT_OPERATOR: \u003d [3581,3582]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [694,739]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: Implements the \u003ca href\u003d\"http://mathworld.wolfram.com/BrentsMethod.html\"\u003eBrent algorithm\u003c/a\u003e [748,839]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: for  finding zeros of real univariate [843,880]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: functions. This algorithm will find only one zero in the given interval.  [884,957]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TagElement [748,1022]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [1031,1086]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Javadoc [741,1090]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [1160,1172]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TagElement [1490,1524]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [1951,1964]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TagElement [2038,2072]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [2236,2355]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Javadoc [2027,2363]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [2419,2432]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PrimitiveType: double [2710,2716]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [2717,2733]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [2710,2734]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PrimitiveType: double [2743,2749]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [2750,2766]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [2743,2767]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [2780,2800]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [2802,2886]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [2776,2886]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ThrowStatement [5892,5958]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/math/analysis/NewtonSolver.java",
+        "src/java/org/apache/commons/math/analysis/NewtonSolver.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.NewtonSolver:solve:[double min, double max]:double",
+            "org.apache.commons.math.analysis.NewtonSolver:solve:[double min, double max, double startValue]:double"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.NewtonSolver:solve:[double min, double max]:double",
+            "org.apache.commons.math.analysis.NewtonSolver:solve:[double min, double max, double startValue]:double"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "19",
+            "20",
+            "21",
+            "25",
+            "26",
+            "27",
+            "29",
+            "31",
+            "50",
+            "51",
+            "53",
+            "54",
+            "56",
+            "66",
+            "67",
+            "70",
+            "80",
+            "91"
+          ],
+          "num": 18
+        },
+        {
+          "qualified_names": [
+            "19",
+            "20",
+            "24",
+            "25",
+            "26",
+            "28",
+            "30",
+            "49",
+            "50",
+            "51",
+            "53",
+            "54",
+            "55",
+            "56",
+            "58",
+            "59",
+            "65",
+            "70",
+            "71",
+            "72",
+            "73",
+            "76",
+            "79",
+            "97",
+            "98"
+          ],
+          "num": 25
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/math/analysis/NewtonSolver.java b/src/java/org/apache/commons/math/analysis/NewtonSolver.java\nindex 3eeac40..8035d22 100644\n--- a/src/java/org/apache/commons/math/analysis/NewtonSolver.java\n+++ b/src/java/org/apache/commons/math/analysis/NewtonSolver.java\n@@ -16,19 +16,18 @@\n \n package org.apache.commons.math.analysis;\n \n-import java.io.Serializable;\n-\n-import org.apache.commons.math.MathException;\n+import org.apache.commons.math.ConvergenceException;\n+import org.apache.commons.math.FunctionEvaluationException; \n \n /**\n  * Implements \u003ca href\u003d\"http://mathworld.wolfram.com/NewtonsMethod.html\"\u003e\n- * Newton\u0027s Method\u003c/a\u003e for finding zeros of real univariate functions. This\n- * algorithm will find only one zero in the given interval.  The function should\n- * be continuous but not necessarily smooth.\n+ * Newton\u0027s Method\u003c/a\u003e for finding zeros of real univariate functions. \n+ * \u003cp\u003e \n+ * The function should be continuous but not necessarily smooth.\n  *\n- * @version $Revision: 1.5 $ $Date: 2004/06/23 16:26:14 $\n+ * @version $Revision: 1.6 $ $Date: 2004/07/17 21:19:39 $\n  */\n-public class NewtonSolver extends UnivariateRealSolverImpl implements Serializable {\n+public class NewtonSolver extends UnivariateRealSolverImpl {\n     \n     /** Serializable version identifier */\n     static final long serialVersionUID \u003d 2606474895443431607L;\n@@ -47,29 +46,37 @@\n \n     /**\n      * Find a zero near the midpoint of \u003ccode\u003emin\u003c/code\u003e and \u003ccode\u003emax\u003c/code\u003e.\n-     * @param min the lower bound for the interval.\n-     * @param max the upper bound for the interval.\n+     * \n+     * @param min the lower bound for the interval\n+     * @param max the upper bound for the interval\n      * @return the value where the function is zero\n-     * @throws MathException if the iteration count was exceeded or the\n-     *  solver detects convergence problems otherwise.\n+     * @throws ConvergenceException if the maximum iteration count is exceeded \n+     * @throws FunctionEvaluationException if an error occurs evaluating the\n+     * function or derivative\n+     * @throws IllegalArgumentException if min is not less than max\n      */\n-    public double solve(double min, double max) throws MathException {\n+    public double solve(double min, double max) throws ConvergenceException, \n+        FunctionEvaluationException  {\n         return solve(min, max, UnivariateRealSolverUtils.midpoint(min, max));\n     }\n \n     /**\n      * Find a zero near the value \u003ccode\u003estartValue\u003c/code\u003e.\n+     * \n      * @param min the lower bound for the interval (ignored).\n      * @param max the upper bound for the interval (ignored).\n      * @param startValue the start value to use.\n      * @return the value where the function is zero\n-     * @throws MathException if the iteration count was exceeded or the\n-     *  solver detects convergence problems otherwise.\n+    * @throws ConvergenceException if the maximum iteration count is exceeded \n+     * @throws FunctionEvaluationException if an error occurs evaluating the\n+     * function or derivative\n+     * @throws IllegalArgumentException if startValue is not between min and max\n      */\n     public double solve(double min, double max, double startValue)\n-        throws MathException {\n+        throws ConvergenceException, FunctionEvaluationException {\n         \n         clearResult();\n+        verifySequence(min, startValue, max);\n \n         double x0 \u003d startValue;\n         double x1;\n@@ -77,7 +84,6 @@\n         int i \u003d 0;\n         while (i \u003c maximalIterationCount) {\n             x1 \u003d x0 - (f.value(x0) / derivative.value(x0));\n-\n             if (Math.abs(x1 - x0) \u003c\u003d absoluteAccuracy) {\n                 \n                 setResult(x1, i);\n@@ -88,7 +94,8 @@\n             ++i;\n         }\n         \n-        throw new MathException(\"Maximum number of iterations exceeded\");\n+        throw new ConvergenceException\n+            (\"Maximum number of iterations exceeded \" + i);\n     }\n \n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [660,712]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [713,772]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Javadoc [775,1061]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TagElement [782,996]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [1003,1057]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [2154,2174]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [2185,2212]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [2958,2978]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [2980,3007]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: Newton\u0027s Method\u003c/a\u003e for finding zeros of real univariate functions.  [855,923]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003cp\u003e  [927,931]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: The function should be continuous but not necessarily smooth. [935,996]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [1843,1915]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [2030,2090]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [2607,2679]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [2794,2867]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [3050,3087]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ThrowStatement [3499,3589]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [660,688]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [690,735]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: Newton\u0027s Method\u003c/a\u003e for finding zeros of real univariate functions. This [817,889]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: algorithm will find only one zero in the given interval.  The function should [893,970]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: be continuous but not necessarily smooth. [974,1015]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TagElement [744,1015]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [1022,1076]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Javadoc [737,1080]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [1151,1163]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [2063,2076]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [2673,2686]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ThrowStatement [3133,3198]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/math/analysis/PolynomialSplineFunction.java",
+        "src/java/org/apache/commons/math/analysis/PolynomialSplineFunction.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.PolynomialSplineFunction:value:[double v]:double"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.PolynomialSplineFunction:value:[double v]:double"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "21",
+            "44",
+            "107",
+            "108",
+            "109",
+            "111",
+            "113"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "21",
+            "44",
+            "107",
+            "108",
+            "109",
+            "111",
+            "113"
+          ],
+          "num": 7
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/math/analysis/PolynomialSplineFunction.java b/src/java/org/apache/commons/math/analysis/PolynomialSplineFunction.java\nindex cbab446..b5789ec 100644\n--- a/src/java/org/apache/commons/math/analysis/PolynomialSplineFunction.java\n+++ b/src/java/org/apache/commons/math/analysis/PolynomialSplineFunction.java\n@@ -18,7 +18,7 @@\n import java.io.Serializable;\n import java.util.Arrays;\n \n-import org.apache.commons.math.MathException;\n+import org.apache.commons.math.FunctionEvaluationException;\n \n /**\n  * Represents a polynomial spline function.\n@@ -41,7 +41,7 @@\n  * \u003cli\u003e Let \u003ccode\u003ej\u003c/code\u003e be the index of the largest knot point that is less than or equal to \u003ccode\u003ex\u003c/code\u003e. \n  *  The value returned is \u003cbr\u003e \u003ccode\u003epolynomials[j](x - knot[j])\u003c/code\u003e\u003c/li\u003e\u003c/ol\u003e\n  *\n- * @version $Revision: 1.6 $ $Date: 2004/06/23 16:26:14 $\n+ * @version $Revision: 1.7 $ $Date: 2004/07/17 21:19:39 $\n  */\n public class PolynomialSplineFunction implements UnivariateRealFunction, Serializable {\n    \n@@ -104,13 +104,13 @@\n      * \n      * @param v the point for which the function value should be computed\n      * @return the value\n-     * @throws MathException if the function couldn\u0027t be computed due to\n-     *  missing additional data or other environmental problems.\n-     * @see UnivariateRealFunction#value(double)\n+     * @throws FunctionEvaluationException if v is outside of the domain of\n+     * of the spline function (less than the smallest knot point or greater\n+     * than the largest knot point)\n      */\n-    public double value(double v) throws MathException {\n+    public double value(double v) throws FunctionEvaluationException {\n         if (v \u003c knots[0] || v \u003e\u003d knots[n]) {\n-            throw new IllegalArgumentException(\"Argument outside domain\");\n+            throw new FunctionEvaluationException(v,\"Argument outside domain\");\n         }\n         int i \u003d Arrays.binarySearch(knots, v);\n         if (i \u003c 0) {\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [719,778]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Javadoc [4671,5020]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [5062,5089]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [4832,5012]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: v [5187,5188]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [719,764]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [4818,4948]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [4956,4997]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Javadoc [4657,5005]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [5047,5060]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/math/analysis/SecantSolver.java",
+        "src/java/org/apache/commons/math/analysis/SecantSolver.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.SecantSolver:solve:[double min, double max, double initial]:double",
+            "org.apache.commons.math.analysis.SecantSolver:solve:[double min, double max]:double"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.SecantSolver:solve:[double min, double max, double initial]:double",
+            "org.apache.commons.math.analysis.SecantSolver:solve:[double min, double max]:double"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "20",
+            "27",
+            "28",
+            "29",
+            "30",
+            "32",
+            "34",
+            "51",
+            "52",
+            "53",
+            "55",
+            "56",
+            "59",
+            "69",
+            "70",
+            "72",
+            "83",
+            "84",
+            "85",
+            "132"
+          ],
+          "num": 20
+        },
+        {
+          "qualified_names": [
+            "20",
+            "21",
+            "22",
+            "29",
+            "30",
+            "31",
+            "32",
+            "33",
+            "34",
+            "36",
+            "38",
+            "55",
+            "56",
+            "57",
+            "58",
+            "60",
+            "61",
+            "62",
+            "63",
+            "64",
+            "67",
+            "77",
+            "78",
+            "79",
+            "80",
+            "81",
+            "83",
+            "84",
+            "85",
+            "87",
+            "88",
+            "144"
+          ],
+          "num": 32
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/math/analysis/SecantSolver.java b/src/java/org/apache/commons/math/analysis/SecantSolver.java\nindex fcbe99b..85e4910 100644\n--- a/src/java/org/apache/commons/math/analysis/SecantSolver.java\n+++ b/src/java/org/apache/commons/math/analysis/SecantSolver.java\n@@ -17,21 +17,25 @@\n \n import java.io.Serializable;\n \n-import org.apache.commons.math.MathException;\n+import org.apache.commons.math.ConvergenceException;\n+import org.apache.commons.math.FunctionEvaluationException;\n+\n \n /**\n  * Implements a modified version of the \n  * \u003ca href\u003d\"http://mathworld.wolfram.com/SecantMethod.html\"\u003esecant method\u003c/a\u003e\n  * for approximating a zero of a real univariate function.  \n  * \u003cp\u003e\n- * The algorithm is modified to maintain bracketing of a root by subsequent approximations. \n- * Because of forced bracketing, convergence may be slower than the unrestricted secant algorithm. \n- * However, this implementation  should in general outperform the \n- * \u003ca href\u003d\"http://mathworld.wolfram.com/MethodofFalsePosition.html\"\u003eregula falsi method.\u003c/a\u003e\n+ * The algorithm is modified to maintain bracketing of a root by successive\n+ * approximations. Because of forced bracketing, convergence may be slower than\n+ * the unrestricted secant algorithm. However, this implementation should in\n+ * general outperform the \n+ * \u003ca href\u003d\"http://mathworld.wolfram.com/MethodofFalsePosition.html\"\u003e\n+ * regula falsi method.\u003c/a\u003e\n  * \u003cp\u003e\n- * The function is supposed to be continuous but not necessarily smooth.\n+ * The function is assumed to be continuous but not necessarily smooth.\n  *  \n- * @version $Revision: 1.16 $ $Date: 2004/06/23 16:26:14 $\n+ * @version $Revision: 1.17 $ $Date: 2004/07/17 21:19:39 $\n  */\n public class SecantSolver extends UnivariateRealSolverImpl implements Serializable {\n     \n@@ -48,15 +52,19 @@\n \n     /**\n      * Find a zero in the given interval.\n-     * @param min the lower bound for the interval.\n-     * @param max the upper bound for the interval.\n-     * @param initial the start value to use (ignored).\n+     * \n+     * @param min the lower bound for the interval\n+     * @param max the upper bound for the interval\n+     * @param initial the start value to use (ignored)\n      * @return the value where the function is zero\n-     * @throws MathException if the iteration count was exceeded or the\n-     *  solver detects convergence problems otherwise.\n+     * @throws ConvergenceException if the maximum iteration count is exceeded\n+     * @throws FunctionEvaluationException if an error occurs evaluating the\n+     * function \n+     * @throws IllegalArgumentException if min is not less than max or the\n+     * signs of the values of the function at the endpoints are not opposites\n      */\n     public double solve(double min, double max, double initial)\n-        throws MathException {\n+        throws ConvergenceException, FunctionEvaluationException {\n             \n         return solve(min, max);\n     }\n@@ -66,11 +74,18 @@\n      * @param min the lower bound for the interval.\n      * @param max the upper bound for the interval.\n      * @return the value where the function is zero\n-     * @throws MathException if the iteration count was exceeded or the\n-     *  solver detects convergence problems otherwise.\n+     * @throws ConvergenceException  if the maximum iteration count is exceeded\n+     * @throws FunctionEvaluationException if an error occurs evaluating the\n+     * function \n+     * @throws IllegalArgumentException if min is not less than max or the\n+     * signs of the values of the function at the endpoints are not opposites\n      */\n-    public double solve(double min, double max) throws MathException {\n+    public double solve(double min, double max) throws ConvergenceException, \n+        FunctionEvaluationException {\n+        \n         clearResult();\n+        verifyBracketing(min, max, f);\n+        \n         // Index 0 is the old approximation for the root.\n         // Index 1 is the last calculated approximation  for the root.\n         // Index 2 is a bracket for the root with respect to x0.\n@@ -80,9 +95,6 @@\n         double x1 \u003d max;\n         double y0 \u003d f.value(x0);\n         double y1 \u003d f.value(x1);\n-        if ((y0 \u003e 0) \u003d\u003d (y1 \u003e 0)) {\n-            throw new MathException(\"Interval doesn\u0027t bracket a zero.\");\n-        }\n         double x2 \u003d x0;\n         double y2 \u003d y0;\n         double oldDelta \u003d x2 - x1;\n@@ -129,7 +141,7 @@\n             oldDelta \u003d x2 - x1;\n             i++;\n         }\n-        throw new MathException(\"Maximal iteration number exceeded\");\n+        throw new ConvergenceException(\"Maximal iteration number exceeded\" + i);\n     }\n \n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [694,746]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [747,806]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Javadoc [809,1504]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TagElement [816,1436]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [1445,1500]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [2575,2595]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [2597,2624]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [3279,3299]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [3310,3337]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: The algorithm is modified to maintain bracketing of a root by successive [1003,1075]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: approximations. Because of forced bracketing, convergence may be slower than [1079,1155]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: the unrestricted secant algorithm. However, this implementation should in [1159,1232]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: general outperform the  [1236,1259]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003ca href\u003d\"http://mathworld.wolfram.com/MethodofFalsePosition.html\"\u003e [1263,1329]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: regula falsi method.\u003c/a\u003e [1333,1357]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: The function is assumed to be continuous but not necessarily smooth. [1368,1436]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [2169,2240]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [2342,2487]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [2896,2968]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [3070,3215]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [3380,3410]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [5375,5414]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: + [5411,5412]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: i [5413,5414]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [694,739]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: The algorithm is modified to maintain bracketing of a root by subsequent approximations.  [935,1024]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: Because of forced bracketing, convergence may be slower than the unrestricted secant algorithm.  [1028,1124]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: However, this implementation  should in general outperform the  [1128,1191]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: \u003ca href\u003d\"http://mathworld.wolfram.com/MethodofFalsePosition.html\"\u003eregula falsi method.\u003c/a\u003e [1195,1285]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: The function is supposed to be continuous but not necessarily smooth. [1296,1365]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TagElement [748,1365]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [1374,1429]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Javadoc [741,1433]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [2300,2313]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [2768,2781]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [3220,3330]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/math/analysis/UnivariateRealFunction.java",
+        "src/java/org/apache/commons/math/analysis/UnivariateRealFunction.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.UnivariateRealFunction:value:[double x]:double"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.UnivariateRealFunction:value:[double x]:double"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "18",
+            "23",
+            "30",
+            "31",
+            "33"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "18",
+            "23",
+            "30",
+            "32"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/math/analysis/UnivariateRealFunction.java b/src/java/org/apache/commons/math/analysis/UnivariateRealFunction.java\nindex 0eed263..0ddd8b4 100644\n--- a/src/java/org/apache/commons/math/analysis/UnivariateRealFunction.java\n+++ b/src/java/org/apache/commons/math/analysis/UnivariateRealFunction.java\n@@ -15,21 +15,20 @@\n  */\n package org.apache.commons.math.analysis;\n \n-import org.apache.commons.math.MathException;\n+import org.apache.commons.math.FunctionEvaluationException;\n \n /**\n  * An interface representing a univariate real function.\n  *  \n- * @version $Revision: 1.13 $ $Date: 2004/06/23 16:26:14 $\n+ * @version $Revision: 1.14 $ $Date: 2004/07/17 21:19:39 $\n  */\n public interface UnivariateRealFunction {\n     /**\n      * Compute the value for the function.\n      * @param x the point for which the function value should be computed\n      * @return the value\n-     * @throws MathException if the function couldn\u0027t be computed due to\n-     *  missing additional data or other environmental problems.\n+     * @throws FunctionEvaluationException if the function evaluation fails\n      */\n-    public double value(double x) throws MathException;\n+    public double value(double x) throws FunctionEvaluationException;\n \n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [664,723]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [1171,1198]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [664,709]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: missing additional data or other environmental problems. [1113,1169]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [1219,1232]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/math/analysis/UnivariateRealSolver.java",
+        "src/java/org/apache/commons/math/analysis/UnivariateRealSolver.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.UnivariateRealSolver:setAbsoluteAccuracy:[double accuracy]:void",
+            "org.apache.commons.math.analysis.UnivariateRealSolver:getFunctionValueAccuracy:[]:double",
+            "org.apache.commons.math.analysis.UnivariateRealSolver:getIterationCount:[]:int",
+            "org.apache.commons.math.analysis.UnivariateRealSolver:setMaximalIterationCount:[int count]:void",
+            "org.apache.commons.math.analysis.UnivariateRealSolver:getRelativeAccuracy:[]:double",
+            "org.apache.commons.math.analysis.UnivariateRealSolver:resetMaximalIterationCount:[]:void",
+            "org.apache.commons.math.analysis.UnivariateRealSolver:getAbsoluteAccuracy:[]:double",
+            "org.apache.commons.math.analysis.UnivariateRealSolver:solve:[double min, double max]:double",
+            "org.apache.commons.math.analysis.UnivariateRealSolver:setFunctionValueAccuracy:[double accuracy]:void",
+            "org.apache.commons.math.analysis.UnivariateRealSolver:resetAbsoluteAccuracy:[]:void",
+            "org.apache.commons.math.analysis.UnivariateRealSolver:setRelativeAccuracy:[double accuracy]:void",
+            "org.apache.commons.math.analysis.UnivariateRealSolver:getResult:[]:double",
+            "org.apache.commons.math.analysis.UnivariateRealSolver:getMaximalIterationCount:[]:int",
+            "org.apache.commons.math.analysis.UnivariateRealSolver:resetRelativeAccuracy:[]:void",
+            "org.apache.commons.math.analysis.UnivariateRealSolver:resetFunctionValueAccuracy:[]:void",
+            "org.apache.commons.math.analysis.UnivariateRealSolver:solve:[double min, double max, double startValue]:double"
+          ],
+          "num": 16
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.UnivariateRealSolver:getFunctionValueAccuracy:[]:double",
+            "org.apache.commons.math.analysis.UnivariateRealSolver:resetAbsoluteAccuracy:[]:void",
+            "org.apache.commons.math.analysis.UnivariateRealSolver:setAbsoluteAccuracy:[double accuracy]:void",
+            "org.apache.commons.math.analysis.UnivariateRealSolver:getAbsoluteAccuracy:[]:double",
+            "org.apache.commons.math.analysis.UnivariateRealSolver:getMaximalIterationCount:[]:int",
+            "org.apache.commons.math.analysis.UnivariateRealSolver:getIterationCount:[]:int",
+            "org.apache.commons.math.analysis.UnivariateRealSolver:solve:[double min, double max]:double",
+            "org.apache.commons.math.analysis.UnivariateRealSolver:getRelativeAccuracy:[]:double",
+            "org.apache.commons.math.analysis.UnivariateRealSolver:resetMaximalIterationCount:[]:void",
+            "org.apache.commons.math.analysis.UnivariateRealSolver:resetRelativeAccuracy:[]:void",
+            "org.apache.commons.math.analysis.UnivariateRealSolver:setRelativeAccuracy:[double accuracy]:void",
+            "org.apache.commons.math.analysis.UnivariateRealSolver:setFunctionValueAccuracy:[double accuracy]:void",
+            "org.apache.commons.math.analysis.UnivariateRealSolver:solve:[double min, double max, double startValue]:double",
+            "org.apache.commons.math.analysis.UnivariateRealSolver:getResult:[]:double",
+            "org.apache.commons.math.analysis.UnivariateRealSolver:setMaximalIterationCount:[int count]:void",
+            "org.apache.commons.math.analysis.UnivariateRealSolver:resetFunctionValueAccuracy:[]:void"
+          ],
+          "num": 16
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "18",
+            "25",
+            "36",
+            "40",
+            "47",
+            "56",
+            "70",
+            "71",
+            "73",
+            "80",
+            "87",
+            "100",
+            "101",
+            "103",
+            "109",
+            "115",
+            "127",
+            "128",
+            "130",
+            "136",
+            "142",
+            "151",
+            "152",
+            "154",
+            "164",
+            "165",
+            "167",
+            "168",
+            "173",
+            "176",
+            "188",
+            "191"
+          ],
+          "num": 32
+        },
+        {
+          "qualified_names": [
+            "18",
+            "19",
+            "20",
+            "27",
+            "38",
+            "39",
+            "43",
+            "50",
+            "59",
+            "73",
+            "74",
+            "76",
+            "83",
+            "90",
+            "103",
+            "104",
+            "106",
+            "112",
+            "118",
+            "130",
+            "131",
+            "133",
+            "139",
+            "145",
+            "154",
+            "155",
+            "156",
+            "157",
+            "158",
+            "159",
+            "161",
+            "162",
+            "172",
+            "173",
+            "174",
+            "175",
+            "176",
+            "177",
+            "179",
+            "180",
+            "184",
+            "186",
+            "189",
+            "201",
+            "204"
+          ],
+          "num": 45
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/math/analysis/UnivariateRealSolver.java b/src/java/org/apache/commons/math/analysis/UnivariateRealSolver.java\nindex d11d412..e166473 100644\n--- a/src/java/org/apache/commons/math/analysis/UnivariateRealSolver.java\n+++ b/src/java/org/apache/commons/math/analysis/UnivariateRealSolver.java\n@@ -15,14 +15,16 @@\n  */\n package org.apache.commons.math.analysis;\n \n-import org.apache.commons.math.MathException;\n+import org.apache.commons.math.ConvergenceException;\n+import org.apache.commons.math.FunctionEvaluationException;\n+\n \n /**\n  * Interface for (univariate real) rootfinding algorithms.\n  * \u003cp\u003e\n  * Implementations will search for only one zero in the given interval.\n  *  \n- * @version $Revision: 1.13 $ $Date: 2004/06/23 16:26:14 $\n+ * @version $Revision: 1.14 $ $Date: 2004/07/17 21:19:39 $\n  */\n public interface UnivariateRealSolver {\n \n@@ -33,18 +35,19 @@\n      * the \"reasonable value\" varies widely for different solvers.  Users are\n      * advised to use the default value supplied by the solver.\n      * \u003cp\u003e\n-     * An exception will be thrown if the number is exceeded.\n+     * A \u003ccode\u003eConvergenceException\u003c/code\u003e will be thrown if this number\n+     * is exceeded.\n      *  \n      * @param count maximum number of iterations\n      */\n-    public void setMaximalIterationCount(int count);\n+    void setMaximalIterationCount(int count);\n \n     /**\n      * Get the upper limit for the number of iterations.\n      * \n      * @return the actual upper limit\n      */\n-    public int getMaximalIterationCount();\n+    int getMaximalIterationCount();\n \n     /**\n      * Reset the upper limit for the number of iterations to the default.\n@@ -53,7 +56,7 @@\n      * \n      * @see #setMaximalIterationCount(int)\n      */\n-    public void resetMaximalIterationCount();\n+    void resetMaximalIterationCount();\n \n     /**\n      * Set the absolute accuracy.\n@@ -67,24 +70,24 @@\n      * accuracy, but clients should not rely on this.\n      *  \n      * @param accuracy the accuracy.\n-     * @throws MathException if the accuracy can\u0027t be achieved by the solver or\n-     *         is otherwise deemed unreasonable. \n+     * @throws IllegalArgumentException if the accuracy can\u0027t be achieved by\n+     * the solver or is otherwise deemed unreasonable. \n      */\n-    public void setAbsoluteAccuracy(double accuracy) throws MathException;\n+    void setAbsoluteAccuracy(double accuracy);\n \n     /**\n      * Get the actual absolute accuracy.\n      * \n      * @return the accuracy\n      */\n-    public double getAbsoluteAccuracy();\n+    double getAbsoluteAccuracy();\n \n     /**\n      * Reset the absolute accuracy to the default.\n      * \u003cp\u003e\n      * The default value is provided by the solver implementation.\n      */\n-    public void resetAbsoluteAccuracy();\n+    void resetAbsoluteAccuracy();\n \n     /**\n      * Set the relative accuracy.\n@@ -97,22 +100,22 @@\n      * like 1E-1000.\n      * \n      * @param accuracy the relative accuracy.\n-     * @throws MathException if the accuracy can\u0027t be achieved by the solver or\n-     *         is otherwise deemed unreasonable. \n+     * @throws IllegalArgumentException if the accuracy can\u0027t be achieved by\n+     *  the solver or is otherwise deemed unreasonable. \n      */\n-    public void setRelativeAccuracy(double accuracy) throws MathException;\n+    void setRelativeAccuracy(double accuracy);\n \n     /**\n      * Get the actual relative accuracy.\n      * @return the accuracy\n      */\n-    public double getRelativeAccuracy();\n+    double getRelativeAccuracy();\n \n     /**\n      * Reset the relative accuracy to the default.\n      * The default value is provided by the solver implementation.\n      */\n-    public void resetRelativeAccuracy();\n+    void resetRelativeAccuracy();\n \n     /**\n      * Set the function value accuracy.\n@@ -124,22 +127,22 @@\n      * general.\n      * \n      * @param accuracy the accuracy.\n-     * @throws MathException if the accuracy can\u0027t be achieved by the solver or\n-     *         is otherwise deemed unreasonable. \n+     * @throws IllegalArgumentException if the accuracy can\u0027t be achieved by\n+     * the solver or is otherwise deemed unreasonable. \n      */\n-    public void setFunctionValueAccuracy(double accuracy) throws MathException;\n+    void setFunctionValueAccuracy(double accuracy);\n \n     /**\n      * Get the actual function value accuracy.\n      * @return the accuracy\n      */\n-    public double getFunctionValueAccuracy();\n+    double getFunctionValueAccuracy();\n \n     /**\n      * Reset the actual function accuracy to the default.\n      * The default value is provided by the solver implementation.\n      */\n-    public void resetFunctionValueAccuracy();\n+    void resetFunctionValueAccuracy();\n \n     /**\n      * Solve for a zero root in the given interval.\n@@ -148,10 +151,15 @@\n      * @param min the lower bound for the interval.\n      * @param max the upper bound for the interval.\n      * @return a value where the function is zero\n-     * @throws MathException if the iteration count was exceeded or the\n-     *  solver detects convergence problems otherwise.\n+     * @throws ConvergenceException if the maximum iteration count is exceeded\n+     * or the solver detects convergence problems otherwise.\n+     * @throws FunctionEvaluationException if an error occurs evaluating the\n+     * function\n+     * @throws IllegalArgumentException if min \u003e max or the endpoints do not\n+     * satisfy the requirements specified by the solver\n      */\n-    public double solve(double min, double max) throws MathException;\n+    double solve(double min, double max) throws ConvergenceException, \n+        FunctionEvaluationException;\n \n     /**\n      * Solve for a zero in the given interval, start at startValue.\n@@ -161,19 +169,24 @@\n      * @param max the upper bound for the interval.\n      * @param startValue the start value to use\n      * @return a value where the function is zero\n-     * @throws MathException if the iteration count was exceeded or the\n-     *  solver detects convergence problems otherwise.\n+     * @throws ConvergenceException if the maximum iteration count is exceeded\n+     * or the solver detects convergence problems otherwise.\n+     * @throws FunctionEvaluationException if an error occurs evaluating the\n+     * function\n+     * @throws IllegalArgumentException if min \u003e max or the arguments do not\n+     * satisfy the requirements specified by the solver\n      */\n-    public double solve(double min, double max, double startValue)\n-        throws MathException;\n+    double solve(double min, double max, double startValue)\n+        throws ConvergenceException, FunctionEvaluationException;\n \n     /**\n      * Get the result of the last run of the solver.\n+     * \n      * @return the last result.\n-     * @throws MathException if there is no result available, either\n+     * @throws IllegalStateException if there is no result available, either\n      * because no result was yet computed or the last attempt failed.\n      */\n-    public double getResult() throws MathException;\n+    double getResult();\n \n     /**\n      * Get the number of iterations in the last run of the solver.\n@@ -185,8 +198,8 @@\n      * problem.\n      * \n      * @return the last iteration count.\n-     * @throws MathException if there is no result available, either\n+     * @throws IllegalStateException if there is no result available, either\n      * because no result was yet computed or the last attempt failed.\n      */\n-    public int getIterationCount() throws MathException;\n+    int getIterationCount();\n }\n\\ No newline at end of file\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [664,716]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [717,776]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [5420,5440]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [5451,5478]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [6291,6311]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [6313,6340]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [5145,5230]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [5238,5363]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [5989,6074]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [6082,6207]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: is exceeded. [1418,1430]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [664,709]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: public [1402,1408]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: public [1575,1581]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: public [1838,1844]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: public [2517,2523]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [2573,2586]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: public [2686,2692]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: public [2873,2879]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: public [3484,3490]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [3540,3553]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: public [3645,3651]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: public [3821,3827]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: public [4336,4342]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [4397,4410]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: public [4508,4514]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: public [4696,4702]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: public [5175,5181]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [5226,5239]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: public [5742,5748]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [5820,5833]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: public [6080,6086]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [6113,6126]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: public [6705,6711]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [6743,6756]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/math/analysis/UnivariateRealSolverImpl.java",
+        "src/java/org/apache/commons/math/analysis/UnivariateRealSolverImpl.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.UnivariateRealSolverImpl:getResult:[]:double",
+            "org.apache.commons.math.analysis.UnivariateRealSolverImpl:UnivariateRealSolverImpl:[UnivariateRealFunction f, int defaultMaximalIterationCount, double defaultAbsoluteAccuracy]:null",
+            "org.apache.commons.math.analysis.UnivariateRealSolverImpl:setAbsoluteAccuracy:[double accuracy]:void",
+            "org.apache.commons.math.analysis.UnivariateRealSolverImpl:setFunctionValueAccuracy:[double accuracy]:void",
+            "org.apache.commons.math.analysis.UnivariateRealSolverImpl:getIterationCount:[]:int",
+            "org.apache.commons.math.analysis.UnivariateRealSolverImpl:resetFunctionValueAccuracy:[]:void",
+            "org.apache.commons.math.analysis.UnivariateRealSolverImpl:setRelativeAccuracy:[double accuracy]:void"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.UnivariateRealSolverImpl:isSequence:[double start, double mid, double end]:boolean",
+            "org.apache.commons.math.analysis.UnivariateRealSolverImpl:getResult:[]:double",
+            "org.apache.commons.math.analysis.UnivariateRealSolverImpl:isBracketing:[double lower, double upper, UnivariateRealFunction f]:boolean",
+            "org.apache.commons.math.analysis.UnivariateRealSolverImpl:setResult:[double result, int iterationCount]:void",
+            "org.apache.commons.math.analysis.UnivariateRealSolverImpl:setAbsoluteAccuracy:[double accuracy]:void",
+            "org.apache.commons.math.analysis.UnivariateRealSolverImpl:setFunctionValueAccuracy:[double accuracy]:void",
+            "org.apache.commons.math.analysis.UnivariateRealSolverImpl:verifySequence:[double lower, double initial, double upper]:void",
+            "org.apache.commons.math.analysis.UnivariateRealSolverImpl:verifyBracketing:[double lower, double upper, UnivariateRealFunction f]:void",
+            "org.apache.commons.math.analysis.UnivariateRealSolverImpl:setRelativeAccuracy:[double accuracy]:void",
+            "org.apache.commons.math.analysis.UnivariateRealSolverImpl:verifyInterval:[double lower, double upper]:void",
+            "org.apache.commons.math.analysis.UnivariateRealSolverImpl:UnivariateRealSolverImpl:[UnivariateRealFunction f, int defaultMaximalIterationCount, double defaultAbsoluteAccuracy]:null",
+            "org.apache.commons.math.analysis.UnivariateRealSolverImpl:getIterationCount:[]:int"
+          ],
+          "num": 12
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "21",
+            "27",
+            "29",
+            "74",
+            "75",
+            "76",
+            "102",
+            "103",
+            "105",
+            "109",
+            "115",
+            "116",
+            "119",
+            "123",
+            "149",
+            "150",
+            "152",
+            "153",
+            "202",
+            "203",
+            "205",
+            "228",
+            "229",
+            "231",
+            "232",
+            "249"
+          ],
+          "num": 26
+        },
+        {
+          "qualified_names": [
+            "21",
+            "27",
+            "29",
+            "30",
+            "74",
+            "76",
+            "77",
+            "78",
+            "79",
+            "105",
+            "106",
+            "107",
+            "109",
+            "113",
+            "119",
+            "120",
+            "121",
+            "124",
+            "128",
+            "134",
+            "155",
+            "156",
+            "158",
+            "207",
+            "208",
+            "210",
+            "233",
+            "234",
+            "236",
+            "254",
+            "255",
+            "256",
+            "257",
+            "258",
+            "259",
+            "260",
+            "261",
+            "262",
+            "263",
+            "264",
+            "265",
+            "266",
+            "267",
+            "268",
+            "269",
+            "270",
+            "271",
+            "272",
+            "273",
+            "274",
+            "275",
+            "276",
+            "277",
+            "278",
+            "279",
+            "280",
+            "281",
+            "282",
+            "283",
+            "284",
+            "285",
+            "286",
+            "287",
+            "288",
+            "289",
+            "290",
+            "291",
+            "292",
+            "293",
+            "294",
+            "295",
+            "296",
+            "297",
+            "298",
+            "299",
+            "300",
+            "301",
+            "302",
+            "303",
+            "304",
+            "305",
+            "306",
+            "307",
+            "308",
+            "309",
+            "310",
+            "311",
+            "312",
+            "313",
+            "314",
+            "315",
+            "316",
+            "317",
+            "318",
+            "319",
+            "320",
+            "321",
+            "322",
+            "323",
+            "324",
+            "325",
+            "326",
+            "327",
+            "328",
+            "329",
+            "330",
+            "331",
+            "332",
+            "333",
+            "334",
+            "335",
+            "336",
+            "337"
+          ],
+          "num": 113
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/math/analysis/UnivariateRealSolverImpl.java b/src/java/org/apache/commons/math/analysis/UnivariateRealSolverImpl.java\nindex c1a22eb..f0cb2f5 100644\n--- a/src/java/org/apache/commons/math/analysis/UnivariateRealSolverImpl.java\n+++ b/src/java/org/apache/commons/math/analysis/UnivariateRealSolverImpl.java\n@@ -18,15 +18,16 @@\n \n import java.io.Serializable;\n \n-import org.apache.commons.math.MathException;\n+import org.apache.commons.math.FunctionEvaluationException;\n \n /**\n  * Provide a default implementation for several functions useful to generic\n  * solvers.\n  *  \n- * @version $Revision: 1.14 $ $Date: 2004/06/23 16:26:14 $\n+ * @version $Revision: 1.15 $ $Date: 2004/07/17 21:19:39 $\n  */\n-public abstract class UnivariateRealSolverImpl implements UnivariateRealSolver, Serializable {\n+public abstract class UnivariateRealSolverImpl implements UnivariateRealSolver,\n+    Serializable {\n \n     /** Serializable version identifier */\n     static final long serialVersionUID \u003d 1112491292565386596L;\n@@ -70,10 +71,12 @@\n \n     /**\n      * Construct a solver with given iteration count and accuracy.\n+     * \n      * @param f the function to solve.\n-     * @param defaultAbsoluteAccuracy maximum absolue error.\n-     * @param defaultMaximalIterationCount maximum number of iterations.\n-     * @throws IllegalArgumentException if function is null.\n+     * @param defaultAbsoluteAccuracy maximum absolute error\n+     * @param defaultMaximalIterationCount maximum number of iterations\n+     * @throws IllegalArgumentException if f is null or the \n+     * defaultAbsoluteAccuracy is not valid\n      */\n     protected UnivariateRealSolverImpl(\n         UnivariateRealFunction f,\n@@ -99,33 +102,36 @@\n \n     /**\n      * Access the last computed root.\n-     * @return the last computed root.\n-     * @throws MathException if no root has been computed.\n+     * \n+     * @return the last computed root\n+     * @throws IllegalStateException if no root has been computed\n      */\n-    public double getResult() throws MathException {\n+    public double getResult() {\n         if (resultComputed) {\n             return result;\n         } else {\n-            throw new MathException(\"No result available\");\n+            throw new IllegalStateException(\"No result available\");\n         }\n     }\n \n     /**\n      * Access the last iteration count.\n-     * @return the last iteration count.\n-     * @throws MathException if no root has been computed.\n+     * \n+     * @return the last iteration count\n+     * @throws IllegalStateException if no root has been computed\n      *  \n      */\n-    public int getIterationCount() throws MathException {\n+    public int getIterationCount() {\n         if (resultComputed) {\n             return iterationCount;\n         } else {\n-            throw new MathException(\"No result available\");\n+            throw new IllegalStateException(\"No result available\");\n         }\n     }\n \n     /**\n      * Convenience function for implementations.\n+     * \n      * @param result the result to set\n      * @param iterationCount the iteration count to set\n      */\n@@ -146,11 +152,10 @@\n      * Set the absolute accuracy.\n      * \n      * @param accuracy the accuracy.\n-     * @throws MathException if the accuracy can\u0027t be achieved by the solver or\n-     *         is otherwise deemed unreasonable. \n+     * @throws IllegalArgumentException if the accuracy can\u0027t be achieved by\n+     *  the solver or is otherwise deemed unreasonable. \n      */\n-    public void setAbsoluteAccuracy(double accuracy)\n-        throws MathException {\n+    public void setAbsoluteAccuracy(double accuracy) {\n         absoluteAccuracy \u003d accuracy;\n     }\n \n@@ -199,10 +204,10 @@\n      * Set the relative accuracy.\n      * \n      * @param accuracy the relative accuracy.\n-     * @throws MathException if the accuracy can\u0027t be achieved by the solver or\n-     *         is otherwise deemed unreasonable. \n+     * @throws IllegalArgumentException if the accuracy can\u0027t be achieved by\n+     *  the solver or is otherwise deemed unreasonable. \n      */\n-    public void setRelativeAccuracy(double accuracy) throws MathException {\n+    public void setRelativeAccuracy(double accuracy) {\n         relativeAccuracy \u003d accuracy;\n     }\n \n@@ -225,11 +230,10 @@\n      * Set the function value accuracy.\n      * \n      * @param accuracy the accuracy.\n-     * @throws MathException if the accuracy can\u0027t be achieved by the solver or\n-     *         is otherwise deemed unreasonable. \n+     * @throws IllegalArgumentException if the accuracy can\u0027t be achieved by\n+     * the solver or is otherwise deemed unreasonable. \n      */\n-    public void setFunctionValueAccuracy(double accuracy)\n-        throws MathException {\n+    public void setFunctionValueAccuracy(double accuracy) {\n         functionValueAccuracy \u003d accuracy;\n     }\n \n@@ -247,4 +251,88 @@\n     public void resetFunctionValueAccuracy() {\n         functionValueAccuracy \u003d defaultFunctionValueAccuracy;\n     }\n+    \n+    \n+    /**\n+     * Returns true iff the function takes opposite signs at the endpoints.\n+     * \n+     * @param lower  the lower endpoint \n+     * @param upper  the upper endpoint\n+     * @param f the function\n+     * @return true if f(lower) * f(upper) \u003c 0\n+     * @throws FunctionEvaluationException if an error occurs evaluating the \n+     * function at the endpoints\n+     */\n+    protected boolean isBracketing(double lower, double upper, \n+            UnivariateRealFunction f) throws FunctionEvaluationException {\n+        return  (f.value(lower) * f.value(upper) \u003c 0);\n+    }\n+    \n+    /**\n+     * Returns true if the arguments form a (strictly) increasing sequence\n+     * \n+     * @param start  first number\n+     * @param mid   second number\n+     * @param end  third number\n+     * @return true if the arguments form an increasing sequence\n+     */\n+    protected boolean isSequence(double start, double mid, double end) {\n+        return (start \u003c mid) \u0026\u0026 (mid \u003c end);\n+    }\n+    \n+    /**\n+     * Verifies that the endpoints specify an interval, \n+     * throws IllegalArgumentException if not\n+     * \n+     * @param lower  lower endpoint\n+     * @param upper upper endpoint\n+     * @throws IllegalArgumentException\n+     */\n+    protected void verifyInterval(double lower, double upper) {\n+        if (lower \u003e\u003d upper) {\n+            throw new IllegalArgumentException\n+                (\"Endpoints do not specify an interval: [\" + lower + \n+                        \",\" + upper + \"]\");\n+        }       \n+    }\n+    \n+    /**\n+     * Verifies that \u003ccode\u003elower \u003c initial \u003c upper\u003c/code\u003e\n+     * throws IllegalArgumentException if not\n+     * \n+     * @param lower  lower endpoint\n+     * @param initial initial value\n+     * @param upper upper endpoint\n+     * @throws IllegalArgumentException\n+     */\n+    protected void verifySequence(double lower, double initial, double upper) {\n+        if (!isSequence(lower, initial, upper)) {\n+            throw new IllegalArgumentException\n+                (\"Invalid interval, initial value parameters:  lower\u003d\" + \n+                   lower + \" initial\u003d\" + initial + \" upper\u003d\" + upper);\n+        }       \n+    }\n+    \n+    /**\n+     * Verifies that the endpoints specify an interval and the function takes\n+     * opposite signs at the enpoints, throws IllegalArgumentException if not\n+     * \n+     * @param lower  lower endpoint\n+     * @param upper upper endpoint\n+     * @param f function\n+     * @throws IllegalArgumentException\n+     * @throws FunctionEvaluationException if an error occurs evaluating the \n+     * function at the endpoints\n+     */\n+    protected void verifyBracketing(double lower, double upper, \n+            UnivariateRealFunction f) throws FunctionEvaluationException {\n+        \n+        verifyInterval(lower, upper);\n+        if (!isBracketing(lower, upper, f)) {\n+            throw new IllegalArgumentException\n+            (\"Function values at endpoints do not have different signs.\" +\n+                    \"  Endpoints: [\" + lower + \",\" + upper + \"]\" + \n+                    \"  Values: [\" + f.value(lower) + \",\" + f.value(upper) + \"]\");       \n+        }\n+    }\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [695,754]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [7322,7885]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [7895,8278]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [8288,8799]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [8809,9424]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [9434,10384]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Javadoc [3361,3522]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Javadoc [3718,3892]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [3418,3448]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [3456,3514]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [3777,3809]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [3817,3875]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: defaultAbsoluteAccuracy is not valid [2488,2524]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [695,740]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [3341,3372]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [3380,3431]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Javadoc [3292,3439]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [3477,3490]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [3699,3732]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [3740,3791]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Javadoc [3648,3808]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [3851,3864]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [4820,4833]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [6161,6174]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [6860,6873]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/math/analysis/UnivariateRealSolverUtils.java",
+        "src/java/org/apache/commons/math/analysis/UnivariateRealSolverUtils.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.UnivariateRealSolverUtils:bracket:[UnivariateRealFunction function, double initial, double lowerBound, double upperBound, int maximumIterations]:double[]",
+            "org.apache.commons.math.analysis.UnivariateRealSolverUtils:solve:[UnivariateRealFunction f, double x0, double x1]:double",
+            "org.apache.commons.math.analysis.UnivariateRealSolverUtils:midpoint:[double a, double b]:double",
+            "org.apache.commons.math.analysis.UnivariateRealSolverUtils:bracket:[UnivariateRealFunction function, double initial, double lowerBound, double upperBound]:double[]",
+            "org.apache.commons.math.analysis.UnivariateRealSolverUtils:solve:[UnivariateRealFunction f, double x0, double x1, double absoluteAccuracy]:double"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.UnivariateRealSolverUtils:setup:[UnivariateRealFunction f]:void",
+            "org.apache.commons.math.analysis.UnivariateRealSolverUtils:midpoint:[double a, double b]:double",
+            "org.apache.commons.math.analysis.UnivariateRealSolverUtils:solve:[UnivariateRealFunction f, double x0, double x1, double absoluteAccuracy]:double",
+            "org.apache.commons.math.analysis.UnivariateRealSolverUtils:bracket:[UnivariateRealFunction function, double initial, double lowerBound, double upperBound, int maximumIterations]:double[]",
+            "org.apache.commons.math.analysis.UnivariateRealSolverUtils:bracket:[UnivariateRealFunction function, double initial, double lowerBound, double upperBound]:double[]",
+            "org.apache.commons.math.analysis.UnivariateRealSolverUtils:solve:[UnivariateRealFunction f, double x0, double x1]:double"
+          ],
+          "num": 6
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "18",
+            "22",
+            "33",
+            "34",
+            "39",
+            "40",
+            "43",
+            "44",
+            "45",
+            "46",
+            "47",
+            "48",
+            "49",
+            "50",
+            "54",
+            "55",
+            "56",
+            "57",
+            "58",
+            "59",
+            "60",
+            "61",
+            "62",
+            "64",
+            "65",
+            "66",
+            "67",
+            "68",
+            "69",
+            "70",
+            "71",
+            "72",
+            "73",
+            "74",
+            "75",
+            "76",
+            "82",
+            "83",
+            "84",
+            "87",
+            "88",
+            "89",
+            "90",
+            "91",
+            "92",
+            "94",
+            "95",
+            "96",
+            "97",
+            "102",
+            "103",
+            "104",
+            "105",
+            "106",
+            "108",
+            "109",
+            "110",
+            "111",
+            "112",
+            "113",
+            "115",
+            "118",
+            "119",
+            "120",
+            "121",
+            "133",
+            "134",
+            "135",
+            "147"
+          ],
+          "num": 69
+        },
+        {
+          "qualified_names": [
+            "18",
+            "19",
+            "23",
+            "24",
+            "33",
+            "34",
+            "35",
+            "38",
+            "39",
+            "40",
+            "45",
+            "46",
+            "47",
+            "48",
+            "49",
+            "52",
+            "53",
+            "54",
+            "58",
+            "59",
+            "60",
+            "61",
+            "62",
+            "63",
+            "64",
+            "65",
+            "66",
+            "67",
+            "68",
+            "69",
+            "70",
+            "71",
+            "73",
+            "74",
+            "75",
+            "76",
+            "77",
+            "78",
+            "84",
+            "85",
+            "86",
+            "87",
+            "88",
+            "89",
+            "90",
+            "91",
+            "92",
+            "93",
+            "94",
+            "95",
+            "96",
+            "97",
+            "98",
+            "99",
+            "100",
+            "101",
+            "102",
+            "103",
+            "104",
+            "105",
+            "106",
+            "107",
+            "108",
+            "109",
+            "112",
+            "113",
+            "114",
+            "115",
+            "116",
+            "117",
+            "118",
+            "119",
+            "120",
+            "121",
+            "122",
+            "124",
+            "125",
+            "126",
+            "131",
+            "132",
+            "133",
+            "134",
+            "135",
+            "136",
+            "137",
+            "138",
+            "139",
+            "140",
+            "141",
+            "142",
+            "143",
+            "144",
+            "145",
+            "146",
+            "147",
+            "148",
+            "149",
+            "151",
+            "152",
+            "153",
+            "154",
+            "155",
+            "156",
+            "158",
+            "159",
+            "160",
+            "161",
+            "162",
+            "163",
+            "166",
+            "167",
+            "168",
+            "169",
+            "170",
+            "171",
+            "172",
+            "173",
+            "174",
+            "175",
+            "176",
+            "177",
+            "178",
+            "179",
+            "180",
+            "181",
+            "192",
+            "194",
+            "195",
+            "196",
+            "197",
+            "198",
+            "199",
+            "200",
+            "201",
+            "202",
+            "203",
+            "204",
+            "205",
+            "206",
+            "212",
+            "220",
+            "221",
+            "222",
+            "223",
+            "224",
+            "225",
+            "226",
+            "227",
+            "228",
+            "229",
+            "230",
+            "231",
+            "232",
+            "233",
+            "234",
+            "235",
+            "236",
+            "237"
+          ],
+          "num": 158
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/math/analysis/UnivariateRealSolverUtils.java b/src/java/org/apache/commons/math/analysis/UnivariateRealSolverUtils.java\nindex 7ae6a29..826f405 100644\n--- a/src/java/org/apache/commons/math/analysis/UnivariateRealSolverUtils.java\n+++ b/src/java/org/apache/commons/math/analysis/UnivariateRealSolverUtils.java\n@@ -15,11 +15,13 @@\n  */\n package org.apache.commons.math.analysis;\n \n-import org.apache.commons.math.MathException;\n+import org.apache.commons.math.FunctionEvaluationException;\n+import org.apache.commons.math.ConvergenceException;\n \n /**\n  * Utility routines for {@link UnivariateRealSolver} objects.\n- * @version $Revision: 1.9 $ $Date: 2004/06/23 16:26:14 $\n+ * \n+ * @version $Revision: 1.10 $ $Date: 2004/07/17 21:19:39 $\n  */\n public class UnivariateRealSolverUtils {\n     /**\n@@ -28,97 +30,155 @@\n     private UnivariateRealSolverUtils() {\n         super();\n     }\n+    \n+    /** Cached solver factory */\n+    private static UnivariateRealSolverFactory factory \u003d null;\n \n     /**\n-     * Method to solve for zeros of real univariate functions.  A\n-     * default solver is created and used for solving. \n+     * Convenience method to find a zero of a univariate real function.  A default\n+     * solver is used. \n+     * \n      * @param f the function.\n      * @param x0 the lower bound for the interval.\n      * @param x1 the upper bound for the interval.\n      * @return a value where the function is zero.\n-     * @throws MathException if the iteration count was exceeded or the\n-     *         solver detects convergence problems otherwise.\n+     * @throws ConvergenceException if the iteration count was exceeded\n+     * @throws FunctionEvaluationException if an error occurs evaluating\n+     * the function\n+     * @throws IllegalArgumentException if f is null or the endpoints do not\n+     * specify a valid interval\n      */\n     public static double solve(UnivariateRealFunction f, double x0, double x1)\n-        throws MathException\n-    {\n-        if(f \u003d\u003d null){\n-            throw new IllegalArgumentException(\"f can not be null.\");    \n-        }\n-        \n-        return UnivariateRealSolverFactory.newInstance().newDefaultSolver(f)\n-            .solve(x0, x1);\n+    throws ConvergenceException, FunctionEvaluationException {\n+        setup(f);\n+        return factory.newDefaultSolver(f).solve(x0, x1);\n     }\n \n     /**\n-     * Convience method to solve for zeros of real univariate functions.  A\n-     * default solver is created and used for solving. \n-     * @param f the function.\n-     * @param x0 the lower bound for the interval.\n-     * @param x1 the upper bound for the interval.\n-     * @param absoluteAccuracy the accuracy to be used by the solver.\n-     * @return a value where the function is zero.\n-     * @throws MathException if the iteration count was exceeded or the\n-     *         solver detects convergence problems otherwise.\n+     * Convenience method to find a zero of a univariate real function.  A default\n+     * solver is used. \n+     * \n+     * @param f the function\n+     * @param x0 the lower bound for the interval\n+     * @param x1 the upper bound for the interval\n+     * @param absoluteAccuracy the accuracy to be used by the solver\n+     * @return a value where the function is zero\n+     * @throws ConvergenceException if the iteration count is exceeded\n+     * @throws FunctionEvaluationException if an error occurs evaluating the\n+     * function\n+     * @throws IllegalArgumentException if f is null, the endpoints do not \n+     * specify a valid interval, or the absoluteAccuracy is not valid for the\n+     * default solver\n      */\n-    public static double solve(\n-        UnivariateRealFunction f,\n-        double x0,\n-        double x1,\n-        double absoluteAccuracy)\n-        throws MathException\n-    {\n-        if(f \u003d\u003d null){\n-            throw new IllegalArgumentException(\"f can not be null.\");    \n-        }\n-            \n-        UnivariateRealSolver solver \u003d UnivariateRealSolverFactory.newInstance()\n-            .newDefaultSolver(f);\n+    public static double solve(UnivariateRealFunction f, double x0, double x1,\n+            double absoluteAccuracy) throws ConvergenceException, \n+            FunctionEvaluationException {    \n+       \n+        setup(f);\n+        UnivariateRealSolver solver \u003d factory.newDefaultSolver(f);\n         solver.setAbsoluteAccuracy(absoluteAccuracy);\n         return solver.solve(x0, x1);\n     }\n \n     /**\n-     * For a function, f, this method returns two values, a and b that bracket\n-     * a root of f.  That is to say, there exists a value c between a and b\n-     * such that f(c) \u003d 0.\n+     * This method attempts to find two values a and b satisfying \u003cul\u003e\n+    * \u003cli\u003e \u003ccode\u003e lowerBound \u003c\u003d a \u003c initial \u003c b \u003c\u003d upperBound\u003c/code\u003e \u003c/li\u003e\n+     * \u003cli\u003e \u003ccode\u003e f(a) * f(b) \u003c 0 \u003c/code\u003e\u003c/li\u003e\n+     * \u003c/ul\u003e\n+     * If f is continuous on \u003ccode\u003e[a,b],\u003c/code\u003e this means that \u003ccode\u003ea\u003c/code\u003e\n+     * and \u003ccode\u003eb\u003c/code\u003e bracket a root of f.\n+     * \u003cp\u003e\n+     * The algorithm starts by setting \n+     * \u003ccode\u003ea :\u003d initial -1; b :\u003d initial +1,\u003c/code\u003e examines the value of the\n+     * function at \u003ccode\u003ea\u003c/code\u003e and \u003ccode\u003eb\u003c/code\u003e and keeps moving\n+     * the endpoints out by one unit each time through a loop that terminates \n+     * when one of the following happens: \u003cul\u003e\n+     * \u003cli\u003e \u003ccode\u003e f(a) * f(b) \u003c 0 \u003c/code\u003e --  success!\u003c/li\u003e\n+     * \u003cli\u003e \u003ccode\u003e a \u003d lower \u003c/code\u003e and \u003ccode\u003e b \u003d upper\u003c/code\u003e \n+     * -- ConvergenceException \u003c/li\u003e\n+     * \u003cli\u003e \u003ccode\u003e Integer.MAX_VALUE\u003c/code\u003e iterations elapse \n+     * -- ConvergenceException \u003c/li\u003e\n+     * \u003c/ul\u003e\n+     * \u003cp\u003e\n+     * \u003cstrong\u003eNote: \u003c/strong\u003e this method can take \n+     * \u003ccode\u003eInteger.MAX_VALUE\u003c/code\u003e iterations to throw a \n+     * \u003ccode\u003eConvergenceException.\u003c/code\u003e  Unless you are confident that there\n+     * is a root between \u003ccode\u003elowerBound\u003c/code\u003e and \u003ccode\u003eupperBound\u003c/code\u003e\n+     * near \u003ccode\u003einitial,\u003c/code\u003e it is better to use \n+     * {@link #bracket(UnivariateRealFunction, double, double, double, int)}, \n+     * explicitly specifying the maximum number of iterations.\n      *\n      * @param function the function\n-     * @param initial midpoint of the returned range.\n-     * @param lowerBound for numerical safety, a never is less than this value.\n-     * @param upperBound for numerical safety, b never is greater than this\n-     *                   value.\n-     * @return a two element array holding {a, b}.\n-     * @throws MathException if a root can not be bracketted.\n+     * @param initial initial midpoint of interval being expanded to\n+     * bracket a root\n+     * @param lowerBound lower bound (a is never lower than this value)\n+     * @param upperBound upper bound (b never is greater than this\n+     * value)\n+     * @return a two element array holding {a, b}\n+     * @throws ConvergenceException if a root can not be bracketted\n+     * @throws FunctionEvaluationException if an error occurs evaluating the\n+     * function\n+     * @throws IllegalArgumentException if function is null, maximumIterations\n+     * is not positive, or initial is not between lowerBound and upperBound\n      */\n-    public static double[] bracket(UnivariateRealFunction function,\n-                                   double initial,\n-                                   double lowerBound,\n-                                   double upperBound) throws MathException {\n+    public static double[] bracket(UnivariateRealFunction function, \n+            double initial, double lowerBound, double upperBound) \n+    throws ConvergenceException, FunctionEvaluationException {\n         return bracket( function, initial, lowerBound, upperBound,\n             Integer.MAX_VALUE ) ;\n     }\n \n-    /**\n-     * For a function, f, this method returns two values, a and b that bracket\n-     * a root of f.  That is to say, there exists a value c between a and b\n-     * such that f(c) \u003d 0.\n-     *\n+     /**\n+     * This method attempts to find two values a and b satisfying \u003cul\u003e\n+     * \u003cli\u003e \u003ccode\u003e lowerBound \u003c\u003d a \u003c initial \u003c b \u003c\u003d upperBound\u003c/code\u003e \u003c/li\u003e\n+     * \u003cli\u003e \u003ccode\u003e f(a) * f(b) \u003c 0 \u003c/code\u003e \u003c/li\u003e\n+     * \u003c/ul\u003e\n+     * If f is continuous on \u003ccode\u003e[a,b],\u003c/code\u003e this means that \u003ccode\u003ea\u003c/code\u003e\n+     * and \u003ccode\u003eb\u003c/code\u003e bracket a root of f.\n+     * \u003cp\u003e\n+     * The algorithm starts by setting \n+     * \u003ccode\u003ea :\u003d initial -1; b :\u003d initial +1,\u003c/code\u003e examines the value of the\n+     * function at \u003ccode\u003ea\u003c/code\u003e and \u003ccode\u003eb\u003c/code\u003e and keeps moving\n+     * the endpoints out by one unit each time through a loop that terminates \n+     * when one of the following happens: \u003cul\u003e\n+     * \u003cli\u003e \u003ccode\u003e f(a) * f(b) \u003c 0 \u003c/code\u003e --  success!\u003c/li\u003e\n+     * \u003cli\u003e \u003ccode\u003e a \u003d lower \u003c/code\u003e and \u003ccode\u003e b \u003d upper\u003c/code\u003e \n+     * -- ConvergenceException \u003c/li\u003e\n+     * \u003cli\u003e \u003ccode\u003e maximumIterations\u003c/code\u003e iterations elapse \n+     * -- ConvergenceException \u003c/li\u003e\u003c/ul\u003e\n+     * \n      * @param function the function\n-     * @param initial midpoint of the returned range.\n-     * @param lowerBound for numerical safety, a never is less than this value.\n-     * @param upperBound for numerical safety, b never is greater than this\n-     *                   value.\n-     * @param maximumIterations to guard against infinite looping, maximum\n-     *                          number of iterations to perform\n+     * @param initial initial midpoint of interval being expanded to\n+     * bracket a root\n+     * @param lowerBound lower bound (a is never lower than this value)\n+     * @param upperBound upper bound (b never is greater than this\n+     * value)\n+     * @param maximumIterations maximum number of iterations to perform\n      * @return a two element array holding {a, b}.\n-     * @throws MathException if a root can not be bracketted.\n+     * @throws ConvergenceException if the algorithm fails to find a and b\n+     * satisfying the desired conditions\n+     * @throws FunctionEvaluationException if an error occurs evaluating the \n+     * function\n+     * @throws IllegalArgumentException if function is null, maximumIterations\n+     * is not positive, or initial is not between lowerBound and upperBound\n      */\n     public static double[] bracket(UnivariateRealFunction function,\n-                                   double initial,\n-                                   double lowerBound,\n-                                   double upperBound,\n-                                   int maximumIterations) throws MathException {\n+            double initial, double lowerBound, double upperBound, \n+            int maximumIterations) throws ConvergenceException, \n+            FunctionEvaluationException {\n+        \n+        if (function \u003d\u003d null) {\n+            throw new IllegalArgumentException (\"function is null.\");\n+        }\n+        if (maximumIterations \u003c\u003d 0)  {\n+            throw new IllegalArgumentException\n+            (\"bad value for maximumIterations: \" + maximumIterations);\n+        }\n+        if (initial \u003c lowerBound || initial \u003e upperBound || lowerBound \u003e\u003d upperBound) {\n+            throw new IllegalArgumentException\n+            (\"Invalid endpoint parameters:  lowerBound\u003d\" + lowerBound + \n+              \" initial\u003d\" + initial + \" upperBound\u003d\" + upperBound);\n+        }\n         double a \u003d initial;\n         double b \u003d initial;\n         double fa;\n@@ -129,15 +189,27 @@\n             a \u003d Math.max(a - 1.0, lowerBound);\n             b \u003d Math.min(b + 1.0, upperBound);\n             fa \u003d function.value(a);\n+            \n             fb \u003d function.value(b);\n-            numIterations +\u003d 1 ;\n-        } while ( (fa * fb \u003e 0.0) \u0026\u0026 ( numIterations \u003c maximumIterations ) );\n-    \n+            numIterations++ ;\n+        } while ((fa * fb \u003e 0.0) \u0026\u0026 (numIterations \u003c maximumIterations) \u0026\u0026 \n+                ((a \u003e lowerBound) || (b \u003c upperBound)));\n+   \n+        if (fa * fb \u003e\u003d 0.0 ) {\n+            throw new ConvergenceException\n+            (\"Number of iterations\u003d \" + numIterations +\n+              \" maximum iterations\u003d \"  + maximumIterations +\n+              \" initial\u003d \" + initial + \" lowerBound\u003d\" + lowerBound +\n+              \" upperBound\u003d\" + upperBound + \" final a value\u003d\" + a +\n+              \" final b value\u003d\" + b + \" f(a)\u003d\" + fa + \" f(b)\u003d\" + fb);\n+        }\n+        \n         return new double[]{a, b};\n     }\n \n     /**\n      * Compute the midpoint of two values.\n+     * \n      * @param a first value.\n      * @param b second value.\n      * @return the midpoint. \n@@ -145,4 +217,22 @@\n     public static double midpoint(double a, double b) {\n         return (a + b) * .5;\n     }\n+    \n+    /**\n+     * Checks to see if f is null, throwing IllegalArgumentException if so.\n+     * Also initializes factory if factory is null.\n+     * \n+     * @param f  input function\n+     * @throws IllegalArgumentException if f is null\n+     */\n+    private static void setup(UnivariateRealFunction f) {\n+       \n+        if (f \u003d\u003d null) {\n+            throw new IllegalArgumentException(\"function can not be null.\");    \n+        }\n+        \n+        if (factory \u003d\u003d null) {\n+            factory \u003d UnivariateRealSolverFactory.newInstance();\n+        }       \n+    }\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [664,723]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [724,776]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [1070,1161]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodDeclaration [9216,9758]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [1841,1861]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [1863,1890]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Javadoc [1980,2694]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [2818,2838]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [2853,2880]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Javadoc [3082,5162]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [5310,5330]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [5332,5359]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Javadoc [5475,7194]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [7372,7392]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [7407,7434]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [9216,9448]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: private [9453,9460]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: static [9461,9467]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrimitiveType: void [9468,9472]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: setup [9473,9478]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [9479,9503]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [9505,9758]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [1476,1540]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [1641,1742]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [1901,1910]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [1991,2090]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [2304,2346]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [2354,2417]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [2425,2510]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [2518,2686]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [2903,2912]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [3093,4501]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TagElement [4552,4635]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TagElement [4715,4788]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [4796,4838]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [4846,4906]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [4914,4999]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [5007,5154]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [5486,6410]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TagElement [6462,6545]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TagElement [6625,6698]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TagElement [6706,6770]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [6829,6937]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [6945,7031]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [7039,7186]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [7454,7557]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [7566,7724]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [7733,8010]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [8509,8908]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [9648,9745]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement:  initial midpoint of interval being expanded to [4566,4613]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: bracket a root [4621,4635]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement:  upper bound (b never is greater than this [4732,4774]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: value) [4782,4788]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement:  initial midpoint of interval being expanded to [6476,6523]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: bracket a root [6531,6545]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement:  upper bound (b never is greater than this [6642,6684]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: value) [6692,6698]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement:  maximum number of iterations to perform [6730,6770]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [8346,8363]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ParenthesizedExpression [8456,8494]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: factory [2951,2958]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: factory [1926,1933]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [664,709]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [1539,1552]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [1690,1731]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [1802,1926]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [2136,2179]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [2187,2313]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Javadoc [1791,2321]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [2474,2487]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [2652,2693]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [2841,3015]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement:  midpoint of the returned range. [3080,3112]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TagElement [3066,3112]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement:  for numerical safety, b never is greater than this [3217,3268]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: value. [3294,3300]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TagElement [3200,3300]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [3308,3351]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [3359,3413]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Javadoc [2830,3421]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [3656,3669]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [3795,3969]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement:  midpoint of the returned range. [4034,4066]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TagElement [4020,4066]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement:  for numerical safety, b never is greater than this [4171,4222]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: value. [4248,4254]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TagElement [4154,4254]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement:  to guard against infinite looping, maximum [4286,4329]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: number of iterations to perform [4362,4393]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TagElement [4262,4393]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [4452,4506]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Javadoc [3784,4514]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [4807,4820]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [5145,5165]",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/math/distribution/AbstractContinuousDistribution.java",
+        "src/java/org/apache/commons/math/distribution/AbstractContinuousDistribution.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.distribution.AbstractContinuousDistribution:inverseCumulativeProbability:[final double p]:double"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.distribution.AbstractContinuousDistribution:inverseCumulativeProbability:[final double p]:double"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "19",
+            "29",
+            "82",
+            "87",
+            "88",
+            "91",
+            "92",
+            "93",
+            "94",
+            "95",
+            "96",
+            "97",
+            "98",
+            "101",
+            "102",
+            "103",
+            "104",
+            "105",
+            "106"
+          ],
+          "num": 19
+        },
+        {
+          "qualified_names": [
+            "20",
+            "21",
+            "31",
+            "84",
+            "89",
+            "90",
+            "91",
+            "92",
+            "93",
+            "94",
+            "95",
+            "98",
+            "99",
+            "100",
+            "101",
+            "102",
+            "103",
+            "104",
+            "105",
+            "106",
+            "107",
+            "108",
+            "109",
+            "110",
+            "111",
+            "112",
+            "113",
+            "114",
+            "115",
+            "116",
+            "117",
+            "118",
+            "119",
+            "120",
+            "121",
+            "122",
+            "123",
+            "124",
+            "127",
+            "128"
+          ],
+          "num": 40
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/math/distribution/AbstractContinuousDistribution.java b/src/java/org/apache/commons/math/distribution/AbstractContinuousDistribution.java\nindex a6f2c9a..78cbb02 100644\n--- a/src/java/org/apache/commons/math/distribution/AbstractContinuousDistribution.java\n+++ b/src/java/org/apache/commons/math/distribution/AbstractContinuousDistribution.java\n@@ -17,6 +17,8 @@\n \n import java.io.Serializable;\n \n+import org.apache.commons.math.ConvergenceException;\n+import org.apache.commons.math.FunctionEvaluationException;\n import org.apache.commons.math.MathException;\n import org.apache.commons.math.analysis.UnivariateRealFunction;\n import org.apache.commons.math.analysis.UnivariateRealSolverUtils;\n@@ -26,7 +28,7 @@\n  * implementations for some of the methods that do not vary from distribution\n  * to distribution.\n  *  \n- * @version $Revision: 1.24 $ $Date: 2004/06/23 16:26:15 $\n+ * @version $Revision: 1.25 $ $Date: 2004/07/17 21:19:39 $\n  */\n public abstract class AbstractContinuousDistribution\n     implements ContinuousDistribution, Serializable {\n@@ -79,31 +81,51 @@\n             throw new IllegalArgumentException(\"p must be between 0.0 and 1.0, inclusive.\");\n         }\n \n-        // by default, do simple root finding using bracketing and bisection.\n+        // by default, do simple root finding using bracketing and default solver.\n         // subclasses can overide if there is a better method.\n         UnivariateRealFunction rootFindingFunction \u003d\n             new UnivariateRealFunction() {\n \n-            public double value(double x) throws MathException {\n-                return cumulativeProbability(x) - p;\n+            public double value(double x) throws FunctionEvaluationException {\n+                try {\n+                    return cumulativeProbability(x) - p;\n+                } catch (MathException ex) {\n+                    throw new FunctionEvaluationException\n+                        (x, \"Error computing cdf\", ex);\n+                }\n             }\n         };\n-\n-        // bracket root\n-        double[] bracket \u003d\n-            UnivariateRealSolverUtils.bracket(\n-                rootFindingFunction,\n-                getInitialDomain(p),\n-                getDomainLowerBound(p),\n-                getDomainUpperBound(p));\n+              \n+        // Try to bracket root, test domain endoints if this fails     \n+        double lowerBound \u003d getDomainLowerBound(p);\n+        double upperBound \u003d getDomainUpperBound(p);\n+        double[] bracket \u003d null;\n+        try {\n+            bracket \u003d UnivariateRealSolverUtils.bracket(\n+                    rootFindingFunction, getInitialDomain(p),\n+                    lowerBound, upperBound);\n+        }  catch (ConvergenceException ex) {\n+            /* \n+             * Check domain endpoints to see if one gives value that is within\n+             * the default solver\u0027s defaultAbsoluteAccuracy of 0 (will be the\n+             * case if density has bounded support and p is 0 or 1).\n+             * \n+             * TODO: expose the default solver, defaultAbsoluteAccuracy as\n+             * a constant.\n+             */ \n+            if (Math.abs(rootFindingFunction.value(lowerBound)) \u003c 1E-6) {\n+                return lowerBound;\n+            }\n+            if (Math.abs(rootFindingFunction.value(upperBound)) \u003c 1E-6) {\n+                return upperBound;\n+            }     \n+            // Failed bracket convergence was not because of corner solution\n+            throw new MathException(ex);\n+        }\n \n         // find root\n-        double root \u003d\n-            UnivariateRealSolverUtils.solve(\n-                rootFindingFunction,\n-                bracket[0],\n-                bracket[1]);\n-\n+        double root \u003d UnivariateRealSolverUtils.solve(rootFindingFunction,\n+                bracket[0],bracket[1]);\n         return root;\n     }\n \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [698,750]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [751,810]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [3828,3871]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [3880,3923]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [3932,3956]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TryStatement [3965,4935]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrimitiveType: double [3828,3834]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [3835,3870]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrimitiveType: double [3880,3886]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [3887,3922]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [3969,4144]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "CatchClause [4146,4935]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: lowerBound [3835,3845]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: upperBound [3887,3897]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ExpressionStatement [3983,4134]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Assignment [3983,4133]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ASSIGNMENT_OPERATOR: \u003d [3991,3992]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [3422,3449]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TryStatement [3468,3707]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: lowerBound [4110,4120]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: upperBound [4122,4132]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [3472,3548]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "CatchClause [3549,3707]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [3304,3317]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ArrayType [3431,3439]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [3440,3650]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [3431,3651]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.apache.commons.math.analysis.UnivariateRealSolverUtils:setup:[UnivariateRealFunction f]:void",
+        "org.apache.commons.math.analysis.UnivariateRealSolverImpl:isSequence:[double start, double mid, double end]:boolean",
+        "org.apache.commons.math.analysis.UnivariateRealSolverImpl:verifyInterval:[double lower, double upper]:void",
+        "org.apache.commons.math.analysis.UnivariateRealSolverImpl:verifySequence:[double lower, double initial, double upper]:void",
+        "org.apache.commons.math.analysis.BrentSolver:BrentSolver:[UnivariateRealFunction f]:null",
+        "org.apache.commons.math.analysis.BisectionSolver:BisectionSolver:[UnivariateRealFunction f]:null",
+        "org.apache.commons.math.analysis.UnivariateRealSolverImpl:verifyBracketing:[double lower, double upper, UnivariateRealFunction f]:void",
+        "org.apache.commons.math.analysis.UnivariateRealSolverImpl:isBracketing:[double lower, double upper, UnivariateRealFunction f]:boolean",
+        "org.apache.commons.math.analysis.UnivariateRealSolverImpl:setResult:[double result, int iterationCount]:void"
+      ],
+      "num": 9
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.apache.commons.math.analysis.UnivariateRealSolverImpl:resetFunctionValueAccuracy:[]:void"
+      ],
+      "num": 1
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math.analysis.BrentSolverTest",
+      "test_function": "testRootEndpoints",
+      "assertion_line": "279",
+      "exception": "java.lang.IllegalArgumentException",
+      "message": "Function values at endpoints do not have different signs.  Endpoints: [3.0,3.141592653589793]  Values: [0.1411200080598672,1.2246467991473532E-16]"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/math/analysis/BrentSolver.java",
+        "src/java/org/apache/commons/math/analysis/BrentSolver.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.BrentSolver:solve:[double min, double max]:double"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.BrentSolver:solve:[double min, double max]:double"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "29",
+            "135",
+            "136",
+            "137",
+            "138",
+            "139",
+            "142",
+            "143",
+            "144"
+          ],
+          "num": 9
+        },
+        {
+          "qualified_names": [
+            "29",
+            "131",
+            "132",
+            "137",
+            "138",
+            "139",
+            "140",
+            "141",
+            "142",
+            "143",
+            "144",
+            "145",
+            "146",
+            "147",
+            "148",
+            "149",
+            "150",
+            "151",
+            "152",
+            "153",
+            "154",
+            "155",
+            "156",
+            "157",
+            "158",
+            "159",
+            "160",
+            "161",
+            "162",
+            "165"
+          ],
+          "num": 30
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/math/analysis/BrentSolver.java b/src/java/org/apache/commons/math/analysis/BrentSolver.java\nindex 01a9ee5..57f64a9 100644\n--- a/src/java/org/apache/commons/math/analysis/BrentSolver.java\n+++ b/src/java/org/apache/commons/math/analysis/BrentSolver.java\n@@ -26,7 +26,7 @@\n  * \u003cp\u003e\n  * The function should be continuous but not necessarily smooth.\u003c/p\u003e\n  *  \n- * @version $Revision$ $Date$\n+ * @version $Revision:670469 $ $Date:2008-06-23 10:01:38 +0200 (lun., 23 juin 2008) $\n  */\n public class BrentSolver extends UnivariateRealSolverImpl {\n     \n@@ -128,20 +128,41 @@\n         clearResult();\n         verifyInterval(min, max);\n         \n+        double ret \u003d Double.NaN;\n+        \n         double yMin \u003d f.value(min);\n         double yMax \u003d f.value(max);\n         \n         // Verify bracketing\n-        if (yMin * yMax \u003e\u003d 0) {\n-            throw new IllegalArgumentException\n-            (\"Function values at endpoints do not have different signs.\" +\n-                    \"  Endpoints: [\" + min + \",\" + max + \"]\" + \n-                    \"  Values: [\" + yMin + \",\" + yMax + \"]\");       \n+        double sign \u003d yMin * yMax;\n+        if (sign \u003e 0) {\n+            // check if either value is close to a zero\n+            if (Math.abs(yMin) \u003c\u003d functionValueAccuracy) {\n+                setResult(min, 0);\n+                ret \u003d min;\n+            } else if (Math.abs(yMax) \u003c\u003d functionValueAccuracy) {\n+                setResult(max, 0);\n+                ret \u003d max;\n+            } else {\n+                // neither value is close to zero and min and max do not bracket root.\n+                throw new IllegalArgumentException\n+                (\"Function values at endpoints do not have different signs.\" +\n+                        \"  Endpoints: [\" + min + \",\" + max + \"]\" + \n+                        \"  Values: [\" + yMin + \",\" + yMax + \"]\");\n+            }\n+        } else if (sign \u003c 0){\n+            // solve using only the first endpoint as initial guess\n+            ret \u003d solve(min, yMin, max, yMax, min, yMin);\n+        } else {\n+            // either min or max is a root\n+            if (yMin \u003d\u003d 0.0) {\n+                ret \u003d min;\n+            } else {\n+                ret \u003d max;\n+            }\n         }\n \n-        // solve using only the first endpoint as initial guess\n-        return solve(min, yMin, max, yMax, min, yMin);\n-\n+        return ret;\n     }\n         \n     /**\n",
+      "operations": [
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [5140,5164]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [5292,5318]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [5327,6379]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [6389,6400]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [5331,5339]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [5341,6043]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [6049,6379]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [5411,6033]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [6053,6061]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [6062,6199]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Block [6205,6379]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [5415,5454]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Block [5456,5533]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ExpressionStatement [6144,6189]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Block [5584,5661]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Assignment [6144,6188]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [5543,5557]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: functionValueAccuracy [5561,5582]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: ret [6144,6147]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ASSIGNMENT_OPERATOR: \u003d [6148,6149]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [5543,5547]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: abs [5548,5551]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [5552,5556]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: yMin [5198,5202]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: * [5203,5204]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [5198,5209]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NumberLiteral: 0 [5213,5214]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ReturnStatement [5556,5602]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "patch_changed_mths": {
+    "qualified_names": [
+      "org.apache.commons.math.analysis.BrentSolver:solve(DD)D:regression"
+    ],
+    "num": 1
+  }
+}

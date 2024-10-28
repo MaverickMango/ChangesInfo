@@ -1,0 +1,298 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.objectid.AlwaysAsReferenceFirstTest::testIssue1607",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector,com.fasterxml.jackson.databind.introspect.ObjectIdInfo,com.fasterxml.jackson.databind.ser.std.BeanSerializerBase",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "79",
+  "workingDir": "../bugs/JacksonDatabind_79_tmp",
+  "bug_name": "JacksonDatabind_79",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.objectid.AlwaysAsReferenceFirstTest",
+      "test_function": "testIssue1607",
+      "assertion_line": "82",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c{\"alwaysClass\":[1],\"alwaysProp\":2}\u003e but was:\u003c{\"alwaysClass\":[{\"id\":1,\"value\":13}],\"alwaysProp\":2}\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/introspect/JacksonAnnotationIntrospector.java",
+        "src/main/java/com/fasterxml/jackson/databind/introspect/JacksonAnnotationIntrospector.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector:findObjectReferenceInfo:[Annotated ann, ObjectIdInfo objectIdInfo]:ObjectIdInfo"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector:findObjectReferenceInfo:[Annotated ann, ObjectIdInfo objectIdInfo]:ObjectIdInfo"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "579",
+            "580",
+            "582",
+            "583",
+            "584",
+            "585"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "579",
+            "580",
+            "582"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/introspect/JacksonAnnotationIntrospector.java b/src/main/java/com/fasterxml/jackson/databind/introspect/JacksonAnnotationIntrospector.java\nindex f2bc1ca..d74a2e9 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/introspect/JacksonAnnotationIntrospector.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/introspect/JacksonAnnotationIntrospector.java\n@@ -576,13 +576,10 @@\n     @Override\n     public ObjectIdInfo findObjectReferenceInfo(Annotated ann, ObjectIdInfo objectIdInfo) {\n         JsonIdentityReference ref \u003d _findAnnotation(ann, JsonIdentityReference.class);\n-        if (ref \u003d\u003d null) {\n-            return objectIdInfo;\n+        if (ref !\u003d null) {\n+            objectIdInfo \u003d objectIdInfo.withAlwaysAsId(ref.alwaysAsId());\n         }\n-        if (objectIdInfo \u003d\u003d null) {\n-            objectIdInfo \u003d ObjectIdInfo.empty();\n-        }\n-        return objectIdInfo.withAlwaysAsId(ref.alwaysAsId());\n+        return objectIdInfo;\n     }\n \n     /*\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [19878,19894]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [19878,19898]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [19900,19960]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [19874,19960]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [19969,20022]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/introspect/ObjectIdInfo.java",
+        "src/main/java/com/fasterxml/jackson/databind/introspect/ObjectIdInfo.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.introspect.ObjectIdInfo:empty:[]:ObjectIdInfo"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.introspect.ObjectIdInfo:ObjectIdInfo:[PropertyName name, Class\u003c?\u003e scope, Class\u003c? extends ObjectIdGenerator\u003c?\u003e\u003e gen, Class\u003c? extends ObjectIdResolver\u003e resolver]:null",
+            "com.fasterxml.jackson.databind.introspect.ObjectIdInfo:withAlwaysAsId:[boolean state]:ObjectIdInfo"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "25",
+            "64",
+            "65",
+            "66"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "24",
+            "64"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/introspect/ObjectIdInfo.java b/src/main/java/com/fasterxml/jackson/databind/introspect/ObjectIdInfo.java\nindex 049ab35..93c3dd5 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/introspect/ObjectIdInfo.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/introspect/ObjectIdInfo.java\n@@ -22,7 +22,6 @@\n     /**\n      * @since 2.8.9\n      */\n-    private final static ObjectIdInfo EMPTY \u003d new ObjectIdInfo(PropertyName.NO_NAME, Object.class, null, false, null);\n \n     public ObjectIdInfo(PropertyName name, Class\u003c?\u003e scope, Class\u003c? extends ObjectIdGenerator\u003c?\u003e\u003e gen,\n             Class\u003c? extends ObjectIdResolver\u003e resolver)\n@@ -61,9 +60,6 @@\n         _resolver \u003d resolver;\n     }\n \n-    public static ObjectIdInfo empty() {\n-        return EMPTY;\n-    }\n \n     public ObjectIdInfo withAlwaysAsId(boolean state) {\n         if (_alwaysAsId \u003d\u003d state) {\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [786,817]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [786,936]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [2198,2262]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/ser/std/BeanSerializerBase.java",
+        "src/main/java/com/fasterxml/jackson/databind/ser/std/BeanSerializerBase.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.std.BeanSerializerBase:createContextual:[SerializerProvider provider, BeanProperty property]:JsonSerializer\u003c?\u003e"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.std.BeanSerializerBase:createContextual:[SerializerProvider provider, BeanProperty property]:JsonSerializer\u003c?\u003e"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "432",
+            "433",
+            "435"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "432",
+            "433"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/ser/std/BeanSerializerBase.java b/src/main/java/com/fasterxml/jackson/databind/ser/std/BeanSerializerBase.java\nindex 3b838cc..1f1d2e3 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/ser/std/BeanSerializerBase.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/ser/std/BeanSerializerBase.java\n@@ -429,10 +429,9 @@\n             if (objectIdInfo \u003d\u003d null) {\n                 // no ObjectId override, but maybe ObjectIdRef?\n                 if (oiw !\u003d null) {\n-                    objectIdInfo \u003d intr.findObjectReferenceInfo(accessor, null);\n-                    if (objectIdInfo !\u003d null) {\n+                    objectIdInfo \u003d intr.findObjectReferenceInfo(accessor,\n+                            new ObjectIdInfo(NAME_FOR_OBJECT_REF, null, null, null));\n                         oiw \u003d _objectIdWriter.withAlwaysAsId(objectIdInfo.getAlwaysAsId());\n-                    }\n                 }\n             } else {\n                 // Ugh: mostly copied from BeanDeserializerBase: but can\u0027t easily change it\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ClassInstanceCreation [17376,17431]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [17380,17392]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: NAME_FOR_OBJECT_REF [17393,17412]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NullLiteral [17420,17424]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NullLiteral [17426,17430]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [17379,17399]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [17401,17516]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [17375,17516]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.introspect.ObjectIdInfo:ObjectIdInfo:[PropertyName name, Class\u003c?\u003e scope, Class\u003c? extends ObjectIdGenerator\u003c?\u003e\u003e gen, Class\u003c? extends ObjectIdResolver\u003e resolver]:null",
+        "com.fasterxml.jackson.databind.introspect.ObjectIdInfo:withAlwaysAsId:[boolean state]:ObjectIdInfo"
+      ],
+      "num": 2
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.introspect.ObjectIdInfo:empty:[]:ObjectIdInfo"
+      ],
+      "num": 1
+    }
+  }
+}

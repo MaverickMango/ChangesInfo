@@ -1,0 +1,154 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.TypeCheckTest::testBackwardsTypedefUse1,com.google.javascript.jscomp.TypeCheckTest::testBackwardsTypedefUse2,com.google.javascript.jscomp.TypeCheckTest::testBackwardsTypedefUse3",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.rhino.jstype.FunctionType",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "152",
+  "workingDir": "../bugs/Closure_152_tmp",
+  "bug_name": "Closure_152",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testBackwardsTypedefUse1",
+      "assertion_line": "2610",
+      "exception": "java.lang.ClassCastException",
+      "message": "com.google.javascript.rhino.jstype.StringType cannot be cast to com.google.javascript.rhino.jstype.ObjectType"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testBackwardsTypedefUse2",
+      "assertion_line": "7551",
+      "exception": "java.lang.ClassCastException",
+      "message": "com.google.javascript.rhino.jstype.UnionType cannot be cast to com.google.javascript.rhino.jstype.ObjectType"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testBackwardsTypedefUse3",
+      "assertion_line": "2624",
+      "exception": "java.lang.ClassCastException",
+      "message": "com.google.javascript.rhino.jstype.UnionType cannot be cast to com.google.javascript.rhino.jstype.ObjectType"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/FunctionType.java",
+        "src/com/google/javascript/rhino/jstype/FunctionType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.jstype.FunctionType:resolveInternal:[ErrorReporter t, StaticScope\u003cJSType\u003e scope]:JSType"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.jstype.FunctionType:resolveInternal:[ErrorReporter t, StaticScope\u003cJSType\u003e scope]:JSType"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "871",
+            "872",
+            "873",
+            "874"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "871"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/FunctionType.java b/src/com/google/javascript/rhino/jstype/FunctionType.java\nindex cf2d3e8..fc2578d 100644\n--- a/src/com/google/javascript/rhino/jstype/FunctionType.java\n+++ b/src/com/google/javascript/rhino/jstype/FunctionType.java\n@@ -868,10 +868,7 @@\n     // Warning about typeOfThis if it doesn\u0027t resolve to an ObjectType\n     // is handled further upstream.\n     // TODO(nicksantos): Handle this correctly if we have a UnionType.\n-    JSType maybeTypeOfThis \u003d safeResolve(typeOfThis, t, scope);\n-    if (maybeTypeOfThis instanceof ObjectType) {\n-      typeOfThis \u003d (ObjectType) maybeTypeOfThis;\n-    }\n+    typeOfThis \u003d (ObjectType) safeResolve(typeOfThis, t, scope);\n \n     boolean changed \u003d false;\n     ImmutableList.Builder\u003cObjectType\u003e resolvedInterfaces \u003d\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: maybeTypeOfThis [28466,28481]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [28325,28331]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: maybeTypeOfThis [28332,28347]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [28332,28383]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [28325,28384]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InstanceofExpression [28393,28430]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [28432,28488]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [28389,28488]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

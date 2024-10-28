@@ -1,0 +1,139 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math.linear.SparseRealVectorTest::testConcurrentModification",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math.linear.OpenMapRealVector",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "49",
+  "workingDir": "../bugs/Math_49_tmp",
+  "bug_name": "Math_49",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math.linear.SparseRealVectorTest",
+      "test_function": "testConcurrentModification",
+      "assertion_line": "1021",
+      "exception": "org.apache.commons.math.MathRuntimeException$6",
+      "message": "map has been modified while iterating"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/linear/OpenMapRealVector.java",
+        "src/main/java/org/apache/commons/math/linear/OpenMapRealVector.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.linear.OpenMapRealVector:ebeDivide:[RealVector v]:OpenMapRealVector",
+            "org.apache.commons.math.linear.OpenMapRealVector:ebeMultiply:[double[] v]:OpenMapRealVector",
+            "org.apache.commons.math.linear.OpenMapRealVector:ebeDivide:[double[] v]:OpenMapRealVector",
+            "org.apache.commons.math.linear.OpenMapRealVector:ebeMultiply:[RealVector v]:OpenMapRealVector"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.linear.OpenMapRealVector:ebeDivide:[RealVector v]:OpenMapRealVector",
+            "org.apache.commons.math.linear.OpenMapRealVector:ebeMultiply:[double[] v]:OpenMapRealVector",
+            "org.apache.commons.math.linear.OpenMapRealVector:ebeMultiply:[RealVector v]:OpenMapRealVector",
+            "org.apache.commons.math.linear.OpenMapRealVector:ebeDivide:[double[] v]:OpenMapRealVector"
+          ],
+          "num": 4
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "345",
+            "358",
+            "370",
+            "383"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "345",
+            "358",
+            "370",
+            "383"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/linear/OpenMapRealVector.java b/src/main/java/org/apache/commons/math/linear/OpenMapRealVector.java\nindex 13ebfd2..5db4884 100644\n--- a/src/main/java/org/apache/commons/math/linear/OpenMapRealVector.java\n+++ b/src/main/java/org/apache/commons/math/linear/OpenMapRealVector.java\n@@ -342,7 +342,7 @@\n     public OpenMapRealVector ebeDivide(RealVector v) {\n         checkVectorDimensions(v.getDimension());\n         OpenMapRealVector res \u003d new OpenMapRealVector(this);\n-        Iterator iter \u003d entries.iterator();\n+        Iterator iter \u003d res.entries.iterator();\n         while (iter.hasNext()) {\n             iter.advance();\n             res.setEntry(iter.key(), iter.value() / v.getEntry(iter.key()));\n@@ -355,7 +355,7 @@\n     public OpenMapRealVector ebeDivide(double[] v) {\n         checkVectorDimensions(v.length);\n         OpenMapRealVector res \u003d new OpenMapRealVector(this);\n-        Iterator iter \u003d entries.iterator();\n+        Iterator iter \u003d res.entries.iterator();\n         while (iter.hasNext()) {\n             iter.advance();\n             res.setEntry(iter.key(), iter.value() / v[iter.key()]);\n@@ -367,7 +367,7 @@\n     public OpenMapRealVector ebeMultiply(RealVector v) {\n         checkVectorDimensions(v.getDimension());\n         OpenMapRealVector res \u003d new OpenMapRealVector(this);\n-        Iterator iter \u003d entries.iterator();\n+        Iterator iter \u003d res.entries.iterator();\n         while (iter.hasNext()) {\n             iter.advance();\n             res.setEntry(iter.key(), iter.value() * v.getEntry(iter.key()));\n@@ -380,7 +380,7 @@\n     public OpenMapRealVector ebeMultiply(double[] v) {\n         checkVectorDimensions(v.length);\n         OpenMapRealVector res \u003d new OpenMapRealVector(this);\n-        Iterator iter \u003d entries.iterator();\n+        Iterator iter \u003d res.entries.iterator();\n         while (iter.hasNext()) {\n             iter.advance();\n             res.setEntry(iter.key(), iter.value() * v[iter.key()]);\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "QualifiedName: res.entries [11422,11433]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "QualifiedName: res.entries [11839,11850]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "QualifiedName: res.entries [12245,12256]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "QualifiedName: res.entries [12664,12675]"
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: entries [11422,11429]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: entries [11835,11842]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: entries [12237,12244]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: entries [12652,12659]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

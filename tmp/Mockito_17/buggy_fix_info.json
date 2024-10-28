@@ -1,0 +1,196 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.mockitousage.basicapi.MocksSerializationTest::shouldBeSerializeAndHaveExtraInterfaces",
+    "test.dir": "test",
+    "clz.modified": "org.mockito.internal.creation.MockSettingsImpl,org.mockito.internal.util.MockUtil",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Mockito",
+  "id": "17",
+  "workingDir": "../bugs/Mockito_17_tmp",
+  "bug_name": "Mockito_17",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.mockitousage.basicapi.MocksSerializationTest",
+      "test_function": "shouldBeSerializeAndHaveExtraInterfaces",
+      "assertion_line": "312",
+      "exception": "java.io.NotSerializableException",
+      "message": "org.mockitousage.IMethods$$EnhancerByMockitoWithCGLIB$$a155cf16"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/org/mockito/internal/creation/MockSettingsImpl.java",
+        "src/org/mockito/internal/creation/MockSettingsImpl.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.mockito.internal.creation.MockSettingsImpl:isSerializable:[]:boolean",
+            "org.mockito.internal.creation.MockSettingsImpl:serializable:[]:MockSettings"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.mockito.internal.creation.MockSettingsImpl:isSerializable:[]:boolean",
+            "org.mockito.internal.creation.MockSettingsImpl:serializable:[]:MockSettings"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "20",
+            "23",
+            "24",
+            "76"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "22",
+            "74"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/org/mockito/internal/creation/MockSettingsImpl.java b/src/org/mockito/internal/creation/MockSettingsImpl.java\nindex 5285d90..bf2cf3b 100644\n--- a/src/org/mockito/internal/creation/MockSettingsImpl.java\n+++ b/src/org/mockito/internal/creation/MockSettingsImpl.java\n@@ -17,11 +17,9 @@\n     private Object spiedInstance;\r\n     private Answer\u003cObject\u003e defaultAnswer;\r\n     private MockName mockName;\r\n-    private boolean serializable;\r\n \r\n     public MockSettings serializable() {\r\n-        this.serializable \u003d true;\r\n-        return this;\r\n+        return this.extraInterfaces(java.io.Serializable.class);\r\n     }\r\n \r\n     public MockSettings extraInterfaces(Class\u003c?\u003e... extraInterfaces) {\r\n@@ -73,7 +71,7 @@\n     }\r\n \r\n     public boolean isSerializable() {\r\n-        return serializable;\r\n+        return extraInterfaces !\u003d null \u0026\u0026 java.util.Arrays.asList(extraInterfaces).contains(java.io.Serializable.class);\r\n     }\r\n \r\n     public void initiateMockName(Class classToMock) {\r\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [684,740]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [2162,2274]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [636,665]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [719,744]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [754,766]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [2188,2208]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/org/mockito/internal/util/MockUtil.java",
+        "src/org/mockito/internal/util/MockUtil.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.mockito.internal.util.MockUtil:createMock:[Class\u003cT\u003e classToMock, MockSettingsImpl settings]:T"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.mockito.internal.util.MockUtil:createMock:[Class\u003cT\u003e classToMock, MockSettingsImpl settings]:T"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "19",
+            "46",
+            "47",
+            "48",
+            "50"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "18",
+            "46"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/org/mockito/internal/util/MockUtil.java b/src/org/mockito/internal/util/MockUtil.java\nindex b8ed8b4..d2d042f 100644\n--- a/src/org/mockito/internal/util/MockUtil.java\n+++ b/src/org/mockito/internal/util/MockUtil.java\n@@ -16,7 +16,6 @@\n import org.mockito.internal.creation.jmock.ClassImposterizer;\r\n import org.mockito.internal.util.reflection.LenientCopyTool;\r\n \r\n-import java.io.Serializable;\r\n \r\n @SuppressWarnings(\"unchecked\")\r\n public class MockUtil {\r\n@@ -43,11 +42,7 @@\n         Class\u003c?\u003e[] interfaces \u003d settings.getExtraInterfaces();\r\n \r\n         Class\u003c?\u003e[] ancillaryTypes;\r\n-        if (settings.isSerializable()) {\r\n-            ancillaryTypes \u003d interfaces \u003d\u003d null ? new Class\u003c?\u003e[] {Serializable.class} : new ArrayUtils().concat(interfaces, Serializable.class);\r\n-        } else {\r\n             ancillaryTypes \u003d interfaces \u003d\u003d null ? new Class\u003c?\u003e[0] : interfaces;\r\n-        }\r\n \r\n         Object spiedInstance \u003d settings.getSpiedInstance();\r\n         \r\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [699,727]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [1700,1725]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [1727,1885]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [1891,1984]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [1696,1984]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

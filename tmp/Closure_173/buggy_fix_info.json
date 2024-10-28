@@ -1,0 +1,234 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.CodePrinterTest::testPrint,com.google.javascript.jscomp.CodePrinterTest::testIssue1062,com.google.javascript.jscomp.PeepholeSubstituteAlternateSyntaxTest::testAssocitivity",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.CodeGenerator,com.google.javascript.jscomp.PeepholeSubstituteAlternateSyntax",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "173",
+  "workingDir": "../bugs/Closure_173_tmp",
+  "bug_name": "Closure_173",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.CodePrinterTest",
+      "test_function": "testPrint",
+      "assertion_line": "197",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003cvar a,b,c;a||[(b||c);a*(b*c);a|(b|c)]\u003e but was:\u003cvar a,b,c;a||[b||c;a*b*c;a|b|c]\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.CodePrinterTest",
+      "test_function": "testIssue1062",
+      "assertion_line": "487",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c3*[(4%3*5)]\u003e but was:\u003c3*[4%3*5]\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.PeepholeSubstituteAlternateSyntaxTest",
+      "test_function": "testAssocitivity",
+      "assertion_line": "459",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: var a,b,c;a||b||c;a*b*c;a|b|c\nResult: var a,b,c;a||b||c;a*b*c;a|b|c"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CodeGenerator.java",
+        "src/com/google/javascript/jscomp/CodeGenerator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CodeGenerator:add:[Node n, Context context]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CodeGenerator:add:[Node n, Context context]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "130"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "130",
+            "131",
+            "132",
+            "133",
+            "134",
+            "135"
+          ],
+          "num": 6
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/CodeGenerator.java b/src/com/google/javascript/jscomp/CodeGenerator.java\nindex d9ac019..35a93af 100644\n--- a/src/com/google/javascript/jscomp/CodeGenerator.java\n+++ b/src/com/google/javascript/jscomp/CodeGenerator.java\n@@ -127,7 +127,12 @@\n       // the IN_FOR_INIT_CLAUSE one.\n       Context rhsContext \u003d getContextForNoInOperator(context);\n \n-      if (NodeUtil.isAssignmentOp(n) \u0026\u0026 NodeUtil.isAssignmentOp(last)) {\n+      if (last.getType() \u003d\u003d type \u0026\u0026\n+          NodeUtil.isAssociative(type)) {\n+        addExpr(first, p, context);\n+        cc.addOp(opstr, true);\n+        addExpr(last, p, rhsContext);\n+      } else if (NodeUtil.isAssignmentOp(n) \u0026\u0026 NodeUtil.isAssignmentOp(last)) {\n         // Assignments are the only right-associative binary operators\n         addExpr(first, p, context);\n         cc.addOp(opstr, true);\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [3991,4523]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [3995,4059]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Block [4061,4175]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/PeepholeSubstituteAlternateSyntax.java",
+        "src/com/google/javascript/jscomp/PeepholeSubstituteAlternateSyntax.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.PeepholeSubstituteAlternateSyntax:tryRotateAssociativeOperator:[Node n]:Node",
+            "com.google.javascript.jscomp.PeepholeSubstituteAlternateSyntax:optimizeSubtree:[Node node]:Node"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.PeepholeSubstituteAlternateSyntax:optimizeSubtree:[Node node]:Node"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "102",
+            "103",
+            "104",
+            "105",
+            "106",
+            "107",
+            "108",
+            "115",
+            "116",
+            "117",
+            "118",
+            "119",
+            "120",
+            "121",
+            "122",
+            "123",
+            "124",
+            "125",
+            "126",
+            "127",
+            "128",
+            "129",
+            "130",
+            "131",
+            "132",
+            "133",
+            "134",
+            "135"
+          ],
+          "num": 28
+        },
+        {
+          "qualified_names": [
+            "101"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/PeepholeSubstituteAlternateSyntax.java b/src/com/google/javascript/jscomp/PeepholeSubstituteAlternateSyntax.java\nindex 2015f05..2c13724 100644\n--- a/src/com/google/javascript/jscomp/PeepholeSubstituteAlternateSyntax.java\n+++ b/src/com/google/javascript/jscomp/PeepholeSubstituteAlternateSyntax.java\n@@ -99,40 +99,12 @@\n       case Token.ARRAYLIT:\n         return tryMinimizeArrayLiteral(node);\n \n-      case Token.MUL:\n-      case Token.AND:\n-      case Token.OR:\n-      case Token.BITOR:\n-      case Token.BITXOR:\n-      case Token.BITAND:\n-        return tryRotateAssociativeOperator(node);\n \n       default:\n         return node; //Nothing changed\n     }\n   }\n \n-  private Node tryRotateAssociativeOperator(Node n) {\n-    if (!late) {\n-      return n;\n-    }\n-    Preconditions.checkArgument(NodeUtil.isAssociative(n.getType()));\n-    Node rhs \u003d n.getLastChild();\n-    if (n.getType() \u003d\u003d rhs.getType()) {\n-      Node parent \u003d n.getParent();\n-      Node first \u003d n.getFirstChild().detachFromParent();\n-      Node second \u003d rhs.getFirstChild().detachFromParent();\n-      Node third \u003d rhs.getLastChild().detachFromParent();\n-      Node newLhs \u003d new Node(n.getType(), first, second)\n-          .copyInformationFrom(n);\n-      Node newRoot \u003d new Node(rhs.getType(), newLhs, third)\n-          .copyInformationFrom(rhs);\n-      parent.replaceChild(n, newRoot);\n-      reportCodeChange();\n-      return newRoot;\n-    }\n-    return n;\n-  }\n \n   private Node tryFoldSimpleFunctionCall(Node n) {\n     Preconditions.checkState(n.isCall());\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [3299,3314]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [3321,3336]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [3343,3357]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [3364,3381]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [3388,3406]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [3413,3431]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [3440,3482]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [3551,4294]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.PeepholeSubstituteAlternateSyntax:tryRotateAssociativeOperator:[Node n]:Node"
+      ],
+      "num": 1
+    }
+  }
+}

@@ -1,0 +1,890 @@
+diff --git a/src/main/java/org/apache/commons/math/analysis/interpolation/BicubicSplineInterpolatingFunction.java b/src/main/java/org/apache/commons/math/analysis/interpolation/BicubicSplineInterpolatingFunction.java
+index e50ef00..e4cae99 100644
+--- a/src/main/java/org/apache/commons/math/analysis/interpolation/BicubicSplineInterpolatingFunction.java
++++ b/src/main/java/org/apache/commons/math/analysis/interpolation/BicubicSplineInterpolatingFunction.java
+@@ -18,7 +18,8 @@
+ 
+ import org.apache.commons.math.util.LocalizedFormats;
+ import org.apache.commons.math.util.MathUtils;
+-import org.apache.commons.math.MathRuntimeException;
++import org.apache.commons.math.exception.NoDataException;
++import org.apache.commons.math.exception.OutOfRangeException;
+ import org.apache.commons.math.FunctionEvaluationException;
+ import org.apache.commons.math.DimensionMismatchException;
+ import org.apache.commons.math.analysis.BivariateRealFunction;
+@@ -85,8 +86,9 @@
+      * every grid point.
+      * @throws DimensionMismatchException if the various arrays do not contain
+      * the expected number of elements.
+-     * @throws IllegalArgumentException if {@code x} or {@code y} are not strictly
++     * @throws NonMonotonousSequenceException if {@code x} or {@code y} are not strictly
+      * increasing.
++     * @throws NoDataException if any of the arrays has zero length.
+      */
+     public BicubicSplineInterpolatingFunction(double[] x,
+                                               double[] y,
+@@ -99,7 +101,7 @@
+         final int yLen = y.length;
+ 
+         if (xLen == 0 || yLen == 0 || f.length == 0 || f[0].length == 0) {
+-            throw MathRuntimeException.createIllegalArgumentException(LocalizedFormats.NO_DATA);
++            throw new NoDataException();
+         }
+         if (xLen != f.length) {
+             throw new DimensionMismatchException(xLen, f.length);
+@@ -158,15 +160,11 @@
+     public double value(double x, double y) {
+         final int i = searchIndex(x, xval);
+         if (i == -1) {
+-            throw MathRuntimeException.createIllegalArgumentException(
+-                  LocalizedFormats.OUT_OF_RANGE_SIMPLE,
+-                  x, xval[0], xval[xval.length - 1]);
++            throw new OutOfRangeException(x, xval[0], xval[xval.length - 1]);
+         }
+         final int j = searchIndex(y, yval);
+         if (j == -1) {
+-            throw MathRuntimeException.createIllegalArgumentException(
+-                  LocalizedFormats.OUT_OF_RANGE_SIMPLE,
+-                  y, yval[0], yval[yval.length - 1]);
++            throw new OutOfRangeException(y, yval[0], yval[yval.length - 1]);
+         }
+ 
+         final double xN = (x - xval[i]) / (xval[i + 1] - xval[i]);
+@@ -233,13 +231,11 @@
+ 
+         final int i = searchIndex(x, xval);
+         if (i == -1) {
+-            throw MathRuntimeException.createIllegalArgumentException(LocalizedFormats.OUT_OF_RANGE_SIMPLE,
+-                                                                      x, xval[0], xval[xval.length - 1]);
++            throw new OutOfRangeException(x, xval[0], xval[xval.length - 1]);
+         }
+         final int j = searchIndex(y, yval);
+         if (j == -1) {
+-            throw MathRuntimeException.createIllegalArgumentException(LocalizedFormats.OUT_OF_RANGE_SIMPLE,
+-                                                                      y, yval[0], yval[yval.length - 1]);
++            throw new OutOfRangeException(y, yval[0], yval[yval.length - 1]);
+         }
+ 
+         final double xN = (x - xval[i]) / (xval[i + 1] - xval[i]);
+@@ -376,12 +372,10 @@
+      */
+     public double value(double x, double y) {
+         if (x < 0 || x > 1) {
+-            throw MathRuntimeException.createIllegalArgumentException(LocalizedFormats.OUT_OF_RANGE_SIMPLE,
+-                                                                      x, 0, 1);
++            throw new OutOfRangeException(x, 0, 1);
+         }
+         if (y < 0 || y > 1) {
+-            throw MathRuntimeException.createIllegalArgumentException(LocalizedFormats.OUT_OF_RANGE_SIMPLE,
+-                                                                      y, 0, 1);
++            throw new OutOfRangeException(y, 0, 1);
+         }
+ 
+         final double x2 = x * x;
+diff --git a/src/main/java/org/apache/commons/math/analysis/interpolation/BicubicSplineInterpolator.java b/src/main/java/org/apache/commons/math/analysis/interpolation/BicubicSplineInterpolator.java
+index 5a9dad5..10c85e1 100644
+--- a/src/main/java/org/apache/commons/math/analysis/interpolation/BicubicSplineInterpolator.java
++++ b/src/main/java/org/apache/commons/math/analysis/interpolation/BicubicSplineInterpolator.java
+@@ -17,7 +17,7 @@
+ package org.apache.commons.math.analysis.interpolation;
+ 
+ import org.apache.commons.math.DimensionMismatchException;
+-import org.apache.commons.math.MathRuntimeException;
++import org.apache.commons.math.exception.NoDataException;
+ import org.apache.commons.math.MathException;
+ import org.apache.commons.math.util.LocalizedFormats;
+ import org.apache.commons.math.util.MathUtils;
+@@ -40,7 +40,7 @@
+                                                           final double[][] fval)
+         throws MathException, IllegalArgumentException {
+         if (xval.length == 0 || yval.length == 0 || fval.length == 0) {
+-            throw MathRuntimeException.createIllegalArgumentException(LocalizedFormats.NO_DATA);
++            throw new NoDataException();
+         }
+         if (xval.length != fval.length) {
+             throw new DimensionMismatchException(xval.length, fval.length);
+diff --git a/src/main/java/org/apache/commons/math/analysis/interpolation/LinearInterpolator.java b/src/main/java/org/apache/commons/math/analysis/interpolation/LinearInterpolator.java
+index f7b6c21..11e2148 100644
+--- a/src/main/java/org/apache/commons/math/analysis/interpolation/LinearInterpolator.java
++++ b/src/main/java/org/apache/commons/math/analysis/interpolation/LinearInterpolator.java
+@@ -16,10 +16,11 @@
+  */
+ package org.apache.commons.math.analysis.interpolation;
+ 
+-import org.apache.commons.math.MathRuntimeException;
++import org.apache.commons.math.exception.DimensionMismatchException;
++import org.apache.commons.math.exception.NumberIsTooSmallException;
+ import org.apache.commons.math.analysis.polynomials.PolynomialFunction;
+ import org.apache.commons.math.analysis.polynomials.PolynomialSplineFunction;
+-import org.apache.commons.math.util.LocalizedFormats;
++import org.apache.commons.math.util.MathUtils;
+ 
+ /**
+  * Implements a linear function for interpolation of real univariate functions.
+@@ -30,28 +31,26 @@
+      * @param x the arguments for the interpolation points
+      * @param y the values for the interpolation points
+      * @return a function which interpolates the data set
+-    */
++     * @throws DimensionMismatchException if {@code x} and {@code y}
++     * have different sizes.
++     * @throws NonMonotonousSequenceException if {@code x} is not sorted in
++     * strict increasing order.
++     * @throws NumberIsTooSmallException if the size of {@code x} is smaller
++     * than 2.
++     */
+     public PolynomialSplineFunction interpolate(double x[], double y[]) {
+         if (x.length != y.length) {
+-            throw MathRuntimeException.createIllegalArgumentException(
+-                  LocalizedFormats.DIMENSIONS_MISMATCH_SIMPLE, x.length, y.length);
++            throw new DimensionMismatchException(x.length, y.length);
+         }
+ 
+         if (x.length < 2) {
+-            throw MathRuntimeException.createIllegalArgumentException(
+-                  LocalizedFormats.WRONG_NUMBER_OF_POINTS, 2, x.length);
++            throw new NumberIsTooSmallException(x.length, 2, true);
+         }
+ 
+         // Number of intervals.  The number of data points is n + 1.
+         int n = x.length - 1;
+ 
+-        for (int i = 0; i < n; i++) {
+-            if (x[i] >= x[i + 1]) {
+-                throw MathRuntimeException.createIllegalArgumentException(
+-                LocalizedFormats.NOT_STRICTLY_INCREASING_NUMBER_OF_POINTS,
+-                i, i+1, x[i], x[i+1]);
+-            }
+-        }
++        MathUtils.checkOrder(x);
+ 
+         // Slope of the lines between the datapoints.
+         final double m[] = new double[n];
+diff --git a/src/main/java/org/apache/commons/math/analysis/interpolation/MicrosphereInterpolatingFunction.java b/src/main/java/org/apache/commons/math/analysis/interpolation/MicrosphereInterpolatingFunction.java
+index bf10172..0e7d824 100644
+--- a/src/main/java/org/apache/commons/math/analysis/interpolation/MicrosphereInterpolatingFunction.java
++++ b/src/main/java/org/apache/commons/math/analysis/interpolation/MicrosphereInterpolatingFunction.java
+@@ -22,7 +22,7 @@
+ import java.util.Map;
+ 
+ import org.apache.commons.math.DimensionMismatchException;
+-import org.apache.commons.math.MathRuntimeException;
++import org.apache.commons.math.exception.NoDataException;
+ import org.apache.commons.math.analysis.MultivariateRealFunction;
+ import org.apache.commons.math.linear.ArrayRealVector;
+ import org.apache.commons.math.linear.RealVector;
+@@ -142,7 +142,7 @@
+      * {@code xval} (equal to {@code n}, the number of interpolation points)
+      * do not match, or the the arrays {@code xval[0]} ... {@code xval[n]},
+      * have lengths different from {@code dimension}.
+-     * @throws IllegalArgumentException if there are no data (xval null or zero length)
++     * @throws NoDataException if there are no data (xval null or zero length)
+      */
+     public MicrosphereInterpolatingFunction(double[][] xval,
+                                             double[] yval,
+@@ -151,7 +151,7 @@
+                                             UnitSphereRandomVectorGenerator rand)
+         throws DimensionMismatchException, IllegalArgumentException {
+         if (xval.length == 0 || xval[0] == null) {
+-            throw MathRuntimeException.createIllegalArgumentException(LocalizedFormats.NO_DATA);
++            throw new NoDataException();
+         }
+ 
+         if (xval.length != yval.length) {
+diff --git a/src/main/java/org/apache/commons/math/analysis/interpolation/MicrosphereInterpolator.java b/src/main/java/org/apache/commons/math/analysis/interpolation/MicrosphereInterpolator.java
+index d909aed..d8872c7 100644
+--- a/src/main/java/org/apache/commons/math/analysis/interpolation/MicrosphereInterpolator.java
++++ b/src/main/java/org/apache/commons/math/analysis/interpolation/MicrosphereInterpolator.java
+@@ -17,7 +17,8 @@
+ package org.apache.commons.math.analysis.interpolation;
+ 
+ import org.apache.commons.math.MathException;
+-import org.apache.commons.math.MathRuntimeException;
++import org.apache.commons.math.exception.NotPositiveException;
++import org.apache.commons.math.exception.NotStrictlyPositiveException;
+ import org.apache.commons.math.analysis.MultivariateRealFunction;
+ import org.apache.commons.math.random.UnitSphereRandomVectorGenerator;
+ import org.apache.commons.math.util.LocalizedFormats;
+@@ -25,7 +26,7 @@
+ /**
+  * Interpolator that implements the algorithm described in
+  * <em>William Dudziak</em>'s
+- * <a href="http://www.dudziak.com/microsphere.pdf">MS thesis</a>
++ * <a href="http://www.dudziak.com/microsphere.pdf">MS thesis</a>.
+  * @since 2.1
+  *
+  * @version $Revision$ $Date$
+@@ -59,18 +60,17 @@
+      * #MicrosphereInterpolator(int, int)
+      * MicrosphereInterpolator(MicrosphereInterpolator.DEFAULT_MICROSPHERE_ELEMENTS,
+      * MicrosphereInterpolator.DEFAULT_BRIGHTNESS_EXPONENT)}.</p>
+-     * weights of the sample data
+      */
+     public MicrosphereInterpolator() {
+         this(DEFAULT_MICROSPHERE_ELEMENTS, DEFAULT_BRIGHTNESS_EXPONENT);
+     }
+ 
+     /** Create a microsphere interpolator.
+-     * @param microsphereElements number of surface elements of the microsphere
++     * @param microsphereElements number of surface elements of the microsphere.
+      * @param brightnessExponent exponent used in the power law that computes the
+-     * weights of the sample data
+-     * @throws IllegalArgumentException if {@code microsphereElements <= 0}
+-     * or {@code brightnessExponent < 0}
++     * weights of the sample data.
++     * @throws NotPositiveException if {@code microsphereElements <= 0}
++     * or {@code brightnessExponent < 0}.
+      */
+     public MicrosphereInterpolator(final int microsphereElements,
+                                    final int brightnessExponent) {
+@@ -94,31 +94,26 @@
+ 
+     /**
+      * Set the brightness exponent.
+-     * @param brightnessExponent Exponent for computing the distance dimming
++     * @param exponent Exponent for computing the distance dimming
+      * factor.
+-     * @throws IllegalArgumentException if {@code brightnessExponent < 0}.
++     * @throws NotPositiveException if {@code exponent < 0}.
+      */
+-    public void setBrightnessExponent(final int brightnessExponent) {
+-        if (brightnessExponent < 0) {
+-            throw MathRuntimeException.createIllegalArgumentException(
+-                LocalizedFormats.NEGATIVE_BRIGHTNESS_EXPONENT,
+-                brightnessExponent);
++    public void setBrightnessExponent(final int exponent) {
++        if (exponent < 0) {
++            throw new NotPositiveException(exponent);
+         }
+-        this.brightnessExponent = brightnessExponent;
++        brightnessExponent = exponent;
+     }
+ 
+     /**
+      * Set the number of microsphere elements.
+      * @param elements Number of surface elements of the microsphere.
+-     * @throws IllegalArgumentException if {@code microsphereElements <= 0}.
++     * @throws NotStrictlyPositiveException if {@code elements <= 0}.
+      */
+     public void setMicropshereElements(final int elements) {
+-        if (microsphereElements < 0) {
+-            throw MathRuntimeException.createIllegalArgumentException(
+-                LocalizedFormats.NON_POSITIVE_MICROSPHERE_ELEMENTS,
+-                microsphereElements);
++        if (elements <= 0) {
++            throw new NotStrictlyPositiveException(elements);
+         }
+-        this.microsphereElements = elements;
++        microsphereElements = elements;
+     }
+-
+ }
+diff --git a/src/main/java/org/apache/commons/math/analysis/interpolation/SplineInterpolator.java b/src/main/java/org/apache/commons/math/analysis/interpolation/SplineInterpolator.java
+index d908228..288c6b9 100644
+--- a/src/main/java/org/apache/commons/math/analysis/interpolation/SplineInterpolator.java
++++ b/src/main/java/org/apache/commons/math/analysis/interpolation/SplineInterpolator.java
+@@ -16,10 +16,11 @@
+  */
+ package org.apache.commons.math.analysis.interpolation;
+ 
+-import org.apache.commons.math.MathRuntimeException;
++import org.apache.commons.math.exception.DimensionMismatchException;
++import org.apache.commons.math.exception.NumberIsTooSmallException;
+ import org.apache.commons.math.analysis.polynomials.PolynomialFunction;
+ import org.apache.commons.math.analysis.polynomials.PolynomialSplineFunction;
+-import org.apache.commons.math.util.LocalizedFormats;
++import org.apache.commons.math.util.MathUtils;
+ 
+ /**
+  * Computes a natural (also known as "free", "unclamped") cubic spline interpolation for the data set.
+@@ -55,28 +56,26 @@
+      * @param x the arguments for the interpolation points
+      * @param y the values for the interpolation points
+      * @return a function which interpolates the data set
++     * @throws DimensionMismatchException if {@code x} and {@code y}
++     * have different sizes.
++     * @throws NonMonotonousSequenceException if {@code x} is not sorted in
++     * strict increasing order.
++     * @throws NumberIsTooSmallException if the size of {@code x} is smaller
++     * than 3.
+      */
+     public PolynomialSplineFunction interpolate(double x[], double y[]) {
+         if (x.length != y.length) {
+-            throw MathRuntimeException.createIllegalArgumentException(
+-                  LocalizedFormats.DIMENSIONS_MISMATCH_SIMPLE, x.length, y.length);
++            throw new DimensionMismatchException(x.length, y.length);
+         }
+ 
+         if (x.length < 3) {
+-            throw MathRuntimeException.createIllegalArgumentException(
+-                  LocalizedFormats.WRONG_NUMBER_OF_POINTS, 3, x.length);
++            throw new NumberIsTooSmallException(x.length, 3, true);
+         }
+ 
+         // Number of intervals.  The number of data points is n + 1.
+         int n = x.length - 1;
+ 
+-        for (int i = 0; i < n; i++) {
+-            if (x[i] >= x[i + 1]) {
+-                throw MathRuntimeException.createIllegalArgumentException(
+-                      LocalizedFormats.NOT_STRICTLY_INCREASING_NUMBER_OF_POINTS,
+-                      i, i+1, x[i], x[i+1]);
+-            }
+-        }
++        MathUtils.checkOrder(x);
+ 
+         // Differences between knot points
+         double h[] = new double[n];
+diff --git a/src/main/java/org/apache/commons/math/exception/NotPositiveException.java b/src/main/java/org/apache/commons/math/exception/NotPositiveException.java
+index 2513814..bf24ebd 100644
+--- a/src/main/java/org/apache/commons/math/exception/NotPositiveException.java
++++ b/src/main/java/org/apache/commons/math/exception/NotPositiveException.java
+@@ -24,13 +24,13 @@
+  * @since 2.2
+  * @version $Revision$ $Date$
+  */
+-public class NotPositiveException extends MathIllegalNumberException {
++public class NotPositiveException extends NumberIsTooSmallException {
+     /**
+      * Construct the exception.
+      *
+      * @param value Argument.
+      */
+     public NotPositiveException(Number value) {
+-        super(LocalizedFormats.NOT_POSITIVE, value);
++        super(value, 0, true);
+     }
+ }
+diff --git a/src/main/java/org/apache/commons/math/exception/NotStrictlyPositiveException.java b/src/main/java/org/apache/commons/math/exception/NotStrictlyPositiveException.java
+index b2f4229..3b5af31 100644
+--- a/src/main/java/org/apache/commons/math/exception/NotStrictlyPositiveException.java
++++ b/src/main/java/org/apache/commons/math/exception/NotStrictlyPositiveException.java
+@@ -24,13 +24,13 @@
+  * @since 2.2
+  * @version $Revision$ $Date$
+  */
+-public class NotStrictlyPositiveException extends MathIllegalNumberException {
++public class NotStrictlyPositiveException extends NumberIsTooSmallException {
+     /**
+      * Construct the exception.
+      *
+      * @param value Argument.
+      */
+     public NotStrictlyPositiveException(Number value) {
+-        super(LocalizedFormats.NOT_STRICTLY_POSITIVE, value);
++        super(value, 0, false);
+     }
+ }
+diff --git a/src/main/java/org/apache/commons/math/exception/NumberIsTooLargeException.java b/src/main/java/org/apache/commons/math/exception/NumberIsTooLargeException.java
+new file mode 100644
+index 0000000..e631a16
+--- /dev/null
++++ b/src/main/java/org/apache/commons/math/exception/NumberIsTooLargeException.java
+@@ -0,0 +1,68 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one or more
++ * contributor license agreements.  See the NOTICE file distributed with
++ * this work for additional information regarding copyright ownership.
++ * The ASF licenses this file to You under the Apache License, Version 2.0
++ * (the "License"); you may not use this file except in compliance with
++ * the License.  You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.math.exception;
++
++import org.apache.commons.math.util.LocalizedFormats;
++
++/**
++ * Exception to be thrown when a number is too large.
++ *
++ * @since 2.2
++ * @version $Revision$ $Date$
++ */
++public class NumberIsTooLargeException extends MathIllegalNumberException {
++    /**
++     * Higher bound.
++     */
++    private final Number max;
++    /**
++     * Whether the maximum is included in the allowed range.
++     */
++    private final boolean boundIsAllowed;
++
++    /**
++     * Construct the exception.
++     *
++     * @param wrong Value that is larger than the maximum.
++     * @param max maximum.
++     */
++    public NumberIsTooLargeException(Number wrong,
++                                     Number max,
++                                     boolean boundIsAllowed) {
++        super((boundIsAllowed ?
++               LocalizedFormats.NUMBER_TOO_LARGE :
++               LocalizedFormats.NUMBER_TOO_LARGE_BOUND_EXCLUDED),
++              wrong, max);
++
++        this.max = max;
++        this.boundIsAllowed = boundIsAllowed;
++    }
++
++    /**
++     * @return {@code true} if the maximum is included in the allowed range.
++     **/
++    public boolean getBoundIsAllowed() {
++        return boundIsAllowed;
++    }
++
++    /**
++     * @return the maximum.
++     **/
++    public Number getMax() {
++        return max;
++    }
++}
+diff --git a/src/main/java/org/apache/commons/math/exception/NumberIsTooSmallException.java b/src/main/java/org/apache/commons/math/exception/NumberIsTooSmallException.java
+new file mode 100644
+index 0000000..0a9fdc9
+--- /dev/null
++++ b/src/main/java/org/apache/commons/math/exception/NumberIsTooSmallException.java
+@@ -0,0 +1,68 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one or more
++ * contributor license agreements.  See the NOTICE file distributed with
++ * this work for additional information regarding copyright ownership.
++ * The ASF licenses this file to You under the Apache License, Version 2.0
++ * (the "License"); you may not use this file except in compliance with
++ * the License.  You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.math.exception;
++
++import org.apache.commons.math.util.LocalizedFormats;
++
++/**
++ * Exception to be thrown when a number is too small.
++ *
++ * @since 2.2
++ * @version $Revision$ $Date$
++ */
++public class NumberIsTooSmallException extends MathIllegalNumberException {
++    /**
++     * Higher bound.
++     */
++    private final Number min;
++    /**
++     * Whether the maximum is included in the allowed range.
++     */
++    private final boolean boundIsAllowed;
++
++    /**
++     * Construct the exception.
++     *
++     * @param wrong Value that is smaller than the minimum.
++     * @param min minimum.
++     */
++    public NumberIsTooSmallException(Number wrong,
++                                     Number min,
++                                     boolean boundIsAllowed) {
++        super((boundIsAllowed ?
++               LocalizedFormats.NUMBER_TOO_SMALL :
++               LocalizedFormats.NUMBER_TOO_SMALL_BOUND_EXCLUDED),
++              wrong, min);
++
++        this.min = min;
++        this.boundIsAllowed = boundIsAllowed;
++    }
++
++    /**
++     * @return {@code true} if the minimum is included in the allowed range.
++     **/
++    public boolean getBoundIsAllowed() {
++        return boundIsAllowed;
++    }
++
++    /**
++     * @return the minimum.
++     **/
++    public Number getMin() {
++        return min;
++    }
++}
+diff --git a/src/main/java/org/apache/commons/math/util/LocalizedFormats.java b/src/main/java/org/apache/commons/math/util/LocalizedFormats.java
+index 2334d40..c3bd9e5 100644
+--- a/src/main/java/org/apache/commons/math/util/LocalizedFormats.java
++++ b/src/main/java/org/apache/commons/math/util/LocalizedFormats.java
+@@ -166,8 +166,6 @@
+     NOT_INCREASING_NUMBER_OF_POINTS("points {0} and {1} are not increasing ({2} > {3})"),
+     NOT_INCREASING_SEQUENCE("points {3} and {2} are not increasing ({1} > {0})"), /* keep */
+     NOT_MULTIPLICATION_COMPATIBLE_MATRICES("{0}x{1} and {2}x{3} matrices are not multiplication compatible"),
+-    NOT_STRICTLY_POSITIVE("{0} is not strictly positive"), /* keep */
+-    NOT_POSITIVE("{0} is not positive"), /* keep */
+     NOT_POSITIVE_ALPHA("alpha must be positive ({0})"),
+     NOT_POSITIVE_BETA("beta must be positive ({0})"),
+     NOT_POSITIVE_COLUMNDIMENSION("invalid column dimension: {0} (must be positive)"),
+@@ -219,6 +217,10 @@
+     NULL_OBJECT_TRANSFORMATION("Conversion Exception in Transformation, Object is null"),
+     NULL_REAL_FORMAT("null real format"),
+     NULL_WHOLE_FORMAT("whole format can not be null"),
++    NUMBER_TOO_LARGE("{0} is larger than the maximum ({1})"), /* keep */
++    NUMBER_TOO_SMALL("{0} is smaller than the minimum ({1})"), /* keep */
++    NUMBER_TOO_LARGE_BOUND_EXCLUDED("{0} is larger than, or equal to, the maximum ({1})"), /* keep */
++    NUMBER_TOO_SMALL_BOUND_EXCLUDED("{0} is smaller than, or equal to, the minimum ({1})"), /* keep */
+     NUMBER_OF_SUCCESS_LARGER_THAN_POPULATION_SIZE("number of successes ({0}) must be less than or equal to population size ({1})"),
+     NUMERATOR_OVERFLOW_AFTER_MULTIPLY("overflow, numerator too large after multiply: {0}"),
+     N_POINTS_GAUSS_LEGENDRE_INTEGRATOR_NOT_SUPPORTED("{0} points Legendre-Gauss integrator not supported, number of points must be in the {1}-{2} range"),
+diff --git a/src/main/resources/META-INF/localization/LocalizedFormats_fr.properties b/src/main/resources/META-INF/localization/LocalizedFormats_fr.properties
+index 8f419f3..f40a507 100644
+--- a/src/main/resources/META-INF/localization/LocalizedFormats_fr.properties
++++ b/src/main/resources/META-INF/localization/LocalizedFormats_fr.properties
+@@ -138,8 +138,6 @@
+ NOT_INCREASING_NUMBER_OF_POINTS = les points {0} et {1} ne sont pas croissants ({2} > {3})
+ NOT_INCREASING_SEQUENCE = les points {3} et {2} ne sont pas croissants ({1} > {0})
+ NOT_MULTIPLICATION_COMPATIBLE_MATRICES = les dimensions {0}x{1} et {2}x{3} sont incompatibles pour la multiplication matricielle
+-NOT_STRICTLY_POSITIVE = {0} n''est pas strictement positif
+-NOT_POSITIVE = {0} n''est pas positif
+ NOT_POSITIVE_ALPHA = alpha doit \u00eatre positif ({0})
+ NOT_POSITIVE_BETA = beta doit \u00eatre positif ({0})
+ NOT_POSITIVE_COLUMNDIMENSION = nombre de colonnes invalide : {0} (doit \u00eatre positif)
+@@ -191,6 +189,10 @@
+ NULL_OBJECT_TRANSFORMATION = Exception de conversion dans une transformation, l''objet est nul
+ NULL_REAL_FORMAT = format r\u00e9el nul
+ NULL_WHOLE_FORMAT = le format complet ne doit pas \u00eatre nul
++NUMBER_TOO_LARGE = {0} est plus grand que le maximum ({1})
++NUMBER_TOO_SMALL = {0} est plus petit que le minimum ({1})
++NUMBER_TOO_LARGE_BOUND_EXCLUDED = {0} n''est pas strictement plus grand que le maximum ({1})
++NUMBER_TOO_SMALL_BOUND_EXCLUDED = {0} n''est pas strictement plus petit que le minimum ({1})
+ NUMBER_OF_SUCCESS_LARGER_THAN_POPULATION_SIZE = le nombre de succ\u00e8s doit \u00eatre inf\u00e9rieur 
+ NUMERATOR_OVERFLOW_AFTER_MULTIPLY = d\u00e9passement de capacit\u00e9 pour le num\u00e9rateur apr\u00e8s multiplication : {0}
+ N_POINTS_GAUSS_LEGENDRE_INTEGRATOR_NOT_SUPPORTED = l''int\u00e9grateur de Legendre-Gauss en {0} points n''est pas disponible, le nombre de points doit \u00eatre entre {1} et {2}
+diff --git a/src/site/xdoc/changes.xml b/src/site/xdoc/changes.xml
+index 38341a3..441ed69 100644
+--- a/src/site/xdoc/changes.xml
++++ b/src/site/xdoc/changes.xml
+@@ -52,6 +52,9 @@
+     If the output is not quite correct, check for invisible trailing spaces!
+      -->
+     <release version="2.2" date="TBD" description="TBD">
++      <action dev="erans" type="fix" issue="MATH-382">
++        Fixed bug in precondition check (method "setMicrosphereElements").
++      </action>
+       <action dev="erans" type="add" issue="MATH-379">
+         Created "MultidimensionalCounter" class.
+       </action>
+diff --git a/src/test/java/org/apache/commons/math/analysis/interpolation/LinearInterpolatorTest.java b/src/test/java/org/apache/commons/math/analysis/interpolation/LinearInterpolatorTest.java
+index 8ea5a81..19c96e3 100644
+--- a/src/test/java/org/apache/commons/math/analysis/interpolation/LinearInterpolatorTest.java
++++ b/src/test/java/org/apache/commons/math/analysis/interpolation/LinearInterpolatorTest.java
+@@ -17,6 +17,9 @@
+ package org.apache.commons.math.analysis.interpolation;
+ 
+ import org.apache.commons.math.MathException;
++import org.apache.commons.math.exception.NonMonotonousSequenceException;
++import org.apache.commons.math.exception.DimensionMismatchException;
++import org.apache.commons.math.exception.NumberIsTooSmallException;
+ import org.apache.commons.math.TestUtils;
+ import org.apache.commons.math.analysis.UnivariateRealFunction;
+ import org.apache.commons.math.analysis.polynomials.PolynomialFunction;
+@@ -109,7 +112,7 @@
+             double yval[] = { 0.0, 1.0, 2.0 };
+             i.interpolate(xval, yval);
+             Assert.fail("Failed to detect data set array with different sizes.");
+-        } catch (IllegalArgumentException iae) {
++        } catch (DimensionMismatchException iae) {
+             // Expected.
+         }
+         // X values not sorted.
+@@ -118,7 +121,16 @@
+             double yval[] = { 0.0, 1.0, 2.0 };
+             i.interpolate(xval, yval);
+             Assert.fail("Failed to detect unsorted arguments.");
+-        } catch (IllegalArgumentException iae) {
++        } catch (NonMonotonousSequenceException iae) {
++            // Expected.
++        }
++        // Not enough data to interpolate.
++        try {
++            double xval[] = { 0.0 };
++            double yval[] = { 0.0 };
++            i.interpolate(xval, yval);
++            Assert.fail("Failed to detect unsorted arguments.");
++        } catch (NumberIsTooSmallException iae) {
+             // Expected.
+         }
+     }
+diff --git a/src/test/java/org/apache/commons/math/analysis/interpolation/SplineInterpolatorTest.java b/src/test/java/org/apache/commons/math/analysis/interpolation/SplineInterpolatorTest.java
+index 2b1111a..a3dcb67 100644
+--- a/src/test/java/org/apache/commons/math/analysis/interpolation/SplineInterpolatorTest.java
++++ b/src/test/java/org/apache/commons/math/analysis/interpolation/SplineInterpolatorTest.java
+@@ -16,20 +16,23 @@
+  */
+ package org.apache.commons.math.analysis.interpolation;
+ 
+-import junit.framework.TestCase;
+-
+ import org.apache.commons.math.MathException;
++import org.apache.commons.math.exception.NonMonotonousSequenceException;
++import org.apache.commons.math.exception.DimensionMismatchException;
++import org.apache.commons.math.exception.NumberIsTooSmallException;
+ import org.apache.commons.math.TestUtils;
+ import org.apache.commons.math.analysis.UnivariateRealFunction;
+ import org.apache.commons.math.analysis.polynomials.PolynomialFunction;
+ import org.apache.commons.math.analysis.polynomials.PolynomialSplineFunction;
++import org.junit.Assert;
++import org.junit.Test;
+ 
+ /**
+  * Test the SplineInterpolator.
+  *
+  * @version $Revision$ $Date$
+  */
+-public class SplineInterpolatorTest extends TestCase {
++public class SplineInterpolatorTest {
+ 
+     /** error tolerance for spline interpolator value at knot points */
+     protected double knotTolerance = 1E-12;
+@@ -40,10 +43,7 @@
+     /** error tolerance for interpolated values -- high value is from sin test */
+     protected double interpolationTolerance = 1E-2;
+ 
+-    public SplineInterpolatorTest(String name) {
+-        super(name);
+-    }
+-
++    @Test
+     public void testInterpolateLinearDegenerateTwoSegment()
+         throws Exception {
+         double x[] = { 0.0, 0.5, 1.0 };
+@@ -61,11 +61,12 @@
+         TestUtils.assertEquals(polynomials[1].getCoefficients(), target, coefficientTolerance);
+ 
+         // Check interpolation
+-        assertEquals(0.0,f.value(0.0), interpolationTolerance);
+-        assertEquals(0.4,f.value(0.4), interpolationTolerance);
+-        assertEquals(1.0,f.value(1.0), interpolationTolerance);
++        Assert.assertEquals(0.0,f.value(0.0), interpolationTolerance);
++        Assert.assertEquals(0.4,f.value(0.4), interpolationTolerance);
++        Assert.assertEquals(1.0,f.value(1.0), interpolationTolerance);
+     }
+ 
++    @Test
+     public void testInterpolateLinearDegenerateThreeSegment()
+         throws Exception {
+         double x[] = { 0.0, 0.5, 1.0, 1.5 };
+@@ -84,11 +85,12 @@
+         TestUtils.assertEquals(polynomials[2].getCoefficients(), target, coefficientTolerance);
+ 
+         // Check interpolation
+-        assertEquals(0,f.value(0), interpolationTolerance);
+-        assertEquals(1.4,f.value(1.4), interpolationTolerance);
+-        assertEquals(1.5,f.value(1.5), interpolationTolerance);
++        Assert.assertEquals(0,f.value(0), interpolationTolerance);
++        Assert.assertEquals(1.4,f.value(1.4), interpolationTolerance);
++        Assert.assertEquals(1.5,f.value(1.5), interpolationTolerance);
+     }
+ 
++    @Test
+     public void testInterpolateLinear() throws Exception {
+         double x[] = { 0.0, 0.5, 1.0 };
+         double y[] = { 0.0, 0.5, 0.0 };
+@@ -105,6 +107,7 @@
+         TestUtils.assertEquals(polynomials[1].getCoefficients(), target, coefficientTolerance);
+     }
+ 
++    @Test
+     public void testInterpolateSin() throws Exception {
+         double x[] =
+             {
+@@ -151,11 +154,11 @@
+         TestUtils.assertEquals(polynomials[7].getCoefficients(), target, coefficientTolerance);
+ 
+         //Check interpolation
+-        assertEquals(Math.sqrt(2d) / 2d,f.value(Math.PI/4d),interpolationTolerance);
+-        assertEquals(Math.sqrt(2d) / 2d,f.value(3d*Math.PI/4d),interpolationTolerance);
++        Assert.assertEquals(Math.sqrt(2d) / 2d,f.value(Math.PI/4d),interpolationTolerance);
++        Assert.assertEquals(Math.sqrt(2d) / 2d,f.value(3d*Math.PI/4d),interpolationTolerance);
+     }
+ 
+-
++    @Test
+     public void testIllegalArguments() throws MathException {
+         // Data set arrays of different size.
+         UnivariateRealInterpolator i = new SplineInterpolator();
+@@ -163,16 +166,27 @@
+             double xval[] = { 0.0, 1.0 };
+             double yval[] = { 0.0, 1.0, 2.0 };
+             i.interpolate(xval, yval);
+-            fail("Failed to detect data set array with different sizes.");
+-        } catch (IllegalArgumentException iae) {
++            Assert.fail("Failed to detect data set array with different sizes.");
++        } catch (DimensionMismatchException iae) {
++            // Expected.
+         }
+         // X values not sorted.
+         try {
+             double xval[] = { 0.0, 1.0, 0.5 };
+             double yval[] = { 0.0, 1.0, 2.0 };
+             i.interpolate(xval, yval);
+-            fail("Failed to detect unsorted arguments.");
+-        } catch (IllegalArgumentException iae) {
++            Assert.fail("Failed to detect unsorted arguments.");
++        } catch (NonMonotonousSequenceException iae) {
++            // Expected.
++        }
++        // Not enough data to interpolate.
++        try {
++            double xval[] = { 0.0, 1.0 };
++            double yval[] = { 0.0, 1.0 };
++            i.interpolate(xval, yval);
++            Assert.fail("Failed to detect unsorted arguments.");
++        } catch (NumberIsTooSmallException iae) {
++            // Expected.
+         }
+     }
+ 
+@@ -182,7 +196,7 @@
+     protected void verifyInterpolation(UnivariateRealFunction f, double x[], double y[])
+         throws Exception{
+         for (int i = 0; i < x.length; i++) {
+-            assertEquals(f.value(x[i]), y[i], knotTolerance);
++            Assert.assertEquals(f.value(x[i]), y[i], knotTolerance);
+         }
+     }
+ 
+@@ -195,11 +209,11 @@
+         PolynomialFunction polynomials[] = f.getPolynomials();
+         for (int i = 1; i < x.length - 2; i++) {
+             // evaluate polynomials and derivatives at x[i + 1]
+-            assertEquals(polynomials[i].value(x[i +1] - x[i]), polynomials[i + 1].value(0), 0.1);
+-            assertEquals(polynomials[i].derivative().value(x[i +1] - x[i]),
+-                    polynomials[i + 1].derivative().value(0), 0.5);
+-            assertEquals(polynomials[i].polynomialDerivative().derivative().value(x[i +1] - x[i]),
+-                    polynomials[i + 1].polynomialDerivative().derivative().value(0), 0.5);
++            Assert.assertEquals(polynomials[i].value(x[i +1] - x[i]), polynomials[i + 1].value(0), 0.1);
++            Assert.assertEquals(polynomials[i].derivative().value(x[i +1] - x[i]),
++                                polynomials[i + 1].derivative().value(0), 0.5);
++            Assert.assertEquals(polynomials[i].polynomialDerivative().derivative().value(x[i +1] - x[i]),
++                                polynomials[i + 1].polynomialDerivative().derivative().value(0), 0.5);
+         }
+     }
+ 
+diff --git a/src/test/java/org/apache/commons/math/exception/NotPositiveExceptionTest.java b/src/test/java/org/apache/commons/math/exception/NotPositiveExceptionTest.java
+index 21bb4dc..f8a7373 100644
+--- a/src/test/java/org/apache/commons/math/exception/NotPositiveExceptionTest.java
++++ b/src/test/java/org/apache/commons/math/exception/NotPositiveExceptionTest.java
+@@ -29,5 +29,7 @@
+     public void testAccessors() {
+         final NotPositiveException e = new NotPositiveException(-1);
+         Assert.assertEquals(-1, e.getArgument());
++        Assert.assertEquals(0, e.getMin());
++        Assert.assertTrue(e.getBoundIsAllowed());
+     }
+ }
+diff --git a/src/test/java/org/apache/commons/math/exception/NotStrictlyPositiveExceptionTest.java b/src/test/java/org/apache/commons/math/exception/NotStrictlyPositiveExceptionTest.java
+index f0c8c03..9f48e4d 100644
+--- a/src/test/java/org/apache/commons/math/exception/NotStrictlyPositiveExceptionTest.java
++++ b/src/test/java/org/apache/commons/math/exception/NotStrictlyPositiveExceptionTest.java
+@@ -29,5 +29,7 @@
+     public void testAccessors() {
+         final NotStrictlyPositiveException e = new NotStrictlyPositiveException(0);
+         Assert.assertEquals(0, e.getArgument());
++        Assert.assertEquals(0, e.getMin());
++        Assert.assertFalse(e.getBoundIsAllowed());
+     }
+ }
+diff --git a/src/test/java/org/apache/commons/math/exception/NumberIsTooLargeExceptionTest.java b/src/test/java/org/apache/commons/math/exception/NumberIsTooLargeExceptionTest.java
+new file mode 100644
+index 0000000..f199fca
+--- /dev/null
++++ b/src/test/java/org/apache/commons/math/exception/NumberIsTooLargeExceptionTest.java
+@@ -0,0 +1,35 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one or more
++ * contributor license agreements.  See the NOTICE file distributed with
++ * this work for additional information regarding copyright ownership.
++ * The ASF licenses this file to You under the Apache License, Version 2.0
++ * (the "License"); you may not use this file except in compliance with
++ * the License.  You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.math.exception;
++
++import org.junit.Assert;
++import org.junit.Test;
++
++/**
++ * Test for {@link NumberIsTooLargeException}.
++ * 
++ * @version $Revision$ $Date$ 
++ */
++public class NumberIsTooLargeExceptionTest {
++    @Test
++    public void testAccessors() {
++        final NumberIsTooLargeException e = new NumberIsTooLargeException(1, 0, true);
++        Assert.assertEquals(1, e.getArgument());
++        Assert.assertEquals(0, e.getMax());
++        Assert.assertTrue(e.getBoundIsAllowed());
++    }
++}
+diff --git a/src/test/java/org/apache/commons/math/exception/NumberIsTooSmallExceptionTest.java b/src/test/java/org/apache/commons/math/exception/NumberIsTooSmallExceptionTest.java
+new file mode 100644
+index 0000000..95c6575
+--- /dev/null
++++ b/src/test/java/org/apache/commons/math/exception/NumberIsTooSmallExceptionTest.java
+@@ -0,0 +1,35 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one or more
++ * contributor license agreements.  See the NOTICE file distributed with
++ * this work for additional information regarding copyright ownership.
++ * The ASF licenses this file to You under the Apache License, Version 2.0
++ * (the "License"); you may not use this file except in compliance with
++ * the License.  You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.math.exception;
++
++import org.junit.Assert;
++import org.junit.Test;
++
++/**
++ * Test for {@link NumberIsTooSmallException}.
++ * 
++ * @version $Revision$ $Date$ 
++ */
++public class NumberIsTooSmallExceptionTest {
++    @Test
++    public void testAccessors() {
++        final NumberIsTooSmallException e = new NumberIsTooSmallException(0, 0, false);
++        Assert.assertEquals(0, e.getArgument());
++        Assert.assertEquals(0, e.getMin());
++        Assert.assertFalse(e.getBoundIsAllowed());
++    }
++}

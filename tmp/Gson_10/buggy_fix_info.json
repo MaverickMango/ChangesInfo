@@ -1,0 +1,109 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.gson.functional.JsonAdapterAnnotationOnFieldsTest::testPrimitiveFieldAnnotationTakesPrecedenceOverDefault",
+    "test.dir": "gson/src/test/java",
+    "clz.modified": "com.google.gson.internal.bind.ReflectiveTypeAdapterFactory",
+    "src.dir": "gson/src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Gson",
+  "id": "10",
+  "workingDir": "../bugs/Gson_10_tmp",
+  "bug_name": "Gson_10",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.gson.functional.JsonAdapterAnnotationOnFieldsTest",
+      "test_function": "testPrimitiveFieldAnnotationTakesPrecedenceOverDefault",
+      "assertion_line": "236",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c{\"part\":[\"42\"]}\u003e but was:\u003c{\"part\":[42]}\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "gson/src/main/java/com/google/gson/internal/bind/ReflectiveTypeAdapterFactory.java",
+        "gson/src/main/java/com/google/gson/internal/bind/ReflectiveTypeAdapterFactory.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.gson.internal.bind.ReflectiveTypeAdapterFactory:createBoundField:[final Gson context, final Field field, final String name, final TypeToken\u003c?\u003e fieldType, boolean serialize, boolean deserialize]:ReflectiveTypeAdapterFactory.BoundField"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.gson.internal.bind.ReflectiveTypeAdapterFactory:createBoundField:[final Gson context, final Field field, final String name, final TypeToken\u003c?\u003e fieldType, boolean serialize, boolean deserialize]:ReflectiveTypeAdapterFactory.BoundField"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "122",
+            "123"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "122",
+            "123"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/gson/src/main/java/com/google/gson/internal/bind/ReflectiveTypeAdapterFactory.java b/gson/src/main/java/com/google/gson/internal/bind/ReflectiveTypeAdapterFactory.java\nindex 9d9f6be..ab1d05a 100644\n--- a/gson/src/main/java/com/google/gson/internal/bind/ReflectiveTypeAdapterFactory.java\n+++ b/gson/src/main/java/com/google/gson/internal/bind/ReflectiveTypeAdapterFactory.java\n@@ -119,8 +119,8 @@\n       @Override void write(JsonWriter writer, Object value)\n           throws IOException, IllegalAccessException {\n         Object fieldValue \u003d field.get(value);\n-        TypeAdapter t \u003d jsonAdapterPresent ? typeAdapter\n-            : new TypeAdapterRuntimeTypeWrapper(context, typeAdapter, fieldType.getType());\n+        TypeAdapter t \u003d\n+          new TypeAdapterRuntimeTypeWrapper(context, typeAdapter, fieldType.getType());\n         t.write(writer, fieldValue);\n       }\n       @Override void read(JsonReader reader, Object value)\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: jsonAdapterPresent [4782,4800]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: typeAdapter [4803,4814]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ConditionalExpression [4782,4905]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

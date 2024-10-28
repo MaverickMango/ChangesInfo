@@ -1,0 +1,943 @@
+diff -r -u inducing/src/com/google/javascript/jscomp/FunctionTypeBuilder.java buggy/src/com/google/javascript/jscomp/FunctionTypeBuilder.java
+--- inducing/src/com/google/javascript/jscomp/FunctionTypeBuilder.java	2023-06-12 11:40:27.962646030 +0800
++++ buggy/src/com/google/javascript/jscomp/FunctionTypeBuilder.java	2023-06-12 11:40:27.866650443 +0800
+@@ -18,10 +18,12 @@
+ 
+ import static com.google.javascript.jscomp.TypeCheck.BAD_IMPLEMENTED_TYPE;
+ import static com.google.javascript.rhino.jstype.JSTypeNative.FUNCTION_FUNCTION_TYPE;
++import static com.google.javascript.rhino.jstype.JSTypeNative.OBJECT_TYPE;
+ import static com.google.javascript.rhino.jstype.JSTypeNative.UNKNOWN_TYPE;
+ import static com.google.javascript.rhino.jstype.JSTypeNative.VOID_TYPE;
+ 
+ import com.google.common.base.Preconditions;
++import com.google.common.base.Predicate;
+ import com.google.common.collect.Iterables;
+ import com.google.common.collect.Lists;
+ import com.google.common.collect.Sets;
+@@ -89,6 +91,10 @@
+       "JSC_EXTENDS_NON_OBJECT",
+       "{0} @extends non-object type {1}");
+ 
++  static final DiagnosticType RESOLVED_TAG_EMPTY = DiagnosticType.warning(
++      "JSC_RESOLVED_TAG_EMPTY",
++      "Could not resolve type in {0} tag of {1}");
++
+   static final DiagnosticType IMPLEMENTS_WITHOUT_CONSTRUCTOR =
+       DiagnosticType.warning(
+           "JSC_IMPLEMENTS_WITHOUT_CONSTRUCTOR",
+@@ -120,6 +126,69 @@
+       "JSC_TEMPLATE_TYPE_EXPECTED",
+       "The template type must be a parameter type");
+ 
++  static final DiagnosticType THIS_TYPE_NON_OBJECT =
++      DiagnosticType.warning(
++          "JSC_THIS_TYPE_NON_OBJECT",
++          "@this type of a function must be an object\n" +
++          "Actual type: {0}");
++
++  private class ExtendedTypeValidator implements Predicate<JSType> {
++    @Override
++    public boolean apply(JSType type) {
++      ObjectType objectType = ObjectType.cast(type);
++      if (objectType == null) {
++        reportWarning(EXTENDS_NON_OBJECT, fnName, type.toString());
++      } else if (objectType.isUnknownType() &&
++          // If this has a supertype that hasn't been resolved yet,
++          // then we can assume this type will be ok once the super
++          // type resolves.
++          (objectType.getImplicitPrototype() == null ||
++           objectType.getImplicitPrototype().isResolved())) {
++        reportWarning(RESOLVED_TAG_EMPTY, "@extends", fnName);
++      } else {
++        return true;
++      }
++      return false;
++    }
++  };
++
++  private class ImplementedTypeValidator implements Predicate<JSType> {
++    @Override
++    public boolean apply(JSType type) {
++      ObjectType objectType = ObjectType.cast(type);
++      if (objectType == null) {
++        reportError(BAD_IMPLEMENTED_TYPE, fnName);
++      } else if (objectType.isUnknownType() &&
++          // If this has a supertype that hasn't been resolved yet,
++          // then we can assume this type will be ok once the super
++          // type resolves.
++          (objectType.getImplicitPrototype() == null ||
++           objectType.getImplicitPrototype().isResolved())) {
++        reportWarning(RESOLVED_TAG_EMPTY, "@implements", fnName);
++      } else {
++        return true;
++      }
++      return false;
++    }
++  };
++
++  private class ThisTypeValidator implements Predicate<JSType> {
++    @Override
++    public boolean apply(JSType type) {
++      // TODO(user): Doing an instanceof check here is too
++      // restrictive as (Date,Error) is, for instance, an object type
++      // even though its implementation is a UnionType. Would need to
++      // create interfaces JSType, ObjectType, FunctionType etc and have
++      // separate implementation instead of the class hierarchy, so that
++      // union types can also be object types, etc.
++      if (!type.isSubtype(typeRegistry.getNativeType(OBJECT_TYPE))) {
++        reportWarning(THIS_TYPE_NON_OBJECT, type.toString());
++        return false;
++      }
++      return true;
++    }
++  };
++
+   /**
+    * @param fnName The function name.
+    * @param compiler The compiler.
+@@ -278,9 +347,11 @@
+       // base type
+       if (info.hasBaseType()) {
+         if (isConstructor || isInterface) {
+-          baseType = ObjectType.cast(info.getBaseType().evaluate(scope, typeRegistry));
+-          if (baseType == null) {
+-            reportWarning(EXTENDS_NON_OBJECT, fnName, baseType.toString());
++          JSType maybeBaseType =
++              info.getBaseType().evaluate(scope, typeRegistry);
++          if (maybeBaseType != null &&
++              maybeBaseType.setValidator(new ExtendedTypeValidator())) {
++            baseType = (ObjectType) maybeBaseType;
+           }
+         } else {
+           reportWarning(EXTENDS_WITHOUT_TYPEDEF, fnName);
+@@ -291,11 +362,10 @@
+       if (isConstructor || isInterface) {
+         implementedInterfaces = Lists.newArrayList();
+         for (JSTypeExpression t : info.getImplementedInterfaces()) {
+-          ObjectType interType = ObjectType.cast(t.evaluate(scope, typeRegistry));
+-          if (interType != null) {
+-            implementedInterfaces.add(interType);
+-          } else {
+-            reportError(BAD_IMPLEMENTED_TYPE, fnName);
++          JSType maybeInterType = t.evaluate(scope, typeRegistry);
++          if (maybeInterType != null &&
++              maybeInterType.setValidator(new ImplementedTypeValidator())) {
++            implementedInterfaces.add((ObjectType) maybeInterType);
+           }
+         }
+         if (baseType != null) {
+@@ -342,13 +412,8 @@
+           info.getThisType().evaluate(scope, typeRegistry));
+     }
+     if (maybeThisType != null) {
+-      // TODO(user): Doing an instanceof check here is too
+-      // restrictive as (Date,Error) is, for instance, an object type
+-      // even though its implementation is a UnionType. Would need to
+-      // create interfaces JSType, ObjectType, FunctionType etc and have
+-      // separate implementation instead of the class hierarchy, so that
+-      // union types can also be object types, etc.
+       thisType = maybeThisType;
++      thisType.setValidator(new ThisTypeValidator());
+     } else if (owner != null &&
+                (info == null || !info.hasType())) {
+       // If the function is of the form:
+@@ -359,7 +424,7 @@
+       // then we should not give it a @this type.
+       String ownerTypeName = owner.getQualifiedName();
+       ObjectType ownerType = ObjectType.cast(
+-          typeRegistry.getType(
++          typeRegistry.getForgivingType(
+               scope, ownerTypeName, sourceName,
+               owner.getLineno(), owner.getCharno()));
+       if (ownerType != null) {
+diff -r -u inducing/src/com/google/javascript/rhino/jstype/FunctionType.java buggy/src/com/google/javascript/rhino/jstype/FunctionType.java
+--- inducing/src/com/google/javascript/rhino/jstype/FunctionType.java	2023-06-12 11:40:27.962646030 +0800
++++ buggy/src/com/google/javascript/rhino/jstype/FunctionType.java	2023-06-12 11:40:27.866650443 +0800
+@@ -458,10 +458,18 @@
+     return supAndInfHelper(that, false);
+   }
+ 
++  /**
++   * Computes the supremum or infimum of functions with other types.
++   * Because sup() and inf() share a lot of logic for functions, we use
++   * a single helper.
++   * @param leastSuper If true, compute the supremum of {@code this} with
++   *     {@code that}. Otherwise compute the infimum.
++   * @return The least supertype or greatest subtype.
++   */
+   private JSType supAndInfHelper(JSType that, boolean leastSuper) {
+     // NOTE(nicksantos): When we remove the unknown type, the function types
+     // form a lattice with the universal constructor at the top of the lattice,
+-    // and the NoObject type at the bottom of the lattice.
++    // and the LEAST_FUNCTION_TYPE type at the bottom of the lattice.
+     //
+     // When we introduce the unknown type, it's much more difficult to make
+     // heads or tails of the partial ordering of types, because there's no
+@@ -470,30 +478,46 @@
+     //
+     // Rather than make the situation more complicated by introducing new
+     // types (like unions of functions), we just fallback on the simpler
+-    // approach of using the universal constructor and the AnyObject as
+-    // the supremum and infinum of all function types.
++    // approach of getting things right at the top and the bottom of the
++    // lattice.
+     if (isFunctionType() && that.isFunctionType()) {
+       if (isEquivalentTo(that)) {
+         return this;
+       }
+ 
+-      // If this is a normal function, look to see if the arguments are equal.
+-      // If they are, we can just take the least supertype (or greatest
+-      // subtype) of the return types.
+-      if (isOrdinaryFunction() && that.isOrdinaryFunction() &&
+-          that instanceof FunctionType) {
+-        FunctionType other = (FunctionType) that;
+-        if (call.hasEqualParameters(other.call) &&
+-            isEquivalent(typeOfThis, other.typeOfThis)) {
+-          JSType newReturnType = leastSuper ?
+-              call.returnType.getLeastSupertype(other.call.returnType) :
+-              call.returnType.getGreatestSubtype(other.call.returnType);
+-          return cloneWithNewReturnType(
+-              newReturnType,
+-              call.returnTypeInferred || other.call.returnTypeInferred);
++      FunctionType other = null;
++      if (that instanceof FunctionType) {
++        other = (FunctionType) that;
++      }
++
++      // If these are ordinary functions, then merge them.
++      // Don't do this if any of the params/return
++      // values are unknown, because then there will be cycles in
++      // their local lattice and they will merge in weird ways.
++      if (other != null &&
++          isOrdinaryFunction() && that.isOrdinaryFunction() &&
++          !this.call.hasUnknownParamsOrReturn() &&
++          !other.call.hasUnknownParamsOrReturn()) {
++
++        // Check for the degenerate case, but double check
++        // that there's not a cycle.
++        boolean isSubtypeOfThat = this.isSubtype(that);
++        boolean isSubtypeOfThis = that.isSubtype(this);
++        if (isSubtypeOfThat && !isSubtypeOfThis) {
++          return leastSuper ? that : this;
++        } else if (isSubtypeOfThis && !isSubtypeOfThat) {
++          return leastSuper ? this : that;
++        }
++
++        // Merge the two functions component-wise.
++        FunctionType merged = tryMergeFunctionPiecewise(other, leastSuper);
++        if (merged != null) {
++          return merged;
+         }
+       }
+ 
++      // The function instance type is a special case
++      // that lives above the rest of the lattice.
+       JSType functionInstance = registry.getNativeType(
+           JSTypeNative.FUNCTION_INSTANCE_TYPE);
+       if (functionInstance.isEquivalentTo(that)) {
+@@ -502,9 +526,17 @@
+         return leastSuper ? this : that;
+       }
+ 
+-      return leastSuper ?
+-          registry.getNativeType(JSTypeNative.U2U_CONSTRUCTOR_TYPE) :
+-          registry.getNativeType(JSTypeNative.NO_OBJECT_TYPE);
++      // In theory, we should be using the GREATEST_FUNCTION_TYPE as the
++      // greatest function. In practice, we don't because it's way too
++      // broad. The greatest function takes var_args None parameters, which
++      // means that all parameters register a type warning.
++      //
++      // Instead, we use the U2U ctor type, which has unknown type args.
++      FunctionType greatestFn =
++          registry.getNativeFunctionType(JSTypeNative.U2U_CONSTRUCTOR_TYPE);
++      FunctionType leastFn =
++          registry.getNativeFunctionType(JSTypeNative.LEAST_FUNCTION_TYPE);
++      return leastSuper ? greatestFn : leastFn;
+     }
+ 
+     return leastSuper ?
+@@ -512,12 +544,49 @@
+         super.getGreatestSubtype(that);
+   }
+ 
+-  FunctionType cloneWithNewReturnType(JSType newReturnType, boolean inferred) {
++  /**
++   * Try to get the sup/inf of two functions by looking at the
++   * piecewise components.
++   */
++  private FunctionType tryMergeFunctionPiecewise(
++      FunctionType other, boolean leastSuper) {
++    Node newParamsNode = null;
++    if (call.hasEqualParameters(other.call)) {
++      newParamsNode = call.parameters;
++    } else {
++      // If the parameters are not equal, don't try to merge them.
++      // Someday, we should try to merge the individual params.
++      return null;
++    }
++
++    JSType newReturnType = leastSuper ?
++        call.returnType.getLeastSupertype(other.call.returnType) :
++        call.returnType.getGreatestSubtype(other.call.returnType);
++
++    ObjectType newTypeOfThis = null;
++    if (isEquivalent(typeOfThis, other.typeOfThis)) {
++      newTypeOfThis = typeOfThis;
++    } else {
++      JSType maybeNewTypeOfThis = leastSuper ?
++          typeOfThis.getLeastSupertype(other.typeOfThis) :
++          typeOfThis.getGreatestSubtype(other.typeOfThis);
++      if (maybeNewTypeOfThis instanceof ObjectType) {
++        newTypeOfThis = (ObjectType) maybeNewTypeOfThis;
++      } else {
++        newTypeOfThis = leastSuper ?
++            registry.getNativeObjectType(JSTypeNative.OBJECT_TYPE) :
++            registry.getNativeObjectType(JSTypeNative.NO_OBJECT_TYPE);
++      }
++    }
++
++    boolean newReturnTypeInferred =
++        call.returnTypeInferred || other.call.returnTypeInferred;
++
+     return new FunctionType(
+-        registry, null, source,
++        registry, null, null,
+         new ArrowType(
+-            registry, call.parameters, newReturnType, inferred),
+-        typeOfThis, null, false, false);
++            registry, newParamsNode, newReturnType, newReturnTypeInferred),
++        newTypeOfThis, null, false, false);
+   }
+ 
+   /**
+@@ -681,9 +750,10 @@
+    */
+   @Override
+   public boolean isSubtype(JSType that) {
+-    if (this.isEquivalentTo(that)) {
++    if (JSType.isSubtype(this, that)) {
+       return true;
+     }
++
+     if (that.isFunctionType()) {
+       if (((FunctionType) that).isInterface()) {
+         // Any function can be assigned to an interface function.
+@@ -706,14 +776,7 @@
+               this.typeOfThis.isSubtype(other.typeOfThis)) &&
+           this.call.isSubtype(other.call);
+     }
+-    if (that instanceof UnionType) {
+-      UnionType union = (UnionType) that;
+-      for (JSType element : union.alternates) {
+-        if (this.isSubtype(element)) {
+-          return true;
+-        }
+-      }
+-    }
++
+     return getNativeType(JSTypeNative.FUNCTION_PROTOTYPE).isSubtype(that);
+   }
+ 
+@@ -801,7 +864,14 @@
+ 
+     call = (ArrowType) safeResolve(call, t, scope);
+     prototype = (FunctionPrototypeType) safeResolve(prototype, t, scope);
+-    typeOfThis = (ObjectType) safeResolve(typeOfThis, t, scope);
++
++    // Warning about typeOfThis if it doesn't resolve to an ObjectType
++    // is handled further upstream.
++    // TODO(nicksantos): Handle this correctly if we have a UnionType.
++    JSType maybeTypeOfThis = safeResolve(typeOfThis, t, scope);
++    if (maybeTypeOfThis instanceof ObjectType) {
++      typeOfThis = (ObjectType) maybeTypeOfThis;
++    }
+ 
+     boolean changed = false;
+     ImmutableList.Builder<ObjectType> resolvedInterfaces =
+diff -r -u inducing/test/com/google/javascript/jscomp/TypeCheckTest.java buggy/test/com/google/javascript/jscomp/TypeCheckTest.java
+--- inducing/test/com/google/javascript/jscomp/TypeCheckTest.java	2023-06-12 11:40:27.962646030 +0800
++++ buggy/test/com/google/javascript/jscomp/TypeCheckTest.java	2023-06-12 11:40:27.870650259 +0800
+@@ -28,6 +28,7 @@
+ import com.google.javascript.rhino.jstype.ObjectType;
+ 
+ import java.util.Arrays;
++import java.util.List;
+ 
+ /**
+  * Tests {@link TypeCheck}.
+@@ -37,6 +38,7 @@
+ 
+   private CheckLevel reportMissingOverrides = CheckLevel.WARNING;
+ 
++  @Override
+   public void setUp() throws Exception {
+     super.setUp();
+     reportMissingOverrides = CheckLevel.WARNING;
+@@ -2605,6 +2607,63 @@
+         "element BAR does not exist on this enum");
+   }
+ 
++  public void testBackwardsTypedefUse1() throws Exception {
++    testTypes(
++        "/** @this {MyTypedef} */ function f() {}" +
++        "/** @typedef {string} */ var MyTypedef;",
++        "@this type of a function must be an object\n" +
++        "Actual type: string");
++  }
++
++  public void testBackwardsTypedefUse2() throws Exception {
++    testTypes(
++        "/** @this {MyTypedef} */ function f() {}" +
++        "/** @typedef {!(Date|Array)} */ var MyTypedef;");
++  }
++
++  public void testBackwardsTypedefUse3() throws Exception {
++    testTypes(
++        "/** @this {MyTypedef} */ function f() {}" +
++        "/** @typedef {(Date|Array)} */ var MyTypedef;",
++        "@this type of a function must be an object\n" +
++        "Actual type: (Array|Date|null)");
++  }
++
++  public void testBackwardsTypedefUse4() throws Exception {
++    testTypes(
++        "/** @return {MyTypedef} */ function f() { return null; }" +
++        "/** @typedef {string} */ var MyTypedef;",
++        "inconsistent return type\n" +
++        "found   : null\n" +
++        "required: string");
++  }
++
++  public void testBackwardsTypedefUse5() throws Exception {
++    testTypes(
++        "/** @return {MyTypedef} */ function f() { return null; }" +
++        "/** @type {string} */ var MyTypedef = goog.typedef;",
++        "inconsistent return type\n" +
++        "found   : null\n" +
++        "required: string");
++  }
++
++  public void testBackwardsTypedefUse6() throws Exception {
++    testTypes(
++        "/** @return {goog.MyTypedef} */ function f() { return null; }" +
++        "var goog = {};" +
++        "/** @typedef {string} */ goog.MyTypedef;",
++        "inconsistent return type\n" +
++        "found   : null\n" +
++        "required: string");
++  }
++
++  public void testBackwardsTypedefUse7() throws Exception {
++    testTypes(
++        "/** @return {goog.MyTypedef} */ function f() { return null; }" +
++        "var goog = {};" +
++        "/** @typedef {Object} */ goog.MyTypedef;");
++  }
++
+   public void testBackwardsConstructor1() throws Exception {
+     testTypes(
+         "function f() { (new Foo(true)); }" +
+@@ -2735,6 +2794,28 @@
+         "required: boolean");
+   }
+ 
++  public void testGoodExtends12() throws Exception {
++    testTypes(
++        "/** @constructor \n * @extends {Super} */ function Sub() {}" +
++        "/** @constructor \n * @extends {Sub} */ function Sub2() {}" +
++        "/** @constructor */ function Super() {}" +
++        "/** @param {Super} x */ function foo(x) {}" +
++        "foo(new Sub2());");
++  }
++
++  public void testGoodExtends13() throws Exception {
++    testTypes(
++        "/** @constructor \n * @extends {B}  */ function C() {}" +
++        "/** @constructor \n * @extends {D}  */ function E() {}" +
++        "/** @constructor \n * @extends {C}  */ function D() {}" +
++        "/** @constructor \n * @extends {A} */ function B() {}" +
++        "/** @constructor */ function A() {}" +
++        "/** @param {number} x */ function f(x) {} f(new E());",
++        "actual parameter 1 of f does not match formal parameter\n" +
++        "found   : E\n" +
++        "required: number");
++  }
++
+   public void testBadExtends1() throws Exception {
+     testTypes("/** @constructor */function base() {}\n" +
+         "/** @constructor\n * @extends {not_base} */function derived() {}\n",
+@@ -2762,6 +2843,17 @@
+         "@extends used without @constructor or @interface for base");
+   }
+ 
++  public void testBadExtends4() throws Exception {
++    // If there's a subclass of a class with a bad extends,
++    // we only want to warn about the first one.
++    testTypes(
++        "/** @constructor \n * @extends {bad} */ function Sub() {}" +
++        "/** @constructor \n * @extends {Sub} */ function Sub2() {}" +
++        "/** @param {Sub} x */ function foo(x) {}" +
++        "foo(new Sub2());",
++        "Parse error. Unknown type bad");
++  }
++
+   public void testLateExtends() throws Exception {
+     testTypes(
+         CLOSURE_DEFS +
+@@ -2850,6 +2942,20 @@
+         "/** @return {string} */ function foo() { return (new Base).foo; }");
+   }
+ 
++  public void testDirectPrototypeAssignment3() throws Exception {
++    // This verifies that the compiler doesn't crash if the user
++    // overwrites the prototype of a global variable in a local scope.
++    testTypes(
++        "/** @constructor */ var MainWidgetCreator = function() {};" +
++        "/** @param {Function} ctor */" +
++        "function createMainWidget(ctor) {" +
++        "  /** @constructor */ function tempCtor() {};" +
++        "  tempCtor.prototype = ctor.prototype;" +
++        "  MainWidgetCreator.superClass_ = ctor.prototype;" +
++        "  MainWidgetCreator.prototype = new tempCtor();" +
++        "}");
++  }
++
+   public void testGoodImplements1() throws Exception {
+     testTypes("/** @interface */function Disposable() {}\n" +
+         "/** @implements {Disposable}\n * @constructor */function f() {}");
+@@ -4676,7 +4782,7 @@
+         "function foo(x) { return x.index; }");
+   }
+ 
+-  public void testScopedConstructors() throws Exception {
++  public void testScopedConstructors1() throws Exception {
+     testTypes(
+         "function foo1() { " +
+         "  /** @constructor */ function Bar() { " +
+@@ -4698,6 +4804,15 @@
+         "required: number");
+   }
+ 
++  public void testScopedConstructors2() throws Exception {
++    testTypes(
++        "/** @param {Function} f */" +
++        "function foo1(f) { " +
++        "  /** @param {Function} g */" +
++        "  f.prototype.bar = function(g) {};" +
++        "}");
++  }
++
+   public void testQualifiedNameInference1() throws Exception {
+     testTypes(
+         "/** @constructor */ function Foo() {}" +
+@@ -4757,6 +4872,29 @@
+         "};");
+   }
+ 
++  public void testQualifiedNameInference5() throws Exception {
++    testTypes(
++        "var ns = {}; " +
++        "(function() { " +
++        "    /** @param {number} x */ ns.foo = function(x) {}; })();" +
++        "(function() { ns.foo(true); })();",
++        "actual parameter 1 of ns.foo does not match formal parameter\n" +
++        "found   : boolean\n" +
++        "required: number");
++  }
++
++  public void testQualifiedNameInference6() throws Exception {
++    testTypes(
++        "var ns = {}; " +
++        "/** @param {number} x */ ns.foo = function(x) {};" +
++        "(function() { " +
++        "    ns.foo = function(x) {};" +
++        "    ns.foo(true); })();",
++        "actual parameter 1 of ns.foo does not match formal parameter\n" +
++        "found   : boolean\n" +
++        "required: number");
++  }
++
+   public void testSheqRefinedScope() throws Exception {
+     Node n = parseAndTypeCheck(
+         "/** @constructor */function A() {}\n" +
+@@ -5240,6 +5378,24 @@
+         null);
+   }
+ 
++  public void testCast15() throws Exception {
++    // This fixes a bug where a type cast on an object literal
++    // would cause a runtime cast exception if the node was visited
++    // more than once.
++    //
++    // Some code assumes that an object literal must have a object type,
++    // while because of the cast, it could have any type (including
++    // a union).
++    testTypes(
++        "for (var i = 0; i < 10; i++) {" +
++          "var x = /** @type {Object|number} */ ({foo: 3});" +
++          "/** @param {boolean} x */ function f(x) {}" +
++          "f(x.foo);" +
++          "f([].foo);" +
++        "}",
++        "Property foo never defined on Array");
++  }
++
+   public void testNestedCasts() throws Exception {
+     testTypes("/** @constructor */var T = function() {};\n" +
+         "/** @constructor */var V = function() {};\n" +
+@@ -5899,7 +6055,7 @@
+   }
+ 
+   public void testInheritanceCheck14() throws Exception {
+-    testTypes(
++    testClosureTypes(
+         "var goog = {};\n" +
+         "/** @constructor\n @extends {goog.Missing} */\n" +
+         "goog.Super = function() {};\n" +
+@@ -6201,11 +6357,41 @@
+   //      "interface members can only be plain functions");
+   //}
+ 
+-  public void testDataPropertyOnInterface2() throws Exception {
++  public void testDataPropertyOnInterface1() throws Exception {
+     testTypes("/** @interface */ function T() {};\n" +
+         "/** @type {number} */T.prototype.x;");
+   }
+ 
++  public void testDataPropertyOnInterface2() throws Exception {
++    reportMissingOverrides = CheckLevel.OFF;
++    testTypes("/** @interface */ function T() {};\n" +
++        "/** @type {number} */T.prototype.x;\n" +
++        "/** @constructor \n" +
++        " *  @implements {T} \n" +
++        " */\n" +
++        "function C() {}\n" +
++        "C.prototype.x = 'foo';",
++        "mismatch of the x property type and the type of the property it " +
++        "overrides from interface T\n" +
++        "original: number\n" +
++        "override: string");
++  }
++
++  public void testDataPropertyOnInterface3() throws Exception {
++    testTypes("/** @interface */ function T() {};\n" +
++        "/** @type {number} */T.prototype.x;\n" +
++        "/** @constructor \n" +
++        " *  @implements {T} \n" +
++        " */\n" +
++        "function C() {}\n" +
++        "/** @override */\n" +
++        "C.prototype.x = 'foo';",
++        "mismatch of the x property type and the type of the property it " +
++        "overrides from interface T\n" +
++        "original: number\n" +
++        "override: string");
++  }
++
+   public void testWarnDataPropertyOnInterface3() throws Exception {
+     testTypes("/** @interface */ u.T = function () {};\n" +
+         "/** @type {number} */u.T.prototype.x = 1;",
+@@ -6297,11 +6483,13 @@
+   }
+ 
+   public void testPrototypeLoop() throws Exception {
+-    testTypes(
++    testClosureTypesMultipleWarnings(
+         suppressMissingProperty("foo") +
+         "/** @constructor \n * @extends {T} */var T = function() {};" +
+         "alert((new T).foo);",
+-        "Parse error. Cycle detected in inheritance chain of type T");
++        Lists.newArrayList(
++            "Parse error. Cycle detected in inheritance chain of type T",
++            "Could not resolve type in @extends tag of T"));
+   }
+ 
+   public void testDirectPrototypeAssign() throws Exception {
+@@ -6613,7 +6801,7 @@
+ 
+         "goog.addDependency('zzz.js', ['MyType'], []);" +
+         "/** @param {MyType} x \n * @return {number} */" +
+-        "function f(x) { return x; }", null);
++        "function f(x) { return 3; }", null);
+   }
+ 
+   public void testForwardTypeDeclaration2() throws Exception {
+@@ -6634,6 +6822,39 @@
+         "required: (MyType|null)");
+   }
+ 
++  public void testForwardTypeDeclaration4() throws Exception {
++    testClosureTypes(
++        "goog.addDependency('zzz.js', ['MyType'], []);" +
++        "/** @param {MyType} x */ function f(x) { return x; }" +
++        "/** @constructor */ var MyType = function() {};" +
++        "f(new MyType());",
++        null);
++  }
++
++  public void testForwardTypeDeclaration5() throws Exception {
++    testClosureTypes(
++        "goog.addDependency('zzz.js', ['MyType'], []);" +
++        "/**\n" +
++        " * @constructor\n" +
++        " * @extends {MyType}\n" +
++        " */ var YourType = function() {};" +
++        "/** @override */ YourType.prototype.method = function() {};",
++        "Could not resolve type in @extends tag of YourType");
++  }
++
++  public void testForwardTypeDeclaration6() throws Exception {
++    testClosureTypesMultipleWarnings(
++        "goog.addDependency('zzz.js', ['MyType'], []);" +
++        "/**\n" +
++        " * @constructor\n" +
++        " * @implements {MyType}\n" +
++        " */ var YourType = function() {};" +
++        "/** @override */ YourType.prototype.method = function() {};",
++        Lists.newArrayList(
++            "Could not resolve type in @implements tag of YourType",
++            "property method not defined on any superclass of YourType"));
++  }
++
+   public void testMalformedOldTypeDef() throws Exception {
+     testTypes(
+         "var goog = {}; goog.typedef = true;" +
+@@ -6736,6 +6957,34 @@
+         "required: number");
+   }
+ 
++  public void testTypeDef4() throws Exception {
++    testTypes(
++        "/** @constructor */ function A() {}" +
++        "/** @constructor */ function B() {}" +
++        "/** @typedef {(A|B)} */ var AB;" +
++        "/** @param {AB} x */ function f(x) {}" +
++        "f(new A()); f(new B()); f(1);",
++        "actual parameter 1 of f does not match formal parameter\n" +
++        "found   : number\n" +
++        "required: (A|B|null)");
++  }
++
++  public void testTypeDef5() throws Exception {
++    // Notice that the error message is slightly different than
++    // the one for testTypeDef4, even though they should be the same.
++    // This is an implementation detail necessary for NamedTypes work out
++    // ok, and it should change if NamedTypes ever go away.
++    testTypes(
++        "/** @param {AB} x */ function f(x) {}" +
++        "/** @constructor */ function A() {}" +
++        "/** @constructor */ function B() {}" +
++        "/** @typedef {(A|B)} */ var AB;" +
++        "f(new A()); f(new B()); f(1);",
++        "actual parameter 1 of f does not match formal parameter\n" +
++        "found   : number\n" +
++        "required: (A|B|null)");
++  }
++
+   public void testCircularTypeDef() throws Exception {
+     testTypes(
+         "var goog = {};" +
+@@ -7089,6 +7338,103 @@
+         "Foo.prototype.baz = function() { this.b = 3; };");
+   }
+ 
++  public void testMissingProperty35() throws Exception {
++    // Bar has specialProp defined, so Bar|Baz may have specialProp defined.
++    testTypes(
++        "/** @constructor */ function Foo() {}" +
++        "/** @constructor */ function Bar() {}" +
++        "/** @constructor */ function Baz() {}" +
++        "/** @param {Foo|Bar} x */ function f(x) { x.specialProp = 1; }" +
++        "/** @param {Bar|Baz} x */ function g(x) { return x.specialProp; }");
++  }
++
++  public void testMissingProperty36() throws Exception {
++    // Foo has baz defined, and SubFoo has bar defined, so some objects with
++    // bar may have baz.
++    testTypes(
++        "/** @constructor */ function Foo() {}" +
++        "Foo.prototype.baz = 0;" +
++        "/** @constructor \n * @extends {Foo} */ function SubFoo() {}" +
++        "SubFoo.prototype.bar = 0;" +
++        "/** @param {{bar: number}} x */ function f(x) { return x.baz; }");
++  }
++
++  public void testLends1() throws Exception {
++    testTypes(
++        "function extend(x, y) {}" +
++        "/** @constructor */ function Foo() {}" +
++        "extend(Foo, /** @lends */ ({bar: 1}));",
++        "Parse error. missing object name in @lends tag");
++  }
++
++  public void testLends2() throws Exception {
++    testTypes(
++        "function extend(x, y) {}" +
++        "/** @constructor */ function Foo() {}" +
++        "extend(Foo, /** @lends {Foob} */ ({bar: 1}));",
++        "Variable Foob not declared before @lends annotation.");
++  }
++
++  public void testLends3() throws Exception {
++    testTypes(
++        "function extend(x, y) {}" +
++        "/** @constructor */ function Foo() {}" +
++        "extend(Foo, {bar: 1});" +
++        "alert(Foo.bar);",
++        "Property bar never defined on Foo");
++  }
++
++  public void testLends4() throws Exception {
++    testTypes(
++        "function extend(x, y) {}" +
++        "/** @constructor */ function Foo() {}" +
++        "extend(Foo, /** @lends {Foo} */ ({bar: 1}));" +
++        "alert(Foo.bar);");
++  }
++
++  public void testLends5() throws Exception {
++    testTypes(
++        "function extend(x, y) {}" +
++        "/** @constructor */ function Foo() {}" +
++        "extend(Foo, {bar: 1});" +
++        "alert((new Foo()).bar);",
++        "Property bar never defined on Foo");
++  }
++
++  public void testLends6() throws Exception {
++    testTypes(
++        "function extend(x, y) {}" +
++        "/** @constructor */ function Foo() {}" +
++        "extend(Foo, /** @lends {Foo.prototype} */ ({bar: 1}));" +
++        "alert((new Foo()).bar);");
++  }
++
++  public void testLends7() throws Exception {
++    testTypes(
++        "function extend(x, y) {}" +
++        "/** @constructor */ function Foo() {}" +
++        "extend(Foo, /** @lends {Foo.prototype|Foo} */ ({bar: 1}));",
++        "Parse error. expected closing }");
++  }
++
++  public void testLends8() throws Exception {
++    testTypes(
++        "function extend(x, y) {}" +
++        "/** @type {number} */ var Foo = 3;" +
++        "extend(Foo, /** @lends {Foo} */ ({bar: 1}));",
++        "May only lend properties to object types. Foo has type number.");
++  }
++
++  public void testLends9() throws Exception {
++    testClosureTypesMultipleWarnings(
++        "function extend(x, y) {}" +
++        "/** @constructor */ function Foo() {}" +
++        "extend(Foo, /** @lends {!Foo} */ ({bar: 1}));",
++        Lists.newArrayList(
++            "Parse error. expected closing }",
++            "Parse error. missing object name in @lends tag"));
++  }
++
+   public void testDeclaredNativeTypeEquality() throws Exception {
+     Node n = parseAndTypeCheck("/** @constructor */ function Object() {};");
+     assertEquals(registry.getNativeType(JSTypeNative.OBJECT_FUNCTION_TYPE),
+@@ -7170,6 +7516,34 @@
+         compiler.getWarnings()[0].description);
+   }
+ 
++  public void testUpdateParameterTypeOnClosure() throws Exception {
++    testTypes(
++        "/**\n" +
++        "* @constructor\n" +
++        "* @param {*=} opt_value\n" +
++        "* @return {?}\n" +
++        "*/\n" +
++        "function Object(opt_value) {}\n" +
++        "/**\n" +
++        "* @constructor\n" +
++        "* @param {...*} var_args\n" +
++        "*/\n" +
++        "function Function(var_args) {}\n" +
++        "/**\n" +
++        "* @type {Function}\n" +
++        "*/\n" +
++        // The line below sets JSDocInfo on Object so that the type of the
++        // argument to function f has JSDoc through its prototype chain.
++        "Object.prototype.constructor = function() {};\n",
++        "/**\n" +
++        "* @param {function(): boolean} fn\n" +
++        "*/\n" +
++        "function f(fn) {}\n" +
++        "f(function(g) { });\n",
++        null,
++        false);
++  }
++
+   public void testBadTemplateType1() throws Exception {
+     testTypes(
+         "/**\n" +
+@@ -7227,6 +7601,29 @@
+         FunctionTypeBuilder.TEMPLATE_TYPE_EXPECTED.format(), true);
+   }
+ 
++  public void testFunctionLiteralUndefinedThisArgument() throws Exception {
++    testTypes(""
++        + "/**\n"
++        + " * @param {function(this:T, ...)?} fn\n"
++        + " * @param {?T} opt_obj\n"
++        + " * @template T\n"
++        + " */\n"
++        + "function baz(fn, opt_obj) {}\n"
++        + "baz(function() { this; });",
++        "Function literal argument refers to undefined this argument");
++  }
++
++  public void testFunctionLiteralDefinedThisArgument() throws Exception {
++    testTypes(""
++        + "/**\n"
++        + " * @param {function(this:T, ...)?} fn\n"
++        + " * @param {?T} opt_obj\n"
++        + " * @template T\n"
++        + " */\n"
++        + "function baz(fn, opt_obj) {}\n"
++        + "baz(function() { this; }, {});");
++  }
++
+   public void testActiveXObject() throws Exception {
+     testTypes(
+         "/** @type {Object} */ var x = new ActiveXObject();" +
+@@ -7258,6 +7655,12 @@
+ 
+   private void testClosureTypes(String js, String description)
+       throws Exception {
++    testClosureTypesMultipleWarnings(js,
++        description == null ? null : Lists.newArrayList(description));
++  }
++
++  private void testClosureTypesMultipleWarnings(
++      String js, List<String> descriptions) throws Exception {
+     Node n = compiler.parseTestCode(js);
+     Node externs = new Node(Token.BLOCK);
+     Node externAndJsRoot = new Node(Token.BLOCK, externs, n);
+@@ -7283,14 +7686,17 @@
+ 
+     assertEquals(0, compiler.getErrorCount());
+ 
+-    if (description == null) {
++    if (descriptions == null) {
+       assertEquals(
+           "unexpected warning(s) : " +
+           Joiner.on(", ").join(compiler.getWarnings()),
+           0, compiler.getWarningCount());
+     } else {
+-      assertEquals(1, compiler.getWarningCount());
+-      assertEquals(description, compiler.getWarnings()[0].description);
++      assertEquals(descriptions.size(), compiler.getWarningCount());
++      for (int i = 0; i < descriptions.size(); i++) {
++        assertEquals(descriptions.get(i),
++            compiler.getWarnings()[i].description);
++      }
+     }
+   }
+ 

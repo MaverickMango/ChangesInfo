@@ -1,0 +1,122 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.LooseTypeCheckTest::testMethodInference6,com.google.javascript.jscomp.TypeCheckTest::testIssue368,com.google.javascript.jscomp.TypeCheckTest::testMethodInference6",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.FunctionTypeBuilder",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "41",
+  "workingDir": "../bugs/Closure_41_tmp",
+  "bug_name": "Closure_41",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.LooseTypeCheckTest",
+      "test_function": "testMethodInference6",
+      "assertion_line": "1772",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "unexpected warnings(s):"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testIssue368",
+      "assertion_line": "9529",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c[actual parameter 2 of Bar.prototype.add does not match formal parameter"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testMethodInference6",
+      "assertion_line": "9534",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "unexpected warnings(s):"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/FunctionTypeBuilder.java",
+        "src/com/google/javascript/jscomp/FunctionTypeBuilder.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.FunctionTypeBuilder:inferFromOverriddenFunction:[@Nullable FunctionType oldType, @Nullable Node paramsParent]:FunctionTypeBuilder",
+            "com.google.javascript.jscomp.FunctionTypeBuilder:inferParameterTypes:[@Nullable Node argsParent, @Nullable JSDocInfo info]:FunctionTypeBuilder"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.FunctionTypeBuilder:inferParameterTypes:[@Nullable Node argsParent, @Nullable JSDocInfo info]:FunctionTypeBuilder",
+            "com.google.javascript.jscomp.FunctionTypeBuilder:inferFromOverriddenFunction:[@Nullable FunctionType oldType, @Nullable Node paramsParent]:FunctionTypeBuilder"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "292",
+            "293",
+            "294",
+            "486",
+            "487",
+            "488",
+            "489",
+            "490",
+            "491"
+          ],
+          "num": 9
+        },
+        {
+          "qualified_names": [
+            "291",
+            "488"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/FunctionTypeBuilder.java b/src/com/google/javascript/jscomp/FunctionTypeBuilder.java\nindex e20d788..14694ce 100644\n--- a/src/com/google/javascript/jscomp/FunctionTypeBuilder.java\n+++ b/src/com/google/javascript/jscomp/FunctionTypeBuilder.java\n@@ -289,9 +289,6 @@\n       }\n \n       // Clone any remaining params that aren\u0027t in the function literal.\n-      while (oldParams.hasNext()) {\n-        paramBuilder.newParameterFromNode(oldParams.next());\n-      }\n \n       parametersNode \u003d paramBuilder.build();\n     }\n@@ -483,12 +480,6 @@\n     }\n \n     // Copy over any old parameters that aren\u0027t in the param list.\n-    if (!isVarArgs) {\n-      while (oldParameterType !\u003d null \u0026\u0026 !isVarArgs) {\n-        builder.newParameterFromNode(oldParameterType);\n-        oldParameterType \u003d oldParameterType.getNext();\n-      }\n-    }\n \n     if (templateTypeName !\u003d null \u0026\u0026 !foundTemplateType) {\n       reportError(TEMPLATE_TYPE_EXPECTED, fnName);\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "WhileStatement [11068,11166]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [17121,17318]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

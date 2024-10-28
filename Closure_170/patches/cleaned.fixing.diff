@@ -1,0 +1,41 @@
+diff -u -r data/changesInfo//Closure_170/properties/modified_classes/inducing/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java data/changesInfo//Closure_170/cleaned/fixing/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java
+--- data/changesInfo//Closure_170/properties/modified_classes/inducing/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java	2023-12-27 22:52:33.907960527 -0800
++++ data/changesInfo//Closure_170/cleaned/fixing/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java	2023-08-03 05:10:40.973802360 -0700
+@@ -417,6 +417,8 @@
+      */
+     private void getNumUseInUseCfgNode(Node n, Node parant) {
+ 
++      final Node cfgNode = n;
++      numUseWithinUseCfgNode = 0;
+       AbstractCfgNodeTraversalCallback gatherCb =
+           new AbstractCfgNodeTraversalCallback() {
+ 
+@@ -424,14 +426,23 @@
+         public void visit(NodeTraversal t, Node n, Node parent) {
+           if (NodeUtil.isName(n) && n.getString().equals(varName) &&
+               // do not count in if it is left child of an assignment operator
+-              !(NodeUtil.isAssign(parent) &&
+-               (parent.getFirstChild() == n))) {
+-            numUseWithinUseCfgNode++;
++            !(NodeUtil.isAssign(parent) &&
++                    (parent.getFirstChild() == n) && isAssignChain(parent, cfgNode))) {
++              numUseWithinUseCfgNode++;
+           }
+         }
++        
++        private boolean isAssignChain(Node child, Node ancestor) {
++          for (Node n = child; n != ancestor; n = n.getParent()) {
++            if (!NodeUtil.isAssign(n)) {
++              return false;
++            }
++          }
++          return true;
++        }
+       };
+ 
+-      NodeTraversal.traverse(compiler, n, gatherCb);
++      NodeTraversal.traverse(compiler, cfgNode, gatherCb);
+     }
+   }
+ 
+Only in data/changesInfo//Closure_170/properties/modified_classes/inducing/: test

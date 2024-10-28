@@ -1,0 +1,223 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.gson.functional.MapTest::testMapDeserializationWithUnquotedLongKeys,com.google.gson.functional.MapTest::testMapDeserializationWithUnquotedIntegerKeys,com.google.gson.stream.JsonReaderTest::testPeekingUnquotedStringsPrefixedWithIntegers",
+    "test.dir": "gson/src/test/java",
+    "clz.modified": "com.google.gson.stream.JsonReader",
+    "src.dir": "gson/src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Gson",
+  "id": "7",
+  "workingDir": "../bugs/Gson_7_tmp",
+  "bug_name": "Gson_7",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.gson.functional.MapTest",
+      "test_function": "testMapDeserializationWithUnquotedLongKeys",
+      "assertion_line": "192",
+      "exception": "com.google.gson.JsonSyntaxException",
+      "message": "java.lang.IllegalStateException: Expected a long but was STRING at line 1 column 2 path $."
+    },
+    {
+      "test_class": "com.google.gson.functional.MapTest",
+      "test_function": "testMapDeserializationWithUnquotedIntegerKeys",
+      "assertion_line": "172",
+      "exception": "com.google.gson.JsonSyntaxException",
+      "message": "java.lang.IllegalStateException: Expected an int but was STRING at line 1 column 2 path $."
+    },
+    {
+      "test_class": "com.google.gson.stream.JsonReaderTest",
+      "test_function": "testPeekingUnquotedStringsPrefixedWithIntegers",
+      "assertion_line": "502",
+      "exception": "java.lang.IllegalStateException",
+      "message": "Expected an int but was STRING at line 1 column 2 path $[0]"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "gson/src/main/java/com/google/gson/stream/JsonReader.java",
+        "gson/src/main/java/com/google/gson/stream/JsonReader.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.gson.stream.JsonReader:nextInt:[]:int",
+            "com.google.gson.stream.JsonReader:nextLong:[]:long"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.google.gson.stream.JsonReader:nextLong:[]:long",
+            "com.google.gson.stream.JsonReader:nextInt:[]:int"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "954",
+            "955",
+            "956",
+            "957",
+            "959",
+            "1186",
+            "1187",
+            "1188",
+            "1189",
+            "1191"
+          ],
+          "num": 10
+        },
+        {
+          "qualified_names": [
+            "954",
+            "1182"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/gson/src/main/java/com/google/gson/stream/JsonReader.java b/gson/src/main/java/com/google/gson/stream/JsonReader.java\nindex 7a5e9cb..d375ba1 100644\n--- a/gson/src/main/java/com/google/gson/stream/JsonReader.java\n+++ b/gson/src/main/java/com/google/gson/stream/JsonReader.java\n@@ -951,12 +951,8 @@\n     if (p \u003d\u003d PEEKED_NUMBER) {\n       peekedString \u003d new String(buffer, pos, peekedNumberLength);\n       pos +\u003d peekedNumberLength;\n-    } else if (p \u003d\u003d PEEKED_SINGLE_QUOTED || p \u003d\u003d PEEKED_DOUBLE_QUOTED || p \u003d\u003d PEEKED_UNQUOTED) {\n-      if (p \u003d\u003d PEEKED_UNQUOTED) {\n-        peekedString \u003d nextUnquotedValue();\n-      } else {\n+    } else if (p \u003d\u003d PEEKED_SINGLE_QUOTED || p \u003d\u003d PEEKED_DOUBLE_QUOTED) {\n         peekedString \u003d nextQuotedValue(p \u003d\u003d PEEKED_SINGLE_QUOTED ? \u0027\\\u0027\u0027 : \u0027\"\u0027);\n-      }\n       try {\n         long result \u003d Long.parseLong(peekedString);\n         peeked \u003d PEEKED_NONE;\n@@ -1183,12 +1179,8 @@\n     if (p \u003d\u003d PEEKED_NUMBER) {\n       peekedString \u003d new String(buffer, pos, peekedNumberLength);\n       pos +\u003d peekedNumberLength;\n-    } else if (p \u003d\u003d PEEKED_SINGLE_QUOTED || p \u003d\u003d PEEKED_DOUBLE_QUOTED || p \u003d\u003d PEEKED_UNQUOTED) {\n-      if (p \u003d\u003d PEEKED_UNQUOTED) {\n-        peekedString \u003d nextUnquotedValue();\n-      } else {\n+    } else if (p \u003d\u003d PEEKED_SINGLE_QUOTED || p \u003d\u003d PEEKED_DOUBLE_QUOTED) {\n         peekedString \u003d nextQuotedValue(p \u003d\u003d PEEKED_SINGLE_QUOTED ? \u0027\\\u0027\u0027 : \u0027\"\u0027);\n-      }\n       try {\n         result \u003d Integer.parseInt(peekedString);\n         peeked \u003d PEEKED_NONE;\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: || [31745,31747]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [31748,31768]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [31690,31768]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [31804,31857]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [31863,31952]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [31778,31952]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: || [38509,38511]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [38512,38532]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [38454,38532]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [38568,38621]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [38627,38716]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [38542,38716]",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

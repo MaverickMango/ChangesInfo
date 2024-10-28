@@ -1,0 +1,193 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Closure",
+  "id": "115",
+  "workingDir": "../bugs/Closure_115_buggy",
+  "inducingCommit": "b80dfd3b0e5e4b490b7afb469320d18bac4520b4",
+  "originalCommit": "b9262dcd42d1b8f53c2a974c182feba2899dc74c",
+  "bug_name": "Closure_115",
+  "derive": "defects4j",
+  "original_fixing_commit": "4597738e8898f738c1f969fe90479728be81cc80",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/FunctionInjector.java",
+        "src/com/google/javascript/jscomp/FunctionInjector.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "canInlineReferenceDirectly"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "canInlineReferenceDirectly"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "696",
+            "721"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "697",
+            "698",
+            "699",
+            "700",
+            "701",
+            "702",
+            "703",
+            "704",
+            "705",
+            "706",
+            "732",
+            "733",
+            "734",
+            "735"
+          ],
+          "num": 14
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/FunctionInjector.java b/src/com/google/javascript/jscomp/FunctionInjector.java\nindex 5b38600..accf4c5 100644\n--- a/src/com/google/javascript/jscomp/FunctionInjector.java\n+++ b/src/com/google/javascript/jscomp/FunctionInjector.java\n@@ -694,6 +694,16 @@\n \n     Node block \u003d fnNode.getLastChild();\n \n+    boolean hasSideEffects \u003d false;  // empty function case\n+    if (block.hasChildren()) {\n+      Preconditions.checkState(block.hasOneChild());\n+      Node stmt \u003d block.getFirstChild();\n+      if (stmt.isReturn()) {\n+        hasSideEffects \u003d NodeUtil.mayHaveSideEffects(\n+            stmt.getFirstChild(), compiler);\n+      }\n+    }\n+\n     // CALL NODE: [ NAME, ARG1, ARG2, ... ]\n     Node cArg \u003d callNode.getFirstChild().getNext();\n \n@@ -719,6 +729,10 @@\n       // For each named parameter check if a mutable argument use more than one.\n       if (fnParam !\u003d null) {\n         if (cArg !\u003d null) {\n+          if (hasSideEffects \u0026\u0026 NodeUtil.canBeSideEffected(cArg)) {\n+            return CanInlineResult.NO;\n+          }\n+\n           // Check for arguments that are evaluated more than once.\n           // Note: Unlike block inlining, there it is not possible that a\n           // parameter reference will be in a loop.\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [23700,23731]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [23760,24022]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [25058,25166]"
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/FunctionInjector.java",
+        "src/com/google/javascript/jscomp/FunctionInjector.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "canInlineReferenceDirectly"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "canInlineReferenceDirectly"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "697",
+            "698",
+            "699",
+            "700",
+            "701",
+            "702",
+            "703",
+            "704",
+            "705",
+            "706",
+            "732",
+            "733",
+            "734",
+            "735"
+          ],
+          "num": 14
+        },
+        {
+          "qualified_names": [
+            "696",
+            "741"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Closure_115/properties/modified_classes/inducing/src/com/google/javascript/jscomp/FunctionInjector.java data/changesInfo//Closure_115/cleaned/fixing/src/com/google/javascript/jscomp/FunctionInjector.java\n--- data/changesInfo//Closure_115/properties/modified_classes/inducing/src/com/google/javascript/jscomp/FunctionInjector.java\t2023-08-25 13:32:02.557104031 +0800\n+++ data/changesInfo//Closure_115/cleaned/fixing/src/com/google/javascript/jscomp/FunctionInjector.java\t2023-06-15 18:28:42.009285394 +0800\n@@ -694,16 +694,6 @@\n \n     Node block \u003d fnNode.getLastChild();\n \n-    boolean hasSideEffects \u003d false;  // empty function case\n-    if (block.hasChildren()) {\n-      Preconditions.checkState(block.hasOneChild());\n-      Node stmt \u003d block.getFirstChild();\n-      if (stmt.isReturn()) {\n-        hasSideEffects \u003d NodeUtil.mayHaveSideEffects(\n-            stmt.getFirstChild(), compiler);\n-      }\n-    }\n-\n     // CALL NODE: [ NAME, ARG1, ARG2, ... ]\n     Node cArg \u003d callNode.getFirstChild().getNext();\n \n@@ -729,10 +719,6 @@\n       // For each named parameter check if a mutable argument use more than one.\n       if (fnParam !\u003d null) {\n         if (cArg !\u003d null) {\n-          if (hasSideEffects \u0026\u0026 NodeUtil.canBeSideEffected(cArg)) {\n-            return CanInlineResult.NO;\n-          }\n-\n           // Check for arguments that are evaluated more than once.\n           // Note: Unlike block inlining, there it is not possible that a\n           // parameter reference will be in a loop.\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [23700,23731]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [23760,24022]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [25058,25166]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

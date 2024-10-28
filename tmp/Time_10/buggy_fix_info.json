@@ -1,0 +1,121 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.joda.time.TestDays::testFactory_daysBetween_RPartial_MonthDay,org.joda.time.TestMonths::testFactory_monthsBetween_RPartial_MonthDay",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.joda.time.base.BaseSingleFieldPeriod",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Time",
+  "id": "10",
+  "workingDir": "../bugs/Time_10_tmp",
+  "bug_name": "Time_10",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.joda.time.TestDays",
+      "test_function": "testFactory_daysBetween_RPartial_MonthDay",
+      "assertion_line": "130",
+      "exception": "org.joda.time.IllegalFieldValueException",
+      "message": "Value 29 for dayOfMonth must be in the range [1,28]"
+    },
+    {
+      "test_class": "org.joda.time.TestMonths",
+      "test_function": "testFactory_monthsBetween_RPartial_MonthDay",
+      "assertion_line": "137",
+      "exception": "org.joda.time.IllegalFieldValueException",
+      "message": "Value 29 for dayOfMonth must be in the range [1,28]"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/joda/time/base/BaseSingleFieldPeriod.java",
+        "src/main/java/org/joda/time/base/BaseSingleFieldPeriod.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.joda.time.base.BaseSingleFieldPeriod:between:[ReadablePartial start, ReadablePartial end, ReadablePeriod zeroInstance]:int"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.joda.time.base.BaseSingleFieldPeriod:between:[ReadablePartial start, ReadablePartial end, ReadablePeriod zeroInstance]:int"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "52",
+            "105"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "51",
+            "104"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/joda/time/base/BaseSingleFieldPeriod.java b/src/main/java/org/joda/time/base/BaseSingleFieldPeriod.java\nindex 839d3b8..91b2c5c 100644\n--- a/src/main/java/org/joda/time/base/BaseSingleFieldPeriod.java\n+++ b/src/main/java/org/joda/time/base/BaseSingleFieldPeriod.java\n@@ -49,7 +49,6 @@\n     /** Serialization version. */\n     private static final long serialVersionUID \u003d 9386874258972L;\n     /** The start of 1972. */\n-    private static final long START_1972 \u003d 2L * 365L * 86400L * 1000L;\n \n     /** The period in the units of this period. */\n     private volatile int iPeriod;\n@@ -102,7 +101,7 @@\n             throw new IllegalArgumentException(\"ReadablePartial objects must be contiguous\");\n         }\n         Chronology chrono \u003d DateTimeUtils.getChronology(start.getChronology()).withUTC();\n-        int[] values \u003d chrono.get(zeroInstance, chrono.set(start, START_1972), chrono.set(end, START_1972));\n+        int[] values \u003d chrono.get(zeroInstance, chrono.set(start, 0L), chrono.set(end, 0L));\n         return values[0];\n     }\n \n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NumberLiteral: 0L [4477,4479]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NumberLiteral: 0L [4498,4500]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [1814,1910]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: START_1972 [4548,4558]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: START_1972 [4577,4587]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

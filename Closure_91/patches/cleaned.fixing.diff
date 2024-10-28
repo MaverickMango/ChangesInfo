@@ -1,0 +1,28 @@
+Only in data/changesInfo//Closure_91/properties/modified_classes/inducing/src/com/google/javascript/jscomp: AbstractCommandLineRunner.java
+diff -u -r data/changesInfo//Closure_91/properties/modified_classes/inducing/src/com/google/javascript/jscomp/CheckGlobalThis.java data/changesInfo//Closure_91/cleaned/fixing/src/com/google/javascript/jscomp/CheckGlobalThis.java
+--- data/changesInfo//Closure_91/properties/modified_classes/inducing/src/com/google/javascript/jscomp/CheckGlobalThis.java	2023-12-27 22:42:29.324689461 -0800
++++ data/changesInfo//Closure_91/cleaned/fixing/src/com/google/javascript/jscomp/CheckGlobalThis.java	2023-06-20 05:49:51.109868557 -0700
+@@ -106,9 +106,19 @@
+             pType == Token.SCRIPT ||
+             pType == Token.NAME ||
+             pType == Token.ASSIGN ||
+-            pType == Token.OBJECTLIT)) {
++            pType == Token.STRING ||
++            pType == Token.NUMBER)) {
+         return false;
+       }
++
++      // Don't traverse functions that are getting lent to a prototype.
++      Node gramps = parent.getParent();
++      if (NodeUtil.isObjectLitKey(parent, gramps)) {
++        if (gramps.getType() == Token.GETPROP &&
++                gramps.getLastChild().getString().equals("prototype")) {
++          return false;
++        }
++      }
+     }
+ 
+     if (parent != null && parent.getType() == Token.ASSIGN) {
+Only in data/changesInfo//Closure_91/properties/modified_classes/inducing/src/com/google/javascript/jscomp: DefaultPassConfig.java
+Only in data/changesInfo//Closure_91/properties/modified_classes/inducing/src/com/google/javascript/jscomp: RuntimeTypeCheck.java
+Only in data/changesInfo//Closure_91/properties/modified_classes/inducing/: test

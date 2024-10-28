@@ -1,0 +1,1690 @@
+diff --git a/src/java/org/apache/commons/math/distribution/AbstractContinuousDistribution.java b/src/java/org/apache/commons/math/distribution/AbstractContinuousDistribution.java
+index eb8ee24..e027686 100644
+--- a/src/java/org/apache/commons/math/distribution/AbstractContinuousDistribution.java
++++ b/src/java/org/apache/commons/math/distribution/AbstractContinuousDistribution.java
+@@ -1,113 +1,153 @@
+-/* ====================================================================
+- * The Apache Software License, Version 1.1
+- *
+- * Copyright (c) 2003 The Apache Software Foundation.  All rights
+- * reserved.
+- *
+- * Redistribution and use in source and binary forms, with or without
+- * modification, are permitted provided that the following conditions
+- * are met:
+- *
+- * 1. Redistributions of source code must retain the above copyright
+- *    notice, this list of conditions and the following disclaimer.
+- *
+- * 2. Redistributions in binary form must reproduce the above copyright
+- *    notice, this list of conditions and the following disclaimer in
+- *    the documentation and/or other materials provided with the
+- *    distribution.
+- *
+- * 3. The end-user documentation included with the redistribution, if
+- *    any, must include the following acknowlegement:
+- *       "This product includes software developed by the
+- *        Apache Software Foundation (http://www.apache.org/)."
+- *    Alternately, this acknowlegement may appear in the software itself,
+- *    if and wherever such third-party acknowlegements normally appear.
+- *
+- * 4. The names "The Jakarta Project", "Commons", and "Apache Software
+- *    Foundation" must not be used to endorse or promote products derived
+- *    from this software without prior written permission. For written
+- *    permission, please contact apache@apache.org.
+- *
+- * 5. Products derived from this software may not be called "Apache"
+- *    nor may "Apache" appear in their names without prior written
+- *    permission of the Apache Software Foundation.
+- *
+- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
+- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+- * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
+- * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+- * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+- * SUCH DAMAGE.
+- * ====================================================================
+- *
+- * This software consists of voluntary contributions made by many
+- * individuals on behalf of the Apache Software Foundation.  For more
+- * information on the Apache Software Foundation, please see
+- * <http://www.apache.org/>.
+- */
+-package org.apache.commons.math.stat.distribution;
+-
+-import org.apache.commons.math.RootFinding;
+-import org.apache.commons.math.UnivariateFunction;
+-
+-/**
+- * Base class for various continuous distributions.  It provides default
+- * implementations for some of the methods that do not vary from distribution
+- * to distribution.
+- *  
+- * @author Brent Worden
+- */
+-public abstract class AbstractContinuousDistribution
+-    implements ContinuousDistribution {
+-        
+-    /**
+-     * Default constructor.
+-     */
+-    protected AbstractContinuousDistribution() {
+-        super();
+-    }
+-
+-    /**
+-     * For this disbution, X, this method returns P(x0 &lt; X &lt; x1).  This
+-     * is accomplished by using the equality P(x0 &lt; X &lt; x1) =
+-     * P(X &lt; x1) - P(X &lt; x0).
+-     * 
+-     * @param x0 the lower bound
+-     * @param x1 the upper bound
+-     * @return the cummulative probability. 
+-     */
+-    public double cummulativeProbability(double x0, double x1) {
+-        return cummulativeProbability(x1) - cummulativeProbability(x0);
+-    }
+-    
+-    /**
+-     * 
+-     */
+-    public double inverseCummulativeProbability(final double p){
+-        if(p < 0.0 || p > 1.0){
+-            throw new IllegalArgumentException("p must be between 0.0 and 1.0 inclusive.");
+-        }
+-        
+-        // by default, do simple root finding using bracketing and bisection.
+-        // subclasses can overide if there is a better method.
+-        UnivariateFunction rootFindingFunction = new UnivariateFunction() {
+-			public double evaluate(double x) {
+-				return cummulativeProbability(x) - p;
+-			}
+-		};
+-        
+-        // bracket root
+-        double[] bracket = RootFinding.bracket(rootFindingFunction, getMean(), getDomainLowerBound(), getDomainUpperBound());
+-        
+-        // find root
+-        double root = RootFinding.bisection(rootFindingFunction, bracket[0], bracket[1]);
+-        
+-        return root;
+-    }
+-}
++/* ====================================================================
++ * The Apache Software License, Version 1.1
++ *
++ * Copyright (c) 2003 The Apache Software Foundation.  All rights
++ * reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in
++ *    the documentation and/or other materials provided with the
++ *    distribution.
++ *
++ * 3. The end-user documentation included with the redistribution, if
++ *    any, must include the following acknowlegement:
++ *       "This product includes software developed by the
++ *        Apache Software Foundation (http://www.apache.org/)."
++ *    Alternately, this acknowlegement may appear in the software itself,
++ *    if and wherever such third-party acknowlegements normally appear.
++ *
++ * 4. The names "The Jakarta Project", "Commons", and "Apache Software
++ *    Foundation" must not be used to endorse or promote products derived
++ *    from this software without prior written permission. For written
++ *    permission, please contact apache@apache.org.
++ *
++ * 5. Products derived from this software may not be called "Apache"
++ *    nor may "Apache" appear in their names without prior written
++ *    permission of the Apache Software Foundation.
++ *
++ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
++ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
++ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
++ * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
++ * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
++ * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
++ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
++ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
++ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ * ====================================================================
++ *
++ * This software consists of voluntary contributions made by many
++ * individuals on behalf of the Apache Software Foundation.  For more
++ * information on the Apache Software Foundation, please see
++ * <http://www.apache.org/>.
++ */
++package org.apache.commons.math.stat.distribution;
++
++import org.apache.commons.math.RootFinding;
++import org.apache.commons.math.UnivariateFunction;
++
++/**
++ * Base class for various continuous distributions.  It provides default
++ * implementations for some of the methods that do not vary from distribution
++ * to distribution.
++ *  
++ * @author Brent Worden
++ */
++public abstract class AbstractContinuousDistribution
++    implements ContinuousDistribution {
++        
++    /**
++     * Default constructor.
++     */
++    protected AbstractContinuousDistribution() {
++        super();
++    }
++
++    /**
++     * For this distribution, X, this method returns P(x0 &lt; X &lt; x1).  This
++     * is accomplished by using the equality P(x0 &lt; X &lt; x1) =
++     * P(X &lt; x1) - P(X &lt; x0).
++     * 
++     * @param x0 the lower bound
++     * @param x1 the upper bound
++     * @return the cummulative probability. 
++     */
++    public double cummulativeProbability(double x0, double x1) {
++        return cummulativeProbability(x1) - cummulativeProbability(x0);
++    }
++    
++    /**
++     * For this distribution, X, this method returns the critical point x, such
++     * that P(X &lt; x) = <code>p</code>.
++     *
++     * @param p the desired probability
++     * @return x, such that P(X &lt; x) = <code>p</code>
++     */
++    public double inverseCummulativeProbability(final double p){
++        if(p < 0.0 || p > 1.0){
++            throw new IllegalArgumentException(
++                "p must be between 0.0 and 1.0, inclusive.");
++        }
++        
++        // by default, do simple root finding using bracketing and bisection.
++        // subclasses can overide if there is a better method.
++        UnivariateFunction rootFindingFunction = new UnivariateFunction() {
++            public double evaluate(double x) {
++                return cummulativeProbability(x) - p;
++            }
++        };
++        
++        // bracket root
++        double[] bracket = RootFinding.bracket(rootFindingFunction,
++            getInitialDomain(p), getDomainLowerBound(p),
++            getDomainUpperBound(p));
++        
++        // find root
++        double root = RootFinding.bisection(rootFindingFunction, bracket[0],
++            bracket[1]);
++        
++        return root;
++    }
++    
++    /**
++     * Access the initial domain value, based on <code>p</code>, used to
++     * bracket a CDF root.  This method is used by
++     * {@link #inverseCummulativeProbability(double)} to find critical values.
++     * 
++     * @param p the desired probability for the critical value
++     * @return initial domain value
++     */
++    protected abstract double getInitialDomain(double p);
++    
++    /**
++     * Access the domain value lower bound, based on <code>p</code>, used to
++     * bracket a CDF root.  This method is used by
++     * {@link #inverseCummulativeProbability(double)} to find critical values.
++     * 
++     * @param p the desired probability for the critical value
++     * @return domain value lower bound, i.e.
++     *         P(X &lt; <i>lower bound</i>) &lt; <code>p</code> 
++     */
++    protected abstract double getDomainLowerBound(double p);
++    
++    /**
++     * Access the domain value upper bound, based on <code>p</code>, used to
++     * bracket a CDF root.  This method is used by
++     * {@link #inverseCummulativeProbability(double)} to find critical values.
++     * 
++     * @param p the desired probability for the critical value
++     * @return domain value upper bound, i.e.
++     *         P(X &lt; <i>upper bound</i>) &gt; <code>p</code> 
++     */
++    protected abstract double getDomainUpperBound(double p);
++}
+diff --git a/src/java/org/apache/commons/math/distribution/ChiSquaredDistribution.java b/src/java/org/apache/commons/math/distribution/ChiSquaredDistribution.java
+new file mode 100644
+index 0000000..0ca8ec4
+--- /dev/null
++++ b/src/java/org/apache/commons/math/distribution/ChiSquaredDistribution.java
+@@ -0,0 +1,87 @@
++/* ====================================================================
++ * The Apache Software License, Version 1.1
++ *
++ * Copyright (c) 2003 The Apache Software Foundation.  All rights
++ * reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in
++ *    the documentation and/or other materials provided with the
++ *    distribution.
++ *
++ * 3. The end-user documentation included with the redistribution, if
++ *    any, must include the following acknowlegement:
++ *       "This product includes software developed by the
++ *        Apache Software Foundation (http://www.apache.org/)."
++ *    Alternately, this acknowlegement may appear in the software itself,
++ *    if and wherever such third-party acknowlegements normally appear.
++ *
++ * 4. The names "The Jakarta Project", "Commons", and "Apache Software
++ *    Foundation" must not be used to endorse or promote products derived
++ *    from this software without prior written permission. For written
++ *    permission, please contact apache@apache.org.
++ *
++ * 5. Products derived from this software may not be called "Apache"
++ *    nor may "Apache" appear in their names without prior written
++ *    permission of the Apache Software Foundation.
++ *
++ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
++ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
++ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
++ * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
++ * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
++ * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
++ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
++ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
++ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ * ====================================================================
++ *
++ * This software consists of voluntary contributions made by many
++ * individuals on behalf of the Apache Software Foundation.  For more
++ * information on the Apache Software Foundation, please see
++ * <http://www.apache.org/>.
++ */
++package org.apache.commons.math.stat.distribution;
++
++/**
++ * <p>
++ * The Chi-Squared Distribution
++ * </p>
++ * 
++ * <p>
++ * Instances of ChiSquaredDistribution objects should be created using
++ * {@link DistributionFactory#createChiSquareDistribution(double)}
++ * </p>
++ * 
++ * <p>
++ * References:
++ * <ul>
++ * <li><a href="http://mathworld.wolfram.com/Chi-SquaredDistribution.html">
++ * Chi-Squared Distribution</a></li>
++ * </p>
++ * 
++ * @author Brent Worden
++ */
++public interface ChiSquaredDistribution extends ContinuousDistribution {
++    /**
++     * Modify the degrees of freedom.
++     * @param degreesOfFreedom the new degrees of freedom.
++     */
++    void setDegreesOfFreedom(double degreesOfFreedom);
++    
++    /**
++     * Access the degrees of freedom.
++     * @return the degrees of freedom.
++     */
++    double getDegreesOfFreedom();
++}
+\ No newline at end of file
+diff --git a/src/java/org/apache/commons/math/distribution/ChiSquaredDistributionImpl.java b/src/java/org/apache/commons/math/distribution/ChiSquaredDistributionImpl.java
+new file mode 100644
+index 0000000..ed968e2
+--- /dev/null
++++ b/src/java/org/apache/commons/math/distribution/ChiSquaredDistributionImpl.java
+@@ -0,0 +1,129 @@
++package org.apache.commons.math.stat.distribution;
++
++/**
++ * The default implementation of {@link ChiSquaredDistribution}
++ * 
++ * @author Brent Worden
++ */
++public class ChiSquaredDistributionImpl
++    extends AbstractContinuousDistribution
++    implements ChiSquaredDistribution {
++    
++    /** Internal Gamma distribution. */    
++    private GammaDistribution gamma;
++    
++    /**
++     * Create a Chi-Squared distribution with the given degrees of freedom.
++     * @param degreesOfFreedom degrees of freedom.
++     */
++    public ChiSquaredDistributionImpl(double degreesOfFreedom){
++        super();
++        setGamma(DistributionFactory.newInstance().createGammaDistribution(
++            degreesOfFreedom / 2.0, 2.0));
++    }
++    
++    /**
++     * Modify the degrees of freedom.
++     * @param degreesOfFreedom the new degrees of freedom.
++     */
++    public void setDegreesOfFreedom(double degreesOfFreedom) {
++        getGamma().setAlpha(degreesOfFreedom / 2.0);
++    }
++        
++    /**
++     * Access the degrees of freedom.
++     * @return the degrees of freedom.
++     */
++    public double getDegreesOfFreedom() {
++        return getGamma().getAlpha() * 2.0;
++    }
++        
++    /**
++     * For this disbution, X, this method returns P(X &lt; x).
++     * @param x the value at which the CDF is evaluated.
++     * @return CDF for this distribution. 
++     */
++    public double cummulativeProbability(double x) {
++        return getGamma().cummulativeProbability(x);
++    }
++        
++    /**
++     * Access the domain value lower bound, based on <code>p</code>, used to
++     * bracket a CDF root.  This method is used by
++     * {@link #inverseCummulativeProbability(double)} to find critical values.
++     * 
++     * @param p the desired probability for the critical value
++     * @return domain value lower bound, i.e.
++     *         P(X &lt; <i>lower bound</i>) &lt; <code>p</code> 
++     */
++    protected double getDomainLowerBound(double p){
++        return Double.MIN_VALUE * getGamma().getBeta();
++    }
++
++    /**
++     * Access the domain value upper bound, based on <code>p</code>, used to
++     * bracket a CDF root.  This method is used by
++     * {@link #inverseCummulativeProbability(double)} to find critical values.
++     * 
++     * @param p the desired probability for the critical value
++     * @return domain value upper bound, i.e.
++     *         P(X &lt; <i>upper bound</i>) &gt; <code>p</code> 
++     */
++    protected double getDomainUpperBound(double p){
++        // NOTE: chi squared is skewed to the left
++        // NOTE: therefore, P(X < &mu;) > .5
++
++        double ret;
++
++        if(p < .5){
++            // use mean
++            ret = getDegreesOfFreedom();
++        } else {
++            // use max
++            ret = Double.MAX_VALUE;
++        }
++        
++        return ret;
++    }
++
++    /**
++     * Access the initial domain value, based on <code>p</code>, used to
++     * bracket a CDF root.  This method is used by
++     * {@link #inverseCummulativeProbability(double)} to find critical values.
++     * 
++     * @param p the desired probability for the critical value
++     * @return initial domain value
++     */
++    protected double getInitialDomain(double p){
++        // NOTE: chi squared is skewed to the left
++        // NOTE: therefore, P(X < &mu;) > .5
++        
++        double ret;
++
++        if(p < .5){
++            // use 1/2 mean
++            ret = getDegreesOfFreedom() * .5;
++        } else {
++            // use mean
++            ret = getDegreesOfFreedom();
++        }
++        
++        return ret;
++    }
++    
++    /**
++     * Modify the Gamma distribution.
++     * @param gamma the new distribution.
++     */
++    private void setGamma(GammaDistribution gamma) {
++        this.gamma = gamma;
++    }
++
++    /**
++     * Access the Gamma distribution.
++     * @return the internal Gamma distribution.
++     */
++    private GammaDistribution getGamma() {
++        return gamma;
++    }
++}
+diff --git a/src/java/org/apache/commons/math/distribution/ContinuousDistribution.java b/src/java/org/apache/commons/math/distribution/ContinuousDistribution.java
+index 52de897..7d714f3 100644
+--- a/src/java/org/apache/commons/math/distribution/ContinuousDistribution.java
++++ b/src/java/org/apache/commons/math/distribution/ContinuousDistribution.java
+@@ -1,98 +1,83 @@
+-/* ====================================================================
+- * The Apache Software License, Version 1.1
+- *
+- * Copyright (c) 2003 The Apache Software Foundation.  All rights
+- * reserved.
+- *
+- * Redistribution and use in source and binary forms, with or without
+- * modification, are permitted provided that the following conditions
+- * are met:
+- *
+- * 1. Redistributions of source code must retain the above copyright
+- *    notice, this list of conditions and the following disclaimer.
+- *
+- * 2. Redistributions in binary form must reproduce the above copyright
+- *    notice, this list of conditions and the following disclaimer in
+- *    the documentation and/or other materials provided with the
+- *    distribution.
+- *
+- * 3. The end-user documentation included with the redistribution, if
+- *    any, must include the following acknowlegement:
+- *       "This product includes software developed by the
+- *        Apache Software Foundation (http://www.apache.org/)."
+- *    Alternately, this acknowlegement may appear in the software itself,
+- *    if and wherever such third-party acknowlegements normally appear.
+- *
+- * 4. The names "The Jakarta Project", "Commons", and "Apache Software
+- *    Foundation" must not be used to endorse or promote products derived
+- *    from this software without prior written permission. For written
+- *    permission, please contact apache@apache.org.
+- *
+- * 5. Products derived from this software may not be called "Apache"
+- *    nor may "Apache" appear in their names without prior written
+- *    permission of the Apache Software Foundation.
+- *
+- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
+- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+- * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
+- * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+- * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+- * SUCH DAMAGE.
+- * ====================================================================
+- *
+- * This software consists of voluntary contributions made by many
+- * individuals on behalf of the Apache Software Foundation.  For more
+- * information on the Apache Software Foundation, please see
+- * <http://www.apache.org/>.
+- */
+-package org.apache.commons.math.stat.distribution;
+-
+-/**
+- * Base interface for various continuous distributions.
+- * 
+- * @author Brent Worden
+- */
+-public interface ContinuousDistribution {
+-    /**
+-     * For this disbution, X, this method returns P(X &lt; x).
+-     * @param x the value at which the CDF is evaluated.
+-     * @return CDF for this distribution. 
+-     */
+-    double cummulativeProbability(double x);
+-
+-    /**
+-     * For this disbution, X, this method returns P(x0 &lt; X &lt; x1).
+-     * @param x0 the lower bound
+-     * @param x1 the upper bound
+-     * @return the cummulative probability. 
+-     */
+-    double cummulativeProbability(double x0, double x1);
+-    
+-    /**
+-     * For this disbution, X, this method returns x such that P(X &lt; x) = p.
+-     * @param p the cummulative probability.
+-     * @return x. 
+-     */
+-    double inverseCummulativeProbability(double p);
+-    
+-    /**
+-     * 
+-     */
+-    double getMean();
+-    
+-    /**
+-     * 
+-     */
+-    double getDomainLowerBound();
+-    
+-    /**
+-     * 
+-     */
+-    double getDomainUpperBound();
+-}
++/* ====================================================================
++ * The Apache Software License, Version 1.1
++ *
++ * Copyright (c) 2003 The Apache Software Foundation.  All rights
++ * reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in
++ *    the documentation and/or other materials provided with the
++ *    distribution.
++ *
++ * 3. The end-user documentation included with the redistribution, if
++ *    any, must include the following acknowlegement:
++ *       "This product includes software developed by the
++ *        Apache Software Foundation (http://www.apache.org/)."
++ *    Alternately, this acknowlegement may appear in the software itself,
++ *    if and wherever such third-party acknowlegements normally appear.
++ *
++ * 4. The names "The Jakarta Project", "Commons", and "Apache Software
++ *    Foundation" must not be used to endorse or promote products derived
++ *    from this software without prior written permission. For written
++ *    permission, please contact apache@apache.org.
++ *
++ * 5. Products derived from this software may not be called "Apache"
++ *    nor may "Apache" appear in their names without prior written
++ *    permission of the Apache Software Foundation.
++ *
++ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
++ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
++ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
++ * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
++ * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
++ * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
++ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
++ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
++ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ * ====================================================================
++ *
++ * This software consists of voluntary contributions made by many
++ * individuals on behalf of the Apache Software Foundation.  For more
++ * information on the Apache Software Foundation, please see
++ * <http://www.apache.org/>.
++ */
++package org.apache.commons.math.stat.distribution;
++
++/**
++ * Base interface for various continuous distributions.
++ * 
++ * @author Brent Worden
++ */
++public interface ContinuousDistribution {
++    /**
++     * For this disbution, X, this method returns P(X &lt; x).
++     * @param x the value at which the CDF is evaluated.
++     * @return CDF for this distribution. 
++     */
++    double cummulativeProbability(double x);
++
++    /**
++     * For this disbution, X, this method returns P(x0 &lt; X &lt; x1).
++     * @param x0 the lower bound
++     * @param x1 the upper bound
++     * @return the cummulative probability. 
++     */
++    double cummulativeProbability(double x0, double x1);
++    
++    /**
++     * For this disbution, X, this method returns x such that P(X &lt; x) = p.
++     * @param p the cummulative probability.
++     * @return x. 
++     */
++    double inverseCummulativeProbability(double p);
++}
+diff --git a/src/java/org/apache/commons/math/distribution/DistributionFactory.java b/src/java/org/apache/commons/math/distribution/DistributionFactory.java
+new file mode 100644
+index 0000000..e3176c6
+--- /dev/null
++++ b/src/java/org/apache/commons/math/distribution/DistributionFactory.java
+@@ -0,0 +1,113 @@
++/* ====================================================================
++ * The Apache Software License, Version 1.1
++ *
++ * Copyright (c) 2003 The Apache Software Foundation.  All rights
++ * reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in
++ *    the documentation and/or other materials provided with the
++ *    distribution.
++ *
++ * 3. The end-user documentation included with the redistribution, if
++ *    any, must include the following acknowlegement:
++ *       "This product includes software developed by the
++ *        Apache Software Foundation (http://www.apache.org/)."
++ *    Alternately, this acknowlegement may appear in the software itself,
++ *    if and wherever such third-party acknowlegements normally appear.
++ *
++ * 4. The names "The Jakarta Project", "Commons", and "Apache Software
++ *    Foundation" must not be used to endorse or promote products derived
++ *    from this software without prior written permission. For written
++ *    permission, please contact apache@apache.org.
++ *
++ * 5. Products derived from this software may not be called "Apache"
++ *    nor may "Apache" appear in their names without prior written
++ *    permission of the Apache Software Foundation.
++ *
++ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
++ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
++ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
++ * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
++ * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
++ * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
++ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
++ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
++ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ * ====================================================================
++ *
++ * This software consists of voluntary contributions made by many
++ * individuals on behalf of the Apache Software Foundation.  For more
++ * information on the Apache Software Foundation, please see
++ * <http://www.apache.org/>.
++ */
++package org.apache.commons.math.stat.distribution;
++
++/**
++ * <p>
++ * This factory provids the means to create common statistical distributions.
++ * The following distributions are supported:
++ * <ul>
++ * <li>Chi-Squared</li>
++ * <li>Gamma</li>
++ * </ul>
++ * </p>
++ * 
++ * <p>
++ * Common usage:<pre>
++ * DistributionFactory factory = DistributionFactory.newInstance();
++ * 
++ * // create a Chi-Square distribution with 5 degrees of freedom.
++ * ChiSquaredDistribution chi = factory.createChiSquareDistribution(5.0);
++ * </pre>
++ * </p>
++ * 
++ * @author Brent Worden
++ */
++public abstract class DistributionFactory {
++    /**
++     * Default constructor.
++     */
++    protected DistributionFactory() {
++        super();
++    }
++    
++    /**
++     * Create an instance of a <code>DistributionFactory</code>
++     * @return a new factory. 
++     */
++    public static DistributionFactory newInstance() {
++        // for now, return the only concrete factory.
++        // later, allow for a plugable implementation, possible using SPI and
++        // commons-discovery.
++        return new DistributionFactoryImpl();
++    }
++    
++    /**
++     * Create a new chi-square distribution with the given degrees of freedom.
++     * @param degreesOfFreedom degrees of freedom.
++     * @return a new chi-square distribution.  
++     */
++    public abstract ChiSquaredDistribution createChiSquareDistribution(
++        double degreesOfFreedom
++    );
++    
++    /**
++     * Create a new gamma distribution with the given alpha and beta values.
++     * @param alpha the shape parameter.
++     * @param beta the scale parameter.
++     * @return a new gamma distribution.  
++     */
++    public abstract GammaDistribution createGammaDistribution(
++        double alpha, double beta);
++}
+diff --git a/src/java/org/apache/commons/math/distribution/DistributionFactoryImpl.java b/src/java/org/apache/commons/math/distribution/DistributionFactoryImpl.java
+new file mode 100644
+index 0000000..c6b128f
+--- /dev/null
++++ b/src/java/org/apache/commons/math/distribution/DistributionFactoryImpl.java
+@@ -0,0 +1,93 @@
++/* ====================================================================
++ * The Apache Software License, Version 1.1
++ *
++ * Copyright (c) 2003 The Apache Software Foundation.  All rights
++ * reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in
++ *    the documentation and/or other materials provided with the
++ *    distribution.
++ *
++ * 3. The end-user documentation included with the redistribution, if
++ *    any, must include the following acknowlegement:
++ *       "This product includes software developed by the
++ *        Apache Software Foundation (http://www.apache.org/)."
++ *    Alternately, this acknowlegement may appear in the software itself,
++ *    if and wherever such third-party acknowlegements normally appear.
++ *
++ * 4. The names "The Jakarta Project", "Commons", and "Apache Software
++ *    Foundation" must not be used to endorse or promote products derived
++ *    from this software without prior written permission. For written
++ *    permission, please contact apache@apache.org.
++ *
++ * 5. Products derived from this software may not be called "Apache"
++ *    nor may "Apache" appear in their names without prior written
++ *    permission of the Apache Software Foundation.
++ *
++ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
++ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
++ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
++ * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
++ * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
++ * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
++ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
++ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
++ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ * ====================================================================
++ *
++ * This software consists of voluntary contributions made by many
++ * individuals on behalf of the Apache Software Foundation.  For more
++ * information on the Apache Software Foundation, please see
++ * <http://www.apache.org/>.
++ */
++package org.apache.commons.math.stat.distribution;
++
++
++/**
++ * A concrete distribution factory.  This is the default factory used by
++ * Commons-Math.
++ *  
++ * @author Brent Worden
++ */
++public class DistributionFactoryImpl extends DistributionFactory {
++    /**
++     * Default constructor.  Package scope to prevent unwanted instantiation. 
++     */
++    DistributionFactoryImpl() {
++        super();
++    }
++    
++    /**
++     * Create a new chi-square distribution with the given degrees of freedom.
++     * @param degreesOfFreedom degrees of freedom.
++     * @return a new chi-square distribution.  
++     */
++    public ChiSquaredDistribution createChiSquareDistribution(
++        final double degreesOfFreedom) {
++            
++        return new ChiSquaredDistributionImpl(degreesOfFreedom);
++    }
++    
++    /**
++     * Create a new gamma distribution the given alpha and beta values.
++     * @param alpha the shape parameter.
++     * @param beta the scale parameter.
++     * @return a new gamma distribution.  
++     */
++    public GammaDistribution createGammaDistribution(
++        double alpha, double beta) {
++
++        return new GammaDistributionImpl(alpha, beta);
++    }
++}
+diff --git a/src/java/org/apache/commons/math/distribution/GammaDistribution.java b/src/java/org/apache/commons/math/distribution/GammaDistribution.java
+new file mode 100644
+index 0000000..7620964
+--- /dev/null
++++ b/src/java/org/apache/commons/math/distribution/GammaDistribution.java
+@@ -0,0 +1,99 @@
++/* ====================================================================
++ * The Apache Software License, Version 1.1
++ *
++ * Copyright (c) 2003 The Apache Software Foundation.  All rights
++ * reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in
++ *    the documentation and/or other materials provided with the
++ *    distribution.
++ *
++ * 3. The end-user documentation included with the redistribution, if
++ *    any, must include the following acknowlegement:
++ *       "This product includes software developed by the
++ *        Apache Software Foundation (http://www.apache.org/)."
++ *    Alternately, this acknowlegement may appear in the software itself,
++ *    if and wherever such third-party acknowlegements normally appear.
++ *
++ * 4. The names "The Jakarta Project", "Commons", and "Apache Software
++ *    Foundation" must not be used to endorse or promote products derived
++ *    from this software without prior written permission. For written
++ *    permission, please contact apache@apache.org.
++ *
++ * 5. Products derived from this software may not be called "Apache"
++ *    nor may "Apache" appear in their names without prior written
++ *    permission of the Apache Software Foundation.
++ *
++ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
++ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
++ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
++ * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
++ * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
++ * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
++ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
++ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
++ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ * ====================================================================
++ *
++ * This software consists of voluntary contributions made by many
++ * individuals on behalf of the Apache Software Foundation.  For more
++ * information on the Apache Software Foundation, please see
++ * <http://www.apache.org/>.
++ */
++package org.apache.commons.math.stat.distribution;
++
++/**
++ * <p>
++ * The Gamma Distribution
++ * </p>
++ * 
++ * <p>
++ * Instances of GammaDistribution objects should be created using
++ * {@link DistributionFactory#createGammaDistribution(double)}
++ * </p>
++ * 
++ * <p>
++ * References:
++ * <ul>
++ * <li><a href="http://mathworld.wolfram.com/GammaDistribution.html">
++ * Gamma Distribution</a></li>
++ * </p>
++ *  
++ * @author Brent Worden
++ */
++public interface GammaDistribution extends ContinuousDistribution {
++    /**
++     * Modify the shape parameter, alpha.
++     * @param alpha the new shape parameter.
++     */
++    void setAlpha(double alpha);
++    
++    /**
++     * Access the shape parameter, alpha
++     * @return alpha.
++     */
++    double getAlpha();
++    
++    /**
++     * Modify the scale parameter, beta.
++     * @param beta the new scale parameter.
++     */
++    void setBeta(double beta);
++    
++    /**
++     * Access the scale parameter, beta
++     * @return beta.
++     */
++    double getBeta();
++}
+diff --git a/src/java/org/apache/commons/math/distribution/GammaDistributionImpl.java b/src/java/org/apache/commons/math/distribution/GammaDistributionImpl.java
+new file mode 100644
+index 0000000..110717a
+--- /dev/null
++++ b/src/java/org/apache/commons/math/distribution/GammaDistributionImpl.java
+@@ -0,0 +1,218 @@
++/* ====================================================================
++ * The Apache Software License, Version 1.1
++ *
++ * Copyright (c) 2003 The Apache Software Foundation.  All rights
++ * reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in
++ *    the documentation and/or other materials provided with the
++ *    distribution.
++ *
++ * 3. The end-user documentation included with the redistribution, if
++ *    any, must include the following acknowlegement:
++ *       "This product includes software developed by the
++ *        Apache Software Foundation (http://www.apache.org/)."
++ *    Alternately, this acknowlegement may appear in the software itself,
++ *    if and wherever such third-party acknowlegements normally appear.
++ *
++ * 4. The names "The Jakarta Project", "Commons", and "Apache Software
++ *    Foundation" must not be used to endorse or promote products derived
++ *    from this software without prior written permission. For written
++ *    permission, please contact apache@apache.org.
++ *
++ * 5. Products derived from this software may not be called "Apache"
++ *    nor may "Apache" appear in their names without prior written
++ *    permission of the Apache Software Foundation.
++ *
++ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
++ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
++ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
++ * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
++ * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
++ * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
++ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
++ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
++ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ * ====================================================================
++ *
++ * This software consists of voluntary contributions made by many
++ * individuals on behalf of the Apache Software Foundation.  For more
++ * information on the Apache Software Foundation, please see
++ * <http://www.apache.org/>.
++ */
++package org.apache.commons.math.stat.distribution;
++
++import org.apache.commons.math.special.Gamma;
++
++/**
++ * The default implementation of {@link GammaDistribution}
++ * 
++ * @author Brent Worden
++ */
++public class GammaDistributionImpl extends AbstractContinuousDistribution
++    implements GammaDistribution {
++
++    /** The shape parameter. */
++    private double alpha;
++    
++    /** The scale parameter. */
++    private double beta;
++    
++    /**
++     * Create a new gamma distribution with the given alpha and beta values.
++     * @param alpha the shape parameter.
++     * @param beta the scale parameter.
++     */
++    public GammaDistributionImpl(double alpha, double beta) {
++        super();
++        setAlpha(alpha);
++        setBeta(beta);
++    }
++    
++    /**
++     * <p>
++     * For this disbution, X, this method returns P(X &lt; x).
++     * </p>
++     * 
++     * <p>
++     * The implementation of this method is based on:
++     * <ul>
++     * <li>
++     * <a href="http://mathworld.wolfram.com/Chi-SquaredDistribution.html">
++     * Chi-Squared Distribution</a>, equation (9).</li>
++     * <li>Casella, G., & Berger, R. (1990). <i>Statistical Inference</i>.
++     * Belmont, CA: Duxbury Press.</li>
++     * </ul>
++     * </p>
++     * 
++     * @param x the value at which the CDF is evaluated.
++     * @return CDF for this distribution. 
++     */
++    public double cummulativeProbability(double x) {
++        double ret;
++    
++        if (x <= 0.0) {
++            ret = 0.0;
++        } else {
++            ret = Gamma.regularizedGammaP(getAlpha(), x / getBeta());
++        }
++    
++        return ret;
++    }
++    
++    /**
++     * Modify the shape parameter, alpha.
++     * @param alpha the new shape parameter.
++     */
++    public void setAlpha(double alpha) {
++        if (alpha <= 0.0) {
++            throw new IllegalArgumentException("alpha must be positive");
++        }
++        this.alpha = alpha;
++    }
++    
++    /**
++     * Access the shape parameter, alpha
++     * @return alpha.
++     */
++    public double getAlpha() {
++        return alpha;
++    }
++    
++    /**
++     * Modify the scale parameter, beta.
++     * @param beta the new scale parameter.
++     */
++    public void setBeta(double beta) {
++        if (beta <= 0.0) {
++            throw new IllegalArgumentException("beta must be positive");
++        }
++        this.beta = beta;
++    }
++    
++    /**
++     * Access the scale parameter, beta
++     * @return beta.
++     */
++    public double getBeta() {
++        return beta;
++    }
++    
++    /**
++     * Access the domain value lower bound, based on <code>p</code>, used to
++     * bracket a CDF root.  This method is used by
++     * {@link #inverseCummulativeProbability(double)} to find critical values.
++     * 
++     * @param p the desired probability for the critical value
++     * @return domain value lower bound, i.e.
++     *         P(X &lt; <i>lower bound</i>) &lt; <code>p</code> 
++     */
++    protected double getDomainLowerBound(double p) {
++        // TODO: try to improve on this estimate
++        return Double.MIN_VALUE;
++    }
++
++    /**
++     * Access the domain value upper bound, based on <code>p</code>, used to
++     * bracket a CDF root.  This method is used by
++     * {@link #inverseCummulativeProbability(double)} to find critical values.
++     * 
++     * @param p the desired probability for the critical value
++     * @return domain value upper bound, i.e.
++     *         P(X &lt; <i>upper bound</i>) &gt; <code>p</code> 
++     */
++    protected double getDomainUpperBound(double p) {
++        // NOTE: gamma is skewed to the left
++        // NOTE: therefore, P(X < &mu;) > .5
++        // TODO: try to improve on this estimate
++
++        double ret;
++
++        if(p < .5){
++            // use mean
++            ret = getAlpha() * getBeta();
++        } else {
++            // use max value
++            ret = Double.MAX_VALUE;
++        }
++        
++        return ret;
++    }
++
++    /**
++     * Access the initial domain value, based on <code>p</code>, used to
++     * bracket a CDF root.  This method is used by
++     * {@link #inverseCummulativeProbability(double)} to find critical values.
++     * 
++     * @param p the desired probability for the critical value
++     * @return initial domain value
++     */
++    protected double getInitialDomain(double p) {
++        // NOTE: gamma is skewed to the left
++        // NOTE: therefore, P(X < &mu;) > .5
++        // TODO: try to improve on this estimate
++
++        double ret;
++
++        if(p < .5){
++            // use 1/2 mean
++            ret = getAlpha() * getBeta() * .5;
++        } else {
++            // use mean
++            ret = getAlpha() * getBeta();
++        }
++        
++        return ret;
++    }
++}
+diff --git a/src/java/org/apache/commons/math/special/Gamma.java b/src/java/org/apache/commons/math/special/Gamma.java
+new file mode 100644
+index 0000000..84821c5
+--- /dev/null
++++ b/src/java/org/apache/commons/math/special/Gamma.java
+@@ -0,0 +1,199 @@
++/* ====================================================================
++ * The Apache Software License, Version 1.1
++ *
++ * Copyright (c) 2003 The Apache Software Foundation.  All rights
++ * reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in
++ *    the documentation and/or other materials provided with the
++ *    distribution.
++ *
++ * 3. The end-user documentation included with the redistribution, if
++ *    any, must include the following acknowlegement:
++ *       "This product includes software developed by the
++ *        Apache Software Foundation (http://www.apache.org/)."
++ *    Alternately, this acknowlegement may appear in the software itself,
++ *    if and wherever such third-party acknowlegements normally appear.
++ *
++ * 4. The names "The Jakarta Project", "Commons", and "Apache Software
++ *    Foundation" must not be used to endorse or promote products derived
++ *    from this software without prior written permission. For written
++ *    permission, please contact apache@apache.org.
++ *
++ * 5. Products derived from this software may not be called "Apache"
++ *    nor may "Apache" appear in their names without prior written
++ *    permission of the Apache Software Foundation.
++ *
++ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
++ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
++ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
++ * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
++ * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
++ * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
++ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
++ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
++ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ * ====================================================================
++ *
++ * This software consists of voluntary contributions made by many
++ * individuals on behalf of the Apache Software Foundation.  For more
++ * information on the Apache Software Foundation, please see
++ * <http://www.apache.org/>.
++ */
++package org.apache.commons.math.special;
++
++import org.apache.commons.math.ConvergenceException;
++
++/**
++ * This is a utility class that provides computation methods related to the
++ * Gamma family of functions.
++ * 
++ * @author Brent Worden
++ */
++public class Gamma {
++    /** Maximum number of iteration allowed for iterative methods. */
++    // TODO: try to reduce this.  regularizedGammaP doesn't converge very
++    // fast for large values of x.
++    private static final int MAXIMUM_ITERATIONS = 100;
++
++    /** Maximum allowed numerical error. */
++    private static final double EPSILON = 10e-9;
++
++    /**
++     * Default constructor.  Prohibit instantiation.
++     */
++    private Gamma() {
++        super();
++    }
++
++    /**
++     * <p>
++     * Returns the regularized gamma function P(a, x).
++     * </p>
++     * 
++     * <p>
++     * The implementation of this method is based on:
++     * <ul>
++     * <li>
++     * <a href="http://mathworld.wolfram.com/RegularizedGammaFunction.html">
++     * Regularized Gamma Function</a>, equation (1).</li>
++     * <li>
++     * <a href="http://mathworld.wolfram.com/IncompleteGammaFunction.html">
++     * Incomplete Gamma Function</a>, equation (4).</li>
++     * <li>
++     * <a href="http://mathworld.wolfram.com/ConfluentHypergeometricFunctionoftheFirstKind.html">
++     * Confluent Hypergeometric Function of the First Kind</a>, equation (1).
++     * </li>
++     * </ul>
++     * </p>
++     * 
++     * @param a ???
++     * @param x ???
++     * @return the regularized gamma function P(a, x)
++     */
++    public static double regularizedGammaP(double a, double x) {
++        double ret;
++
++        if (a <= 0.0) {
++            throw new IllegalArgumentException("a must be positive");
++        } else if (x <= 0.0) {
++            throw new IllegalArgumentException("x must be non-negative");
++        } else {
++            // calculate series
++            double n = 0.0; // current element index
++            double an = 1.0 / a; // n-th element in the series
++            double sum = an; // partial sum
++            while (Math.abs(an) > EPSILON && n < MAXIMUM_ITERATIONS) {
++                // compute next element in the series
++                n = n + 1.0;
++                an = an * (x / (a + n));
++
++                // update partial sum
++                sum = sum + an;
++            }
++            if (n >= MAXIMUM_ITERATIONS) {
++                throw new ConvergenceException(
++                    "maximum number of iterations reached");
++            } else {
++                ret = Math.exp(-x + (a * Math.log(x)) - logGamma(a)) * sum;
++            }
++        }
++
++        return ret;
++    }
++
++    /**
++     * <p>
++     * Returns the natural logarithm of the gamma function &#915;(x).
++     * </p>
++     *
++     * <p> 
++     * The implementation of this method is based on:
++     * <ul>
++     * <li><a href="http://mathworld.wolfram.com/GammaFunction.html">
++     * Gamma Function</a>, equation (28).</li>
++     * <li><a href="http://mathworld.wolfram.com/LanczosApproximation.html">
++     * Lanczos Approximation</a>, equations (1) through (5).</li>
++     * <li><a href="http://my.fit.edu/~gabdo/gamma.txt">Paul Godfrey, A note on
++     * the computation of the convergent Lanczos complex Gamma approximation
++     * </a></li>
++     * </ul>
++     * </p>
++     * 
++     * @param x ???
++     * @return log(&#915;(x))
++     */
++    public static double logGamma(double x) {
++        double ret;
++
++        if (x <= 0.0) {
++            throw new IllegalArgumentException(
++                "x must be non-negative");
++        } else {
++            double g = 607.0 / 128.0;
++
++            // Lanczos coefficients
++            double[] c =
++                {
++                    0.99999999999999709182,
++                    57.156235665862923517,
++                    -59.597960355475491248,
++                    14.136097974741747174,
++                    -0.49191381609762019978,
++                    .33994649984811888699e-4,
++                    .46523628927048575665e-4,
++                    -.98374475304879564677e-4,
++                    .15808870322491248884e-3,
++                    -.21026444172410488319e-3,
++                    .21743961811521264320e-3,
++                    -.16431810653676389022e-3,
++                    .84418223983852743293e-4,
++                    -.26190838401581408670e-4,
++                    .36899182659531622704e-5,
++                    };
++
++            double sum = 0.0;
++            for (int i = 1; i < c.length; ++i) {
++                sum = sum + (c[i] / (x + i));
++            }
++            sum = sum + c[0];
++
++            double tmp = x + g + .5;
++            ret = ((x + .5) * Math.log(tmp)) - tmp
++                + (.5 * Math.log(2.0 * Math.PI)) + Math.log(sum) - Math.log(x);
++        }
++
++        return ret;
++    }
++}
+diff --git a/src/test/org/apache/commons/math/distribution/ChiSquareDistributionTest.java b/src/test/org/apache/commons/math/distribution/ChiSquareDistributionTest.java
+new file mode 100644
+index 0000000..d77fc01
+--- /dev/null
++++ b/src/test/org/apache/commons/math/distribution/ChiSquareDistributionTest.java
+@@ -0,0 +1,76 @@
++package org.apache.commons.math.stat.distribution;
++
++import junit.framework.TestCase;
++
++/**
++ * @author Brent Worden
++ */
++public class ChiSquareDistributionTest extends TestCase {
++    private ChiSquaredDistribution chiSquare;
++    
++	/**
++	 * Constructor for ChiSquareDistributionTest.
++	 * @param name
++	 */
++	public ChiSquareDistributionTest(String name) {
++		super(name);
++	}
++
++	/*
++	 * @see TestCase#setUp()
++	 */
++	protected void setUp() throws Exception {
++		super.setUp();
++        chiSquare = DistributionFactory.newInstance().createChiSquareDistribution(5.0);
++	}
++
++	/*
++	 * @see TestCase#tearDown()
++	 */
++	protected void tearDown() throws Exception {
++        chiSquare = null;
++		super.tearDown();
++	}
++
++    public void testLowerTailProbability(){
++        testProbability( .210, .001);
++        testProbability( .554, .010);
++        testProbability( .831, .025);
++        testProbability(1.145, .050);
++        testProbability(1.610, .100);
++    }
++
++    public void testUpperTailProbability(){
++        testProbability(20.515, .999);
++        testProbability(15.086, .990);
++        testProbability(12.833, .975);
++        testProbability(11.070, .950);
++        testProbability( 9.236, .900);
++    }
++    
++    public void testLowerTailValues(){
++        testValue(.001,  .210);
++        testValue(.010,  .554);
++        testValue(.025,  .831);
++        testValue(.050, 1.145);
++        testValue(.100, 1.610);
++    }
++    
++    public void testUpperTailValues(){
++        testValue(.999, 20.515);
++        testValue(.990, 15.086);
++        testValue(.975, 12.833);
++        testValue(.950, 11.070);
++        testValue(.900,  9.236);
++    }
++    
++    private void testProbability(double x, double expected){
++        double actual = chiSquare.cummulativeProbability(x);
++        assertEquals("probability for " + x, expected, actual, 10e-4);
++    }
++    
++    private void testValue(double p, double expected){
++        double actual = chiSquare.inverseCummulativeProbability(p);
++        assertEquals("value for " + p, expected, actual, 10e-4);
++    }
++}
+diff --git a/src/test/org/apache/commons/math/distribution/DistributionFactoryImplTest.java b/src/test/org/apache/commons/math/distribution/DistributionFactoryImplTest.java
+new file mode 100644
+index 0000000..e9bfde4
+--- /dev/null
++++ b/src/test/org/apache/commons/math/distribution/DistributionFactoryImplTest.java
+@@ -0,0 +1,130 @@
++package org.apache.commons.math.stat.distribution;
++
++import junit.framework.TestCase;
++
++/**
++ * @author Brent Worden
++ */
++public class DistributionFactoryImplTest extends TestCase {
++    /** */
++    private DistributionFactory factory;
++    
++	/**
++	 * Constructor for DistributionFactoryImplTest.
++	 * @param name
++	 */
++	public DistributionFactoryImplTest(String name) {
++		super(name);
++	}
++	/**
++	 * @throws java.lang.Exception
++	 */
++	protected void setUp() throws Exception {
++		super.setUp();
++        factory = new DistributionFactoryImpl();
++	}
++
++	/**
++	 * @throws java.lang.Exception
++	 */
++	protected void tearDown() throws Exception {
++        factory = null;
++		super.tearDown();
++	}
++    
++    public void testCreateChiSquareDistributionNegative(){
++        try {
++            factory.createChiSquareDistribution(-1.0);
++            fail("negative degrees of freedom.  IllegalArgumentException expected");
++        } catch (IllegalArgumentException ex) {
++            ;
++        }
++    }
++    
++    public void testCreateChiSquareDistributionZero(){
++        try {
++            factory.createChiSquareDistribution(0.0);
++            fail("zero degrees of freedom.  IllegalArgumentException expected");
++        } catch (IllegalArgumentException ex) {
++            ;
++        }
++    }
++    
++    public void testCreateChiSquareDistributionPositive(){
++        try {
++            factory.createChiSquareDistribution(1.0);
++        } catch (IllegalArgumentException ex) {
++            fail("positive degrees of freedom.  IllegalArgumentException is not expected");
++        }
++    }
++    
++    public void testCreateGammaDistributionNegativePositive(){
++        try {
++            factory.createGammaDistribution(-1.0, 1.0);
++            fail("negative alpha.  IllegalArgumentException expected");
++        } catch (IllegalArgumentException ex) {
++            ;
++        }
++    }
++    
++    public void testCreateGammaDistributionZeroPositive(){
++        try {
++            factory.createGammaDistribution(0.0, 1.0);
++            fail("zero alpha.  IllegalArgumentException expected");
++        } catch (IllegalArgumentException ex) {
++            ;
++        }
++    }
++    
++    public void testCreateGammaDistributionPositiveNegative(){
++        try {
++            factory.createGammaDistribution(1.0, -1.0);
++            fail("negative beta.  IllegalArgumentException expected");
++        } catch (IllegalArgumentException ex) {
++            ;
++        }
++    }
++    
++    public void testCreateGammaDistributionPositiveZero(){
++        try {
++            factory.createGammaDistribution(1.0, 0.0);
++            fail("zero beta.  IllegalArgumentException expected");
++        } catch (IllegalArgumentException ex) {
++            ;
++        }
++    }
++    
++    public void testCreateGammaDistributionPositivePositive(){
++        try {
++            factory.createGammaDistribution(1.0, 1.0);
++        } catch (IllegalArgumentException ex) {
++            fail("positive alpah and beta.  IllegalArgumentException is not expected");
++        }
++    }
++//    
++//    public void testCreateTDistributionNegative(){
++//        try {
++//            factory.createTDistribution(-1.0);
++//            fail("negative degrees of freedom.  IllegalArgumentException expected");
++//        } catch (IllegalArgumentException ex) {
++//            ;
++//        }
++//    }
++//    
++//    public void testCreateTDistributionZero(){
++//        try {
++//            factory.createTDistribution(0.0);
++//            fail("zero degrees of freedom.  IllegalArgumentException expected");
++//        } catch (IllegalArgumentException ex) {
++//            ;
++//        }
++//    }
++//    
++//    public void testCreateTDistributionPositive(){
++//        try {
++//            factory.createTDistribution(1.0);
++//        } catch (IllegalArgumentException ex) {
++//            fail("positive degrees of freedom.  IllegalArgumentException is not expected");
++//        }
++//    }
++}
+diff --git a/src/test/org/apache/commons/math/distribution/GammaDistributionTest.java b/src/test/org/apache/commons/math/distribution/GammaDistributionTest.java
+new file mode 100644
+index 0000000..d163881
+--- /dev/null
++++ b/src/test/org/apache/commons/math/distribution/GammaDistributionTest.java
+@@ -0,0 +1,28 @@
++package org.apache.commons.math.stat.distribution;
++
++import junit.framework.TestCase;
++
++/**
++ * @author Brent Worden
++ */
++public class GammaDistributionTest extends TestCase {
++	/**
++	 * Constructor for ChiSquareDistributionTest.
++	 * @param name
++	 */
++	public GammaDistributionTest(String name) {
++		super(name);
++	}
++
++    public void testProbabilities(){
++        testProbability(15.5, 4.0, 2.0, .9499);
++        testProbability( 0.5, 4.0, 1.0, .0018);
++        testProbability(10.0, 1.0, 2.0, .9933);
++        testProbability( 5.0, 2.0, 2.0, .7127);
++    }
++    
++    private void testProbability(double x, double a, double b, double expected){
++        double actual = DistributionFactory.newInstance().createGammaDistribution(a, b).cummulativeProbability(x);
++        assertEquals("probability for " + x, expected, actual, 10e-4);
++    }
++}

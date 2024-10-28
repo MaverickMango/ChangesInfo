@@ -1,0 +1,251 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.compress.archivers.cpio.CpioArchiveInputStreamTest::testCpioUnarchiveCreatedByRedlineRpm",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.compress.archivers.cpio.CpioArchiveInputStream",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Compress",
+  "id": "20",
+  "workingDir": "../bugs/Compress_20_tmp",
+  "bug_name": "Compress_20",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.compress.archivers.cpio.CpioArchiveInputStreamTest",
+      "test_function": "testCpioUnarchiveCreatedByRedlineRpm",
+      "assertion_line": "55",
+      "exception": "java.lang.IllegalArgumentException",
+      "message": "Unknown mode. Full: 1a4 Masked: 0"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/compress/archivers/cpio/CpioArchiveInputStream.java",
+        "src/main/java/org/apache/commons/compress/archivers/cpio/CpioArchiveInputStream.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.cpio.CpioArchiveInputStream:readNewEntry:[final boolean hasCrc]:CpioArchiveEntry",
+            "org.apache.commons.compress.archivers.cpio.CpioArchiveInputStream:readOldBinaryEntry:[final boolean swapHalfWord]:CpioArchiveEntry",
+            "org.apache.commons.compress.archivers.cpio.CpioArchiveInputStream:readOldAsciiEntry:[]:CpioArchiveEntry"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.cpio.CpioArchiveInputStream:readOldBinaryEntry:[final boolean swapHalfWord]:CpioArchiveEntry",
+            "org.apache.commons.compress.archivers.cpio.CpioArchiveInputStream:readOldAsciiEntry:[]:CpioArchiveEntry",
+            "org.apache.commons.compress.archivers.cpio.CpioArchiveInputStream:readNewEntry:[final boolean hasCrc]:CpioArchiveEntry"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "331",
+            "347",
+            "361",
+            "373",
+            "387",
+            "399"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "331",
+            "347",
+            "361",
+            "373",
+            "387",
+            "399"
+          ],
+          "num": 6
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/compress/archivers/cpio/CpioArchiveInputStream.java b/src/main/java/org/apache/commons/compress/archivers/cpio/CpioArchiveInputStream.java\nindex 664d0e6..934eb0a 100644\n--- a/src/main/java/org/apache/commons/compress/archivers/cpio/CpioArchiveInputStream.java\n+++ b/src/main/java/org/apache/commons/compress/archivers/cpio/CpioArchiveInputStream.java\n@@ -328,7 +328,7 @@\n \n         ret.setInode(readAsciiLong(8, 16));\n         long mode \u003d readAsciiLong(8, 16);\n-        if (CpioUtil.fileType(mode) !\u003d 0){ // mode is initialised to 0\n+        if (mode !\u003d 0){\n             ret.setMode(mode);\n         }\n         ret.setUID(readAsciiLong(8, 16));\n@@ -344,7 +344,7 @@\n         ret.setChksum(readAsciiLong(8, 16));\n         String name \u003d readCString((int) namesize);\n         ret.setName(name);\n-        if (CpioUtil.fileType(mode) \u003d\u003d 0 \u0026\u0026 !name.equals(CPIO_TRAILER)){\n+        if (mode \u003d\u003d 0 \u0026\u0026 !name.equals(CPIO_TRAILER)){\n             throw new IOException(\"Mode 0 only allowed in the trailer. Found entry name: \"+name + \" Occured at byte: \" + getBytesRead());\n         }\n         skip(ret.getHeaderPadCount());\n@@ -358,7 +358,7 @@\n         ret.setDevice(readAsciiLong(6, 8));\n         ret.setInode(readAsciiLong(6, 8));\n         final long mode \u003d readAsciiLong(6, 8);\n-        if (CpioUtil.fileType(mode) !\u003d 0) {\n+        if (mode !\u003d 0) {\n             ret.setMode(mode);\n         }\n         ret.setUID(readAsciiLong(6, 8));\n@@ -370,7 +370,7 @@\n         ret.setSize(readAsciiLong(11, 8));\n         final String name \u003d readCString((int) namesize);\n         ret.setName(name);\n-        if (CpioUtil.fileType(mode) \u003d\u003d 0 \u0026\u0026 !name.equals(CPIO_TRAILER)){\n+        if (mode \u003d\u003d 0 \u0026\u0026 !name.equals(CPIO_TRAILER)){\n             throw new IOException(\"Mode 0 only allowed in the trailer. Found entry: \"+ name + \" Occured at byte: \" + getBytesRead());\n         }\n \n@@ -384,7 +384,7 @@\n         ret.setDevice(readBinaryLong(2, swapHalfWord));\n         ret.setInode(readBinaryLong(2, swapHalfWord));\n         final long mode \u003d readBinaryLong(2, swapHalfWord);\n-        if (CpioUtil.fileType(mode) !\u003d 0){\n+        if (mode !\u003d 0){\n             ret.setMode(mode);\n         }\n         ret.setUID(readBinaryLong(2, swapHalfWord));\n@@ -396,7 +396,7 @@\n         ret.setSize(readBinaryLong(4, swapHalfWord));\n         final String name \u003d readCString((int) namesize);\n         ret.setName(name);\n-        if (CpioUtil.fileType(mode) \u003d\u003d 0 \u0026\u0026 !name.equals(CPIO_TRAILER)){\n+        if (mode \u003d\u003d 0 \u0026\u0026 !name.equals(CPIO_TRAILER)){\n             throw new IOException(\"Mode 0 only allowed in the trailer. Found entry: \"+name + \"Occured at byte: \" + getBytesRead());\n         }\n         skip(ret.getHeaderPadCount());\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_RECEIVER [10727,10735]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: fileType [10736,10744]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [10745,10749]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [10727,10750]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_RECEIVER [11434,11442]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: fileType [11443,11451]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [11452,11456]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [11434,11457]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_RECEIVER [11998,12006]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: fileType [12007,12015]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [12016,12020]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [11998,12021]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_RECEIVER [12481,12489]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: fileType [12490,12498]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [12499,12503]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [12481,12504]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_RECEIVER [13078,13086]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: fileType [13087,13095]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [13096,13100]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [13078,13101]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_RECEIVER [13642,13650]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: fileType [13651,13659]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [13660,13664]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [13642,13665]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

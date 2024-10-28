@@ -1,0 +1,114 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.mockitousage.bugs.VerifyingWithAnExtraCallToADifferentMockTest::shouldAllowVerifyingWhenOtherMockCallIsInTheSameLine",
+    "test.dir": "test",
+    "clz.modified": "org.mockito.internal.MockHandler",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Mockito",
+  "id": "13",
+  "workingDir": "../bugs/Mockito_13_tmp",
+  "bug_name": "Mockito_13",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.mockitousage.bugs.VerifyingWithAnExtraCallToADifferentMockTest",
+      "test_function": "shouldAllowVerifyingWhenOtherMockCallIsInTheSameLine",
+      "assertion_line": "33",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/org/mockito/internal/MockHandler.java",
+        "src/org/mockito/internal/MockHandler.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.mockito.internal.MockHandler:handle:[Invocation invocation]:Object"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.mockito.internal.MockHandler:handle:[Invocation invocation]:Object"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "77",
+            "81",
+            "84"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "77"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/org/mockito/internal/MockHandler.java b/src/org/mockito/internal/MockHandler.java\nindex 8962ceb..6f2e4bc 100644\n--- a/src/org/mockito/internal/MockHandler.java\n+++ b/src/org/mockito/internal/MockHandler.java\n@@ -74,14 +74,12 @@\n         if (verificationMode !\u003d null) {\r\n             //We need to check if verification was started on the correct mock \r\n             // - see VerifyingWithAnExtraCallToADifferentMockTest (bug 138)\r\n-            if (((MockAwareVerificationMode) verificationMode).getMock() \u003d\u003d invocation.getMock()) {                \r\n+            if (verificationMode instanceof MockAwareVerificationMode \u0026\u0026 ((MockAwareVerificationMode) verificationMode).getMock() \u003d\u003d invocation.getMock()) {                \r\n                 VerificationDataImpl data \u003d new VerificationDataImpl(invocationContainerImpl, invocationMatcher);            \r\n                 verificationMode.verify(data);\r\n                 return null;\r\n-            } else {\r\n                 // this means there is an invocation on a different mock. Re-adding verification mode \r\n                 // - see VerifyingWithAnExtraCallToADifferentMockTest (bug 138)\r\n-                mockingProgress.verificationStarted(verificationMode);\r\n             }\r\n         }\r\n         \r\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [3227,3364]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InstanceofExpression [3227,3280]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [3281,3283]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [3552,3825]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,351 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Closure",
+  "id": "85",
+  "workingDir": "../bugs/Closure_85_buggy",
+  "inducingCommit": "2581851be3b2202bd48d4c76889b020f4cecebf6",
+  "originalCommit": "7e0d71b3d68ad4788a094d8618e2b0aa474cf3db",
+  "bug_name": "Closure_85",
+  "derive": "defects4j",
+  "original_fixing_commit": "21a2103d7fa5664ea324ef9ee25b4a8922e50955",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/UnreachableCodeElimination.java",
+        "src/com/google/javascript/jscomp/UnreachableCodeElimination.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "removeDeadExprStatementSafely",
+            "visit"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "tryRemoveUnconditionalBranching",
+            "removeDeadExprStatementSafely",
+            "visit"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "91",
+            "122",
+            "134",
+            "152",
+            "153",
+            "154",
+            "160",
+            "182"
+          ],
+          "num": 8
+        },
+        {
+          "qualified_names": [
+            "90",
+            "121",
+            "125",
+            "126",
+            "127",
+            "128",
+            "129",
+            "130",
+            "131",
+            "132",
+            "133",
+            "134",
+            "135",
+            "136",
+            "137",
+            "138",
+            "139",
+            "140",
+            "141",
+            "142",
+            "143",
+            "144",
+            "145",
+            "146",
+            "147",
+            "157",
+            "158",
+            "159",
+            "160",
+            "161",
+            "162",
+            "163",
+            "164",
+            "165",
+            "166",
+            "167",
+            "168",
+            "169",
+            "170",
+            "171",
+            "172",
+            "173",
+            "174",
+            "175",
+            "176",
+            "177",
+            "178",
+            "179",
+            "180",
+            "182",
+            "183",
+            "184",
+            "185",
+            "186",
+            "187",
+            "188",
+            "189",
+            "206",
+            "207",
+            "208",
+            "209",
+            "210",
+            "211",
+            "213",
+            "216",
+            "219",
+            "241"
+          ],
+          "num": 67
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/UnreachableCodeElimination.java b/src/com/google/javascript/jscomp/UnreachableCodeElimination.java\nindex 7b33f88..0a986b3 100644\n--- a/src/com/google/javascript/jscomp/UnreachableCodeElimination.java\n+++ b/src/com/google/javascript/jscomp/UnreachableCodeElimination.java\n@@ -88,7 +88,6 @@\n     NodeTraversal.traverse(compiler, root, this);\n   }\n \n-  @SuppressWarnings(\"fallthrough\")\n   @Override\n   public void visit(NodeTraversal t, Node n, Node parent) {\n     if (parent \u003d\u003d null) {\n@@ -119,10 +118,33 @@\n     }\n     if (gNode.getAnnotation() !\u003d GraphReachability.REACHABLE ||\n         (removeNoOpStatements \u0026\u0026 !NodeUtil.mayHaveSideEffects(n))) {\n-      removeDeadExprStatementSafely(n, parent);\n+      removeDeadExprStatementSafely(n);\n       return;\n     }\n \n+    tryRemoveUnconditionalBranching(n);\n+  }\n+\n+  /**\n+   * Tries to remove n if an unconditional branch node (break, continue or\n+   * return) if the target of n is the same as the the follow of n. That is, if\n+   * we remove n, the control flow remains the same. Also if n targets to\n+   * another unconditional branch, this function will recursively try to remove\n+   * the target branch as well. The reason why we want to cascade this removal\n+   * is because we only run this pass once. If we have code such as\n+   *\n+   * break -\u003e break -\u003e break\n+   *\n+   * where all 3 break\u0027s are useless. The order of removal matters. When we\n+   * first look at the first break, we see that it branches to the 2nd break.\n+   * However, if we remove the last break, the 2nd break becomes useless and\n+   * finally the first break becomes useless as well.\n+   *\n+   * @return The target of this jump. If the target is also useless jump,\n+   *     the target of that useless jump recursively.\n+   */\n+  @SuppressWarnings(\"fallthrough\")\n+  private Node tryRemoveUnconditionalBranching(Node n) {\n     /*\n      * For each of the unconditional branching control flow node, check to see\n      * if the ControlFlowAnalysis.computeFollowNode of that node is same as\n@@ -132,7 +154,39 @@\n      * if-else conversion but it handles more complicated switch statements\n      * much nicer.\n      */\n+\n+    // If n is null the target is the end of the function, nothing to do.\n+    if (n \u003d\u003d null) {\n+       return n;\n+    }\n+\n+    DiGraphNode\u003cNode, Branch\u003e gNode \u003d curCfg.getDirectedGraphNode(n);\n+\n+    if (gNode \u003d\u003d null) {\n+      return n;\n+    }\n+\n+    // If the parent is null, this mean whatever node it was there is now\n+    // useless and it has been removed by other logics in this pass. That node\n+    // while no longer exists in the AST, is still in the CFG because we\n+    // never update the graph as nodes are removed.\n+    if (n.getParent() \u003d\u003d null) {\n+      List\u003cDiGraphEdge\u003cNode,Branch\u003e\u003e outEdges \u003d gNode.getOutEdges();\n+      if (outEdges.size() \u003d\u003d 1) {\n+        return tryRemoveUnconditionalBranching(\n+          outEdges.get(0).getDestination().getValue());\n+      }\n+    }\n+\n     switch (n.getType()) {\n+      case Token.BLOCK:\n+        if (n.hasChildren()) {\n+          Node first \u003d n.getFirstChild();\n+          return tryRemoveUnconditionalBranching(first);\n+        } else {\n+          return tryRemoveUnconditionalBranching(\n+            ControlFlowAnalysis.computeFollowNode(n));\n+        }\n       case Token.RETURN:\n         if (n.hasChildren()) {\n           break;\n@@ -149,15 +203,20 @@\n             // If there is a next node, there is no chance this jump is useless.\n             (n.getNext() \u003d\u003d null || n.getNext().getType() \u003d\u003d Token.FUNCTION)) {\n           Preconditions.checkState(outEdges.get(0).getValue() \u003d\u003d Branch.UNCOND);\n-          Node fallThrough \u003d ControlFlowAnalysis.computeFollowNode(n);\n-          if (outEdges.get(0).getDestination().getValue() \u003d\u003d fallThrough) {\n-            removeDeadExprStatementSafely(n, parent);\n+          Node fallThrough \u003d tryRemoveUnconditionalBranching(\n+            ControlFlowAnalysis.computeFollowNode(n));\n+          Node nextCfgNode \u003d outEdges.get(0).getDestination().getValue();\n+          if (nextCfgNode \u003d\u003d fallThrough) {\n+            removeDeadExprStatementSafely(n);\n+            return fallThrough;\n           }\n+\n         }\n     }\n+    return n;\n   }\n \n-  private void removeDeadExprStatementSafely(Node n, Node parent) {\n+  private void removeDeadExprStatementSafely(Node n) {\n     if (n.getType() \u003d\u003d Token.EMPTY ||\n         (n.getType() \u003d\u003d Token.BLOCK \u0026\u0026 !n.hasChildren())) {\n       // Not always trivial to remove, let FoldContants work its magic later.\n@@ -179,6 +238,6 @@\n     if (logger.isLoggable(Level.FINE)) {\n       logger.fine(\"Removing \" + n.toString());\n     }\n-    NodeUtil.removeChild(parent, n);\n+    NodeUtil.removeChild(n.getParent(), n);\n   }\n }\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodDeclaration [4299,7886]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [4299,5221]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleMemberAnnotation [5224,5256]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: private [5259,5266]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [5267,5271]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: tryRemoveUnconditionalBranching [5272,5303]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [5304,5310]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [5312,7886]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [4256,4291]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [5820,5859]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [5865,5930]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [5936,5978]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [6262,6511]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [7873,7882]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SwitchCase [6546,6563]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [6572,6825]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [7654,7717]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [8708,8721]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [7654,7658]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [7659,7716]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [7556,7642]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: nextCfgNode [7659,7670]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: nextCfgNode [7732,7743]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [7820,7839]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: tryRemoveUnconditionalBranching [7556,7587]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [7601,7641]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleMemberAnnotation [3106,3138]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: parent [4265,4271]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: parent [5642,5648]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [5737,5748]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: parent [6517,6523]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "tryRemoveUnconditionalBranching"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.UnreachableCodeEliminationTest",
+      "test_function": "testCascadedRemovalOfUnlessUnconditonalJumps",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

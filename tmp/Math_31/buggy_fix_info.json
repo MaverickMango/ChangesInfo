@@ -1,0 +1,254 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math3.distribution.BinomialDistributionTest::testMath718,org.apache.commons.math3.distribution.FDistributionTest::testMath785",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math3.util.ContinuedFraction",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "31",
+  "workingDir": "../bugs/Math_31_tmp",
+  "bug_name": "Math_31",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math3.distribution.BinomialDistributionTest",
+      "test_function": "testMath718",
+      "assertion_line": "140",
+      "exception": "org.apache.commons.math3.exception.ConvergenceException",
+      "message": "illegal state: Continued fraction diverged to NaN for value 0.5"
+    },
+    {
+      "test_class": "org.apache.commons.math3.distribution.FDistributionTest",
+      "test_function": "testMath785",
+      "assertion_line": "156",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Failing to calculate inverse cumulative probability"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math3/util/ContinuedFraction.java",
+        "src/main/java/org/apache/commons/math3/util/ContinuedFraction.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.util.ContinuedFraction:evaluate:[double x, double epsilon, int maxIterations]:double"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.util.ContinuedFraction:evaluate:[double x, double epsilon, int maxIterations]:double"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "133",
+            "141",
+            "142",
+            "143",
+            "144",
+            "145",
+            "146",
+            "147",
+            "150",
+            "151",
+            "152",
+            "167",
+            "168",
+            "169"
+          ],
+          "num": 14
+        },
+        {
+          "qualified_names": [
+            "134",
+            "135",
+            "143",
+            "144",
+            "145",
+            "146",
+            "147",
+            "148",
+            "149",
+            "150",
+            "151",
+            "152",
+            "153",
+            "154",
+            "155",
+            "156",
+            "157",
+            "158",
+            "159",
+            "160",
+            "161",
+            "162",
+            "163",
+            "164",
+            "165",
+            "166",
+            "169",
+            "170",
+            "185",
+            "186",
+            "187",
+            "188",
+            "189"
+          ],
+          "num": 33
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math3/util/ContinuedFraction.java b/src/main/java/org/apache/commons/math3/util/ContinuedFraction.java\nindex 253f3c5..b881bb2 100644\n--- a/src/main/java/org/apache/commons/math3/util/ContinuedFraction.java\n+++ b/src/main/java/org/apache/commons/math3/util/ContinuedFraction.java\n@@ -131,6 +131,8 @@\n \n         int n \u003d 1;\n         double dPrev \u003d 0.0;\n+        double p0 \u003d 1.0;\n+        double q1 \u003d 1.0;\n         double cPrev \u003d hPrev;\n         double hN \u003d hPrev;\n \n@@ -138,18 +140,34 @@\n             final double a \u003d getA(n, x);\n             final double b \u003d getB(n, x);\n \n-            double dN \u003d a + b * dPrev;\n-            if (Precision.equals(dN, 0.0, small)) {\n-                dN \u003d small;\n-            }\n-            double cN \u003d a + b / cPrev;\n-            if (Precision.equals(cN, 0.0, small)) {\n-                cN \u003d small;\n+            double cN \u003d a * hPrev + b * p0;\n+            double q2 \u003d a * q1 + b * dPrev;\n+            if (Double.isInfinite(cN) || Double.isInfinite(q2)) {\n+                double scaleFactor \u003d 1d;\n+                double lastScaleFactor \u003d 1d;\n+                final int maxPower \u003d 5;\n+                final double scale \u003d FastMath.max(a,b);\n+                if (scale \u003c\u003d 0) {  // Can\u0027t scale\n+                    throw new ConvergenceException(LocalizedFormats.CONTINUED_FRACTION_INFINITY_DIVERGENCE, x);\n+                }\n+                for (int i \u003d 0; i \u003c maxPower; i++) {\n+                    lastScaleFactor \u003d scaleFactor;\n+                    scaleFactor *\u003d scale;\n+                    if (a !\u003d 0.0 \u0026\u0026 a \u003e b) {\n+                        cN \u003d hPrev / lastScaleFactor + (b / scaleFactor * p0);\n+                        q2 \u003d q1 / lastScaleFactor + (b / scaleFactor * dPrev);\n+                    } else if (b !\u003d 0) {\n+                        cN \u003d (a / scaleFactor * hPrev) + p0 / lastScaleFactor;\n+                        q2 \u003d (a / scaleFactor * q1) + dPrev / lastScaleFactor;\n+                    }\n+                    if (!(Double.isInfinite(cN) || Double.isInfinite(q2))) {\n+                        break;\n+                    }\n+                }\n             }\n \n-            dN \u003d 1 / dN;\n-            final double deltaN \u003d cN * dN;\n-            hN \u003d hPrev * deltaN;\n+            final double deltaN \u003d cN / q2 / cPrev;\n+            hN \u003d cPrev * deltaN;\n \n             if (Double.isInfinite(hN)) {\n                 throw new ConvergenceException(LocalizedFormats.CONTINUED_FRACTION_INFINITY_DIVERGENCE,\n@@ -164,9 +182,11 @@\n                 break;\n             }\n \n-            dPrev \u003d dN;\n-            cPrev \u003d cN;\n-            hPrev \u003d hN;\n+            dPrev \u003d q1;\n+            cPrev \u003d cN / q2;\n+            p0 \u003d hPrev;\n+            hPrev \u003d cN;\n+            q1 \u003d q2;\n             n++;\n         }\n \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [4931,4947]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [4956,4972]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [5162,5193]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [5206,5237]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [5250,6397]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [6411,6449]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [6462,6482]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [7025,7041]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [7078,7089]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [7102,7110]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: hPrev [7059,7064]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [5112,5138]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [5151,5232]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [5245,5271]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [5284,5365]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [5404,5434]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [5447,5467]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [5384,5390]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [6010,6021]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [6034,6045]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

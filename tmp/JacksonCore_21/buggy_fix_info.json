@@ -1,0 +1,133 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.core.filter.TokenVerifyingParserFiltering330Test::testTokensSingleMatchWithPath,com.fasterxml.jackson.core.filter.TokenVerifyingParserFiltering330Test::testBasicSingleMatchFilteringWithPath,com.fasterxml.jackson.core.filter.TokenVerifyingParserFiltering330Test::testSkippingForSingleWithPath",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.core.filter.FilteringParserDelegate",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonCore",
+  "id": "21",
+  "workingDir": "../bugs/JacksonCore_21_tmp",
+  "bug_name": "JacksonCore_21",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.core.filter.TokenVerifyingParserFiltering330Test",
+      "test_function": "testTokensSingleMatchWithPath",
+      "assertion_line": "111",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected token END_OBJECT, current token null"
+    },
+    {
+      "test_class": "com.fasterxml.jackson.core.filter.TokenVerifyingParserFiltering330Test",
+      "test_function": "testBasicSingleMatchFilteringWithPath",
+      "assertion_line": "62",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c{\"ob\":{\"value\":3}[}]\u003e but was:\u003c{\"ob\":{\"value\":3}[]\u003e"
+    },
+    {
+      "test_class": "com.fasterxml.jackson.core.filter.TokenVerifyingParserFiltering330Test",
+      "test_function": "testSkippingForSingleWithPath",
+      "assertion_line": "134",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003cEND_OBJECT\u003e but was:\u003cnull\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java",
+        "src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.filter.FilteringParserDelegate:nextToken:[]:JsonToken"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.filter.FilteringParserDelegate:nextToken:[]:JsonToken"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "238",
+            "249"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "237",
+            "249"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java b/src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java\nindex 5274f33..e6558fd 100644\n--- a/src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java\n+++ b/src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java\n@@ -235,7 +235,6 @@\n         // If all the conditions matches then check for scalar / non-scalar property\n         if (!_allowMultipleMatches \u0026\u0026 (_currToken !\u003d null) \u0026\u0026 (_exposedContext \u003d\u003d null)) {\n             //if not scalar and ended successfully, and !includePath, then return null\n-            if (!_includePath) {\n                 if (_currToken.isStructEnd()) {\n                     if (_headContext.isStartHandled()) {\n                         return (_currToken \u003d null);\n@@ -246,7 +245,6 @@\n                     if (!_headContext.isStartHandled() \u0026\u0026 (_itemFilter \u003d\u003d TokenFilter.INCLUDE_ALL)) {\n                         return (_currToken \u003d null);\n                     }\n-                }\n             }\n         }\n         // Anything buffered?\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "PrefixExpression [8449,8462]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [8464,9070]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [8445,9070]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

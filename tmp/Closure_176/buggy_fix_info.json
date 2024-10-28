@@ -1,0 +1,237 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.TypeCheckTest::testIssue1056",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.TypeInference",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "176",
+  "workingDir": "../bugs/Closure_176_tmp",
+  "bug_name": "Closure_176",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testIssue1056",
+      "assertion_line": "6911",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected a warning"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/TypeInference.java",
+        "src/com/google/javascript/jscomp/TypeInference.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypeInference:updateScopeForTypeChange:[FlowScope scope, Node left, JSType leftType, JSType resultType]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypeInference:updateScopeForTypeChange:[FlowScope scope, Node left, JSType leftType, JSType resultType]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "530",
+            "531",
+            "532",
+            "550",
+            "552",
+            "565",
+            "566",
+            "569"
+          ],
+          "num": 8
+        },
+        {
+          "qualified_names": [
+            "530",
+            "548",
+            "564",
+            "565"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/TypeInference.java b/src/com/google/javascript/jscomp/TypeInference.java\nindex 54d429d..c43a7d1 100644\n--- a/src/com/google/javascript/jscomp/TypeInference.java\n+++ b/src/com/google/javascript/jscomp/TypeInference.java\n@@ -527,9 +527,7 @@\n       case Token.NAME:\n         String varName \u003d left.getString();\n         Var var \u003d syntacticScope.getVar(varName);\n-        JSType varType \u003d var \u003d\u003d null ? null : var.getType();\n-        boolean isVarDeclaration \u003d left.hasChildren()\n-            \u0026\u0026 varType !\u003d null \u0026\u0026 !var.isTypeInferred();\n+        boolean isVarDeclaration \u003d left.hasChildren();\n \n         // When looking at VAR initializers for declared VARs, we tend\n         // to use the declared type over the type it\u0027s being\n@@ -547,9 +545,8 @@\n         // sure we back-infer the \u003cstring\u003e element constraint on\n         // the left hand side, so we use the left hand side.\n \n-        boolean isVarTypeBetter \u003d isVarDeclaration \u0026\u0026\n+        boolean isVarTypeBetter \u003d !isVarDeclaration || var \u003d\u003d null || var.isTypeInferred();\n             // Makes it easier to check for NPEs.\n-            !resultType.isNullType() \u0026\u0026 !resultType.isVoidType();\n \n         // TODO(nicksantos): This might be a better check once we have\n         // back-inference of object/array constraints.  It will probably\n@@ -562,11 +559,10 @@\n \n \n         if (isVarTypeBetter) {\n-          redeclareSimpleVar(scope, left, varType);\n-        } else {\n           redeclareSimpleVar(scope, left, resultType);\n         }\n-        left.setJSType(resultType);\n+        left.setJSType(isVarDeclaration || leftType \u003d\u003d null ?\n+            resultType : null);\n \n         if (var !\u003d null \u0026\u0026 var.isTypeInferred()) {\n           JSType oldType \u003d var.getType();\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [18681,18713]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [18717,18737]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ConditionalExpression [19381,19449]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrefixExpression [18681,18698]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: || [18699,18701]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [18702,18713]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [19381,19417]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NullLiteral [19445,19449]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [17856,17908]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [17975,17977]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [17978,17993]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [17944,17993]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [17994,17996]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "PrefixExpression [17997,18018]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [17944,18018]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [18881,18904]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PrefixExpression [18880,18904]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "PrefixExpression [18908,18932]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [19448,19489]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [19505,19571]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,54 @@
+diff -u -r data/changesInfo//Codec_6/properties/modified_classes/inducing/src/java/org/apache/commons/codec/binary/Base64InputStream.java data/changesInfo//Codec_6/cleaned/fixing/src/java/org/apache/commons/codec/binary/Base64InputStream.java
+--- data/changesInfo//Codec_6/properties/modified_classes/inducing/src/java/org/apache/commons/codec/binary/Base64InputStream.java	2023-07-26 04:28:26.506278648 -0700
++++ data/changesInfo//Codec_6/cleaned/fixing/src/java/org/apache/commons/codec/binary/Base64InputStream.java	2023-07-26 04:40:17.161485008 -0700
+@@ -117,30 +117,34 @@
+     public int read(byte b[], int offset, int len) throws IOException {
+         if (b == null) {
+             throw new NullPointerException();
+-        } else if (offset < 0 || len < 0 || offset + len < 0) {
++        } else if (offset < 0 || len < 0) {
+             throw new IndexOutOfBoundsException();
+         } else if (offset > b.length || offset + len > b.length) {
+             throw new IndexOutOfBoundsException();
+         } else if (len == 0) {
+             return 0;
+         } else {
+-            if (!base64.hasData()) {
+-                byte[] buf = new byte[doEncode ? 4096 : 8192];
+-                int c = in.read(buf);
++            int readLen = 0;
++            while (readLen == 0) {
++                if (!base64.hasData()) {
++                    byte[] buf = new byte[doEncode ? 4096 : 8192];
++                    int c = in.read(buf);
+ 
+-                // A little optimization to avoid System.arraycopy()
+-                // when possible.
+-                if (c > 0 && b.length == len) {
+-                    base64.setInitialBuffer(b, offset, len);
+-                }
++                    // A little optimization to avoid System.arraycopy()
++                    // when possible.
++                    if (c > 0 && b.length == len) {
++                        base64.setInitialBuffer(b, offset, len);
++                    }
+ 
+-                if (doEncode) {
+-                    base64.encode(buf, 0, c);
+-                } else {
+-                    base64.decode(buf, 0, c);
++                    if (doEncode) {
++                        base64.encode(buf, 0, c);
++                    } else {
++                        base64.decode(buf, 0, c);
++                    }
+                 }
++                readLen = base64.readResults(b, offset, len);
+             }
+-            return base64.readResults(b, offset, len);
++            return readLen;
+         }
+     }
+ 
+Only in data/changesInfo//Codec_6/properties/modified_classes/inducing/src/java/org/apache/commons/codec/binary: Base64.java
+Only in data/changesInfo//Codec_6/properties/modified_classes/inducing/src: test

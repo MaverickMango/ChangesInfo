@@ -1,0 +1,116 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.TypeCheckTest::testIssue1047",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.TypeValidator",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "117",
+  "workingDir": "../bugs/Closure_117_tmp",
+  "bug_name": "Closure_117",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testIssue1047",
+      "assertion_line": "6852",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c...p never defined on C[2]\u003e but was:\u003c...p never defined on C[3.c2_]\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/TypeValidator.java",
+        "src/com/google/javascript/jscomp/TypeValidator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypeValidator:getReadableJSTypeName:[Node n, boolean dereference]:String"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypeValidator:getReadableJSTypeName:[Node n, boolean dereference]:String"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "725",
+            "726",
+            "727",
+            "728",
+            "729",
+            "730",
+            "731",
+            "734",
+            "735",
+            "736",
+            "737",
+            "738",
+            "767"
+          ],
+          "num": 13
+        },
+        {
+          "qualified_names": [
+            "724",
+            "756",
+            "757",
+            "758",
+            "759",
+            "760",
+            "761",
+            "762",
+            "763",
+            "764",
+            "765",
+            "766",
+            "767"
+          ],
+          "num": 13
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/TypeValidator.java b/src/com/google/javascript/jscomp/TypeValidator.java\nindex f57ae14..bcd024a 100644\n--- a/src/com/google/javascript/jscomp/TypeValidator.java\n+++ b/src/com/google/javascript/jscomp/TypeValidator.java\n@@ -722,20 +722,8 @@\n    *     to an Object type, if possible.\n    */\n   String getReadableJSTypeName(Node n, boolean dereference) {\n-    JSType type \u003d getJSType(n);\n-    if (dereference) {\n-      ObjectType dereferenced \u003d type.dereference();\n-      if (dereferenced !\u003d null) {\n-        type \u003d dereferenced;\n-      }\n-    }\n \n     // The best type name is the actual type name.\n-    if (type.isFunctionPrototypeType() ||\n-        (type.toObjectType() !\u003d null \u0026\u0026\n-         type.toObjectType().getConstructor() !\u003d null)) {\n-      return type.toString();\n-    }\n \n     // If we\u0027re analyzing a GETPROP, the property may be inherited by the\n     // prototype chain. So climb the prototype chain and find out where\n@@ -765,6 +753,18 @@\n       }\n     }\n \n+    JSType type \u003d getJSType(n);\n+    if (dereference) {\n+      ObjectType dereferenced \u003d type.dereference();\n+      if (dereferenced !\u003d null) {\n+        type \u003d dereferenced;\n+      }\n+    }\n+    if (type.isFunctionPrototypeType() ||\n+        (type.toObjectType() !\u003d null \u0026\u0026\n+         type.toObjectType().getConstructor() !\u003d null)) {\n+      return type.toString();\n+    }\n     String qualifiedName \u003d n.getQualifiedName();\n     if (qualifiedName !\u003d null) {\n       return qualifiedName;\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

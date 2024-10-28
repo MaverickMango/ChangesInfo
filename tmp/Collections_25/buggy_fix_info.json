@@ -1,0 +1,311 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.collections4.IteratorUtilsTest::testCollatedIterator",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.collections4.IteratorUtils",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Collections",
+  "id": "25",
+  "workingDir": "../bugs/Collections_25_tmp",
+  "bug_name": "Collections_25",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.collections4.IteratorUtilsTest",
+      "test_function": "testCollatedIterator",
+      "assertion_line": "943",
+      "exception": "java.lang.NullPointerException",
+      "message": "You must invoke setComparator() to set a comparator first."
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/collections4/IteratorUtils.java",
+        "src/main/java/org/apache/commons/collections4/IteratorUtils.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.collections4.IteratorUtils:collatedIterator:[final Comparator\u003c? super E\u003e comparator, final Collection\u003cIterator\u003c? extends E\u003e\u003e iterators]:Iterator\u003cE\u003e",
+            "org.apache.commons.collections4.IteratorUtils:collatedIterator:[final Comparator\u003c? super E\u003e comparator, final Iterator\u003c? extends E\u003e... iterators]:Iterator\u003cE\u003e",
+            "org.apache.commons.collections4.IteratorUtils:collatedIterator:[final Comparator\u003c? super E\u003e comparator, final Iterator\u003c? extends E\u003e iterator1, final Iterator\u003c? extends E\u003e iterator2]:Iterator\u003cE\u003e"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.collections4.IteratorUtils:collatedIterator:[final Comparator\u003c? super E\u003e comparator, final Iterator\u003c? extends E\u003e iterator1, final Iterator\u003c? extends E\u003e iterator2]:Iterator\u003cE\u003e",
+            "org.apache.commons.collections4.IteratorUtils:collatedIterator:[final Comparator\u003c? super E\u003e comparator, final Collection\u003cIterator\u003c? extends E\u003e\u003e iterators]:Iterator\u003cE\u003e",
+            "org.apache.commons.collections4.IteratorUtils:collatedIterator:[final Comparator\u003c? super E\u003e comparator, final Iterator\u003c? extends E\u003e... iterators]:Iterator\u003cE\u003e"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "605",
+            "606",
+            "607",
+            "628",
+            "629",
+            "630",
+            "652",
+            "653",
+            "654"
+          ],
+          "num": 9
+        },
+        {
+          "qualified_names": [
+            "605",
+            "626",
+            "648"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/collections4/IteratorUtils.java b/src/main/java/org/apache/commons/collections4/IteratorUtils.java\nindex b3b1be0..40f9989 100644\n--- a/src/main/java/org/apache/commons/collections4/IteratorUtils.java\n+++ b/src/main/java/org/apache/commons/collections4/IteratorUtils.java\n@@ -602,9 +602,7 @@\n     public static \u003cE\u003e Iterator\u003cE\u003e collatedIterator(final Comparator\u003c? super E\u003e comparator,\n                                                    final Iterator\u003c? extends E\u003e iterator1,\n                                                    final Iterator\u003c? extends E\u003e iterator2) {\n-        @SuppressWarnings(\"unchecked\")\n-        final Comparator\u003cE\u003e comp \u003d comparator \u003d\u003d null ? ComparatorUtils.NATURAL_COMPARATOR : comparator;\n-        return new CollatingIterator\u003cE\u003e(comp, iterator1, iterator2);\n+        return new CollatingIterator\u003cE\u003e(comparator, iterator1, iterator2);\n     }\n \n     /**\n@@ -625,9 +623,7 @@\n      */\n     public static \u003cE\u003e Iterator\u003cE\u003e collatedIterator(final Comparator\u003c? super E\u003e comparator,\n                                                    final Iterator\u003c? extends E\u003e... iterators) {\n-        @SuppressWarnings(\"unchecked\")\n-        final Comparator\u003cE\u003e comp \u003d comparator \u003d\u003d null ? ComparatorUtils.NATURAL_COMPARATOR : comparator;\n-        return new CollatingIterator\u003cE\u003e(comp, iterators);\n+        return new CollatingIterator\u003cE\u003e(comparator, iterators);\n     }\n \n     /**\n@@ -649,9 +645,7 @@\n      */\n     public static \u003cE\u003e Iterator\u003cE\u003e collatedIterator(final Comparator\u003c? super E\u003e comparator,\n                                                    final Collection\u003cIterator\u003c? extends E\u003e\u003e iterators) {\n-        @SuppressWarnings(\"unchecked\")\n-        final Comparator\u003cE\u003e comp \u003d comparator \u003d\u003d null ? ComparatorUtils.NATURAL_COMPARATOR : comparator;\n-        return new CollatingIterator\u003cE\u003e(comp, iterators);\n+        return new CollatingIterator\u003cE\u003e(comparator, iterators);\n     }\n \n     // Object Graph\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "SingleMemberAnnotation [25486,25516]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: final [25525,25530]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ParameterizedType [25531,25544]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: comp [25545,25549]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u003d\u003d [25563,25565]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NullLiteral [25566,25570]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [25552,25570]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "QualifiedName: ComparatorUtils.NATURAL_COMPARATOR [25573,25607]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: comparator [25610,25620]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ConditionalExpression [25552,25620]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [25545,25620]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [25486,25621]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleMemberAnnotation [26703,26733]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: final [26742,26747]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ParameterizedType [26748,26761]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: comp [26762,26766]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u003d\u003d [26780,26782]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NullLiteral [26783,26787]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [26769,26787]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "QualifiedName: ComparatorUtils.NATURAL_COMPARATOR [26790,26824]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: comparator [26827,26837]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ConditionalExpression [26769,26837]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [26762,26837]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [26703,26838]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleMemberAnnotation [28014,28044]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: final [28053,28058]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ParameterizedType [28059,28072]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: comp [28073,28077]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u003d\u003d [28091,28093]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NullLiteral [28094,28098]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [28080,28098]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "QualifiedName: ComparatorUtils.NATURAL_COMPARATOR [28101,28135]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: comparator [28138,28148]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ConditionalExpression [28080,28148]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [28073,28148]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [28014,28149]",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

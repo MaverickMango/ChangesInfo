@@ -1,0 +1,29 @@
+Only in data/changesInfo//Mockito_8/properties/modified_classes/inducing/: src
+diff -u -r data/changesInfo//Mockito_8/properties/modified_classes/inducing/test/org/mockito/internal/util/reflection/GenericMetadataSupportTest.java data/changesInfo//Mockito_8/cleaned/inducing/test/org/mockito/internal/util/reflection/GenericMetadataSupportTest.java
+--- data/changesInfo//Mockito_8/properties/modified_classes/inducing/test/org/mockito/internal/util/reflection/GenericMetadataSupportTest.java	2023-12-27 22:49:11.848332983 -0800
++++ data/changesInfo//Mockito_8/cleaned/inducing/test/org/mockito/internal/util/reflection/GenericMetadataSupportTest.java	2023-12-21 04:40:22.881000187 -0800
+@@ -21,7 +21,10 @@
+ 
+ @SuppressWarnings("unused")
+ public class GenericMetadataSupportTest {
+-
++  
++    interface GenericsSelfReference<T extends GenericsSelfReference<T>> {
++        T self();
++    }
+     interface UpperBoundedTypeWithClass<E extends Number & Comparable<E>> {
+         E get();
+     }
+@@ -44,6 +47,12 @@
+ 
+     static class StringList extends ArrayList<String> { }
+ 
++    @Test
++    public void typeVariable_of_self_type() {
++        GenericMetadataSupport genericMetadata = inferFrom(GenericsSelfReference.class).resolveGenericReturnType(firstNamedMethod("self", GenericsSelfReference.class));
++
++        assertThat(genericMetadata.rawType()).isEqualTo(GenericsSelfReference.class);
++    }
+ 
+     @Test
+     public void can_get_raw_type_from_Class() throws Exception {

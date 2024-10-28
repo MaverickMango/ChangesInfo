@@ -1,0 +1,98 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.collections4.map.MultiValueMapTest::testUnsafeDeSerialization",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.collections4.map.MultiValueMap",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Collections",
+  "id": "27",
+  "workingDir": "../bugs/Collections_27_tmp",
+  "bug_name": "Collections_27",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.collections4.map.MultiValueMapTest",
+      "test_function": "testUnsafeDeSerialization",
+      "assertion_line": "405",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "unsafe clazz accepted when de-serializing MultiValueMap"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/collections4/map/MultiValueMap.java",
+        "src/main/java/org/apache/commons/collections4/map/MultiValueMap.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.collections4.map.MultiValueMap\\$ReflectionFactory:readObject:[ObjectInputStream is]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "568",
+            "569",
+            "570",
+            "571",
+            "572",
+            "573",
+            "574"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "567"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/collections4/map/MultiValueMap.java b/src/main/java/org/apache/commons/collections4/map/MultiValueMap.java\nindex 3c690ab..d131af2 100644\n--- a/src/main/java/org/apache/commons/collections4/map/MultiValueMap.java\n+++ b/src/main/java/org/apache/commons/collections4/map/MultiValueMap.java\n@@ -565,13 +565,6 @@\n             }\n         }\n \n-        private void readObject(ObjectInputStream is) throws IOException, ClassNotFoundException {\n-            is.defaultReadObject();\n-            // ensure that the de-serialized class is a Collection, COLLECTIONS-580\n-            if (clazz !\u003d null \u0026\u0026 !Collection.class.isAssignableFrom(clazz)) {\n-                throw new UnsupportedOperationException();\n-            }\n-        }\n     }\n \n }\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [20273,20644]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.apache.commons.collections4.map.MultiValueMap\\$ReflectionFactory:readObject:[ObjectInputStream is]:void"
+      ],
+      "num": 1
+    }
+  }
+}

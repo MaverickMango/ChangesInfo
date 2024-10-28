@@ -1,0 +1,115 @@
+diff -r -u buggy/javadoc/com/google/javascript/jscomp/Compiler.IntermediateState.html inducing/javadoc/com/google/javascript/jscomp/Compiler.IntermediateState.html
+--- buggy/javadoc/com/google/javascript/jscomp/Compiler.IntermediateState.html	2023-06-12 11:24:20.158711704 +0800
++++ inducing/javadoc/com/google/javascript/jscomp/Compiler.IntermediateState.html	2023-06-12 11:24:20.318714908 +0800
+@@ -109,7 +109,7 @@
+  different output targets without having to perform checking multiple times.
+ 
+  NOTE: This does not include all parts of the compiler's internal state. In
+- particular, SourceFiles and CompilerOptions are not recorded. In
++ particular, JSSourceFiles and CompilerOptions are not recorded. In
+  order to recreate a Compiler instance from scratch, you would need to
+  call <code>init</code> with the same arguments as in the initial creation before
+  restoring intermediate state.
+diff -r -u buggy/src/com/google/javascript/jscomp/Compiler.java inducing/src/com/google/javascript/jscomp/Compiler.java
+--- buggy/src/com/google/javascript/jscomp/Compiler.java	2023-06-12 11:34:20.546112605 +0800
++++ inducing/src/com/google/javascript/jscomp/Compiler.java	2023-06-12 11:34:20.742116190 +0800
+@@ -32,10 +32,6 @@
+ import com.google.javascript.jscomp.deps.SortedDependencies.MissingProvideException;
+ import com.google.javascript.jscomp.parsing.Config;
+ import com.google.javascript.jscomp.parsing.ParserRunner;
+-import com.google.javascript.jscomp.type.ChainableReverseAbstractInterpreter;
+-import com.google.javascript.jscomp.type.ClosureReverseAbstractInterpreter;
+-import com.google.javascript.jscomp.type.ReverseAbstractInterpreter;
+-import com.google.javascript.jscomp.type.SemanticReverseAbstractInterpreter;
+ import com.google.javascript.rhino.IR;
+ import com.google.javascript.rhino.InputId;
+ import com.google.javascript.rhino.JSDocInfo;
+@@ -1391,7 +1387,7 @@
+    * process and creates JSModules and the corresponding dependency tree
+    * on the way.
+    */
+-  void processAMDAndCommonJSModules() {
++  private void processAMDAndCommonJSModules() {
+     Map<String, JSModule> modulesByName = Maps.newLinkedHashMap();
+     Map<CompilerInput, JSModule> modulesByInput = Maps.newLinkedHashMap();
+     // TODO(nicksantos): Refactor module dependency resolution to work nicely
+@@ -1427,12 +1423,7 @@
+       for (JSModule module : modules) {
+         for (CompilerInput input : module.getInputs()) {
+           for (String require : input.getRequires()) {
+-            JSModule dependency = modulesByName.get(require);
+-            if (dependency == null) {
+-              report(JSError.make(MISSING_ENTRY_ERROR, require));
+-            } else {
+-              module.addDependency(dependency);
+-            }
++            module.addDependency(modulesByName.get(require));
+           }
+         }
+       }
+@@ -1491,7 +1482,7 @@
+   Node parseTestCode(String js) {
+     initCompilerOptionsIfTesting();
+     CompilerInput input = new CompilerInput(
+-        SourceFile.fromCode("[testcode]", js));
++        SourceFile.fromCode(" [testcode] ", js));
+     if (inputsById == null) {
+       inputsById = Maps.newHashMap();
+     }
+diff -r -u buggy/test/com/google/javascript/jscomp/CommandLineRunnerTest.java inducing/test/com/google/javascript/jscomp/CommandLineRunnerTest.java
+--- buggy/test/com/google/javascript/jscomp/CommandLineRunnerTest.java	2023-06-12 11:34:20.566112971 +0800
++++ inducing/test/com/google/javascript/jscomp/CommandLineRunnerTest.java	2023-06-12 11:34:20.774116774 +0800
+@@ -349,14 +349,10 @@
+   //////////////////////////////////////////////////////////////////////////////
+   // Integration tests
+ 
+-  public void testIssue70a() {
++  public void testIssue70() {
+     test("function foo({}) {}", RhinoErrorReporter.PARSE_ERROR);
+   }
+ 
+-  public void testIssue70b() {
+-    test("function foo([]) {}", RhinoErrorReporter.PARSE_ERROR);
+-  }
+-
+   public void testIssue81() {
+     args.add("--compilation_level=ADVANCED_OPTIMIZATIONS");
+     useStringComparison = true;
+@@ -647,37 +643,6 @@
+          RhinoErrorReporter.TYPE_PARSE_ERROR);
+   }
+ 
+-  public void testOnlyClosureDependenciesEmptyEntryPoints() throws Exception {
+-    // Prevents this from trying to load externs.zip
+-    args.add("--use_only_custom_externs=true");
+-
+-    args.add("--only_closure_dependencies=true");
+-    try {
+-      CommandLineRunner runner = createCommandLineRunner(new String[0]);
+-      runner.doRun();
+-      fail("Expected FlagUsageException");
+-    } catch (FlagUsageException e) {
+-      assertTrue(e.getMessage(),
+-          e.getMessage().contains("only_closure_dependencies"));
+-    }
+-  }
+-
+-  public void testOnlyClosureDependenciesOneEntryPoint() throws Exception {
+-    args.add("--only_closure_dependencies=true");
+-    args.add("--closure_entry_point=beer");
+-    test(new String[] {
+-          "goog.require('beer'); var beerRequired = 1;",
+-          "goog.provide('beer');\ngoog.require('hops');\nvar beerProvided = 1;",
+-          "goog.provide('hops'); var hopsProvided = 1;",
+-          "goog.provide('scotch'); var scotchProvided = 1;",
+-          "var includeFileWithoutProvides = 1;"
+-         },
+-         new String[] {
+-           "var hops = {}, hopsProvided = 1;",
+-           "var beer = {}, beerProvided = 1;"
+-         });
+-  }
+-
+   public void testSourceMapExpansion1() {
+     args.add("--js_output_file");
+     args.add("/path/to/out.js");

@@ -1,0 +1,166 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.codec.language.DoubleMetaphoneTest::testIsDoubleMetaphoneEqualBasic,org.apache.commons.codec.language.DoubleMetaphoneTest::testCodec184",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.codec.binary.CharSequenceUtils,org.apache.commons.codec.binary.StringUtils,org.apache.commons.codec.language.DoubleMetaphone",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Codec",
+  "id": "13",
+  "workingDir": "../bugs/Codec_13_tmp",
+  "bug_name": "Codec_13",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.codec.language.DoubleMetaphoneTest",
+      "test_function": "testIsDoubleMetaphoneEqualBasic",
+      "assertion_line": "1136",
+      "exception": "java.lang.NullPointerException",
+      "message": ""
+    },
+    {
+      "test_class": "org.apache.commons.codec.language.DoubleMetaphoneTest",
+      "test_function": "testCodec184",
+      "exception": "java.lang.NullPointerException",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/codec/binary/StringUtils.java",
+        "src/main/java/org/apache/commons/codec/binary/StringUtils.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.codec.binary.StringUtils:equals:[final CharSequence cs1, final CharSequence cs2]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "70",
+            "71",
+            "72",
+            "73",
+            "74",
+            "75",
+            "76",
+            "77",
+            "78",
+            "79",
+            "80",
+            "81"
+          ],
+          "num": 12
+        },
+        {
+          "qualified_names": [
+            "69"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/codec/binary/StringUtils.java b/src/main/java/org/apache/commons/codec/binary/StringUtils.java\nindex 8f1f57f..b3c399f 100644\n--- a/src/main/java/org/apache/commons/codec/binary/StringUtils.java\n+++ b/src/main/java/org/apache/commons/codec/binary/StringUtils.java\n@@ -67,18 +67,6 @@\n      * @return {@code true} if the CharSequences are equal (case-sensitive), or both {@code null}\n      * @since 1.10\n      */\n-    public static boolean equals(final CharSequence cs1, final CharSequence cs2) {\n-        if (cs1 \u003d\u003d cs2) {\n-            return true;\n-        }\n-        if (cs1 \u003d\u003d null || cs2 \u003d\u003d null) {\n-            return false;\n-        }\n-        if (cs1 instanceof String \u0026\u0026 cs2 instanceof String) {\n-            return cs1.equals(cs2);\n-        }\n-        return CharSequenceUtils.regionMatches(cs1, false, 0, cs2, 0, Math.max(cs1.length(), cs2.length()));\n-    }\n \n     /**\n      * Calls {@link String#getBytes(Charset)}\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [1519,3000]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/codec/language/DoubleMetaphone.java",
+        "src/main/java/org/apache/commons/codec/language/DoubleMetaphone.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.codec.language.DoubleMetaphone:isDoubleMetaphoneEqual:[final String value1, final String value2, final boolean alternate]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.codec.language.DoubleMetaphone:isDoubleMetaphoneEqual:[final String value1, final String value2, final boolean alternate]:boolean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "22",
+            "245"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "21",
+            "244"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/codec/language/DoubleMetaphone.java b/src/main/java/org/apache/commons/codec/language/DoubleMetaphone.java\nindex 6ccd3f2..125503a 100644\n--- a/src/main/java/org/apache/commons/codec/language/DoubleMetaphone.java\n+++ b/src/main/java/org/apache/commons/codec/language/DoubleMetaphone.java\n@@ -19,7 +19,6 @@\n \n import org.apache.commons.codec.EncoderException;\n import org.apache.commons.codec.StringEncoder;\n-import org.apache.commons.codec.binary.StringUtils;\n \n /**\n  * Encodes a string into a double metaphone value. This Implementation is based on the algorithm by \u003cCITE\u003eLawrence\n@@ -242,7 +241,7 @@\n      *          {@code false} otherwise.\n      */\n     public boolean isDoubleMetaphoneEqual(final String value1, final String value2, final boolean alternate) {\n-        return StringUtils.equals(doubleMetaphone(value1, alternate), doubleMetaphone(value2, alternate));\n+        return doubleMetaphone(value1, alternate).equals(doubleMetaphone(value2, alternate));\n     }\n \n     /**\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [945,996]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: StringUtils [9008,9019]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [
+        "src/main/java/org/apache/commons/codec/binary/CharSequenceUtils.java"
+      ],
+      "num": 1
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.apache.commons.codec.binary.StringUtils:equals:[final CharSequence cs1, final CharSequence cs2]:boolean"
+      ],
+      "num": 1
+    }
+  }
+}

@@ -1,0 +1,149 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math3.optimization.direct.CMAESOptimizerTest::testFitAccuracyDependsOnBoundary",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math3.optimization.direct.CMAESOptimizer",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "18",
+  "workingDir": "../bugs/Math_18_tmp",
+  "bug_name": "Math_18",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math3.optimization.direct.CMAESOptimizerTest",
+      "test_function": "testFitAccuracyDependsOnBoundary",
+      "assertion_line": "477",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c11.100000000388787\u003e but was:\u003c8.0\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math3/optimization/direct/CMAESOptimizer.java",
+        "src/main/java/org/apache/commons/math3/optimization/direct/CMAESOptimizer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.optimization.direct.CMAESOptimizer\\$FitnessFunction:decode:[final double[] x]:double[]",
+            "org.apache.commons.math3.optimization.direct.CMAESOptimizer\\$FitnessFunction:encode:[final double[] x]:double[]",
+            "org.apache.commons.math3.optimization.direct.CMAESOptimizer\\$FitnessFunction:isFeasible:[final double[] x]:boolean"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.optimization.direct.CMAESOptimizer\\$FitnessFunction:encode:[final double[] x]:double[]",
+            "org.apache.commons.math3.optimization.direct.CMAESOptimizer\\$FitnessFunction:decode:[final double[] x]:double[]",
+            "org.apache.commons.math3.optimization.direct.CMAESOptimizer\\$FitnessFunction:isFeasible:[final double[] x]:boolean"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "932",
+            "958",
+            "990",
+            "991",
+            "994",
+            "997"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "932",
+            "958",
+            "992",
+            "995"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math3/optimization/direct/CMAESOptimizer.java b/src/main/java/org/apache/commons/math3/optimization/direct/CMAESOptimizer.java\nindex 866c8fd..bc754a5 100644\n--- a/src/main/java/org/apache/commons/math3/optimization/direct/CMAESOptimizer.java\n+++ b/src/main/java/org/apache/commons/math3/optimization/direct/CMAESOptimizer.java\n@@ -929,7 +929,7 @@\n             double[] res \u003d new double[x.length];\n             for (int i \u003d 0; i \u003c x.length; i++) {\n                 double diff \u003d boundaries[1][i] - boundaries[0][i];\n-                res[i] \u003d x[i] / diff;\n+                res[i] \u003d (x[i] - boundaries[0][i]) / diff;\n             }\n             return res;\n         }\n@@ -955,7 +955,7 @@\n             double[] res \u003d new double[x.length];\n             for (int i \u003d 0; i \u003c x.length; i++) {\n                 double diff \u003d boundaries[1][i] - boundaries[0][i];\n-                res[i] \u003d diff * x[i];\n+                res[i] \u003d diff * x[i] + boundaries[0][i];\n             }\n             return res;\n         }\n@@ -987,14 +987,12 @@\n                 return true;\n             }\n \n-            final double[] bLoEnc \u003d encode(boundaries[0]);\n-            final double[] bHiEnc \u003d encode(boundaries[1]);\n \n             for (int i \u003d 0; i \u003c x.length; i++) {\n-                if (x[i] \u003c bLoEnc[i]) {\n+                if (x[i] \u003c 0) {\n                     return false;\n                 }\n-                if (x[i] \u003e bHiEnc[i]) {\n+                if (x[i] \u003e 1.0) {\n                     return false;\n                 }\n             }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [40487,40529]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [41356,41396]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NumberLiteral: 0 [42476,42477]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NumberLiteral: 1.0 [42560,42563]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [40487,40508]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [41335,41356]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [42371,42417]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [42430,42476]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ArrayAccess [42554,42563]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ArrayAccess [42646,42655]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

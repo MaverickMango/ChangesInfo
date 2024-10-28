@@ -1,0 +1,247 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.dataformat.xml.misc.XmlTextTest::testMixedContent",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.dataformat.xml.deser.XmlTokenStream",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonXml",
+  "id": "2",
+  "workingDir": "../bugs/JacksonXml_2_tmp",
+  "bug_name": "JacksonXml_2",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.dataformat.xml.misc.XmlTextTest",
+      "test_function": "testMixedContent",
+      "assertion_line": "70",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c27\u003e but was:\u003c0\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/dataformat/xml/deser/XmlTokenStream.java",
+        "src/main/java/com/fasterxml/jackson/dataformat/xml/deser/XmlTokenStream.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.dataformat.xml.deser.XmlTokenStream:_next:[]:int",
+            "com.fasterxml.jackson.dataformat.xml.deser.XmlTokenStream:_allWs:[String str]:boolean"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.dataformat.xml.deser.XmlTokenStream:_collectUntilTag:[]:String",
+            "com.fasterxml.jackson.dataformat.xml.deser.XmlTokenStream:_next:[]:int"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "62",
+            "325",
+            "327",
+            "328",
+            "329",
+            "331",
+            "332",
+            "333",
+            "334",
+            "338",
+            "342",
+            "350",
+            "351",
+            "352",
+            "353",
+            "520",
+            "521",
+            "522",
+            "523",
+            "524",
+            "525",
+            "526",
+            "527",
+            "528",
+            "529",
+            "530",
+            "531"
+          ],
+          "num": 27
+        },
+        {
+          "qualified_names": [
+            "61",
+            "325",
+            "359",
+            "533"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/dataformat/xml/deser/XmlTokenStream.java b/src/main/java/com/fasterxml/jackson/dataformat/xml/deser/XmlTokenStream.java\nindex 5e03896..fe37ee9 100644\n--- a/src/main/java/com/fasterxml/jackson/dataformat/xml/deser/XmlTokenStream.java\n+++ b/src/main/java/com/fasterxml/jackson/dataformat/xml/deser/XmlTokenStream.java\n@@ -59,7 +59,6 @@\n      *\n      * @since 2.8\n      */\n-    protected boolean _mixedText;\n \n     /**\n      * Index of the next attribute of the current START_ELEMENT\n@@ -322,24 +321,15 @@\n             }\n             // otherwise need to find START/END_ELEMENT or text\n             String text \u003d _collectUntilTag();\n-            final boolean startElementNext \u003d _xmlReader.getEventType() \u003d\u003d XMLStreamReader.START_ELEMENT;\n             // If we have no/all-whitespace text followed by START_ELEMENT, ignore text\n-            if (startElementNext) {\n-                if (text \u003d\u003d null || _allWs(text)) {\n-                    _mixedText \u003d false;\n+            if (_xmlReader.getEventType() \u003d\u003d XMLStreamReader.START_ELEMENT) {\n                     return _initStartElement();\n-                }\n-                _mixedText \u003d true;\n-                _textValue \u003d text;\n-                return (_currentState \u003d XML_TEXT);\n             }\n             // For END_ELEMENT we will return text, if any\n             if (text !\u003d null) {\n-                _mixedText \u003d false;\n                 _textValue \u003d text;\n                 return (_currentState \u003d XML_TEXT);\n             }\n-            _mixedText \u003d false;\n             return _handleEndElement();\n \n         case XML_ATTRIBUTE_NAME:\n@@ -347,10 +337,6 @@\n             return (_currentState \u003d XML_ATTRIBUTE_VALUE);\n         case XML_TEXT:\n             // mixed text with other elements\n-            if (_mixedText){\n-                _mixedText \u003d false;\n-                return _initStartElement();\n-            }\n             // text followed by END_ELEMENT\n             return _handleEndElement();\n         case XML_END:\n@@ -517,18 +503,6 @@\n     }\n \n \n-    protected boolean _allWs(String str)\n-    {\n-        final int len \u003d (str \u003d\u003d null) ? 0 : str.length();\n-        if (len \u003e 0) {\n-            for (int i \u003d 0; i \u003c len; ++i) {\n-                if (str.charAt(i) \u003e \u0027 \u0027) {\n-                    return false;\n-                }\n-            }\n-        }\n-        return true;\n-    }\n     \n     // for DEBUGGING\n     @Override\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "QualifiedName: XMLStreamReader.START_ELEMENT [11295,11324]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [11266,11276]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [1789,1914]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: text [11445,11449]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NullLiteral [11453,11457]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [11445,11457]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: || [11458,11460]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_ARGUMENTS [11468,11472]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [11497,11516]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [11208,11300]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: startElementNext [11405,11421]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [11599,11617]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [11634,11652]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [11669,11703]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [11423,11717]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [11401,11717]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [11825,11844]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [11957,11976]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [12265,12375]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [18921,19234]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.dataformat.xml.deser.XmlTokenStream:_collectUntilTag:[]:String"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.dataformat.xml.deser.XmlTokenStream:_allWs:[String str]:boolean"
+      ],
+      "num": 1
+    }
+  }
+}

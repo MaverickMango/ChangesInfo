@@ -1,0 +1,766 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Closure",
+  "id": "133",
+  "workingDir": "../bugs/Closure_133_buggy",
+  "inducingCommit": "384daa779c874c449d86ec219de29cf45fd965db",
+  "originalCommit": "d7150bed74c04d079b496d897757556dc883ad68",
+  "bug_name": "Closure_133",
+  "derive": "defects4j",
+  "original_fixing_commit": "4fbbc47cb18f241b23dd2d4bf9c15d45b2473523",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java",
+        "src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "parse"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "parse"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "717",
+            "718",
+            "719",
+            "720",
+            "721",
+            "722",
+            "723",
+            "724",
+            "725",
+            "726",
+            "727",
+            "728",
+            "729",
+            "730",
+            "731",
+            "732",
+            "733",
+            "734",
+            "735",
+            "736",
+            "737",
+            "738",
+            "739",
+            "740",
+            "843",
+            "851",
+            "852",
+            "853",
+            "854",
+            "855",
+            "856",
+            "862",
+            "863",
+            "864",
+            "865",
+            "867",
+            "868",
+            "869",
+            "870",
+            "878",
+            "912",
+            "913",
+            "914",
+            "915",
+            "916",
+            "917",
+            "918"
+          ],
+          "num": 47
+        },
+        {
+          "qualified_names": [
+            "716",
+            "820",
+            "821",
+            "822",
+            "830",
+            "831",
+            "832",
+            "833",
+            "834",
+            "835",
+            "836",
+            "837",
+            "838",
+            "839",
+            "843",
+            "844",
+            "845",
+            "846",
+            "847",
+            "850",
+            "851",
+            "852",
+            "853",
+            "854",
+            "855",
+            "856",
+            "857",
+            "858",
+            "859",
+            "860",
+            "861",
+            "862",
+            "863",
+            "864",
+            "865",
+            "866",
+            "867",
+            "877",
+            "878",
+            "879",
+            "880",
+            "881",
+            "882",
+            "883",
+            "884",
+            "885",
+            "886",
+            "887",
+            "888",
+            "889",
+            "890",
+            "891",
+            "892",
+            "893",
+            "894",
+            "895",
+            "896",
+            "897",
+            "898",
+            "899",
+            "900",
+            "902",
+            "903",
+            "904",
+            "905"
+          ],
+          "num": 65
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java b/src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java\nindex 3bf7d47..4539ef5 100644\n--- a/src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java\n+++ b/src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java\n@@ -714,30 +714,6 @@\n                   token \u003d eatTokensUntilEOL();\n                   continue retry;\n \n-                case PRIVATE:\n-                  if (!jsdocBuilder.recordVisibility(Visibility.PRIVATE)) {\n-                    parser.addParserWarning(\"msg.jsdoc.visibility.private\",\n-                        stream.getLineno(), stream.getCharno());\n-                  }\n-                  token \u003d eatTokensUntilEOL();\n-                  continue retry;\n-\n-                case PROTECTED:\n-                  if (!jsdocBuilder.recordVisibility(Visibility.PROTECTED)) {\n-                    parser.addParserWarning(\"msg.jsdoc.visibility.protected\",\n-                        stream.getLineno(), stream.getCharno());\n-                  }\n-                  token \u003d eatTokensUntilEOL();\n-                  continue retry;\n-\n-                case PUBLIC:\n-                  if (!jsdocBuilder.recordVisibility(Visibility.PUBLIC)) {\n-                    parser.addParserWarning(\"msg.jsdoc.visibility.public\",\n-                        stream.getLineno(), stream.getCharno());\n-                  }\n-                  token \u003d eatTokensUntilEOL();\n-                  continue retry;\n-\n                 case NO_SHADOW:\n                   if (!jsdocBuilder.recordNoShadow()) {\n                     parser.addParserWarning(\"msg.jsdoc.noshadow\",\n@@ -841,6 +817,9 @@\n \n                 case DEFINE:\n                 case RETURN:\n+                case PRIVATE:\n+                case PROTECTED:\n+                case PUBLIC:\n                 case THIS:\n                 case TYPE:\n                 case TYPEDEF:\n@@ -848,26 +827,45 @@\n                   charno \u003d stream.getCharno();\n \n                   Node typeNode \u003d null;\n-                  if (!lookAheadForTypeAnnotation() \u0026\u0026\n-                      annotation \u003d\u003d Annotation.RETURN) {\n-                    // If RETURN doesn\u0027t have a type annotation, record\n-                    // it as the unknown type.\n-                    typeNode \u003d newNode(Token.QMARK);\n-                  } else {\n+                  boolean hasType \u003d lookAheadForTypeAnnotation();\n+                  boolean isVisibilityAnnotation \u003d\n+                      (annotation \u003d\u003d Annotation.PRIVATE ||\n+                       annotation \u003d\u003d Annotation.PROTECTED ||\n+                       annotation \u003d\u003d Annotation.PUBLIC);\n+                  boolean canSkipTypeAnnotation \u003d\n+                      (isVisibilityAnnotation ||\n+                       annotation \u003d\u003d Annotation.RETURN);\n+                  type \u003d null;\n+                  if (hasType || !canSkipTypeAnnotation) {\n                     skipEOLs();\n                     token \u003d next();\n                     typeNode \u003d parseAndRecordTypeNode(token);\n+\n+                    if (annotation \u003d\u003d Annotation.THIS) {\n+                      typeNode \u003d wrapNode(Token.BANG, typeNode);\n+                    }\n+                    type \u003d createJSTypeExpression(typeNode);\n                   }\n \n-                  if (annotation \u003d\u003d Annotation.THIS) {\n-                    typeNode \u003d wrapNode(Token.BANG, typeNode);\n-                  }\n-                  type \u003d createJSTypeExpression(typeNode);\n+                  // The error was reported during recursive descent\n+                  // recovering parsing\n+                  boolean hasError \u003d type \u003d\u003d null \u0026\u0026 !canSkipTypeAnnotation;\n+                  if (!hasError) {\n+                    // Record types for @type.\n+                    // If the @private, @protected, or @public annotations\n+                    // have a type attached, pretend that they actually wrote:\n+                    // @type {type}\\n@private\n+                    // This will have some weird behavior in some cases\n+                    // (for example, @private can now be used as a type-cast),\n+                    // but should be mostly OK.\n+                    if ((type !\u003d null \u0026\u0026 isVisibilityAnnotation)\n+                        || annotation \u003d\u003d Annotation.TYPE) {\n+                      if (!jsdocBuilder.recordType(type)) {\n+                        parser.addTypeWarning(\n+                            \"msg.jsdoc.incompat.type\", lineno, charno);\n+                      }\n+                    }\n \n-                  if (type \u003d\u003d null) {\n-                    // error reported during recursive descent\n-                    // recovering parsing\n-                  } else {\n                     switch (annotation) {\n                       case DEFINE:\n                         if (!jsdocBuilder.recordDefineType(type)) {\n@@ -876,7 +874,35 @@\n                         }\n                         break;\n \n+                      case PRIVATE:\n+                        if (!jsdocBuilder.recordVisibility(Visibility.PRIVATE)) {\n+                          parser.addParserWarning(\n+                              \"msg.jsdoc.visibility.private\",\n+                              lineno, charno);\n+                        }\n+                        break;\n+\n+                      case PROTECTED:\n+                        if (!jsdocBuilder.recordVisibility(Visibility.PROTECTED)) {\n+                          parser.addParserWarning(\n+                              \"msg.jsdoc.visibility.protected\",\n+                              lineno, charno);\n+                        }\n+                        break;\n+\n+                      case PUBLIC:\n+                        if (!jsdocBuilder.recordVisibility(Visibility.PUBLIC)) {\n+                          parser.addParserWarning(\n+                              \"msg.jsdoc.visibility.public\",\n+                              lineno, charno);\n+                        }\n+                        break;\n+\n                       case RETURN:\n+                        if (type \u003d\u003d null) {\n+                          type \u003d createJSTypeExpression(newNode(Token.QMARK));\n+                        }\n+\n                         if (!jsdocBuilder.recordReturnType(type)) {\n                           parser.addTypeWarning(\n                               \"msg.jsdoc.incompat.type\", lineno, charno);\n@@ -909,13 +935,6 @@\n                         }\n                         break;\n \n-                      case TYPE:\n-                        if (!jsdocBuilder.recordType(type)) {\n-                          parser.addTypeWarning(\n-                              \"msg.jsdoc.incompat.type\", lineno, charno);\n-                        }\n-                        break;\n-\n                       case TYPEDEF:\n                         if (!jsdocBuilder.recordTypedef(type)) {\n                           parser.addTypeWarning(\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [31852,31899]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [31918,32127]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [32146,32283]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [32302,32314]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [32333,32729]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [32858,32916]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [32935,36944]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrimitiveType: boolean [32146,32153]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [32154,32282]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [32337,32370]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrimitiveType: boolean [32858,32865]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [32866,32915]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PrefixExpression [32939,32948]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: canSkipTypeAnnotation [32154,32175]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ParenthesizedExpression [32200,32282]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: hasError [32866,32874]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [32877,32915]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [33418,33747]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [32201,32281]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [32890,32892]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PrefixExpression [32893,32915]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [33422,33519]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [33521,33747]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "BreakStatement [34397,34403]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SwitchCase [34427,34442]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SwitchCase [34769,34781]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [35139,35263]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "BreakStatement [36896,36902]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: isVisibilityAnnotation [32201,32223]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: || [32224,32226]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: lineno [34330,34336]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: charno [34338,34344]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: lineno [34672,34678]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: charno [34680,34686]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: lineno [35005,35011]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: charno [35013,35019]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [31753,31781]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [27540,27558]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [27560,27578]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [27895,27913]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [27915,27933]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [28241,28259]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [28261,28279]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "PrefixExpression [32815,32844]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [32845,32847]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [32815,32901]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [32903,33096]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [32811,33253]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [33489,33615]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [33471,35933]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [35953,35981]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ContinueStatement [36742,36757]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ContinueStatement [36897,36912]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [36989,37017]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ContinueStatement [37030,37045]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/Token.java",
+        "src/com/google/javascript/rhino/Token.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "name"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "name"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "245",
+            "281"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "244",
+            "281",
+            "282",
+            "283"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/Token.java b/src/com/google/javascript/rhino/Token.java\nindex 41491b7..a4e6f2c 100644\n--- a/src/com/google/javascript/rhino/Token.java\n+++ b/src/com/google/javascript/rhino/Token.java\n@@ -242,7 +242,6 @@\n           case ASSIGN_DIV:      return \"ASSIGN_DIV\";\n           case ASSIGN_MOD:      return \"ASSIGN_MOD\";\n           case HOOK:            return \"HOOK\";\n-          case COLON:           return \"COLON\";\n           case OR:              return \"OR\";\n           case AND:             return \"AND\";\n           case INC:             return \"INC\";\n@@ -279,6 +278,9 @@\n           case BANG:            return \"BANG\";\n           case VOID:            return \"VOID\";\n           case EQUALS:          return \"EQUALS\";\n+          case LB:              return \"LB\";\n+          case LC:              return \"LC\";\n+          case COLON:           return \"COLON\";\n         }\n \n         // Token without name\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SwitchCase [10844,10852]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [10866,10878]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SwitchCase [10889,10897]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [10911,10923]"
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.CrossModuleMethodMotionTest",
+      "test_function": "testTwoMethods",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.CrossModuleMethodMotionTest",
+      "test_function": "testClosureVariableReads3",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

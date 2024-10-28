@@ -1,0 +1,117 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.csv.CSVFormatTest::testDuplicateHeaderElements",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.csv.CSVFormat",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Csv",
+  "id": "8",
+  "workingDir": "../bugs/Csv_8_tmp",
+  "bug_name": "Csv_8",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.csv.CSVFormatTest",
+      "test_function": "testDuplicateHeaderElements",
+      "assertion_line": "66",
+      "exception": "java.lang.Exception",
+      "message": "Unexpected exception, expected\u003cjava.lang.IllegalArgumentException\u003e but was\u003cjava.lang.IllegalStateException\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/csv/CSVFormat.java",
+        "src/main/java/org/apache/commons/csv/CSVFormat.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.csv.CSVFormat:validate:[]:void",
+            "org.apache.commons.csv.CSVFormat:CSVFormat:[final char delimiter, final Character quoteChar, final Quote quotePolicy, final Character commentStart, final Character escape, final boolean ignoreSurroundingSpaces, final boolean ignoreEmptyLines, final String recordSeparator, final String nullString, final String[] header, final boolean skipHeaderRecord]:null"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.csv.CSVFormat:CSVFormat:[final char delimiter, final Character quoteChar, final Quote quotePolicy, final Character commentStart, final Character escape, final boolean ignoreSurroundingSpaces, final boolean ignoreEmptyLines, final String recordSeparator, final String nullString, final String[] header, final boolean skipHeaderRecord]:null",
+            "org.apache.commons.csv.CSVFormat:validate:[]:void"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "316",
+            "317",
+            "318",
+            "319",
+            "320",
+            "321",
+            "670"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "315",
+            "665",
+            "666",
+            "667",
+            "668",
+            "669",
+            "670",
+            "671"
+          ],
+          "num": 8
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/csv/CSVFormat.java b/src/main/java/org/apache/commons/csv/CSVFormat.java\nindex 772aaf0..22130bf 100644\n--- a/src/main/java/org/apache/commons/csv/CSVFormat.java\n+++ b/src/main/java/org/apache/commons/csv/CSVFormat.java\n@@ -313,12 +313,6 @@\n         if (header \u003d\u003d null) {\n         \tthis.header \u003d null;\n         } else {\n-        \tSet\u003cString\u003e dupCheck \u003d new HashSet\u003cString\u003e();\n-        \tfor(String hdr : header) {\n-        \t\tif (!dupCheck.add(hdr)) {\n-        \t\t\tthrow new IllegalArgumentException(\"The header contains a duplicate entry: \u0027\" + hdr + \"\u0027 in \" + Arrays.toString(header));\n-        \t\t}\n-        \t}\n             this.header \u003d header.clone();        \t\n         }\n         this.skipHeaderRecord \u003d skipHeaderRecord;\n@@ -668,6 +662,13 @@\n             throw new IllegalStateException(\"No quotes mode set but no escape character is set\");\n         }\n \n+        if (header !\u003d null) {\n+            final Set\u003cString\u003e set \u003d new HashSet\u003cString\u003e(header.length);\n+            set.addAll(Arrays.asList(header));\n+            if (set.size() !\u003d header.length) {\n+                throw new IllegalStateException(\"The header contains duplicate names: \" + Arrays.toString(header));\n+            }\n+        }\n     }\n \n     /**\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [21645,21972]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [10875,10920]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "EnhancedForStatement [10930,11148]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

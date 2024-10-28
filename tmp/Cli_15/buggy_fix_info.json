@@ -1,0 +1,156 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.cli2.bug.BugCLI158Test::testSingleOptionSingleArgument,org.apache.commons.cli2.bug.BugCLI158Test::testSingleOptionMaximumNumberOfArgument",
+    "test.dir": "src/test",
+    "clz.modified": "org.apache.commons.cli2.commandline.WriteableCommandLineImpl",
+    "src.dir": "src/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Cli",
+  "id": "15",
+  "workingDir": "../bugs/Cli_15_tmp",
+  "bug_name": "Cli_15",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.cli2.bug.BugCLI158Test",
+      "test_function": "testSingleOptionSingleArgument",
+      "assertion_line": "70",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c[1[, 1000]]\u003e but was:\u003c[1[]]\u003e"
+    },
+    {
+      "test_class": "org.apache.commons.cli2.bug.BugCLI158Test",
+      "test_function": "testSingleOptionMaximumNumberOfArgument",
+      "assertion_line": "112",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c[1, 2[, 10000]]\u003e but was:\u003c[1, 2[]]\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/cli2/commandline/WriteableCommandLineImpl.java",
+        "src/java/org/apache/commons/cli2/commandline/WriteableCommandLineImpl.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.cli2.commandline.WriteableCommandLineImpl:getValues:[final Option option, List defaultValues]:List"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.cli2.commandline.WriteableCommandLineImpl:getValues:[final Option option, List defaultValues]:List"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "117",
+            "118",
+            "122",
+            "123",
+            "124",
+            "125",
+            "128",
+            "130",
+            "131",
+            "132",
+            "133",
+            "134",
+            "135",
+            "136"
+          ],
+          "num": 14
+        },
+        {
+          "qualified_names": [
+            "117",
+            "118",
+            "122",
+            "123",
+            "124"
+          ],
+          "num": 5
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/cli2/commandline/WriteableCommandLineImpl.java b/src/java/org/apache/commons/cli2/commandline/WriteableCommandLineImpl.java\nindex 319f8c2..3ca952d 100644\n--- a/src/java/org/apache/commons/cli2/commandline/WriteableCommandLineImpl.java\n+++ b/src/java/org/apache/commons/cli2/commandline/WriteableCommandLineImpl.java\n@@ -114,26 +114,17 @@\n         List valueList \u003d (List) values.get(option);\n \n         // grab the correct default values\n-        if (defaultValues \u003d\u003d null || defaultValues.isEmpty()) {\n-            defaultValues \u003d (List) this.defaultValues.get(option);\n+        if ((valueList \u003d\u003d null) || valueList.isEmpty()) {\n+            valueList \u003d defaultValues;\n         }\n \n         // augment the list with the default values\n-        if (defaultValues !\u003d null \u0026\u0026 !defaultValues.isEmpty()) {\n-            if (valueList \u003d\u003d null || valueList.isEmpty()) {\n-                valueList \u003d defaultValues;\n-            } else {\n+        if ((valueList \u003d\u003d null) || valueList.isEmpty()) {\n+            valueList \u003d (List) this.defaultValues.get(option);\n+        }\n                 // if there are more default values as specified, add them to\n                 // the list.\n-                if (defaultValues.size() \u003e valueList.size()) {\n                     // copy the list first\n-                    valueList \u003d new ArrayList(valueList);\n-                    for (int i\u003dvalueList.size(); i\u003cdefaultValues.size(); i++) {\n-                        valueList.add(defaultValues.get(i));\n-                    }\n-                }\n-            }\n-        }\n         \n         return valueList \u003d\u003d null ? Collections.EMPTY_LIST : valueList;\n     }\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [4271,4393]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ParenthesizedExpression [4115,4134]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [4484,4951]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [4111,4243]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [4309,4358]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [4360,4961]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [4305,4961]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

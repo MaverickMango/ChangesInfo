@@ -1,0 +1,554 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "/home/liumengjiao/Desktop/CI/Benchmark/data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.compress.archivers.ArchiveOutputStreamTest::testFinish",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.compress.archivers.tar.TarArchiveOutputStream",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Compress",
+  "id": "3",
+  "workingDir": "../bugs/Compress_3_buggy",
+  "buggyCommit": "ddbd61f0e75b7d98873b9a9bf6398218edcfd17b",
+  "inducingCommit": "6dfdfb5ddb465252644c6f80e6b13abfd211ef29",
+  "originalCommit": "3608991616066c9c6dab1d19ca5591dc41a1360a",
+  "bug_name": "Compress_3",
+  "derive": "defects4j",
+  "original_fixing_commit": "d170f34fa65e19b604f5a9e04e6ed5f81d35658c",
+  "buildFiles_changed": true,
+  "regression": true,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/compress/archivers/ArchiveOutputStream.java",
+        "src/main/java/org/apache/commons/compress/archivers/ArchiveOutputStream.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.ArchiveOutputStream:closeArchiveEntry:[]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.ArchiveOutputStream:finish:[]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "29",
+            "57"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "30",
+            "31",
+            "32",
+            "33",
+            "34",
+            "35",
+            "36",
+            "37",
+            "38",
+            "39",
+            "40",
+            "41",
+            "42",
+            "43",
+            "47",
+            "73",
+            "74",
+            "75",
+            "76",
+            "77",
+            "78",
+            "79"
+          ],
+          "num": 22
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/compress/archivers/ArchiveOutputStream.java b/src/main/java/org/apache/commons/compress/archivers/ArchiveOutputStream.java\nindex 1729c80..2cad89d 100644\n--- a/src/main/java/org/apache/commons/compress/archivers/ArchiveOutputStream.java\n+++ b/src/main/java/org/apache/commons/compress/archivers/ArchiveOutputStream.java\n@@ -27,9 +27,24 @@\n  * {@link #write(byte[], int, int)} method to improve performance.\n  * They should also override {@link #close()} to ensure that any necessary\n  * trailers are added.\n+ * \n+ * \u003cp\u003e\n+ * The normal sequence of calls for working with ArchiveOutputStreams is:\n+ * + create ArchiveOutputStream object\n+ * + write SFX header (optional, Zip only)\n+ * + repeat as needed:\n+ *      - putArchiveEntry() (writes entry header)\n+ *      - write() (writes entry data)\n+ *      - closeArchiveEntry() (closes entry)\n+ * + finish() (ends the addition of entries)\n+ * + write additional data if format supports it (optional)\n+ * + close()\n+ * \u003c/p\u003e\n+ * \n  * \u003cp\u003e\n  * Example usage:\u003cbr/\u003e\n  * TBA\n+ * \u003c/p\u003e\n  */\n public abstract class ArchiveOutputStream extends OutputStream {\n     \n@@ -55,6 +70,13 @@\n      * @throws IOException\n      */\n     public abstract void closeArchiveEntry() throws IOException;\n+    \n+    /**\n+     * Finishes the addition of entries to this stream, without closing it.\n+     * Additional data can be written, if the format supports it.\n+     * @throws IOException\n+     */\n+    public abstract void finish() throws IOException;\n \n     /**\n      * Create an archive entry using the inputFile and entryName provided.\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [2535,2769]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003cp\u003e [1179,1182]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: The normal sequence of calls for working with ArchiveOutputStreams is: [1186,1256]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: + create ArchiveOutputStream object [1260,1295]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: + write SFX header (optional, Zip only) [1299,1338]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: + repeat as needed: [1342,1361]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: - putArchiveEntry() (writes entry header) [1370,1411]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: - write() (writes entry data) [1420,1449]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: - closeArchiveEntry() (closes entry) [1458,1494]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: + finish() (ends the addition of entries) [1498,1539]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: + write additional data if format supports it (optional) [1543,1599]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: + close() [1603,1612]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003c/p\u003e [1616,1620]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003c/p\u003e [1665,1669]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/compress/archivers/ar/ArArchiveOutputStream.java",
+        "src/main/java/org/apache/commons/compress/archivers/ar/ArArchiveOutputStream.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.ar.ArArchiveOutputStream:finish:[]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "165"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "166",
+            "167",
+            "168",
+            "169",
+            "170",
+            "171"
+          ],
+          "num": 6
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/compress/archivers/ar/ArArchiveOutputStream.java b/src/main/java/org/apache/commons/compress/archivers/ar/ArArchiveOutputStream.java\nindex ee7ecee..8a48da5 100644\n--- a/src/main/java/org/apache/commons/compress/archivers/ar/ArArchiveOutputStream.java\n+++ b/src/main/java/org/apache/commons/compress/archivers/ar/ArArchiveOutputStream.java\n@@ -163,4 +163,10 @@\n         return new ArArchiveEntry(inputFile, entryName);\n     }\n \n+    /* (non-Javadoc)\n+     * @see org.apache.commons.compress.archivers.ArchiveOutputStream#finish()\n+     */\n+    public void finish() throws IOException {\n+        // Nothing to do\n+    }\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [5209,5281]"
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.apache.commons.compress.archivers.ArchiveOutputStream:finish:[]:void",
+        "org.apache.commons.compress.archivers.ar.ArArchiveOutputStream:finish:[]:void"
+      ],
+      "num": 2
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.apache.commons.compress.archivers.ArchiveOutputStream:closeArchiveEntry:[]:void"
+      ],
+      "num": 1
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.compress.archivers.ArchiveOutputStreamTest",
+      "test_function": "testFinish",
+      "assertion_line": "67",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "After putArchive should follow closeArchive"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/compress/archivers/ArchiveOutputStream.java",
+        "src/main/java/org/apache/commons/compress/archivers/ArchiveOutputStream.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.ArchiveOutputStream:finish:[]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.ArchiveOutputStream:finish:[]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "76"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "77",
+            "78",
+            "79"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/compress/archivers/ArchiveOutputStream.java b/src/main/java/org/apache/commons/compress/archivers/ArchiveOutputStream.java\nindex 2cad89d..1d6e78e 100644\n--- a/src/main/java/org/apache/commons/compress/archivers/ArchiveOutputStream.java\n+++ b/src/main/java/org/apache/commons/compress/archivers/ArchiveOutputStream.java\n@@ -74,6 +74,9 @@\n     /**\n      * Finishes the addition of entries to this stream, without closing it.\n      * Additional data can be written, if the format supports it.\n+     * \n+     * The finish() method throws an Exception if the user forgets to close the entry\n+     * .\n      * @throws IOException\n      */\n     public abstract void finish() throws IOException;\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: The finish() method throws an Exception if the user forgets to close the entry [2696,2774]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: . [2782,2783]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/compress/archivers/ar/ArArchiveOutputStream.java",
+        "src/main/java/org/apache/commons/compress/archivers/ar/ArArchiveOutputStream.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.ar.ArArchiveOutputStream:finish:[]:void",
+            "org.apache.commons.compress.archivers.ar.ArArchiveOutputStream:close:[]:void"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.ar.ArArchiveOutputStream:finish:[]:void",
+            "org.apache.commons.compress.archivers.ar.ArArchiveOutputStream:close:[]:void"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "156",
+            "170"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "155",
+            "169",
+            "170",
+            "171"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/compress/archivers/ar/ArArchiveOutputStream.java b/src/main/java/org/apache/commons/compress/archivers/ar/ArArchiveOutputStream.java\nindex 8a48da5..de1a87c 100644\n--- a/src/main/java/org/apache/commons/compress/archivers/ar/ArArchiveOutputStream.java\n+++ b/src/main/java/org/apache/commons/compress/archivers/ar/ArArchiveOutputStream.java\n@@ -153,7 +153,6 @@\n     }\n \n     public void close() throws IOException {\n-        closeArchiveEntry();\n         out.close();\n         prevEntry \u003d null;\n     }\n@@ -167,6 +166,8 @@\n      * @see org.apache.commons.compress.archivers.ArchiveOutputStream#finish()\n      */\n     public void finish() throws IOException {\n-        // Nothing to do\n+        if(haveUnclosedEntry) {\n+            throw new IOException(\"This archives contains unclosed entries.\");\n+        }\n     }\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [5230,5342]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [4848,4868]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/compress/archivers/cpio/CpioArchiveOutputStream.java",
+        "src/main/java/org/apache/commons/compress/archivers/cpio/CpioArchiveOutputStream.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.cpio.CpioArchiveOutputStream:finish:[]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.cpio.CpioArchiveOutputStream:finish:[]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "318"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "318"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/compress/archivers/cpio/CpioArchiveOutputStream.java b/src/main/java/org/apache/commons/compress/archivers/cpio/CpioArchiveOutputStream.java\nindex b9b1ead..3641ab6 100644\n--- a/src/main/java/org/apache/commons/compress/archivers/cpio/CpioArchiveOutputStream.java\n+++ b/src/main/java/org/apache/commons/compress/archivers/cpio/CpioArchiveOutputStream.java\n@@ -315,7 +315,7 @@\n             return;\n         }\n         if (this.entry !\u003d null) {\n-            closeArchiveEntry();\n+            throw new IOException(\"This archives contains unclosed entries.\");\n         }\n         this.entry \u003d new CpioArchiveEntry(this.entryFormat);\n         this.entry.setName(CPIO_TRAILER);\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ThrowStatement [11199,11265]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [11199,11219]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/compress/archivers/tar/TarArchiveOutputStream.java",
+        "src/main/java/org/apache/commons/compress/archivers/tar/TarArchiveOutputStream.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.tar.TarArchiveOutputStream:finish:[]:void",
+            "org.apache.commons.compress.archivers.tar.TarArchiveOutputStream:closeArchiveEntry:[]:void",
+            "org.apache.commons.compress.archivers.tar.TarArchiveOutputStream:putArchiveEntry:[ArchiveEntry archiveEntry]:void"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.tar.TarArchiveOutputStream:putArchiveEntry:[ArchiveEntry archiveEntry]:void",
+            "org.apache.commons.compress.archivers.tar.TarArchiveOutputStream:closeArchiveEntry:[]:void",
+            "org.apache.commons.compress.archivers.tar.TarArchiveOutputStream:finish:[]:void"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "53",
+            "109",
+            "184",
+            "214"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "54",
+            "55",
+            "56",
+            "113",
+            "114",
+            "115",
+            "191",
+            "222"
+          ],
+          "num": 8
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/compress/archivers/tar/TarArchiveOutputStream.java b/src/main/java/org/apache/commons/compress/archivers/tar/TarArchiveOutputStream.java\nindex 1d9e5c5..2dc3b26 100644\n--- a/src/main/java/org/apache/commons/compress/archivers/tar/TarArchiveOutputStream.java\n+++ b/src/main/java/org/apache/commons/compress/archivers/tar/TarArchiveOutputStream.java\n@@ -51,6 +51,9 @@\n \n     private boolean closed \u003d false;\n \n+    /* Indicates if putArchiveEntry has been called without closeArchiveEntry */\n+    private boolean haveUnclosedEntry \u003d false;\n+    \n     private final OutputStream out;\n \n     /**\n@@ -107,6 +110,9 @@\n      * @throws IOException on error\n      */\n     public void finish() throws IOException {\n+        if(haveUnclosedEntry) {\n+            throw new IOException(\"This archives contains unclosed entries.\");\n+        }\n         writeEOFRecord();\n         writeEOFRecord();\n     }\n@@ -182,6 +188,7 @@\n             currSize \u003d entry.getSize();\n         }\n         currName \u003d entry.getName();\n+        haveUnclosedEntry \u003d true;\n     }\n \n     /**\n@@ -212,6 +219,7 @@\n                                   + \"\u0027 before the \u0027\" + currSize\n                                   + \"\u0027 bytes specified in the header were written\");\n         }\n+        haveUnclosedEntry \u003d false;\n     }\n \n     /**\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [2105,2147]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [3990,4102]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [6953,6978]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [8072,8098]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveOutputStream.java",
+        "src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveOutputStream.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream:finish:[]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream:finish:[]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "331",
+            "332",
+            "333",
+            "334",
+            "337"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "331",
+            "332",
+            "335",
+            "336",
+            "337",
+            "338"
+          ],
+          "num": 6
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveOutputStream.java b/src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveOutputStream.java\nindex cb8a203..645d3af 100644\n--- a/src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveOutputStream.java\n+++ b/src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveOutputStream.java\n@@ -328,13 +328,14 @@\n         fallbackToUTF8 \u003d b;\n     }\n \n-    /**\n-     * Finishs writing the contents and closes this as well as the\n-     * underlying stream.\n-     * @throws IOException on error\n+    /* (non-Javadoc)\n+     * @see org.apache.commons.compress.archivers.ArchiveOutputStream#finish()\n      */\n     public void finish() throws IOException {\n-        closeArchiveEntry();\n+        if(entry !\u003d null) {\n+            throw new IOException(\"This archives contains unclosed entries.\");\n+        }\n+        \n         cdOffset \u003d written;\n         for (Iterator i \u003d entries.iterator(); i.hasNext(); ) {\n             writeCentralFileHeader((ZipArchiveEntry) i.next());\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [9866,9974]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "Javadoc [9708,9848]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [9903,9923]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "patch_changed_mths": {
+    "qualified_names": [
+      "org.apache.commons.compress.archivers.ArchiveOutputStream:finish()V",
+      "org.apache.commons.compress.archivers.ar.ArArchiveOutputStream:close()V:regression",
+      "org.apache.commons.compress.archivers.ar.ArArchiveOutputStream:finish()V:regression",
+      "org.apache.commons.compress.archivers.cpio.CpioArchiveOutputStream:finish()V:regression",
+      "org.apache.commons.compress.archivers.tar.TarArchiveOutputStream:finish()V:regression",
+      "org.apache.commons.compress.archivers.tar.TarArchiveOutputStream:closeArchiveEntry()V:regression",
+      "org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream:finish()V:regression"
+    ],
+    "num": 7
+  }
+}

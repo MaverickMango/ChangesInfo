@@ -1,0 +1,188 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.deser.exc.ExceptionPathTest::testReferenceChainForInnerClass,com.fasterxml.jackson.databind.deser.exc.TestExceptionHandlingWithDefaultDeserialization::testShouldThrowJsonMappingExceptionWithPathReference,com.fasterxml.jackson.databind.deser.exc.TestExceptionHandlingWithJsonCreatorDeserialization::testShouldThrowJsonMappingExceptionWithPathReference",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.JsonMappingException",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "63",
+  "workingDir": "../bugs/JacksonDatabind_63_tmp",
+  "bug_name": "JacksonDatabind_63",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.deser.exc.ExceptionPathTest",
+      "test_function": "testReferenceChainForInnerClass",
+      "assertion_line": "37",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c....databind.deser.exc.[ExceptionPathTest$]Outer[\"inner\"]\u003e but was:\u003c....databind.deser.exc.[]Outer[\"inner\"]\u003e"
+    },
+    {
+      "test_class": "com.fasterxml.jackson.databind.deser.exc.TestExceptionHandlingWithDefaultDeserialization",
+      "test_function": "testShouldThrowJsonMappingExceptionWithPathReference",
+      "assertion_line": "53",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c....databind.deser.exc.[TestExceptionHandlingWithDefaultDeserialization$Foo[\"bar\"]-\u003ecom.fasterxml.jackson.databind.deser.exc.TestExceptionHandlingWithDefaultDeserialization$]Bar[\"baz\"]\u003e but was:\u003c....databind.deser.exc.[Foo[\"bar\"]-\u003ecom.fasterxml.jackson.databind.deser.exc.]Bar[\"baz\"]\u003e"
+    },
+    {
+      "test_class": "com.fasterxml.jackson.databind.deser.exc.TestExceptionHandlingWithJsonCreatorDeserialization",
+      "test_function": "testShouldThrowJsonMappingExceptionWithPathReference",
+      "assertion_line": "64",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c....databind.deser.exc.[TestExceptionHandlingWithJsonCreatorDeserialization$Foo[\"bar\"]-\u003ecom.fasterxml.jackson.databind.deser.exc.TestExceptionHandlingWithJsonCreatorDeserialization$]Bar[\"baz\"]\u003e but was:\u003c....databind.deser.exc.[Foo[\"bar\"]-\u003ecom.fasterxml.jackson.databind.deser.exc.]Bar[\"baz\"]\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/JsonMappingException.java",
+        "src/main/java/com/fasterxml/jackson/databind/JsonMappingException.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.JsonMappingException\\$Reference:getDescription:[]:String"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.JsonMappingException\\$Reference:getDescription:[]:String"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "9",
+            "130",
+            "131",
+            "132",
+            "133",
+            "134",
+            "135",
+            "136",
+            "137",
+            "138",
+            "139",
+            "145"
+          ],
+          "num": 12
+        },
+        {
+          "qualified_names": [
+            "10",
+            "136"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/JsonMappingException.java b/src/main/java/com/fasterxml/jackson/databind/JsonMappingException.java\nindex 00896ea..e8bd1e2 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/JsonMappingException.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/JsonMappingException.java\n@@ -7,6 +7,7 @@\n \n import com.fasterxml.jackson.annotation.JsonIgnore;\n import com.fasterxml.jackson.core.*;\n+import com.fasterxml.jackson.databind.util.ClassUtil;\n \n /**\n  * Checked exception used to signal fatal problems with mapping of\n@@ -127,22 +128,12 @@\n                     // butt-ugly for arrays.\n                     // 06-Oct-2016, tatu: as per [databind#1403], `getSimpleName()` not so good\n                     //   as it drops enclosing class. So let\u0027s try bit different approach\n-                    int arrays \u003d 0;\n-                    while (cls.isArray()) {\n-                        cls \u003d cls.getComponentType();\n-                        ++arrays;\n-                    }\n-                    sb.append(cls.getName());\n-                    while (--arrays \u003e\u003d 0) {\n-                        sb.append(\"[]\");\n-                    }\n-                    /* was:\n                     String pkgName \u003d ClassUtil.getPackageName(cls);\n                     if (pkgName !\u003d null) {\n                         sb.append(pkgName);\n                         sb.append(\u0027.\u0027);\n                     }\n-                    */\n+                    sb.append(cls.getSimpleName());\n                 }\n                 sb.append(\u0027[\u0027);\n                 if (_fieldName !\u003d null) {\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [234,287]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [4938,4985]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [5006,5134]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [5155,5186]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [5010,5025]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: pkgName [5063,5070]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "CharacterLiteral: \u0027.\u0027 [5107,5110]"
+        },
+        {
+          "type": "delete-node",
+          "from": "StringLiteral: \"[]\" [5178,5182]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [5084,5097]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [4884,4899]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "WhileStatement [4920,5053]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [5127,5140]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "WhileStatement [5120,5206]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

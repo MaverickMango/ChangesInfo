@@ -1,0 +1,206 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.core.json.RawValueWithSurrogatesTest::testRawWithSurrogatesString",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.core.json.UTF8JsonGenerator",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonCore",
+  "id": "17",
+  "workingDir": "../bugs/JacksonCore_17_tmp",
+  "bug_name": "JacksonCore_17",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.core.json.RawValueWithSurrogatesTest",
+      "test_function": "testRawWithSurrogatesString",
+      "assertion_line": "54",
+      "exception": "com.fasterxml.jackson.core.JsonGenerationException",
+      "message": "Split surrogate on writeRaw() input (last character)"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/core/json/UTF8JsonGenerator.java",
+        "src/main/java/com/fasterxml/jackson/core/json/UTF8JsonGenerator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.json.UTF8JsonGenerator:_outputRawMultiByteChar:[int ch, char[] cbuf, int inputOffset, int inputEnd]:int",
+            "com.fasterxml.jackson.core.json.UTF8JsonGenerator:_writeRawSegment:[char[] cbuf, int offset, int end]:void",
+            "com.fasterxml.jackson.core.json.UTF8JsonGenerator:writeRaw:[String text, int offset, int len]:void"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.json.UTF8JsonGenerator:_outputRawMultiByteChar:[int ch, char[] cbuf, int inputOffset, int inputEnd]:int",
+            "com.fasterxml.jackson.core.json.UTF8JsonGenerator:writeRaw:[String text, int offset, int len]:void",
+            "com.fasterxml.jackson.core.json.UTF8JsonGenerator:writeBinary:[Base64Variant b64variant, InputStream data, int dataLength]:int"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "528",
+            "529",
+            "530",
+            "531",
+            "532",
+            "537",
+            "538",
+            "541",
+            "543",
+            "544",
+            "545",
+            "548",
+            "549",
+            "550",
+            "551",
+            "552",
+            "553",
+            "554",
+            "688",
+            "689",
+            "690",
+            "691",
+            "692",
+            "693",
+            "694",
+            "695",
+            "696",
+            "697",
+            "698",
+            "699",
+            "700",
+            "701",
+            "702",
+            "703",
+            "704",
+            "705",
+            "706",
+            "707",
+            "708",
+            "709",
+            "710",
+            "711",
+            "1927",
+            "1928"
+          ],
+          "num": 44
+        },
+        {
+          "qualified_names": [
+            "534",
+            "536",
+            "703",
+            "1887"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/core/json/UTF8JsonGenerator.java b/src/main/java/com/fasterxml/jackson/core/json/UTF8JsonGenerator.java\nindex a638519..4f4394c 100644\n--- a/src/main/java/com/fasterxml/jackson/core/json/UTF8JsonGenerator.java\n+++ b/src/main/java/com/fasterxml/jackson/core/json/UTF8JsonGenerator.java\n@@ -525,33 +525,17 @@\n         final char[] buf \u003d _charBuffer;\n \n         // minor optimization: see if we can just get and copy\n-        if (len \u003c\u003d buf.length) {\n-            text.getChars(offset, offset+len, buf, 0);\n-            _writeRawSegment(buf, 0, len);\n-            return;\n-        }\n \n         // If not, need segmented approach. For speed, let\u0027s also use input buffer\n         // size that is guaranteed to fit in output buffer; each char can expand to\n         // at most 3 bytes, so at most 1/3 of buffer size.\n-        final int maxChunk \u003d (_outputEnd \u003e\u003e 2) + (_outputEnd \u003e\u003e 4); // \u003d\u003d (1/4 + 1/16) \u003d\u003d 5/16\n-        final int maxBytes \u003d maxChunk * 3;\n \n         while (len \u003e 0) {\n-            int len2 \u003d Math.min(maxChunk, len);\n+            int len2 \u003d Math.min(buf.length, len);\n             text.getChars(offset, offset+len2, buf, 0);\n-            if ((_outputTail + maxBytes) \u003e _outputEnd) {\n-                _flushBuffer();\n-            }\n+            writeRaw(buf, 0, len2);\n             // If this is NOT the last segment and if the last character looks like\n             // split surrogate second half, drop it\n-            if (len \u003e 0) {\n-                char ch \u003d buf[len2-1];\n-                if ((ch \u003e\u003d SURR1_FIRST) \u0026\u0026 (ch \u003c\u003d SURR1_LAST)) {\n-                    --len2;\n-                }\n-            }\n-            _writeRawSegment(buf, 0, len2);\n             offset +\u003d len2;\n             len -\u003d len2;\n         }\n@@ -685,30 +669,6 @@\n      *\n      * @since 2.8.2\n      */\n-    private void _writeRawSegment(char[] cbuf, int offset, int end) throws IOException\n-    {\n-        main_loop:\n-        while (offset \u003c end) {\n-            inner_loop:\n-            while (true) {\n-                int ch \u003d (int) cbuf[offset];\n-                if (ch \u003e 0x7F) {\n-                    break inner_loop;\n-                }\n-                _outputBuffer[_outputTail++] \u003d (byte) ch;\n-                if (++offset \u003e\u003d end) {\n-                    break main_loop;\n-                }\n-            }\n-            char ch \u003d cbuf[offset++];\n-            if (ch \u003c 0x800) { // 2-byte?\n-                _outputBuffer[_outputTail++] \u003d (byte) (0xc0 | (ch \u003e\u003e 6));\n-                _outputBuffer[_outputTail++] \u003d (byte) (0x80 | (ch \u0026 0x3f));\n-            } else {\n-                offset \u003d _outputRawMultiByteChar(ch, cbuf, offset, end);\n-            }\n-        }\n-    }\n \n     /*\n     /**********************************************************\n@@ -1924,8 +1884,7 @@\n             if (ch \u003c\u003d SURR2_LAST) { // yes, outside of BMP\n                 // Do we have second part?\n                 if (inputOffset \u003e\u003d inputEnd || cbuf \u003d\u003d null) { // nope... have to note down\n-                    _reportError(String.format(\n-\"Split surrogate on writeRaw() input (last character): first character 0x%4x\", ch));\n+                    _reportError(\"Split surrogate on writeRaw() input (last character)\");\n                 }\n                 _outputSurrogates(ch, cbuf[inputOffset]);\n                 return inputOffset+1;\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [21801,22140]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [17645,17668]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "QualifiedName: buf.length [17559,17569]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "StringLiteral: \"Split surrogate on writeRaw() input (last character)\" [67607,67661]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [17281,17433]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [17669,17728]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [17764,17798]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: maxChunk [17858,17866]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [17942,18032]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [18181,18359]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [18372,18403]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [22400,23586]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [69053,69150]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.core.json.UTF8JsonGenerator:writeBinary:[Base64Variant b64variant, InputStream data, int dataLength]:int"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.core.json.UTF8JsonGenerator:_writeRawSegment:[char[] cbuf, int offset, int end]:void"
+      ],
+      "num": 1
+    }
+  }
+}

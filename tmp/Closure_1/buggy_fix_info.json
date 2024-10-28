@@ -1,0 +1,143 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.CommandLineRunnerTest::testSimpleModeLeavesUnusedParams,com.google.javascript.jscomp.CommandLineRunnerTest::testForwardDeclareDroppedTypes,com.google.javascript.jscomp.CommandLineRunnerTest::testDebugFlag1,com.google.javascript.jscomp.IntegrationTest::testIssue787,com.google.javascript.jscomp.RemoveUnusedVarsTest::testRemoveGlobal1,com.google.javascript.jscomp.RemoveUnusedVarsTest::testRemoveGlobal2,com.google.javascript.jscomp.RemoveUnusedVarsTest::testRemoveGlobal3,com.google.javascript.jscomp.RemoveUnusedVarsTest::testIssue168b",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.RemoveUnusedVars",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "1",
+  "workingDir": "../bugs/Closure_1_tmp",
+  "bug_name": "Closure_1",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.CommandLineRunnerTest",
+      "test_function": "testSimpleModeLeavesUnusedParams",
+      "assertion_line": "156",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: window.f\u003dfunction(a){}\nResult: window.f\u003dfunction(){}"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.CommandLineRunnerTest",
+      "test_function": "testForwardDeclareDroppedTypes",
+      "assertion_line": "1204",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: var beer\u003d{};function f(a){}\nResult: var beer\u003d{};function f(){}"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.CommandLineRunnerTest",
+      "test_function": "testDebugFlag1",
+      "assertion_line": "1204",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function foo(a){}\nResult: function foo(){}"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.IntegrationTest",
+      "test_function": "testIssue787",
+      "assertion_line": "2371",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function some_function(){var a,b;any_expression\u0026\u0026(b\u003dexternal_ref,a\u003dfunction(a){return b()});return{method1:function(){a\u0026\u0026a();return!0},method2:function(){return!1}}}\nResult: function some_function(){var a,b;any_expression\u0026\u0026(b\u003dexternal_ref,a\u003dfunction(){return b()});return{method1:function(){a\u0026\u0026a();return!0},method2:function(){return!1}}}"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.RemoveUnusedVarsTest",
+      "test_function": "testRemoveGlobal1",
+      "assertion_line": "247",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: var y\u003dfunction(x){}\nResult: var y\u003dfunction(){}"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.RemoveUnusedVarsTest",
+      "test_function": "testRemoveGlobal2",
+      "assertion_line": "253",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function y(x){}\nResult: function y(){}"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.RemoveUnusedVarsTest",
+      "test_function": "testRemoveGlobal3",
+      "assertion_line": "259",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function x(){function y(x$$1){}y()}\nResult: function x(){function y(){}y()}"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.RemoveUnusedVarsTest",
+      "test_function": "testIssue168b",
+      "assertion_line": "283",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function a(){(function(x){b()})(1)}function b(){a()}\nResult: function a(){(function(){b()})(1)}function b(){a()}"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/RemoveUnusedVars.java",
+        "src/com/google/javascript/jscomp/RemoveUnusedVars.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.RemoveUnusedVars:removeUnreferencedFunctionArgs:[Scope fnScope]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.RemoveUnusedVars:removeUnreferencedFunctionArgs:[Scope fnScope]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "379",
+            "380",
+            "381"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "378"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/RemoveUnusedVars.java b/src/com/google/javascript/jscomp/RemoveUnusedVars.java\nindex 4c84735..dfad51b 100644\n--- a/src/com/google/javascript/jscomp/RemoveUnusedVars.java\n+++ b/src/com/google/javascript/jscomp/RemoveUnusedVars.java\n@@ -376,9 +376,6 @@\n     // is removing globals, then it\u0027s OK to remove unused function args.\n     //\n     // See http://code.google.com/p/closure-compiler/issues/detail?id\u003d253\n-    if (!removeGlobals) {\n-      return;\n-    }\n \n     Node function \u003d fnScope.getRootNode();\n \n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [13585,13626]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

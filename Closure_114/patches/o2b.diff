@@ -1,0 +1,1699 @@
+diff -r -u original/src/com/google/javascript/jscomp/NameAnalyzer.java buggy/src/com/google/javascript/jscomp/NameAnalyzer.java
+--- original/src/com/google/javascript/jscomp/NameAnalyzer.java	2023-06-13 15:31:46.507116369 +0800
++++ buggy/src/com/google/javascript/jscomp/NameAnalyzer.java	2023-06-12 11:40:30.006552365 +0800
+@@ -19,20 +19,23 @@
+ import com.google.common.base.Preconditions;
+ import com.google.common.base.Predicate;
+ import com.google.common.collect.ImmutableSet;
++import com.google.common.collect.LinkedListMultimap;
++import com.google.common.collect.ListMultimap;
+ import com.google.common.collect.Lists;
+ import com.google.common.collect.Maps;
+ import com.google.common.collect.Sets;
+ import com.google.javascript.jscomp.CodingConvention.SubclassRelationship;
+-import com.google.javascript.jscomp.GatherSideEffectSubexpressionsCallback.CopySideEffectSubexpressions;
++import com.google.javascript.jscomp.GatherSideEffectSubexpressionsCallback.GetReplacementSideEffectSubexpressions;
+ import com.google.javascript.jscomp.GatherSideEffectSubexpressionsCallback.SideEffectAccumulator;
+ import com.google.javascript.jscomp.NodeTraversal.AbstractPostOrderCallback;
+ import com.google.javascript.jscomp.NodeTraversal.Callback;
+ import com.google.javascript.jscomp.Scope.Var;
+ import com.google.javascript.jscomp.graph.DiGraph;
+-import com.google.javascript.jscomp.graph.FixedPointGraphTraversal;
+-import com.google.javascript.jscomp.graph.LinkedDirectedGraph;
+ import com.google.javascript.jscomp.graph.DiGraph.DiGraphEdge;
++import com.google.javascript.jscomp.graph.FixedPointGraphTraversal;
+ import com.google.javascript.jscomp.graph.FixedPointGraphTraversal.EdgeCallback;
++import com.google.javascript.jscomp.graph.LinkedDirectedGraph;
++import com.google.javascript.rhino.IR;
+ import com.google.javascript.rhino.Node;
+ import com.google.javascript.rhino.Token;
+ 
+@@ -66,7 +69,7 @@
+  * TODO(nicksantos): In the initial implementation of this pass, it was
+  * important to understand namespaced names (e.g., that a.b is distinct from
+  * a.b.c). Now that this pass comes after CollapseProperties, this is no longer
+- * necessary. For now, I've changed so that {@code refernceParentNames}
++ * necessary. For now, I've changed so that {@code referenceParentNames}
+  * creates a two-way reference between a.b and a.b.c, so that they're
+  * effectively the same name. When someone has the time, we should completely
+  * rip out all the logic that understands namespaces.
+@@ -91,7 +94,8 @@
+    * If scopes.get(node).equals(name) && node2 is a child of node, then node2
+    * will not get executed unless name is referenced via a get operation
+    */
+-  private final Map<Node, NameInformation> scopes = Maps.newHashMap();
++  private final ListMultimap<Node, NameInformation> scopes =
++      LinkedListMultimap.create();
+ 
+   /** Used to parse prototype names */
+   private static final String PROTOTYPE_SUBSTRING = ".prototype.";
+@@ -161,10 +165,11 @@
+   }
+ 
+   /**
+-   * Callback that propagates side effect information across call sites.
++   * Callback that propagates reference information.
+    */
+   private static class ReferencePropagationCallback
+       implements EdgeCallback<JsName, RefType> {
++    @Override
+     public boolean traverseEdge(JsName from,
+                                 RefType callSite,
+                                 JsName to) {
+@@ -223,6 +228,9 @@
+     /** Whether the name has descendants that are written to. */
+     boolean hasWrittenDescendants = false;
+ 
++    /** Whether the name is used in a instanceof check */
++    boolean hasInstanceOfReference = false;
++
+     /**
+      * Output the node as a string
+      *
+@@ -248,6 +256,7 @@
+       return out.toString();
+     }
+ 
++    @Override
+     public int compareTo(JsName rhs) {
+       return this.name.compareTo(rhs.name);
+     }
+@@ -265,19 +274,21 @@
+    * Class for nodes that reference a fully-qualified JS name. Fully qualified
+    * names are of form A or A.B (A.B.C, etc.). References can get the value or
+    * set the value of the JS name.
+-   *
+-   * TODO(user) Create an interface with a remove() method that is
+-   * implemented differently by type of parent node
+    */
+   private class JsNameRefNode implements RefNode {
+     /** JsName node for this reference */
+     JsName name;
+ 
+-    /** Top GETPROP or NAME node defining the name of this node */
++    /**
++     * Top GETPROP or NAME or STRING [objlit key] node defining the name of
++     * this node
++     */
++    @SuppressWarnings("unused")
+     Node node;
+ 
+     /**
+-     * Parent node of the name access (ASSIGN, VAR, FUNCTION, or CALL)
++     * Parent node of the name access
++     * (ASSIGN, VAR, FUNCTION, OBJECTLIT, or CALL)
+      */
+     Node parent;
+ 
+@@ -286,7 +297,7 @@
+      * Create a node that refers to a name
+      *
+      * @param name The name
+-     * @param node The top node representing the name (GETPROP, NAME)
++     * @param node The top node representing the name (GETPROP, NAME, STRING)
+      */
+     JsNameRefNode(JsName name, Node node) {
+       this.name = name;
+@@ -294,10 +305,12 @@
+       this.parent = node.getParent();
+     }
+ 
++    @Override
+     public JsName name() {
+       return name;
+     }
+ 
++    @Override
+     public void remove() {
+       // Setters have VAR, FUNCTION, or ASSIGN parent nodes. CALL parent
+       // nodes are global refs, and are handled later in this function.
+@@ -311,12 +324,17 @@
+           replaceWithRhs(containingNode, parent);
+           break;
+         case Token.ASSIGN:
+-          if (NodeUtil.isExpressionNode(containingNode)) {
++          if (containingNode.isExprResult()) {
+             replaceWithRhs(containingNode.getParent(), containingNode);
+           } else {
+             replaceWithRhs(containingNode, parent);
+           }
+           break;
++        case Token.OBJECTLIT:
++          // TODO(nicksantos): Come up with a way to remove this.
++          // If we remove object lit keys, then we will need to also
++          // create dependency scopes for them.
++          break;
+       }
+     }
+   }
+@@ -335,18 +353,18 @@
+     PrototypeSetNode(JsName name, Node parent) {
+       super(name, parent.getFirstChild());
+ 
+-      Preconditions.checkState(parent.getType() == Token.ASSIGN);
++      Preconditions.checkState(parent.isAssign());
+     }
+ 
+     @Override public void remove() {
+       Node gramps = parent.getParent();
+-      if (NodeUtil.isExpressionNode(gramps)) {
++      if (gramps.isExprResult()) {
+         // name.prototype.foo = function() { ... };
+         changeProxy.removeChild(gramps.getParent(), gramps);
+       } else {
+         // ... name.prototype.foo = function() { ... } ...
+         changeProxy.replaceWith(gramps, parent,
+-                                parent.getLastChild().cloneTree());
++                                parent.getLastChild().detachFromParent());
+       }
+     }
+   }
+@@ -361,31 +379,29 @@
+     /** The CALL node */
+     Node node;
+ 
+-    /** The parent of {@code node} */
+-    Node parent;
+-
+-    /** The parent of {@code parent} */
+-    Node gramps;
+-
+     /**
+      * Create a special reference node.
+      *
+      * @param name The name
+      * @param node The CALL node
+-     * @param parent The parent of {@code node}
+-     * @param gramps The parent of {@code parent}
+      */
+-    SpecialReferenceNode(JsName name, Node node, Node parent,
+-        Node gramps) {
++    SpecialReferenceNode(JsName name, Node node) {
+       this.name = name;
+       this.node = node;
+-      this.parent = parent;
+-      this.gramps = gramps;
+     }
+ 
++    @Override
+     public JsName name() {
+       return name;
+     }
++
++    Node getParent() {
++      return node.getParent();
++    }
++
++    Node getGramps() {
++      return node.getParent() == null ? null : node.getParent().getParent();
++    }
+   }
+ 
+ 
+@@ -400,22 +416,20 @@
+      *
+      * @param name The name
+      * @param node The CALL node
+-     * @param parent The parent of {@code node}
+-     * @param gramps The parent of {@code parent}
+      */
+-    ClassDefiningFunctionNode(JsName name, Node node, Node parent,
+-        Node gramps) {
+-      super(name, node, parent, gramps);
+-      Preconditions.checkState(node.getType() == Token.CALL);
++    ClassDefiningFunctionNode(JsName name, Node node) {
++      super(name, node);
++      Preconditions.checkState(node.isCall());
+     }
+ 
++    @Override
+     public void remove() {
+-      Preconditions.checkState(node.getType() == Token.CALL);
+-      if (NodeUtil.isExpressionNode(parent)) {
+-        changeProxy.removeChild(gramps, parent);
++      Preconditions.checkState(node.isCall());
++      Node parent = getParent();
++      if (parent.isExprResult()) {
++        changeProxy.removeChild(getGramps(), parent);
+       } else {
+-        changeProxy.replaceWith(
+-            parent, node, new Node(Token.VOID, Node.newNumber(0)));
++        changeProxy.replaceWith(parent, node, IR.voidNode(IR.number(0)));
+       }
+     }
+   }
+@@ -431,18 +445,16 @@
+      *
+      * @param name The name
+      * @param node The qualified name node
+-     * @param parent The parent of {@code node}, this should be an instanceof
+-     *     node.
+-     * @param gramps The parent of {@code parent}.
+      */
+-    InstanceOfCheckNode(JsName name, Node node, Node parent, Node gramps) {
+-      super(name, node, parent, gramps);
++    InstanceOfCheckNode(JsName name, Node node) {
++      super(name, node);
+       Preconditions.checkState(node.isQualifiedName());
+-      Preconditions.checkState(parent.getType() == Token.INSTANCEOF);
++      Preconditions.checkState(getParent().isInstanceOf());
+     }
+ 
++    @Override
+     public void remove() {
+-      changeProxy.replaceWith(gramps, parent, new Node(Token.FALSE));
++      changeProxy.replaceWith(getGramps(), getParent(), IR.falseNode());
+     }
+   }
+ 
+@@ -450,12 +462,13 @@
+    * Walk through externs and mark nodes as externally declared if declared
+    */
+   private class ProcessExternals extends AbstractPostOrderCallback {
++    @Override
+     public void visit(NodeTraversal t, Node n, Node parent) {
+       NameInformation ns = null;
+       if (NodeUtil.isVarDeclaration(n)) {
+-        ns = createNameInformation(t, n, parent);
++        ns = createNameInformation(t, n);
+       } else if (NodeUtil.isFunctionDeclaration(n)) {
+-        ns = createNameInformation(t, n.getFirstChild(), n);
++        ns = createNameInformation(t, n.getFirstChild());
+       }
+       if (ns != null) {
+         JsName jsName = getName(ns.name, true);
+@@ -487,75 +500,114 @@
+    * </pre>
+    */
+   private class FindDependencyScopes extends AbstractPostOrderCallback {
++    @Override
+     public void visit(NodeTraversal t, Node n, Node parent) {
+       if (!t.inGlobalScope()) {
+         return;
+       }
+ 
+-      if (n.getType() == Token.ASSIGN) {
+-        Node nameNode = n.getFirstChild();
+-        NameInformation ns = createNameInformation(t, nameNode, n);
+-        if (ns != null) {
+-          if (parent.getType() == Token.FOR && !NodeUtil.isForIn(parent)) {
+-            // Patch for assignments that appear in the init,
+-            // condition or iteration part of a FOR loop.  Without
+-            // this change, all 3 of those parts try to claim the for
+-            // loop as their dependency scope.  The last assignment in
+-            // those three fields wins, which can result in incorrect
+-            // reference edges between referenced and assigned variables.
+-            //
+-            // TODO(user) revisit the dependency scope calculation
+-            // logic.
+-            if (parent.getFirstChild().getNext() != n) {
+-              recordDepScope(n, ns);
+-            } else {
+-              recordDepScope(nameNode, ns);
+-            }
+-          } else {
+-            recordDepScope(parent, ns);
+-          }
++      if (n.isAssign()) {
++        recordAssignment(t, n, n);
++        if (!NodeUtil.isImmutableResult(n.getLastChild())) {
++          recordConsumers(t, n, n);
+         }
+       } else if (NodeUtil.isVarDeclaration(n)) {
+-        NameInformation ns = createNameInformation(t, n, parent);
++        NameInformation ns = createNameInformation(t, n);
+         recordDepScope(n, ns);
+       } else if (NodeUtil.isFunctionDeclaration(n)) {
+-        NameInformation ns = createNameInformation(t, n.getFirstChild(), n);
++        NameInformation ns = createNameInformation(t, n.getFirstChild());
+         recordDepScope(n, ns);
+       } else if (NodeUtil.isExprCall(n)) {
+         Node callNode = n.getFirstChild();
+         Node nameNode = callNode.getFirstChild();
+-        NameInformation ns = createNameInformation(t, nameNode, callNode);
++        NameInformation ns = createNameInformation(t, nameNode);
+         if (ns != null && ns.onlyAffectsClassDef) {
+           recordDepScope(n, ns);
+         }
+       }
+     }
+ 
++    private void recordConsumers(NodeTraversal t, Node n, Node recordNode) {
++      Node parent = n.getParent();
++      switch (parent.getType()) {
++        case Token.ASSIGN:
++          if (n == parent.getLastChild()) {
++            recordAssignment(t, parent, recordNode);
++          }
++          recordConsumers(t, parent, recordNode);
++          break;
++        case Token.NAME:
++          NameInformation ns = createNameInformation(t, parent);
++          recordDepScope(recordNode, ns);
++          break;
++        case Token.OR:
++          recordConsumers(t, parent, recordNode);
++          break;
++        case Token.AND:
++          // In "a && b" only "b" can be meaningfully aliased.
++          // "a" must be falsy, which it must be an immutable, non-Object
++        case Token.COMMA:
++        case Token.HOOK:
++          if (n != parent.getFirstChild()) {
++            recordConsumers(t, parent, recordNode);
++          }
++          break;
++      }
++    }
++
++    private void recordAssignment(NodeTraversal t, Node n, Node recordNode) {
++      Node nameNode = n.getFirstChild();
++      Node parent = n.getParent();
++      NameInformation ns = createNameInformation(t, nameNode);
++      if (ns != null) {
++        if (parent.isFor() && !NodeUtil.isForIn(parent)) {
++          // Patch for assignments that appear in the init,
++          // condition or iteration part of a FOR loop.  Without
++          // this change, all 3 of those parts try to claim the for
++          // loop as their dependency scope.  The last assignment in
++          // those three fields wins, which can result in incorrect
++          // reference edges between referenced and assigned variables.
++          //
++          // TODO(user) revisit the dependency scope calculation
++          // logic.
++          if (parent.getFirstChild().getNext() != n) {
++            recordDepScope(recordNode, ns);
++          } else {
++            recordDepScope(nameNode, ns);
++          }
++        } else {
++          recordDepScope(recordNode, ns);
++        }
++      }
++    }
++
+     /**
+      * Defines a dependency scope.
+      */
+     private void recordDepScope(Node node, NameInformation name) {
++      Preconditions.checkNotNull(name);
+       scopes.put(node, name);
+     }
+   }
+ 
+   /**
+    * Create JsName objects for variable and function declarations in
+-   * the global scope before computing name references.  In javascript
++   * the global scope before computing name references.  In JavaScript
+    * it is legal to refer to variable and function names before the
+    * actual declaration.
+    */
+   private class HoistVariableAndFunctionDeclarations
+       extends NodeTraversal.AbstractShallowCallback {
+ 
++    @Override
+     public void visit(NodeTraversal t, Node n, Node parent) {
+       if (NodeUtil.isVarDeclaration(n)) {
+-        NameInformation ns = createNameInformation(t, n, parent);
++        NameInformation ns = createNameInformation(t, n);
+         Preconditions.checkNotNull(ns, "NameInformation is null");
+         createName(ns.name);
+       } else if (NodeUtil.isFunctionDeclaration(n)) {
+         Node nameNode = n.getFirstChild();
+-        NameInformation ns = createNameInformation(t, nameNode, n);
++        NameInformation ns = createNameInformation(t, nameNode);
+         Preconditions.checkNotNull(ns, "NameInformation is null");
+         createName(nameNode.getString());
+       }
+@@ -572,29 +624,35 @@
+    */
+   private class FindDeclarationsAndSetters extends AbstractPostOrderCallback {
+ 
++    @Override
+     public void visit(NodeTraversal t, Node n, Node parent) {
+ 
+       // Record global variable and function declarations
+       if (t.inGlobalScope()) {
+         if (NodeUtil.isVarDeclaration(n)) {
+-          NameInformation ns = createNameInformation(t, n, parent);
++          NameInformation ns = createNameInformation(t, n);
+           Preconditions.checkNotNull(ns);
+           recordSet(ns.name, n);
+         } else if (NodeUtil.isFunctionDeclaration(n)) {
+           Node nameNode = n.getFirstChild();
+-          NameInformation ns = createNameInformation(t, nameNode, n);
++          NameInformation ns = createNameInformation(t, nameNode);
+           if (ns != null) {
+             JsName nameInfo = getName(nameNode.getString(), true);
+             recordSet(nameInfo.name, nameNode);
+           }
++        } else if (NodeUtil.isObjectLitKey(n)) {
++          NameInformation ns = createNameInformation(t, n);
++          if (ns != null) {
++            recordSet(ns.name, n);
++          }
+         }
+       }
+ 
+       // Record assignments and call sites
+-      if (n.getType() == Token.ASSIGN) {
++      if (n.isAssign()) {
+         Node nameNode = n.getFirstChild();
+ 
+-        NameInformation ns = createNameInformation(t, nameNode, n);
++        NameInformation ns = createNameInformation(t, nameNode);
+         if (ns != null) {
+           if (ns.isPrototype) {
+             recordPrototypeSet(ns.prototypeClass, ns.prototypeProperty, n);
+@@ -602,15 +660,12 @@
+             recordSet(ns.name, nameNode);
+           }
+         }
+-      } else if (n.getType() == Token.CALL) {
++      } else if (n.isCall()) {
+         Node nameNode = n.getFirstChild();
+-        NameInformation ns = createNameInformation(t, nameNode, n);
++        NameInformation ns = createNameInformation(t, nameNode);
+         if (ns != null && ns.onlyAffectsClassDef) {
+-          JsName name = getName(ns.name, false);
+-          if (name != null) {
+-            refNodes.add(new ClassDefiningFunctionNode(
+-                            name, n, parent, parent.getParent()));
+-          }
++          JsName name = getName(ns.name, true);
++          refNodes.add(new ClassDefiningFunctionNode(name, n));
+         }
+       }
+     }
+@@ -619,7 +674,8 @@
+      * Records the assignment of a value to a global name.
+      *
+      * @param name Fully qualified name
+-     * @param node The top node representing the name (GETPROP, NAME)
++     * @param node The top node representing the name (GETPROP, NAME, or STRING
++     * [objlit key])
+      */
+     private void recordSet(String name, Node node) {
+       JsName jsn = getName(name, true);
+@@ -628,7 +684,7 @@
+ 
+       // Now, look at all parent names and record that their properties have
+       // been written to.
+-      if (node.getType() == Token.GETELEM) {
++      if (node.isGetElem()) {
+         recordWriteOnProperties(name);
+       } else if (name.indexOf('.') != -1) {
+         recordWriteOnProperties(name.substring(0, name.lastIndexOf('.')));
+@@ -645,12 +701,10 @@
+      */
+     private void recordPrototypeSet(String className, String prototypeProperty,
+         Node node) {
+-      JsName name = getName(className, false);
+-      if (name != null) {
+-        name.prototypeNames.add(prototypeProperty);
+-        refNodes.add(new PrototypeSetNode(name, node));
+-        recordWriteOnProperties(className);
+-      }
++      JsName name = getName(className, true);
++      name.prototypeNames.add(prototypeProperty);
++      refNodes.add(new PrototypeSetNode(name, node));
++      recordWriteOnProperties(className);
+     }
+ 
+     /**
+@@ -679,11 +733,11 @@
+       new Predicate<Node>() {
+         @Override
+         public boolean apply(Node input) {
+-          if (input.getType() == Token.CALL) {
++          if (input.isCall()) {
+             return false;
+           }
+           // TODO(johnlenz): handle NEW calls that record their 'this'
+-          // in global scope and effectly return an alias.
++          // in global scope and effectively return an alias.
+           // Other non-local references are handled by this pass.
+           return true;
+         }
+@@ -720,26 +774,27 @@
+     }
+ 
+     private void addSimplifiedExpression(Node n, Node parent) {
+-      if (parent.getType() == Token.VAR) {
++      if (parent.isVar()) {
+         Node value = n.getFirstChild();
+         if (value != null) {
+           addSimplifiedChildren(value);
+         }
+-      } else if (n.getType() == Token.ASSIGN &&
+-          (parent.getType() == Token.EXPR_RESULT ||
+-           parent.getType() == Token.FOR ||
+-           parent.getType() == Token.RETURN)) {
++      } else if (n.isAssign() &&
++          (parent.isExprResult() ||
++           parent.isFor() ||
++           parent.isReturn())) {
+         for (Node child : n.children()) {
+           addSimplifiedChildren(child);
+         }
+-      } else if (n.getType() == Token.CALL &&
+-                 parent.getType() == Token.EXPR_RESULT) {
++      } else if (n.isCall() &&
++                 parent.isExprResult()) {
+         addSimplifiedChildren(n);
+       } else {
+         addAllChildren(n);
+       }
+     }
+ 
++    @Override
+     public boolean shouldTraverse(NodeTraversal t, Node n, Node parent) {
+       if (parent == null) {
+         return true;
+@@ -749,7 +804,7 @@
+       // arguments to function calls with side effects or are used in
+       // control structure predicates.  These names are always
+       // referenced when the enclosing function is called.
+-      if (n.getType() == Token.FOR) {
++      if (n.isFor()) {
+         if (!NodeUtil.isForIn(n)) {
+           Node decl = n.getFirstChild();
+           Node pred = decl.getNext();
+@@ -765,37 +820,38 @@
+         }
+       }
+ 
+-      if (parent.getType() == Token.VAR ||
+-          parent.getType() == Token.EXPR_RESULT ||
+-          parent.getType() == Token.RETURN ||
+-          parent.getType() == Token.THROW) {
++      if (parent.isVar() ||
++          parent.isExprResult() ||
++          parent.isReturn() ||
++          parent.isThrow()) {
+         addSimplifiedExpression(n, parent);
+       }
+ 
+-      if ((parent.getType() == Token.IF ||
+-           parent.getType() == Token.WHILE ||
+-           parent.getType() == Token.WITH ||
+-           parent.getType() == Token.SWITCH ||
+-           parent.getType() == Token.CASE) &&
++      if ((parent.isIf() ||
++           parent.isWhile() ||
++           parent.isWith() ||
++           parent.isSwitch() ||
++           parent.isCase()) &&
+           parent.getFirstChild() == n) {
+         addAllChildren(n);
+       }
+ 
+-      if (parent.getType() == Token.DO && parent.getLastChild() == n) {
++      if (parent.isDo() && parent.getLastChild() == n) {
+         addAllChildren(n);
+       }
+ 
+       return true;
+     }
+ 
++    @Override
+     public void visit(NodeTraversal t, Node n, Node parent) {
+-      if (!(NodeUtil.isName(n) ||
+-            NodeUtil.isGet(n) && !NodeUtil.isGetProp(parent))) {
++      if (!(n.isName() ||
++            NodeUtil.isGet(n) && !parent.isGetProp())) {
+         // This is not a simple or qualified name.
+         return;
+       }
+ 
+-      NameInformation nameInfo = createNameInformation(t, n, parent);
++      NameInformation nameInfo = createNameInformation(t, n);
+       if (nameInfo == null) {
+         // The name is not a global name
+         return;
+@@ -819,14 +875,13 @@
+         return;
+       }
+ 
+-      if (parent.getType() == Token.INSTANCEOF &&
++      if (parent.isInstanceOf() &&
+           parent.getLastChild() == n &&
+           // Don't cover GETELEMs with a global root node.
+           n.isQualifiedName()) {
+         JsName checkedClass = getName(nameInfo.name, true);
+-        refNodes.add(
+-            new InstanceOfCheckNode(
+-                checkedClass, n, parent, parent.getParent()));
++        refNodes.add(new InstanceOfCheckNode(checkedClass, n));
++        checkedClass.hasInstanceOfReference = true;
+         return;
+       }
+ 
+@@ -834,7 +889,20 @@
+       // looking up the nearest enclosing dependency scope. It's unnecessary to
+       // determine all enclosing dependency scopes because this callback should
+       // create a chain of references between them.
+-      NameInformation referring = getDependencyScope(n);
++      List<NameInformation> referers = getDependencyScope(n);
++      if (referers.isEmpty()) {
++        maybeRecordReferenceOrAlias(t, n, parent, nameInfo, null);
++      } else {
++        for (NameInformation referring : referers) {
++          maybeRecordReferenceOrAlias(t, n, parent, nameInfo, referring);
++        }
++        recordAliases(referers);
++      }
++    }
++
++    private void maybeRecordReferenceOrAlias(
++        NodeTraversal t, Node n, Node parent,
++        NameInformation nameInfo, NameInformation referring) {
+       String referringName = "";
+       if (referring != null) {
+         referringName = referring.isPrototype
+@@ -848,7 +916,7 @@
+       // can be an alias to global object.
+       // Here we add a alias to the general "global" object
+       // to act as a placeholder for the actual (unnamed) value.
+-      if (maybeHiddenAlias(name, n)) {
++      if (maybeHiddenAlias(n)) {
+         recordAlias(name, WINDOW);
+       }
+ 
+@@ -862,7 +930,7 @@
+ 
+       // An assignment implies a reference from the enclosing dependency scope.
+       // For example, foo references bar in: function foo() {bar=5}.
+-      if (NodeUtil.isLhs(n, parent)) {
++      if (NodeUtil.isVarOrSimpleAssignLhs(n, parent)) {
+         if (referring != null) {
+           recordReference(referringName, name, RefType.REGULAR);
+         }
+@@ -870,11 +938,17 @@
+       }
+ 
+       if (nodesToKeep.contains(n)) {
+-        NameInformation functionScope = getEnclosingFunctionDependencyScope(t);
+-        if (functionScope != null) {
+-          recordReference(functionScope.name, name, RefType.REGULAR);
++        List<NameInformation> functionScopes =
++            getEnclosingFunctionDependencyScope(t);
++        if (!functionScopes.isEmpty()) {
++          for (NameInformation functionScope : functionScopes) {
++            recordReference(functionScope.name, name, RefType.REGULAR);
++          }
+         } else {
+           recordReference(WINDOW, name, RefType.REGULAR);
++          if (referring != null) {
++            maybeRecordAlias(name, parent, referring, referringName);
++          }
+         }
+       } else if (referring != null) {
+         if (!maybeRecordAlias(name, parent, referring, referringName)) {
+@@ -889,7 +963,7 @@
+         // protect this node by creating a reference to WINDOW.
+         for (Node ancestor : n.getAncestors()) {
+           if (NodeUtil.isAssignmentOp(ancestor) ||
+-              NodeUtil.isFunction(ancestor)) {
++              ancestor.isFunction()) {
+             recordReference(WINDOW, name, RefType.REGULAR);
+             break;
+           }
+@@ -897,16 +971,26 @@
+       }
+     }
+ 
++    private void recordAliases(List<NameInformation> referers) {
++      int size = referers.size();
++      for (int i = 0; i < size; i++) {
++        for (int j = i + 1; j < size; j++) {
++          recordAlias(referers.get(i).name, referers.get(j).name);
++          recordAlias(referers.get(j).name, referers.get(i).name);
++        }
++      }
++    }
++
+     /**
+      * A value whose result is the return value of a function call
+      * can be an alias to global object. The dependency on the call target will
+      * prevent the removal of the function and its dependent values, but won't
+      * prevent the alias' removal.
+      */
+-    private boolean maybeHiddenAlias(String name, Node n) {
++    private boolean maybeHiddenAlias(Node n) {
+       Node parent = n.getParent();
+-      if (NodeUtil.isLhs(n, parent)) {
+-        Node rhs = (parent.getType() == Token.VAR)
++      if (NodeUtil.isVarOrSimpleAssignLhs(n, parent)) {
++        Node rhs = (parent.isVar())
+             ? n.getFirstChild() : parent.getLastChild();
+         return (rhs != null && !NodeUtil.evaluatesToLocalValue(
+             rhs, NON_LOCAL_RESULT_PREDICATE));
+@@ -920,10 +1004,31 @@
+     private boolean maybeRecordAlias(
+         String name, Node parent,
+         NameInformation referring, String referringName) {
+-      if ((parent.getType() == Token.NAME ||
+-          parent.getType() == Token.ASSIGN) &&
++      // A common type of reference is
++      // function F() {}
++      // F.prototype.bar = goog.nullFunction;
++      //
++      // In this specific case, we do not want a reference to goog.nullFunction
++      // to preserve F.
++      //
++      // In the general case, the user could do something like
++      // function F() {}
++      // F.prototype.bar = goog.nullFunction;
++      // F.prototype.bar.baz = 3;
++      // where it would not be safe to remove F.
++      //
++      // So we do not treat this alias as a backdoor for people to mutate the
++      // original object. We think that this heuristic will always be
++      // OK in real code.
++      boolean isPrototypePropAssignment =
++          parent.isAssign()
++          && NodeUtil.isPrototypeProperty(parent.getFirstChild());
++
++      if ((parent.isName() ||
++          parent.isAssign()) &&
++          !isPrototypePropAssignment &&
+           referring != null &&
+-          scopes.get(parent) == referring) {
++          scopes.get(parent).contains(referring)) {
+         recordAlias(referringName, name);
+         return true;
+       }
+@@ -974,6 +1079,7 @@
+   }
+ 
+   private class RemoveListener implements AstChangeProxy.ChangeListener {
++    @Override
+     public void nodeRemoved(Node n) {
+       compiler.reportCodeChange();
+     }
+@@ -1008,7 +1114,7 @@
+     NodeTraversal.traverse(compiler, root, new FindReferences());
+ 
+     // Create bi-directional references between parent names and their
+-    // descendents. This may create new names.
++    // descendants. This may create new names.
+     referenceParentNames();
+ 
+     // If we modify the property of an alias, make sure that modification
+@@ -1235,11 +1341,15 @@
+    * directional reference from the original name to the alias. For example,
+    * in this case, the assign to {@code a.foo} triggers a reference from
+    * {@code b} to {@code a}, but NOT from a to b.
++   *
++   * Similarly, "instanceof" checks do not prevent the removal
++   * of a unaliased name but an instanceof check on an alias can only be removed
++   * if the other aliases are also removed, so we add a connection here.
+    */
+   private void referenceAliases() {
+     for (Map.Entry<String, AliasSet> entry : aliases.entrySet()) {
+       JsName name = getName(entry.getKey(), false);
+-      if (name.hasWrittenDescendants) {
++      if (name.hasWrittenDescendants || name.hasInstanceOfReference) {
+         for (String alias : entry.getValue().names) {
+           recordReference(alias, entry.getKey(), RefType.REGULAR);
+         }
+@@ -1280,32 +1390,53 @@
+    *
+    * @param t The node traversal
+    * @param n The current node
+-   * @param parent The parent of n
+    * @return The name information, or null if the name is irrelevant to this
+    *     pass
+    */
+-  private NameInformation createNameInformation(NodeTraversal t, Node n,
+-      Node parent) {
++  private NameInformation createNameInformation(NodeTraversal t, Node n) {
++    Node parent = n.getParent();
+     // Build the full name and find its root node by iterating down through all
+     // GETPROP/GETELEM nodes.
+     String name = "";
+     Node rootNameNode = n;
+     boolean bNameWasShortened = false;
+-    while (NodeUtil.isGet(rootNameNode)) {
+-      Node prop = rootNameNode.getLastChild();
+-      if (rootNameNode.getType() == Token.GETPROP) {
+-        name = "." + prop.getString() + name;
++    while (true) {
++      if (NodeUtil.isGet(rootNameNode)) {
++        Node prop = rootNameNode.getLastChild();
++        if (rootNameNode.isGetProp()) {
++          name = "." + prop.getString() + name;
++        } else {
++          // We consider the name to be "a.b" in a.b['c'] or a.b[x].d.
++          bNameWasShortened = true;
++          name = "";
++        }
++        rootNameNode = rootNameNode.getFirstChild();
++      } else if (NodeUtil.isObjectLitKey(rootNameNode)) {
++        name = "." + rootNameNode.getString() + name;
++
++        // Check if this is an object literal assigned to something.
++        Node objLit = rootNameNode.getParent();
++        Node objLitParent = objLit.getParent();
++        if (objLitParent.isAssign()) {
++          // This must be the right side of the assign.
++          rootNameNode = objLitParent.getFirstChild();
++        } else if (objLitParent.isName()) {
++          // This must be a VAR initialization.
++          rootNameNode = objLitParent;
++        } else if (objLitParent.isStringKey()) {
++          // This must be a object literal key initialization.
++          rootNameNode = objLitParent;
++        } else {
++          return null;
++        }
+       } else {
+-        // We consider the name to be "a.b" in a.b['c'] or a.b[x].d.
+-        bNameWasShortened = true;
+-        name = "";
++        break;
+       }
+-      rootNameNode = rootNameNode.getFirstChild();
+     }
+ 
+     // Check whether this is a class-defining call. Classes may only be defined
+     // in the global scope.
+-    if (NodeUtil.isCall(parent) && t.inGlobalScope()) {
++    if (parent.isCall() && t.inGlobalScope()) {
+       CodingConvention convention = compiler.getCodingConvention();
+       SubclassRelationship classes = convention.getClassesDefinedByCall(parent);
+       if (classes != null) {
+@@ -1331,10 +1462,10 @@
+         // Check whether this is an assignment to a prototype property
+         // of an object defined in the global scope.
+         if (!bNameWasShortened &&
+-            n.getType() == Token.GETPROP &&
+-            parent.getType() == Token.ASSIGN &&
++            n.isGetProp() &&
++            parent.isAssign() &&
+             "prototype".equals(n.getLastChild().getString())) {
+-          if (createNameInformation(t, n.getFirstChild(), n) != null) {
++          if (createNameInformation(t, n.getFirstChild()) != null) {
+             name = rootNameNode.getString() + name;
+             name = name.substring(0, name.length() - PROTOTYPE_SUFFIX_LEN);
+             NameInformation nameInfo = new NameInformation();
+@@ -1428,15 +1559,15 @@
+   /**
+    * Gets the nearest enclosing dependency scope, or null if there isn't one.
+    */
+-  private NameInformation getDependencyScope(Node n) {
++  private List<NameInformation> getDependencyScope(Node n) {
+     for (Node node : n.getAncestors()) {
+-      NameInformation ref = scopes.get(node);
+-      if (ref != null) {
+-        return ref;
++      List<NameInformation> refs = scopes.get(node);
++      if (!refs.isEmpty()) {
++        return refs;
+       }
+     }
+ 
+-    return null;
++    return Collections.emptyList();
+   }
+ 
+   /**
+@@ -1445,15 +1576,16 @@
+    * its parent if the parent node is a variable declaration or
+    * assignment.
+    */
+-  private NameInformation getEnclosingFunctionDependencyScope(NodeTraversal t) {
++  private List<NameInformation> getEnclosingFunctionDependencyScope(
++      NodeTraversal t) {
+     Node function = t.getEnclosingFunction();
+     if (function == null) {
+-      return null;
++      return Collections.emptyList();
+     }
+ 
+-    NameInformation ref = scopes.get(function);
+-    if (ref != null) {
+-      return ref;
++    List<NameInformation> refs = scopes.get(function);
++    if (!refs.isEmpty()) {
++      return refs;
+     }
+ 
+     // Function expression.  try to get a name from the parent var
+@@ -1462,23 +1594,20 @@
+     if (parent != null) {
+       // Account for functions defined in the form:
+       //   var a = cond ? function a() {} : function b() {};
+-      while (parent.getType() == Token.HOOK) {
++      while (parent.isHook()) {
+         parent = parent.getParent();
+       }
+ 
+-      if (parent.getType() == Token.NAME) {
++      if (parent.isName()) {
+         return scopes.get(parent);
+       }
+ 
+-      if (parent.getType() == Token.ASSIGN) {
+-        Node gramp = parent.getParent();
+-        if (gramp != null && gramp.getType() == Token.EXPR_RESULT) {
+-          return scopes.get(gramp);
+-        }
++      if (parent.isAssign()) {
++        return scopes.get(parent);
+       }
+     }
+ 
+-    return null;
++    return Collections.emptyList();
+   }
+ 
+   /**
+@@ -1547,7 +1676,8 @@
+         compiler, n,
+         new GatherSideEffectSubexpressionsCallback(
+             compiler,
+-            new CopySideEffectSubexpressions(compiler, subexpressions)));
++            new GetReplacementSideEffectSubexpressions(
++                compiler, subexpressions)));
+ 
+     List<Node> replacements =
+         Lists.newArrayListWithExpectedSize(subexpressions.size());
+@@ -1561,7 +1691,7 @@
+    * Replace n with a simpler expression, while preserving program
+    * behavior.
+    *
+-   * If the n's value is used, replace it with its rhs; otherwise
++   * If the n's value is used, replace it with its RHS; otherwise
+    * replace it with the subexpressions that have side effects.
+    */
+   private void replaceWithRhs(Node parent, Node n) {
+@@ -1578,7 +1708,7 @@
+       newReplacements.add(valueExpr);
+       changeProxy.replaceWith(
+           parent, n, collapseReplacements(newReplacements));
+-    } else if (n.getType() == Token.ASSIGN && parent.getType() != Token.FOR) {
++    } else if (n.isAssign() && !parent.isFor()) {
+       // assignment appears in a RHS expression.  we have already
+       // considered names in the assignment's RHS as being referenced;
+       // replace the assignment with its RHS.
+@@ -1616,9 +1746,8 @@
+       case Token.VAR:
+         break;
+       case Token.ASSIGN:
+-        Preconditions.checkArgument(
+-            parent.getType() == Token.FOR,
+-            "Unsupported assignment in replaceWithRhs. parent: " +
++        Preconditions.checkArgument(parent.isFor(),
++            "Unsupported assignment in replaceWithRhs. parent: %s",
+             Token.name(parent.getType()));
+         break;
+       default:
+@@ -1633,10 +1762,10 @@
+       replacements.addAll(getSideEffectNodes(rhs));
+     }
+ 
+-    if (parent.getType() == Token.FOR) {
++    if (parent.isFor()) {
+       // tweak replacements array s.t. it is a single expression node.
+       if (replacements.isEmpty()) {
+-        replacements.add(new Node(Token.EMPTY));
++        replacements.add(IR.empty());
+       } else {
+         Node expr = collapseReplacements(replacements);
+         replacements.clear();
+@@ -1650,14 +1779,14 @@
+   /**
+    * Determine if the parent reads the value of a child expression
+    * directly.  This is true children used in predicates, RETURN
+-   * statements and, rhs of variable declarations and assignments.
++   * statements and, RHS of variable declarations and assignments.
+    *
+    * In the case of:
+    * if (a) b else c
+    *
+    * This method returns true for "a", and false for "b" and "c": the
+    * IF expression does something special based on "a"'s value.  "b"
+-   * and "c" are effectivelly outputs.  Same logic applies to FOR,
++   * and "c" are effectively outputs.  Same logic applies to FOR,
+    * WHILE and DO loop predicates.  AND/OR/HOOK expressions are
+    * syntactic sugar for IF statements; therefore this method returns
+    * true for the predicate and false otherwise.
+@@ -1694,7 +1823,7 @@
+   private Node collapseReplacements(List<Node> replacements) {
+     Node expr = null;
+     for (Node rep : replacements) {
+-      if (rep.getType() == Token.EXPR_RESULT) {
++      if (rep.isExprResult()) {
+         rep = rep.getFirstChild();
+         rep.detachFromParent();
+       }
+@@ -1702,7 +1831,7 @@
+       if (expr == null) {
+         expr = rep;
+       } else {
+-        expr = new Node(Token.COMMA, expr, rep);
++        expr = IR.comma(expr, rep);
+       }
+     }
+ 
+@@ -1718,11 +1847,11 @@
+         // process body
+         return getRhsSubexpressions(n.getFirstChild());
+       case Token.FUNCTION:
+-        // function nodes have no rhs
++        // function nodes have no RHS
+         return Collections.emptyList();
+       case Token.NAME:
+         {
+-          // parent is a var node.  rhs is first child
++          // parent is a var node.  RHS is the first child
+           Node rhs = n.getFirstChild();
+           if (rhs != null) {
+             return Lists.newArrayList(rhs);
+@@ -1732,7 +1861,7 @@
+         }
+       case Token.ASSIGN:
+         {
+-          // add lhs and rhs expressions - lhs may be a complex expression
++          // add LHS and RHS expressions - LHS may be a complex expression
+           Node lhs = n.getFirstChild();
+           Node rhs = lhs.getNext();
+           return Lists.newArrayList(lhs, rhs);
+diff -r -u original/test/com/google/javascript/jscomp/NameAnalyzerTest.java buggy/test/com/google/javascript/jscomp/NameAnalyzerTest.java
+--- original/test/com/google/javascript/jscomp/NameAnalyzerTest.java	2023-06-13 15:31:46.507116369 +0800
++++ buggy/test/com/google/javascript/jscomp/NameAnalyzerTest.java	2023-06-12 11:40:30.006552365 +0800
+@@ -27,7 +27,9 @@
+   private static String kExterns =
+       "var window, top;" +
+       "var document;" +
+-      "var Function; var externfoo; methods.externfoo;";
++      "var Function;" +
++      "var Array;" +
++      "var externfoo; methods.externfoo;";
+ 
+   public NameAnalyzerTest() {
+     super(kExterns);
+@@ -45,43 +47,84 @@
+     return 1;
+   }
+ 
+-  public void testRemoveVarDeclartion1() {
++  public void testRemoveVarDeclaration1() {
+     test("var foo = 3;", "");
+   }
+ 
+-  public void testRemoveVarDeclartion2() {
++  public void testRemoveVarDeclaration2() {
+     test("var foo = 3, bar = 4; externfoo = foo;",
+          "var foo = 3; externfoo = foo;");
+   }
+ 
+-  public void testRemoveVarDeclartion3() {
++  public void testRemoveVarDeclaration3() {
+     test("var a = f(), b = 1, c = 2; b; c", "f();var b = 1, c = 2; b; c");
+   }
+ 
+-  public void testRemoveVarDeclartion4() {
++  public void testRemoveVarDeclaration4() {
+     test("var a = 0, b = f(), c = 2; a; c", "var a = 0;f();var c = 2; a; c");
+   }
+ 
+-  public void testRemoveVarDeclartion5() {
++  public void testRemoveVarDeclaration5() {
+     test("var a = 0, b = 1, c = f(); a; b", "var a = 0, b = 1; f(); a; b");
+   }
+ 
+-  public void testRemoveVarDeclartion6() {
++  public void testRemoveVarDeclaration6() {
+     test("var a = 0, b = a = 1; a", "var a = 0; a = 1; a");
+   }
+ 
+-  public void testRemoveVarDeclartion7() {
++  public void testRemoveVarDeclaration7() {
+     test("var a = 0, b = a = 1", "");
+   }
+ 
+-  public void testRemoveVarDeclartion8() {
++  public void testRemoveVarDeclaration8() {
+     test("var a;var b = 0, c = a = b = 1", "");
+   }
+ 
+-  public void testRemoveFunction() {
++
++  public void testRemoveDeclaration1() {
++    test("var a;var b = 0, c = a = b = 1", "");
++  }
++
++  public void testRemoveDeclaration2() {
++    test("var a,b,c; c = a = b = 1", "");
++  }
++
++  public void testRemoveDeclaration3() {
++    test("var a,b,c; c = a = b = {}; a.x = 1;", "");
++  }
++
++  public void testRemoveDeclaration4() {
++    testSame("var a,b,c; c = a = b = {}; a.x = 1;alert(c.x);");
++  }
++
++  public void testRemoveDeclaration5() {
++    test("var a,b,c; c = a = b = null; use(b)", "var b;b=null;use(b)");
++  }
++
++  public void testRemoveDeclaration6() {
++    test("var a,b,c; c = a = b = 'str';use(b)", "var b;b='str';use(b)");
++  }
++
++  public void testRemoveDeclaration7() {
++    test("var a,b,c; c = a = b = true;use(b)", "var b;b=true;use(b)");
++  }
++
++  public void testRemoveFunction1() {
++    test("var foo = function(){};", "");
++  }
++
++  public void testRemoveFunction2() {
++    test("var foo; foo = function(){};", "");
++  }
++
++  public void testRemoveFunction3() {
+     test("var foo = {}; foo.bar = function() {};", "");
+   }
+ 
++  public void testRemoveFunction4() {
++    test("var a = {}; a.b = {}; a.b.c = function() {};", "");
++  }
++
+   public void testReferredToByWindow() {
+     testSame("var foo = {}; foo.bar = function() {}; window['fooz'] = foo.bar");
+   }
+@@ -102,12 +145,16 @@
+     test("var f = function (){f()}", "");
+   }
+ 
++  public void testRemoveRecursiveFunction2a() {
++    test("var f = function g(){g()}", "");
++  }
++
+   public void testRemoveRecursiveFunction3() {
+     test("var f;f = function (){f()}", "");
+   }
+ 
+   public void testRemoveRecursiveFunction4() {
+-    // TODO(user) bug?  not removed if name definition doesn't exist.
++    // don't removed if name definition doesn't exist.
+     testSame("f = function (){f()}");
+   }
+ 
+@@ -568,6 +615,22 @@
+          "var e = false;if(e);");
+   }
+ 
++  public void testIf4a() {
++    // TODO(johnlenz): fix this.
++    testSame("var e = [], f;if(f=e);f[0] = 1;");
++  }
++
++  public void testIf4b() {
++    // TODO(johnlenz): fix this.
++    test("var e = [], f;if(e=f);f[0] = 1;",
++         "var f;if(f);f[0] = 1;");
++  }
++
++  public void testIf4c() {
++    test("var e = [], f;if(f=e);e[0] = 1;",
++         "var e = [];if(e);e[0] = 1;");
++  }
++
+   public void testIf5() {
+     test("var e = false, f;var foo = {};if(f = e + 1)foo.bar=function(){};",
+          "var e = false;if(e + 1);");
+@@ -690,17 +753,11 @@
+   }
+ 
+   public void testSetterInForIn3() {
+-    // TODO(user) Fix issue similar to b/2316773: bar should be preserved
+-    // but isn't due to missing references between e and foo.a
+-    test("var foo = {}; var bar; for(e in bar = foo.a); bar.b = 3",
+-         "var foo = {}; for(e in foo.a);");
++    testSame("var foo = {}; var bar; for(e in bar = foo.a); bar.b = 3");
+   }
+ 
+   public void testSetterInForIn4() {
+-    // TODO(user) Fix issue similar to b/2316773: bar should be preserved
+-    // but isn't due to missing references between e and foo.a
+-    test("var foo = {}; var bar; for (e in bar = foo.a); bar.b = 3; foo.a",
+-         "var foo = {}; for (e in foo.a); foo.a");
++    testSame("var foo = {}; var bar; for (e in bar = foo.a); bar.b = 3; foo.a");
+   }
+ 
+   public void testSetterInForIn5() {
+@@ -749,9 +806,13 @@
+     testSame("var x = 0; x += 3; x *= 5;");
+   }
+ 
+-  public void testNestedAssigns() {
+-    // TODO(nicksantos): Make NameAnalyzer smarter, so that we can eliminate x.
+-    testSame("var x = 0; var y = x = 3; window.alert(y);");
++  public void testNestedAssigns1() {
++    test("var x = 0; var y = x = 3; window.alert(y);",
++         "var y = 3; window.alert(y);");
++  }
++
++  public void testNestedAssigns2() {
++    testSame("var x = 0; var y = x = {}; x.b = 3; window.alert(y);");
+   }
+ 
+   public void testComplexNestedAssigns1() {
+@@ -871,6 +932,11 @@
+     testSame("var g; 1 || (externfoo.x = function() { g; })");
+   }
+ 
++  public void testConditionallyDefinedFunction3() {
++      testSame("var a = {};" +
++           "rand() % 2 || (a.f = function() { externfoo = 1; } || alert());");
++  }
++
+   public void testGetElemOnThis() {
+     testSame("var a = 3; this['foo'] = a;");
+     testSame("this['foo'] = 3;");
+@@ -919,6 +985,19 @@
+         "}; new Bar().func();");
+   }
+ 
++  public void testDoNotChangeLocalScopeReferencedLocalScopedInstanceOf2() {
++    test(
++        "function Foo() {}" +
++        "var createAxis = function(f) { return window.passThru(f); };" +
++        "var axis = createAxis(function(test) {" +
++        "  return test instanceof Foo;" +
++        "});",
++        "var createAxis = function(f) { return window.passThru(f); };" +
++        "createAxis(function(test) {" +
++        "  return false;" +
++        "});");
++  }
++
+   public void testDoNotChangeInstanceOfGetElem() {
+     testSame("var goog = {};" +
+         "function f(obj, name) {" +
+@@ -1069,6 +1148,13 @@
+         "");
+   }
+ 
++  public void testAssignWithHook2a() {
++    test("function Foo(){} var foo = null;" +
++        "var f; f = window.a ? " +
++        "    function () {return new Foo()} : function () {return foo};",
++        "");
++  }
++
+   public void testAssignWithHook3() {
+     testSame("function Foo(){} var foo = null; var f = {};" +
+         "f.b = window.a ? " +
+@@ -1097,20 +1183,72 @@
+         "");
+   }
+ 
++  public void testAssignWithHook7() {
++    testSame("function Foo(){} var foo = null;" +
++        "var f = window.a ? new Foo() : foo;" +
++        "f()");
++  }
++
++  public void testAssignWithHook8() {
++    test("function Foo(){} var foo = null;" +
++        "var f = window.a ? new Foo() : foo;",
++        "function Foo(){}" +
++        "window.a && new Foo()");
++  }
++
++  public void testAssignWithHook9() {
++    test("function Foo(){} var foo = null; var f = {};" +
++        "f.b = window.a ? new Foo() : foo;",
++        "function Foo(){} window.a && new Foo()");
++  }
++
++  public void testAssign1() {
++    test("function Foo(){} var foo = null; var f = {};" +
++        "f.b = window.a;",
++        "");
++  }
++
++  public void testAssign2() {
++    test("function Foo(){} var foo = null; var f = {};" +
++        "f.b = window;",
++        "");
++  }
++
++  public void testAssign3() {
++    test("var f = {};" +
++        "f.b = window;",
++        "");
++  }
++
++  public void testAssign4() {
++    test("function Foo(){} var foo = null; var f = {};" +
++        "f.b = new Foo();",
++        "function Foo(){} new Foo()");
++  }
++
++  public void testAssign5() {
++    test("function Foo(){} var foo = null; var f = {};" +
++        "f.b = foo;",
++        "");
++  }
++
+   public void testNestedAssign1() {
+     test("var a, b = a = 1, c = 2", "");
+   }
+ 
+   public void testNestedAssign2() {
+-    testSame("var a, b = a = 1; foo(b)");
++    test("var a, b = a = 1; foo(b)",
++         "var b = 1; foo(b)");
+   }
+ 
+   public void testNestedAssign3() {
+-    testSame("var a, b = a = 1; a = b = 2; foo(b)");
++    test("var a, b = a = 1; a = b = 2; foo(b)",
++         "var b = 1; b = 2; foo(b)");
+   }
+ 
+   public void testNestedAssign4() {
+-    testSame("var a, b = a = 1; b = a = 2; foo(b)");
++    test("var a, b = a = 1; b = a = 2; foo(b)",
++         "var b = 1; b = 2; foo(b)");
+   }
+ 
+   public void testNestedAssign5() {
+@@ -1433,13 +1571,7 @@
+         "this.x = Foo.getInstance();");
+   }
+ 
+-  // TODO(user): Make NameAnalyzer handle this. The OR subexpressions may
+-  // modify global state.
+-  // public void testConditionallyDefinedFunction3() {
+-  //    test("var a = {};" +
+-  //         "rand() % 2 || (a.f = function() { externfoo = 1; } || alert());",
+-  //         "rand() % 2 || function() { externfoo = 1; } || alert();");
+-  // }
++
+ 
+   public void testNoRemoveWindowPropertyAlias1() {
+      testSame(
+@@ -1459,6 +1591,62 @@
+         "self_['qs'] = function() {};");
+   }
+ 
++  public void testNoRemoveWindowPropertyAlias4() {
++    // TODO(johnlenz): fix this. "self_" should remain.
++    test(
++        "var self_ = window['gbar'] || {};\n" +
++        "self_.qs = function() {};",
++        "");
++ }
++
++  public void testNoRemoveWindowPropertyAlias4a() {
++    // TODO(johnlenz): fix this. "self_" should remain.
++    test(
++        "var self_; self_ = window.gbar || {};\n" +
++        "self_.qs = function() {};",
++        "");
++ }
++
++  public void testNoRemoveWindowPropertyAlias5() {
++    // TODO(johnlenz): fix this. "self_" should remain.
++    test(
++        "var self_ = window || {};\n" +
++        "self_['qs'] = function() {};",
++        "");
++  }
++
++  public void testNoRemoveWindowPropertyAlias5a() {
++    // TODO(johnlenz): fix this.
++    test(
++        "var self_; self_ = window || {};\n" +
++        "self_['qs'] = function() {};",
++        "");
++  }
++
++  public void testNoRemoveWindowPropertyAlias6() {
++    testSame(
++        "var self_ = (window.gbar = window.gbar || {});\n" +
++        "self_.qs = function() {};");
++  }
++
++  public void testNoRemoveWindowPropertyAlias6a() {
++    testSame(
++        "var self_; self_ = (window.gbar = window.gbar || {});\n" +
++        "self_.qs = function() {};");
++  }
++
++  public void testNoRemoveWindowPropertyAlias7() {
++    testSame(
++        "var self_ = (window = window || {});\n" +
++        "self_['qs'] = function() {};");
++  }
++
++  public void testNoRemoveWindowPropertyAlias7a() {
++    testSame(
++        "var self_; self_ = (window = window || {});\n" +
++        "self_['qs'] = function() {};");
++  }
++
+   public void testNoRemoveAlias0() {
+     testSame(
+         "var x = {}; function f() { return x; }; " +
+@@ -1520,6 +1708,221 @@
+       "throw new e();");
+   }
+ 
++  public void testClassDefinedInObjectLit1() {
++    test(
++      "var data = {Foo: function() {}};" +
++      "data.Foo.prototype.toString = function() {};",
++      "");
++  }
++
++  public void testClassDefinedInObjectLit2() {
++    test(
++      "var data = {}; data.bar = {Foo: function() {}};" +
++      "data.bar.Foo.prototype.toString = function() {};",
++      "");
++  }
++
++  public void testClassDefinedInObjectLit3() {
++    test(
++      "var data = {bar: {Foo: function() {}}};" +
++      "data.bar.Foo.prototype.toString = function() {};",
++      "");
++  }
++
++  public void testClassDefinedInObjectLit4() {
++    test(
++      "var data = {};" +
++      "data.baz = {bar: {Foo: function() {}}};" +
++      "data.baz.bar.Foo.prototype.toString = function() {};",
++      "");
++  }
++
++  public void testVarReferencedInClassDefinedInObjectLit1() {
++    testSame(
++      "var ref = 3;" +
++      "var data = {Foo: function() { this.x = ref; }};" +
++      "window.Foo = data.Foo;");
++  }
++
++  public void testVarReferencedInClassDefinedInObjectLit2() {
++    testSame(
++      "var ref = 3;" +
++      "var data = {Foo: function() { this.x = ref; }," +
++      "            Bar: function() {}};" +
++      "window.Bar = data.Bar;");
++  }
++
++  public void testArrayExt() {
++    testSame(
++      "Array.prototype.foo = function() { return 1 };" +
++      "var y = [];" +
++      "switch (y.foo()) {" +
++      "}");
++  }
++
++  public void testArrayAliasExt() {
++    testSame(
++      "Array$X = Array;" +
++      "Array$X.prototype.foo = function() { return 1 };" +
++      "function Array$X() {}" +
++      "var y = [];" +
++      "switch (y.foo()) {" +
++      "}");
++  }
++
++  public void testExternalAliasInstanceof1() {
++    test(
++      "Array$X = Array;" +
++      "function Array$X() {}" +
++      "var y = [];" +
++      "if (y instanceof Array) {}",
++      "var y = [];" +
++      "if (y instanceof Array) {}"
++      );
++  }
++
++  public void testExternalAliasInstanceof2() {
++    testSame(
++      "Array$X = Array;" +
++      "function Array$X() {}" +
++      "var y = [];" +
++      "if (y instanceof Array$X) {}");
++  }
++
++  public void testExternalAliasInstanceof3() {
++    testSame(
++      "var b = Array;" +
++      "var y = [];" +
++      "if (y instanceof b) {}");
++  }
++
++  public void testAliasInstanceof4() {
++    testSame(
++      "function Foo() {};" +
++      "var b = Foo;" +
++      "var y = new Foo();" +
++      "if (y instanceof b) {}");
++  }
++
++  public void testAliasInstanceof5() {
++    // TODO(johnlenz): fix this. "b" should remain.
++    test(
++      "function Foo() {}" +
++      "function Bar() {}" +
++      "var b = x ? Foo : Bar;" +
++      "var y = new Foo();" +
++      "if (y instanceof b) {}",
++      "function Foo() {}" +
++      "var y = new Foo;" +
++      "if (false){}");
++  }
++
++  // We cannot leave x.a.prototype there because it will
++  // fail sanity var check.
++  public void testBrokenNamespaceWithPrototypeAssignment() {
++    test("var x = {}; x.a.prototype = 1", "");
++  }
++
++  public void testRemovePrototypeAliases() {
++    test(
++        "function g() {}" +
++        "function F() {} F.prototype.bar = g;" +
++        "window.g = g;",
++        "function g() {}" +
++        "window.g = g;");
++  }
++
++  public void testIssue284() {
++    test(
++        "var goog = {};" +
++        "goog.inherits = function(x, y) {};" +
++        "var ns = {};" +
++        "/** @constructor */" +
++        "ns.PageSelectionModel = function() {};" +
++        "/** @constructor */" +
++        "ns.PageSelectionModel.FooEvent = function() {};" +
++        "/** @constructor */" +
++        "ns.PageSelectionModel.SelectEvent = function() {};" +
++        "goog.inherits(ns.PageSelectionModel.ChangeEvent," +
++        "    ns.PageSelectionModel.FooEvent);",
++        "");
++  }
++
++  public void testIssue838a() {
++    testSame("var z = window['z'] || (window['z'] = {});\n" +
++         "z['hello'] = 'Hello';\n" +
++         "z['world'] = 'World';");
++  }
++
++  public void testIssue838b() {
++    testSame(
++         "var z;" +
++         "window['z'] = z || (z = {});\n" +
++         "z['hello'] = 'Hello';\n" +
++         "z['world'] = 'World';");
++  }
++
++
++  public void testIssue874a() {
++    testSame(
++        "var a = a || {};\n" +
++        "var b = a;\n" +
++        "b.View = b.View || {}\n" +
++        "var c = b.View;\n" +
++        "c.Editor = function f(d, e) {\n" +
++        "  return d + e\n" +
++        "};\n" +
++        "window.ImageEditor.View.Editor = a.View.Editor;");
++  }
++
++  public void testIssue874b() {
++    testSame(
++        "var b;\n" +
++        "var c = b = {};\n" +
++        "c.Editor = function f(d, e) {\n" +
++        "  return d + e\n" +
++        "};\n" +
++        "window['Editor'] = b.Editor;");
++  }
++
++  public void testIssue874c() {
++    testSame(
++        "var b, c;\n" +
++        "c = b = {};\n" +
++        "c.Editor = function f(d, e) {\n" +
++        "  return d + e\n" +
++        "};\n" +
++        "window['Editor'] = b.Editor;");
++  }
++
++  public void testIssue874d() {
++    testSame(
++        "var b = {}, c;\n" +
++        "c = b;\n" +
++        "c.Editor = function f(d, e) {\n" +
++        "  return d + e\n" +
++        "};\n" +
++        "window['Editor'] = b.Editor;");
++  }
++
++  public void testIssue874e() {
++    testSame(
++        "var a;\n" +
++        "var b = a || (a = {});\n" +
++        "var c = b.View || (b.View = {});\n" +
++        "c.Editor = function f(d, e) {\n" +
++        "  return d + e\n" +
++        "};\n" +
++        "window.ImageEditor.View.Editor = a.View.Editor;");
++  }
++
++  public void testBug6575051() {
++    testSame(
++        "var hackhack = window['__o_o_o__'] = window['__o_o_o__'] || {};\n" +
++        "window['__o_o_o__']['va'] = 1;\n" +
++        "hackhack['Vb'] = 1;");
++  }
++
+   @Override
+   protected CompilerPass getProcessor(Compiler compiler) {
+     return new MarkNoSideEffectCallsAndNameAnalyzerRunner(compiler);
+@@ -1534,6 +1937,7 @@
+       this.analyzer = new NameAnalyzer(compiler, true);
+     }
+ 
++    @Override
+     public void process(Node externs, Node root) {
+       markNoSideEffectCalls.process(externs, root);
+       analyzer.process(externs, root);

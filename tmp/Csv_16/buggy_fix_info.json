@@ -1,0 +1,123 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.csv.CSVParserTest::testIteratorSequenceBreaking",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.csv.CSVParser",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Csv",
+  "id": "16",
+  "workingDir": "../bugs/Csv_16_tmp",
+  "bug_name": "Csv_16",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.csv.CSVParserTest",
+      "test_function": "testIteratorSequenceBreaking",
+      "assertion_line": "1053",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c[3]\u003e but was:\u003c[4]\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/csv/CSVParser.java",
+        "src/main/java/org/apache/commons/csv/CSVParser.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.csv.CSVParser:iterator:[]:Iterator\u003cCSVRecord\u003e",
+            "org.apache.commons.csv.CSVParser:CSVParser:[final Reader reader, final CSVFormat format, final long characterOffset, final long recordNumber]:null"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.csv.CSVParser:iterator:[]:Iterator\u003cCSVRecord\u003e",
+            "org.apache.commons.csv.CSVParser:CSVParser:[final Reader reader, final CSVFormat format, final long characterOffset, final long recordNumber]:null"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "289",
+            "358",
+            "525",
+            "526",
+            "527",
+            "528",
+            "575"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "288",
+            "358",
+            "523",
+            "571"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/csv/CSVParser.java b/src/main/java/org/apache/commons/csv/CSVParser.java\nindex 7e9d7d4..1e3106e 100644\n--- a/src/main/java/org/apache/commons/csv/CSVParser.java\n+++ b/src/main/java/org/apache/commons/csv/CSVParser.java\n@@ -286,7 +286,6 @@\n \n     private final Lexer lexer;\n \n-    private final CSVRecordIterator csvRecordIterator;\n     \n     /** A record buffer for getRecord(). Grows as necessary and is reused. */\n     private final List\u003cString\u003e recordList \u003d new ArrayList\u003c\u003e();\n@@ -355,7 +354,6 @@\n \n         this.format \u003d format;\n         this.lexer \u003d new Lexer(format, new ExtendedBufferedReader(reader));\n-        this.csvRecordIterator \u003d new CSVRecordIterator();\n         this.headerMap \u003d this.initializeHeader();\n         this.characterOffset \u003d characterOffset;\n         this.recordNumber \u003d recordNumber - 1;\n@@ -522,10 +520,7 @@\n      */\n     @Override\n     public Iterator\u003cCSVRecord\u003e iterator() {\n-        return csvRecordIterator;\n-    }\n-    \n-    class CSVRecordIterator implements Iterator\u003cCSVRecord\u003e {\n+        return new Iterator\u003cCSVRecord\u003e() {\n         private CSVRecord current;\n   \n         private CSVRecord getNextRecord() {\n@@ -573,6 +568,7 @@\n             throw new UnsupportedOperationException();\n         }\n     };\n+    }\n \n     /**\n      * Parses the next record from the current point in the stream.\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [18803,20228]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [10537,10587]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [13304,13353]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [18916,18941]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TypeDeclaration [18957,20403]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

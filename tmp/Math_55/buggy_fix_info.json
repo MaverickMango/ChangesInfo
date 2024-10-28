@@ -1,0 +1,650 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math.geometry.Vector3DTest::testCrossProductCancellation",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math.geometry.Vector3D",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "55",
+  "workingDir": "../bugs/Math_55_tmp",
+  "bug_name": "Math_55",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math.geometry.Vector3DTest",
+      "test_function": "testCrossProductCancellation",
+      "assertion_line": "159",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c1.0\u003e but was:\u003c0.0\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/geometry/Vector3D.java",
+        "src/main/java/org/apache/commons/math/geometry/Vector3D.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.geometry.Vector3D:crossProduct:[final Vector3D v1, final Vector3D v2]:Vector3D"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.geometry.Vector3D:crossProduct:[final Vector3D v1, final Vector3D v2]:Vector3D"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "459",
+            "460",
+            "461",
+            "462",
+            "463",
+            "467",
+            "468",
+            "469",
+            "470",
+            "471",
+            "472",
+            "473",
+            "482",
+            "483",
+            "485",
+            "486",
+            "487",
+            "490"
+          ],
+          "num": 18
+        },
+        {
+          "qualified_names": [
+            "458",
+            "473"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/geometry/Vector3D.java b/src/main/java/org/apache/commons/math/geometry/Vector3D.java\nindex 2d915e5..3c741e9 100644\n--- a/src/main/java/org/apache/commons/math/geometry/Vector3D.java\n+++ b/src/main/java/org/apache/commons/math/geometry/Vector3D.java\n@@ -456,21 +456,9 @@\n    */\n   public static Vector3D crossProduct(final Vector3D v1, final Vector3D v2) {\n \n-      final double n1 \u003d v1.getNormSq();\n-      final double n2 \u003d v2.getNormSq();\n-      if ((n1 * n2) \u003c MathUtils.SAFE_MIN) {\n-          return ZERO;\n-      }\n \n       // rescale both vectors without losing precision,\n       // to ensure their norm are the same order of magnitude\n-      final int deltaExp \u003d (FastMath.getExponent(n1) - FastMath.getExponent(n2)) / 4;\n-      final double x1    \u003d FastMath.scalb(v1.x, -deltaExp);\n-      final double y1    \u003d FastMath.scalb(v1.y, -deltaExp);\n-      final double z1    \u003d FastMath.scalb(v1.z, -deltaExp);\n-      final double x2    \u003d FastMath.scalb(v2.x,  deltaExp);\n-      final double y2    \u003d FastMath.scalb(v2.y,  deltaExp);\n-      final double z2    \u003d FastMath.scalb(v2.z,  deltaExp);\n \n       // we reduce cancellation errors by preconditioning,\n       // we replace v1 by v3 \u003d v1 - rho v2 with rho chosen in order to compute\n@@ -479,15 +467,10 @@\n       // available at http://www.cs.berkeley.edu/~wkahan/MathH110/Cross.pdf\n \n       // compute rho as an 8 bits approximation of v1.v2 / v2.v2\n-      final double ratio \u003d (x1 * x2 + y1 * y2 + z1 * z2) / FastMath.scalb(n2, 2 * deltaExp);\n-      final double rho   \u003d FastMath.rint(256 * ratio) / 256;\n \n-      final double x3 \u003d x1 - rho * x2;\n-      final double y3 \u003d y1 - rho * y2;\n-      final double z3 \u003d z1 - rho * z2;\n \n       // compute cross product from v3 and v2 instead of v1 and v2\n-      return new Vector3D(y3 * z2 - z3 * y2, z3 * x2 - x3 * z2, x3 * y2 - y3 * x2);\n+      return new Vector3D(v1.y * v2.z - v1.z * v2.y, v1.z * v2.x - v1.x * v2.z, v1.x * v2.y - v1.y * v2.x);\n \n   }\n \n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [15645,15656]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [15659,15670]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [15672,15683]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [15686,15697]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [15699,15710]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [15713,15724]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "QualifiedName: v1.y [15645,15649]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "QualifiedName: v1.z [15659,15663]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "QualifiedName: v1.z [15672,15676]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "QualifiedName: v1.x [15686,15690]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "QualifiedName: v1.x [15699,15703]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "QualifiedName: v1.y [15713,15717]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [15008,15041]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [15048,15081]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [15088,15156]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [15282,15361]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [15368,15421]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [15428,15481]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [15488,15541]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: final [15548,15553]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PrimitiveType: double [15554,15560]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: x2 [15561,15563]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_RECEIVER [15569,15577]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: scalb [15578,15583]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: deltaExp [15591,15599]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [15584,15599]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [15569,15600]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [15561,15600]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [15548,15601]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: final [15608,15613]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PrimitiveType: double [15614,15620]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: y2 [15621,15623]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_RECEIVER [15629,15637]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: scalb [15638,15643]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: deltaExp [15651,15659]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [15644,15659]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [15629,15660]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [15621,15660]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [15608,15661]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: final [15668,15673]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PrimitiveType: double [15674,15680]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: z2 [15681,15683]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_RECEIVER [15689,15697]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: scalb [15698,15703]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: deltaExp [15711,15719]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [15704,15719]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [15689,15720]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [15681,15720]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [15668,15721]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [16157,16243]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [16250,16304]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: final [16312,16317]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PrimitiveType: double [16318,16324]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: x3 [16325,16327]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: x1 [16330,16332]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: - [16333,16334]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [16335,16343]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [16325,16343]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [16312,16344]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: final [16351,16356]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PrimitiveType: double [16357,16363]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: y3 [16364,16366]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: y1 [16369,16371]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: - [16372,16373]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [16374,16382]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [16364,16382]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [16351,16383]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: final [16390,16395]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PrimitiveType: double [16396,16402]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: z3 [16403,16405]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: z1 [16408,16410]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: - [16411,16412]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [16413,16421]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [16403,16421]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [16390,16422]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: y3 [16517,16519]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: z2 [16522,16524]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [16517,16524]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: z3 [16527,16529]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: y2 [16532,16534]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [16527,16534]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: z3 [16536,16538]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: x2 [16541,16543]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [16536,16543]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: x3 [16546,16548]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: z2 [16551,16553]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [16546,16553]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: x3 [16555,16557]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: y2 [16560,16562]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [16555,16562]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: y3 [16565,16567]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: x2 [16570,16572]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [16565,16572]",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

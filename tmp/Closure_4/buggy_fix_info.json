@@ -1,0 +1,112 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.TypeCheckTest::testImplementsExtendsLoop,com.google.javascript.jscomp.TypeCheckTest::testImplementsLoop,com.google.javascript.jscomp.TypeCheckTest::testConversionFromInterfaceToRecursiveConstructor",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.rhino.jstype.NamedType",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "4",
+  "workingDir": "../bugs/Closure_4_tmp",
+  "bug_name": "Closure_4",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testImplementsExtendsLoop",
+      "assertion_line": "9232",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "unexpected warning(s) : JSC_IMPLEMENTS_NON_INTERFACE. can only implement interfaces at [testcode] line 2 : 29, JSC_IMPLEMENTS_NON_INTERFACE. can only implement interfaces at [testcode] line 3 : 26 expected:\u003c1\u003e but was:\u003c2\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testImplementsLoop",
+      "assertion_line": "9223",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c[Parse error. Cycle detected in inheritance chain of type T]\u003e but was:\u003c[can only implement interfaces]\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testConversionFromInterfaceToRecursiveConstructor",
+      "exception": "java.lang.StackOverflowError",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/NamedType.java",
+        "src/com/google/javascript/rhino/jstype/NamedType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.jstype.NamedType:resolveInternal:[ErrorReporter t, StaticScope\u003cJSType\u003e enclosing]:JSType"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.jstype.NamedType:resolveInternal:[ErrorReporter t, StaticScope\u003cJSType\u003e enclosing]:JSType"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "190",
+            "202"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "190",
+            "202"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/NamedType.java b/src/com/google/javascript/rhino/jstype/NamedType.java\nindex 06988ab..70142c4 100644\n--- a/src/com/google/javascript/rhino/jstype/NamedType.java\n+++ b/src/com/google/javascript/rhino/jstype/NamedType.java\n@@ -187,7 +187,7 @@\n     // makes more sense. Now, resolution via registry is first in order to\n     // avoid triggering the warnings built into the resolution via properties.\n     boolean resolved \u003d resolveViaRegistry(t, enclosing);\n-    if (detectInheritanceCycle()) {\n+    if (detectImplicitPrototypeCycle()) {\n       handleTypeCycle(t);\n     }\n \n@@ -199,7 +199,7 @@\n     }\n \n     resolveViaProperties(t, enclosing);\n-    if (detectInheritanceCycle()) {\n+    if (detectImplicitPrototypeCycle()) {\n       handleTypeCycle(t);\n     }\n \n",
+      "operations": [
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

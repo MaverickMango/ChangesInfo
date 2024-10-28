@@ -1,0 +1,150 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.jsontype.DefaultTypingWithPrimitivesTest::testDefaultTypingWithLong",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.ObjectMapper,com.fasterxml.jackson.databind.jsontype.impl.StdTypeResolverBuilder",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "61",
+  "workingDir": "../bugs/JacksonDatabind_61_tmp",
+  "bug_name": "JacksonDatabind_61",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.jsontype.DefaultTypingWithPrimitivesTest",
+      "test_function": "testDefaultTypingWithLong",
+      "assertion_line": "38",
+      "exception": "com.fasterxml.jackson.databind.JsonMappingException",
+      "message": "Class java.lang.Long not subtype of [simple type, class long] (through reference chain: java.util.HashMap[\"longAsField\"]-\u003ecom.fasterxml.jackson.databind.jsontype.Data[\"key\"])"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java",
+        "src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ObjectMapper\\$DefaultTypeResolverBuilder:useForType:[JavaType t]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ObjectMapper\\$DefaultTypeResolverBuilder:useForType:[JavaType t]:boolean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "232",
+            "233",
+            "234"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "231"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java b/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java\nindex 3d939ec..1f419e8 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/ObjectMapper.java\n@@ -229,9 +229,6 @@\n         {\n             // 03-Oct-2016, tatu: As per [databind#1395], need to skip\n             //  primitive types too, regardless\n-            if (t.isPrimitive()) {\n-                return false;\n-            }\n \n             switch (_appliesFor) {\n             case NON_CONCRETE_AND_ARRAYS:\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [10928,10994]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/jsontype/impl/StdTypeResolverBuilder.java",
+        "src/main/java/com/fasterxml/jackson/databind/jsontype/impl/StdTypeResolverBuilder.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.jsontype.impl.StdTypeResolverBuilder:buildTypeDeserializer:[DeserializationConfig config, JavaType baseType, Collection\u003cNamedType\u003e subtypes]:TypeDeserializer",
+            "com.fasterxml.jackson.databind.jsontype.impl.StdTypeResolverBuilder:buildTypeSerializer:[SerializationConfig config, JavaType baseType, Collection\u003cNamedType\u003e subtypes]:TypeSerializer"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.jsontype.impl.StdTypeResolverBuilder:buildTypeSerializer:[SerializationConfig config, JavaType baseType, Collection\u003cNamedType\u003e subtypes]:TypeSerializer",
+            "com.fasterxml.jackson.databind.jsontype.impl.StdTypeResolverBuilder:buildTypeDeserializer:[DeserializationConfig config, JavaType baseType, Collection\u003cNamedType\u003e subtypes]:TypeDeserializer"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "74",
+            "75",
+            "76",
+            "107",
+            "108",
+            "109"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "73",
+            "109"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/StdTypeResolverBuilder.java b/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/StdTypeResolverBuilder.java\nindex e5a3e4d..ad9888f 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/StdTypeResolverBuilder.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/StdTypeResolverBuilder.java\n@@ -71,9 +71,6 @@\n         if (_idType \u003d\u003d JsonTypeInfo.Id.NONE) { return null; }\n         // 03-Oct-2016, tatu: As per [databind#1395] better prevent use for primitives,\n         //    regardless of setting\n-        if (baseType.isPrimitive()) {\n-            return null;\n-        }\n         TypeIdResolver idRes \u003d idResolver(config, baseType, subtypes, true, false);\n         switch (_includeAs) {\n         case WRAPPER_ARRAY:\n@@ -104,9 +101,6 @@\n         if (_idType \u003d\u003d JsonTypeInfo.Id.NONE) { return null; }\n         // 03-Oct-2016, tatu: As per [databind#1395] better prevent use for primitives,\n         //    regardless of setting\n-        if (baseType.isPrimitive()) {\n-            return null;\n-        }\n \n         TypeIdResolver idRes \u003d idResolver(config, baseType, subtypes, false, true);\n \n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [2208,2272]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [3631,3695]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

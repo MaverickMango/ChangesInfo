@@ -1,0 +1,317 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.ExpresssionDecomposerTest::testCanExposeExpression2,com.google.javascript.jscomp.ExpresssionDecomposerTest::testCanExposeExpression7,com.google.javascript.jscomp.InlineFunctionsTest::testDecomposeAnonymousInCall,com.google.javascript.jscomp.PureFunctionIdentifierTest::testCallFunctionFOrGViaHookWithSideEffects,com.google.javascript.jscomp.PureFunctionIdentifierTest::testCallFunctionForGorH,com.google.javascript.jscomp.PureFunctionIdentifierTest::testCallFunctionFOrG,com.google.javascript.jscomp.PureFunctionIdentifierTest::testCallFunctionFOrGViaHook,com.google.javascript.jscomp.PureFunctionIdentifierTest::testCallFunctionFOrGWithSideEffects",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.NodeUtil,com.google.javascript.jscomp.PureFunctionIdentifier",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "141",
+  "workingDir": "../bugs/Closure_141_tmp",
+  "bug_name": "Closure_141",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.ExpresssionDecomposerTest",
+      "test_function": "testCanExposeExpression2",
+      "assertion_line": "85",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003cMOVABLE\u003e but was:\u003cDECOMPOSABLE\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.ExpresssionDecomposerTest",
+      "test_function": "testCanExposeExpression7",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003cMOVABLE\u003e but was:\u003cDECOMPOSABLE\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/NodeUtil.java",
+        "src/com/google/javascript/jscomp/NodeUtil.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.NodeUtil:canBeSideEffected:[Node n, Set\u003cString\u003e knownConstants]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.NodeUtil:canBeSideEffected:[Node n, Set\u003cString\u003e knownConstants]:boolean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "602",
+            "605",
+            "606"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "601"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/NodeUtil.java b/src/com/google/javascript/jscomp/NodeUtil.java\nindex aaf8470..044bdd9 100644\n--- a/src/com/google/javascript/jscomp/NodeUtil.java\n+++ b/src/com/google/javascript/jscomp/NodeUtil.java\n@@ -599,11 +599,8 @@\n       case Token.GETELEM:\n         return true;\n \n-      case Token.FUNCTION:\n         // Anonymous functions definitions are not changed by side-effects,\n         // and named functions are not part of expressions.\n-        Preconditions.checkState(NodeUtil.isAnonymousFunction(n));\n-        return false;\n     }\n \n     for (Node c \u003d n.getFirstChild(); c !\u003d null; c \u003d c.getNext()) {\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [17363,17383]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [17528,17586]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [17595,17608]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/PureFunctionIdentifier.java",
+        "src/com/google/javascript/jscomp/PureFunctionIdentifier.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.PureFunctionIdentifier:getCallableDefinitions:[DefinitionProvider definitionProvider, Node name]:Collection\u003cDefinition\u003e"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.PureFunctionIdentifier:getCallableDefinitions:[DefinitionProvider definitionProvider, Node name]:Collection\u003cDefinition\u003e"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "177",
+            "196",
+            "197",
+            "198",
+            "199",
+            "200",
+            "201",
+            "202",
+            "203",
+            "204",
+            "205",
+            "206",
+            "207",
+            "208",
+            "209",
+            "210",
+            "211",
+            "212",
+            "213",
+            "214",
+            "215",
+            "216"
+          ],
+          "num": 22
+        },
+        {
+          "qualified_names": [
+            "179",
+            "180",
+            "181",
+            "193"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/PureFunctionIdentifier.java b/src/com/google/javascript/jscomp/PureFunctionIdentifier.java\nindex 894d65b..55afa60 100644\n--- a/src/com/google/javascript/jscomp/PureFunctionIdentifier.java\n+++ b/src/com/google/javascript/jscomp/PureFunctionIdentifier.java\n@@ -174,9 +174,11 @@\n    */\n   private static Collection\u003cDefinition\u003e getCallableDefinitions(\n       DefinitionProvider definitionProvider, Node name) {\n-    if (NodeUtil.isGetProp(name) || NodeUtil.isName(name)) {\n       List\u003cDefinition\u003e result \u003d Lists.newArrayList();\n \n+      if (!NodeUtil.isGetProp(name) \u0026\u0026 !NodeUtil.isName(name)) {\n+        return null;\n+      }\n       Collection\u003cDefinition\u003e decls \u003d\n           definitionProvider.getDefinitionsReferencedAt(name);\n       if (decls \u003d\u003d null) {\n@@ -193,27 +195,6 @@\n       }\n \n       return result;\n-    } else if (name.getType() \u003d\u003d Token.OR || name.getType() \u003d\u003d Token.HOOK) {\n-      Node firstVal;\n-      if (name.getType() \u003d\u003d Token.HOOK) {\n-        firstVal \u003d name.getFirstChild().getNext();\n-      } else {\n-        firstVal \u003d name.getFirstChild();\n-      }\n-\n-      Collection\u003cDefinition\u003e defs1 \u003d getCallableDefinitions(definitionProvider,\n-                                                            firstVal);\n-      Collection\u003cDefinition\u003e defs2 \u003d getCallableDefinitions(definitionProvider,\n-                                                            firstVal.getNext());\n-      if (defs1 !\u003d null \u0026\u0026 defs2 !\u003d null) {\n-        defs1.addAll(defs2);\n-        return defs1;\n-      } else {\n-        return null;\n-      }\n-    } else {\n-      return null;\n-    }\n   }\n \n   /**\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [6543,6592]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [6547,6560]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PrefixExpression [6353,6378]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PrefixExpression [6382,6404]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: decls [6514,6519]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NullLiteral [6523,6527]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [6296,6345]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [6834,6892]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [6902,6916]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [6923,7073]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [7081,7225]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [7232,7386]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [7397,7427]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [7429,7489]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [7495,7525]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [7393,7525]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [6894,7531]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [7537,7563]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [6830,7563]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [6292,7563]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

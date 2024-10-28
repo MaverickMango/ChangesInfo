@@ -1,0 +1,201 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math3.linear.SparseRealVectorTest::testEbeDivideMixedTypes,org.apache.commons.math3.linear.SparseRealVectorTest::testEbeMultiplyMixedTypes,org.apache.commons.math3.linear.SparseRealVectorTest::testEbeMultiplySameType",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math3.linear.OpenMapRealVector",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "29",
+  "workingDir": "../bugs/Math_29_tmp",
+  "bug_name": "Math_29",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math3.linear.SparseRealVectorTest",
+      "test_function": "testEbeDivideMixedTypes",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "entry #0, left \u003d 0.0, right \u003d 0.0 expected:\u003cNaN\u003e but was:\u003c0.0\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math3/linear/OpenMapRealVector.java",
+        "src/main/java/org/apache/commons/math3/linear/OpenMapRealVector.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.linear.OpenMapRealVector:ebeDivide:[RealVector v]:OpenMapRealVector",
+            "org.apache.commons.math3.linear.OpenMapRealVector:ebeMultiply:[RealVector v]:OpenMapRealVector"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.linear.OpenMapRealVector:ebeMultiply:[RealVector v]:OpenMapRealVector",
+            "org.apache.commons.math3.linear.OpenMapRealVector:ebeDivide:[RealVector v]:OpenMapRealVector"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "349",
+            "350",
+            "351",
+            "373",
+            "374",
+            "375",
+            "376",
+            "377",
+            "378",
+            "379",
+            "380",
+            "381",
+            "382",
+            "383",
+            "384"
+          ],
+          "num": 15
+        },
+        {
+          "qualified_names": [
+            "349",
+            "350",
+            "351",
+            "352",
+            "371"
+          ],
+          "num": 5
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math3/linear/OpenMapRealVector.java b/src/main/java/org/apache/commons/math3/linear/OpenMapRealVector.java\nindex 294ac57..8214827 100644\n--- a/src/main/java/org/apache/commons/math3/linear/OpenMapRealVector.java\n+++ b/src/main/java/org/apache/commons/math3/linear/OpenMapRealVector.java\n@@ -346,9 +346,10 @@\n          * this only. Indeed, if this[i] \u003d 0d and v[i] \u003d 0d, then\n          * this[i] / v[i] \u003d NaN, and not 0d.\n          */\n-        final int n \u003d getDimension();\n-        for (int i \u003d 0; i \u003c n; i++) {\n-            res.setEntry(i, this.getEntry(i) / v.getEntry(i));\n+        Iterator iter \u003d entries.iterator();\n+        while (iter.hasNext()) {\n+            iter.advance();\n+            res.setEntry(iter.key(), iter.value() / v.getEntry(iter.key()));\n         }\n         return res;\n     }\n@@ -370,18 +371,6 @@\n          *\n          * These special cases are handled below.\n          */\n-        if (v.isNaN() || v.isInfinite()) {\n-            final int n \u003d getDimension();\n-            for (int i \u003d 0; i \u003c n; i++) {\n-                final double y \u003d v.getEntry(i);\n-                if (Double.isNaN(y)) {\n-                    res.setEntry(i, Double.NaN);\n-                } else if (Double.isInfinite(y)) {\n-                    final double x \u003d this.getEntry(i);\n-                    res.setEntry(i, x * y);\n-                }\n-            }\n-        }\n         return res;\n     }\n \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [11624,11659]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "WhileStatement [11668,11807]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [11675,11689]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [11705,11720]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [11746,11756]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: iter [11758,11762]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [11784,11794]"
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: i [11717,11718]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ThisExpression [11720,11724]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_ARGUMENTS [11734,11735]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: i [11750,11751]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [11624,11653]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationExpression [11667,11676]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [11678,11683]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "PostfixExpression [11685,11688]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ForStatement [11662,11764]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [12518,12964]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

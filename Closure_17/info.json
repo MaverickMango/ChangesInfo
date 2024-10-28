@@ -1,0 +1,377 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Closure",
+  "id": "17",
+  "workingDir": "../bugs/Closure_17_buggy",
+  "inducingCommit": "a2153e7405e09c8fa413a01874c949b8b2bcd32b",
+  "originalCommit": "1d806d5becb1be384050f49ffadbb57b7523db35",
+  "bug_name": "Closure_17",
+  "derive": "defects4j",
+  "original_fixing_commit": "33ab4df84afbdb36216b8a1ea3a526c438615e26",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/TypedScopeCreator.java",
+        "src/com/google/javascript/jscomp/TypedScopeCreator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "getDeclaredType",
+            "defineObjectLiteral",
+            "maybeDeclareQualifiedName"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "defineObjectLiteral",
+            "getDeclaredType",
+            "maybeDeclareQualifiedName"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "546",
+            "557",
+            "558",
+            "1130",
+            "1131",
+            "1132",
+            "1133",
+            "1134",
+            "1137",
+            "1138",
+            "1139",
+            "1140",
+            "1141",
+            "1142",
+            "1293",
+            "1295",
+            "1301",
+            "1304",
+            "1321",
+            "1322",
+            "1323"
+          ],
+          "num": 21
+        },
+        {
+          "qualified_names": [
+            "547",
+            "550",
+            "559",
+            "560",
+            "561",
+            "562",
+            "563",
+            "1135",
+            "1136",
+            "1137",
+            "1138",
+            "1139",
+            "1140",
+            "1141",
+            "1142",
+            "1143",
+            "1144",
+            "1146",
+            "1147",
+            "1148",
+            "1149",
+            "1152",
+            "1153",
+            "1303",
+            "1304",
+            "1306",
+            "1312",
+            "1315",
+            "1332",
+            "1333",
+            "1334",
+            "1335",
+            "1336",
+            "1337"
+          ],
+          "num": 34
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/TypedScopeCreator.java b/src/com/google/javascript/jscomp/TypedScopeCreator.java\nindex 73aee95..a0dd90b 100644\n--- a/src/com/google/javascript/jscomp/TypedScopeCreator.java\n+++ b/src/com/google/javascript/jscomp/TypedScopeCreator.java\n@@ -544,8 +544,10 @@\n       info \u003d getBestJSDocInfo(objectLit);\n       Node lValue \u003d getBestLValue(objectLit);\n       String lValueName \u003d getBestLValueName(lValue);\n+      boolean createdEnumType \u003d false;\n       if (info !\u003d null \u0026\u0026 info.hasEnumParameterType()) {\n         type \u003d createEnumTypeFromNodes(objectLit, lValueName, info, lValue);\n+        createdEnumType \u003d true;\n       }\n \n       if (type \u003d\u003d null) {\n@@ -554,8 +556,11 @@\n \n       setDeferredType(objectLit, type);\n \n-      processObjectLitProperties(\n-          t, objectLit, ObjectType.cast(objectLit.getJSType()));\n+      // If this is an enum, the properties were already taken care of above.\n+      if (!createdEnumType) {\n+        processObjectLitProperties(\n+            t, objectLit, ObjectType.cast(objectLit.getJSType()));\n+      }\n     }\n \n     /**\n@@ -1127,20 +1132,25 @@\n           shouldUseFunctionLiteralType(\n               (FunctionType) rValue.getJSType(), info, lValue)) {\n         return rValue.getJSType();\n-      } else if (info !\u003d null \u0026\u0026 info.hasEnumParameterType()) {\n-        if (rValue !\u003d null \u0026\u0026 rValue.getType() \u003d\u003d Token.OBJECTLIT) {\n-          return rValue.getJSType();\n-        } else {\n-          return createEnumTypeFromNodes(\n+      } else if (info !\u003d null) {\n+        if (info.hasEnumParameterType()) {\n+          if (rValue !\u003d null \u0026\u0026 rValue.getType() \u003d\u003d Token.OBJECTLIT) {\n+            return rValue.getJSType();\n+          } else {\n+            return createEnumTypeFromNodes(\n+                rValue, lValue.getQualifiedName(), info, lValue);\n+          }\n+        } else if (info.isConstructor() || info.isInterface()) {\n+          return createFunctionTypeFromNodes(\n               rValue, lValue.getQualifiedName(), info, lValue);\n+        } else if (info.isConstant() \u0026\u0026 rValue !\u003d null\n+            \u0026\u0026 rValue.getJSType() !\u003d null\n+            \u0026\u0026 !rValue.getJSType().isUnknownType()) {\n+          return rValue.getJSType();\n         }\n-      } else if (info !\u003d null \u0026\u0026\n-                 (info.isConstructor() || info.isInterface())) {\n-        return createFunctionTypeFromNodes(\n-            rValue, lValue.getQualifiedName(), info, lValue);\n-      } else {\n-        return getDeclaredTypeInAnnotation(sourceName, lValue, info);\n       }\n+\n+      return getDeclaredTypeInAnnotation(sourceName, lValue, info);\n     }\n \n     /**\n@@ -1290,18 +1300,19 @@\n       // 1) @type annnotation / @enum annotation\n       // 2) ASSIGN to FUNCTION literal\n       // 3) @param/@return annotation (with no function literal)\n-      // 4) ASSIGN to anything else\n+      // 4) ASSIGN to something marked @const\n+      // 5) ASSIGN to anything else\n       //\n-      // 1 and 3 are declarations, 4 is inferred, and 2 is a declaration iff\n+      // 1, 3, and 4 are declarations, 5 is inferred, and 2 is a declaration iff\n       // the function has not been declared before.\n       //\n       // FUNCTION literals are special because TypedScopeCreator is very smart\n       // about getting as much type information as possible for them.\n \n-      // Determining type for #1 + #2 + #3\n+      // Determining type for #1 + #2 + #3 + #4\n       JSType valueType \u003d getDeclaredType(t.getSourceName(), info, n, rhsValue);\n       if (valueType \u003d\u003d null \u0026\u0026 rhsValue !\u003d null) {\n-        // Determining type for #4\n+        // Determining type for #5\n         valueType \u003d rhsValue.getJSType();\n       }\n \n@@ -1318,9 +1329,12 @@\n \n       boolean inferred \u003d true;\n       if (info !\u003d null) {\n-        // Determining declaration for #1 + #3\n-        inferred \u003d !(info.hasType() || info.hasEnumParameterType() ||\n-            FunctionTypeBuilder.isFunctionTypeDeclaration(info));\n+        // Determining declaration for #1 + #3 + #4\n+        inferred \u003d !(info.hasType()\n+            || info.hasEnumParameterType()\n+            || (info.isConstant() \u0026\u0026 valueType !\u003d null\n+                \u0026\u0026 !valueType.isUnknownType())\n+            || FunctionTypeBuilder.isFunctionTypeDeclaration(info));\n       }\n \n       if (inferred) {\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [20077,20109]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [20502,20636]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PrefixExpression [20506,20522]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [20524,20636]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [20252,20275]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [42663,43357]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [42681,43357]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [43167,43349]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ParenthesizedExpression [50589,50675]"
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [42489,42491]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [42476,42519]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [42792,42794]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ParenthesizedExpression [42812,42856]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [42779,42856]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [42979,43058]",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.CrossModuleMethodMotionTest",
+      "test_function": "testTwoMethods",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.CrossModuleMethodMotionTest",
+      "test_function": "testClosureVariableReads3",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/TypedScopeCreator.java",
+        "src/com/google/javascript/jscomp/TypedScopeCreator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "getDeclaredType"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "getDeclaredType"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1146",
+            "1147",
+            "1148",
+            "1149"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "1146",
+            "1147",
+            "1148",
+            "1149",
+            "1150",
+            "1151",
+            "1152",
+            "1153",
+            "1154",
+            "1155"
+          ],
+          "num": 10
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Closure_17/properties/modified_classes/inducing/src/com/google/javascript/jscomp/TypedScopeCreator.java data/changesInfo//Closure_17/cleaned/fixing/src/com/google/javascript/jscomp/TypedScopeCreator.java\n--- data/changesInfo//Closure_17/properties/modified_classes/inducing/src/com/google/javascript/jscomp/TypedScopeCreator.java\t2023-08-25 13:06:02.810049285 +0800\n+++ data/changesInfo//Closure_17/cleaned/fixing/src/com/google/javascript/jscomp/TypedScopeCreator.java\t2023-07-31 22:23:58.627493438 +0800\n@@ -1143,10 +1143,16 @@\n         } else if (info.isConstructor() || info.isInterface()) {\n           return createFunctionTypeFromNodes(\n               rValue, lValue.getQualifiedName(), info, lValue);\n-        } else if (info.isConstant() \u0026\u0026 rValue !\u003d null\n-            \u0026\u0026 rValue.getJSType() !\u003d null\n-            \u0026\u0026 !rValue.getJSType().isUnknownType()) {\n-          return rValue.getJSType();\n+//        } else if (info.isConstant() \u0026\u0026 rValue !\u003d null\n+//            \u0026\u0026 rValue.getJSDocInfo() !\u003d null\n+//            \u0026\u0026 rValue.getJSDocInfo().hasType()) {\n+//          return rValue.getJSDocInfo().getType().evaluate(scope, typeRegistry);\n+        } else if (info.isConstant() \u0026\u0026 rValue !\u003d null) {\n+          if (rValue.getJSDocInfo() !\u003d null \u0026\u0026 rValue.getJSDocInfo().hasType()) {\n+            return getDeclaredTypeInAnnotation(sourceName, rValue, rValue.getJSDocInfo());\n+          } else if (rValue.getJSType() !\u003d null \u0026\u0026 !rValue.getJSType().isUnknownType()) {\n+            return rValue.getJSType();\n+          }\n         }\n       }\n \n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [43405,43771]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [43446,43771]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [43458,43761]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [43462,43526]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Block [43528,43632]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [43219,43221]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [43171,43248]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

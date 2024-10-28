@@ -1,0 +1,200 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.NormalizeTest::testNormalizeFunctionDeclarations,com.google.javascript.jscomp.NormalizeTest::testRemoveDuplicateVarDeclarations3,com.google.javascript.jscomp.NormalizeTest::testMoveFunctions2",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.Normalize",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "139",
+  "workingDir": "../bugs/Closure_139_tmp",
+  "bug_name": "Closure_139",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.NormalizeTest",
+      "test_function": "testNormalizeFunctionDeclarations",
+      "assertion_line": "167",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: a:var g\u003dfunction(){}\nResult: a:{function g(){}}"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.NormalizeTest",
+      "test_function": "testRemoveDuplicateVarDeclarations3",
+      "assertion_line": "255",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Unexpected error(s): JSC_VAR_MULTIPLY_DECLARED_ERROR. Variable f first declared in testcode at testcode line 1 expected:\u003c0\u003e but was:\u003c1\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.NormalizeTest",
+      "test_function": "testMoveFunctions2",
+      "assertion_line": "141",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function f(){f();a:var bar\u003dfunction(){}}\nResult: function f(){f();a:{function bar(){}}}"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/Normalize.java",
+        "src/com/google/javascript/jscomp/Normalize.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.Normalize\\$NormalizeStatements:rewriteFunctionDeclaration:[Node n]:void",
+            "com.google.javascript.jscomp.Normalize\\$NormalizeStatements:normalizeFunctionDeclaration:[Node n]:void",
+            "com.google.javascript.jscomp.Normalize\\$NormalizeStatements:visit:[NodeTraversal t, Node n, Node parent]:void",
+            "com.google.javascript.jscomp.Normalize\\$DuplicateDeclarationHandler:onRedeclaration:[Scope s, String name, Node n, Node parent, Node gramps, Node nodeWithLineNumber]:void"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.Normalize\\$NormalizeStatements:doStatementNormalizations:[NodeTraversal t, Node n, Node parent]:void",
+            "com.google.javascript.jscomp.Normalize\\$DuplicateDeclarationHandler:onRedeclaration:[Scope s, String name, Node n, Node parent, Node gramps, Node nodeWithLineNumber]:void",
+            "com.google.javascript.jscomp.Normalize\\$NormalizeStatements:visit:[NodeTraversal t, Node n, Node parent]:void"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "281",
+            "282",
+            "283",
+            "295",
+            "296",
+            "297",
+            "298",
+            "299",
+            "300",
+            "301",
+            "319",
+            "321",
+            "322",
+            "323",
+            "324",
+            "327",
+            "330",
+            "331",
+            "332",
+            "334",
+            "335",
+            "542",
+            "544",
+            "545",
+            "546",
+            "547",
+            "548",
+            "549",
+            "550",
+            "551",
+            "552",
+            "553"
+          ],
+          "num": 32
+        },
+        {
+          "qualified_names": [
+            "280",
+            "297",
+            "328",
+            "521"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/Normalize.java b/src/com/google/javascript/jscomp/Normalize.java\nindex 22a5131..26655f1 100644\n--- a/src/com/google/javascript/jscomp/Normalize.java\n+++ b/src/com/google/javascript/jscomp/Normalize.java\n@@ -278,9 +278,6 @@\n           }\n           break;\n \n-        case Token.FUNCTION:\n-          normalizeFunctionDeclaration(n);\n-          break;\n       }\n     }\n \n@@ -292,13 +289,6 @@\n      * to:\n      *    var f \u003d function () {};\n      */\n-    private void normalizeFunctionDeclaration(Node n) {\n-      Preconditions.checkState(n.getType() \u003d\u003d Token.FUNCTION);\n-      if (!NodeUtil.isFunctionAnonymous(n)\n-          \u0026\u0026 !NodeUtil.isHoistedFunctionDeclaration(n)) {\n-        rewriteFunctionDeclaration(n);\n-      }\n-    }\n \n     /**\n      * Rewrite the function declaration from:\n@@ -316,23 +306,12 @@\n      *         LP\n      *         BLOCK\n      */\n-    private void rewriteFunctionDeclaration(Node n) {\n       // Prepare a spot for the function.\n-      Node oldNameNode \u003d n.getFirstChild();\n-      Node fnNameNode \u003d oldNameNode.cloneNode();\n-      Node var \u003d new Node(Token.VAR, fnNameNode, n.getLineno(), n.getCharno());\n-      var.copyInformationFrom(n);\n \n       // Prepare the function\n-      oldNameNode.setString(\"\");\n \n       // Move the function\n-      Node parent \u003d n.getParent();\n-      parent.replaceChild(n, var);\n-      fnNameNode.addChildToFront(n);\n \n-      reportCodeChange(\"Function declaration\");\n-    }\n \n     /**\n      * Do normalizations that introduce new siblings or parents.\n@@ -539,18 +518,8 @@\n         Scope s, String name, Node n, Node parent, Node gramps,\n         Node nodeWithLineNumber) {\n       Preconditions.checkState(n.getType() \u003d\u003d Token.NAME);\n-      Var v \u003d s.getVar(name);\n+      if (parent.getType() \u003d\u003d Token.VAR) {\n       // If name is \"arguments\", Var maybe null.\n-      Preconditions.checkState(\n-          v \u003d\u003d null || v.getParentNode().getType() !\u003d Token.CATCH);\n-      if (v !\u003d null \u0026\u0026 parent.getType() \u003d\u003d Token.FUNCTION) {\n-        if (v.getParentNode().getType() \u003d\u003d Token.VAR) {\n-          s.undeclare(v);\n-          s.declare(name, n, n.getJSType(), v.input);\n-          replaceVarWithAssignment(v.getNameNode(), v.getParentNode(),\n-              v.getParentNode().getParent());\n-        }\n-      } else if (parent.getType() \u003d\u003d Token.VAR) {\n         Preconditions.checkState(parent.hasOneChild());\n \n         replaceVarWithAssignment(n, parent, gramps);\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [9813,9833]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [9844,9876]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "BreakStatement [9887,9893]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [9913,10429]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [10435,11310]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [18437,18460]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [18516,18609]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [18620,18667]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [18669,18941]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [18616,19101]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.Normalize\\$NormalizeStatements:doStatementNormalizations:[NodeTraversal t, Node n, Node parent]:void"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.Normalize\\$NormalizeStatements:rewriteFunctionDeclaration:[Node n]:void",
+        "com.google.javascript.jscomp.Normalize\\$NormalizeStatements:normalizeFunctionDeclaration:[Node n]:void"
+      ],
+      "num": 2
+    }
+  }
+}

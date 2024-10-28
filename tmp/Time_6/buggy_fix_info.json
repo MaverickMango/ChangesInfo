@@ -1,0 +1,170 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.joda.time.chrono.TestGJDate::test_cutoverPreZero,org.joda.time.chrono.TestGJDate::test_plusWeekyears_positiveToNegative_crossCutover,org.joda.time.chrono.TestGJDate::test_plusYears_positiveToZero_crossCutover,org.joda.time.chrono.TestGJDate::test_plusYears_positiveToNegative_crossCutover,org.joda.time.chrono.TestGJDate::test_plusWeekyears_positiveToZero_crossCutover",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.joda.time.chrono.GJChronology",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Time",
+  "id": "6",
+  "workingDir": "../bugs/Time_6_tmp",
+  "bug_name": "Time_6",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.joda.time.chrono.TestGJDate",
+      "test_function": "test_cutoverPreZero",
+      "assertion_line": "132",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    },
+    {
+      "test_class": "org.joda.time.chrono.TestGJDate",
+      "test_function": "test_plusWeekyears_positiveToNegative_crossCutover",
+      "assertion_line": "124",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c-0002-06-30\u003e but was:\u003c-0001-06-28\u003e"
+    },
+    {
+      "test_class": "org.joda.time.chrono.TestGJDate",
+      "test_function": "test_plusYears_positiveToZero_crossCutover",
+      "assertion_line": "99",
+      "exception": "org.joda.time.IllegalFieldValueException",
+      "message": "Value 0 for year is not supported"
+    },
+    {
+      "test_class": "org.joda.time.chrono.TestGJDate",
+      "test_function": "test_plusYears_positiveToNegative_crossCutover",
+      "assertion_line": "105",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c-0002-06-30\u003e but was:\u003c-0001-06-30\u003e"
+    },
+    {
+      "test_class": "org.joda.time.chrono.TestGJDate",
+      "test_function": "test_plusWeekyears_positiveToZero_crossCutover",
+      "assertion_line": "118",
+      "exception": "org.joda.time.IllegalFieldValueException",
+      "message": "Value 0 for year is not supported"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/joda/time/chrono/GJChronology.java",
+        "src/main/java/org/joda/time/chrono/GJChronology.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.joda.time.chrono.GJChronology:getInstance:[DateTimeZone zone, ReadableInstant gregorianCutover, int minDaysInFirstWeek]:GJChronology",
+            "org.joda.time.chrono.GJChronology\\$ImpreciseCutoverField:add:[long instant, int value]:long",
+            "org.joda.time.chrono.GJChronology\\$ImpreciseCutoverField:add:[long instant, long value]:long"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "org.joda.time.chrono.GJChronology\\$ImpreciseCutoverField:getDifference:[long minuendInstant, long subtrahendInstant]:int",
+            "org.joda.time.chrono.GJChronology:getInstance:[DateTimeZone zone, ReadableInstant gregorianCutover, int minDaysInFirstWeek]:GJChronology",
+            "org.joda.time.chrono.GJChronology\\$ImpreciseCutoverField:add:[long instant, int value]:long"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "196",
+            "197",
+            "198",
+            "199",
+            "983",
+            "984",
+            "985",
+            "986",
+            "987",
+            "988",
+            "989",
+            "990",
+            "991",
+            "992",
+            "993",
+            "1016",
+            "1017",
+            "1018",
+            "1019",
+            "1020",
+            "1021",
+            "1022",
+            "1023",
+            "1024",
+            "1025",
+            "1026"
+          ],
+          "num": 26
+        },
+        {
+          "qualified_names": [
+            "195",
+            "986",
+            "1030"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/joda/time/chrono/GJChronology.java b/src/main/java/org/joda/time/chrono/GJChronology.java\nindex d1556f5..b970403 100644\n--- a/src/main/java/org/joda/time/chrono/GJChronology.java\n+++ b/src/main/java/org/joda/time/chrono/GJChronology.java\n@@ -193,10 +193,6 @@\n             cutoverInstant \u003d DEFAULT_CUTOVER;\n         } else {\n             cutoverInstant \u003d gregorianCutover.toInstant();\n-            LocalDate cutoverDate \u003d new LocalDate(cutoverInstant.getMillis(), GregorianChronology.getInstance(zone));\n-            if (cutoverDate.getYear() \u003c\u003d 0) {\n-                throw new IllegalArgumentException(\"Cutover too early. Must be on or after 0001-01-01.\");\n-            }\n         }\n \n         GJChronology chrono;\n@@ -980,17 +976,6 @@\n                 if (instant \u003c iCutover) {\n                     // Only adjust if gap fully crossed.\n                     if (instant + iGapDuration \u003c iCutover) {\n-                        if (iConvertByWeekyear) {\n-                            int wyear \u003d iGregorianChronology.weekyear().get(instant);\n-                            if (wyear \u003c\u003d 0) {\n-                                instant \u003d iGregorianChronology.weekyear().add(instant, -1);\n-                            }\n-                        } else {\n-                            int year \u003d iGregorianChronology.year().get(instant);\n-                            if (year \u003c\u003d 0) {\n-                                instant \u003d iGregorianChronology.year().add(instant, -1);\n-                            }\n-                        }\n                         instant \u003d gregorianToJulian(instant);\n                     }\n                 }\n@@ -1013,17 +998,6 @@\n                 if (instant \u003c iCutover) {\n                     // Only adjust if gap fully crossed.\n                     if (instant + iGapDuration \u003c iCutover) {\n-                        if (iConvertByWeekyear) {\n-                            int wyear \u003d iGregorianChronology.weekyear().get(instant);\n-                            if (wyear \u003c\u003d 0) {\n-                                instant \u003d iGregorianChronology.weekyear().add(instant, -1);\n-                            }\n-                        } else {\n-                            int year \u003d iGregorianChronology.year().get(instant);\n-                            if (year \u003c\u003d 0) {\n-                                instant \u003d iGregorianChronology.year().add(instant, -1);\n-                            }\n-                        }\n                         instant \u003d gregorianToJulian(instant);\n                     }\n                 }\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [7911,8016]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [8029,8182]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [38597,39179]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [40121,40703]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.joda.time.chrono.GJChronology\\$ImpreciseCutoverField:getDifference:[long minuendInstant, long subtrahendInstant]:int"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.joda.time.chrono.GJChronology\\$ImpreciseCutoverField:add:[long instant, long value]:long"
+      ],
+      "num": 1
+    }
+  }
+}

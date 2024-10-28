@@ -1,0 +1,128 @@
+diff --git a/src/java/org/apache/commons/math/util/MathUtils.java b/src/java/org/apache/commons/math/util/MathUtils.java
+index 09bbd4f..d354b87 100644
+--- a/src/java/org/apache/commons/math/util/MathUtils.java
++++ b/src/java/org/apache/commons/math/util/MathUtils.java
+@@ -276,6 +276,30 @@
+     }
+ 
+     /**
++     * Returns true iff both arguments aren null or have same dimensions
++     * and all their elements are {@link #equals(double,double) equals}
++     * 
++     * @param x first array
++     * @param y second array
++     * @return true if the values are both null or have same dimension
++     * and equal elements
++     */
++    public static boolean equals(double[] x, double[] y) {
++        if ((x == null) || (y == null)) {
++            return !((x == null) ^ (y == null));
++        }
++        if (x.length != y.length) {
++            return false;
++        }
++        for (int i = 0; i < x.length; ++i) {
++            if (!equals(x[i], y[i])) {
++                return false;
++            }
++        }
++        return true;
++    }
++
++    /**
+      * Returns n!. Shorthand for <code>n</code> <a
+      * href="http://mathworld.wolfram.com/Factorial.html"> Factorial</a>, the
+      * product of the numbers <code>1,...,n</code>.
+@@ -433,6 +457,23 @@
+     }
+ 
+     /**
++     * Returns an integer hash code representing the given double array value.
++     * 
++     * @param value the value to be hashed (may be null)
++     * @return the hash code
++     */
++    public static int hash(double[] value) {
++        if (value == null) {
++            return 0;
++        }
++        int result = value.length;
++        for (int i = 0; i < value.length; ++i) {
++            result = result * 31 + hash(value[i]);
++        }
++        return result;
++    }
++
++    /**
+      * For a byte value x, this method returns (byte)(+1) if x >= 0 and
+      * (byte)(-1) if x < 0.
+      * 
+diff --git a/src/site/xdoc/changes.xml b/src/site/xdoc/changes.xml
+index f3f12af..c1190ca 100644
+--- a/src/site/xdoc/changes.xml
++++ b/src/site/xdoc/changes.xml
+@@ -143,6 +143,9 @@
+         Throw EOFException when using empty files with ValueServer in replay and
+         digest modes.
+       </action>     
++      <action dev="luc" type="update" >
++        Added a equals and hash methods in MathUtils to check for double arrays
++      </action> 
+     </release>
+     <release version="1.1" date="2005-12-17"  
+  description="This is a maintenance release containing bug fixes and enhancements.
+diff --git a/src/test/org/apache/commons/math/util/MathUtilsTest.java b/src/test/org/apache/commons/math/util/MathUtilsTest.java
+index 7dcd0d9..e204118 100644
+--- a/src/test/org/apache/commons/math/util/MathUtilsTest.java
++++ b/src/test/org/apache/commons/math/util/MathUtilsTest.java
+@@ -209,6 +209,27 @@
+         }
+     }
+ 
++    public void testArrayEquals() {
++        assertFalse(MathUtils.equals(new double[] { 1d }, null));
++        assertFalse(MathUtils.equals(null, new double[] { 1d }));
++        assertTrue(MathUtils.equals((double[]) null, (double[]) null));
++
++        assertFalse(MathUtils.equals(new double[] { 1d }, new double[0]));
++        assertTrue(MathUtils.equals(new double[] { 1d }, new double[] { 1d }));
++        assertTrue(MathUtils.equals(new double[] {
++                                      Double.NaN, Double.POSITIVE_INFINITY,
++                                      Double.NEGATIVE_INFINITY, 1d, 0d
++                                    }, new double[] {
++                                      Double.NaN, Double.POSITIVE_INFINITY,
++                                      Double.NEGATIVE_INFINITY, 1d, 0d
++                                    }));
++        assertFalse(MathUtils.equals(new double[] { Double.POSITIVE_INFINITY },
++                                     new double[] { Double.NEGATIVE_INFINITY }));
++        assertFalse(MathUtils.equals(new double[] { 1d },
++                                     new double[] { MathUtils.nextAfter(1d, 2d) }));
++
++    }
++
+     public void testFactorial() {
+         for (int i = 1; i < 10; i++) {
+             assertEquals(i + "! ", factorial(i), MathUtils.factorial(i));
+@@ -295,6 +316,22 @@
+         }
+     }
+ 
++    public void testArrayHash() {
++        assertEquals(0, MathUtils.hash((double[]) null));
++        assertEquals(MathUtils.hash(new double[] {
++                                      Double.NaN, Double.POSITIVE_INFINITY,
++                                      Double.NEGATIVE_INFINITY, 1d, 0d
++                                    }),
++                     MathUtils.hash(new double[] {
++                                      Double.NaN, Double.POSITIVE_INFINITY,
++                                      Double.NEGATIVE_INFINITY, 1d, 0d
++                                    }));
++        assertFalse(MathUtils.hash(new double[] { 1d }) ==
++                    MathUtils.hash(new double[] { MathUtils.nextAfter(1d, 2d) }));
++        assertFalse(MathUtils.hash(new double[] { 1d }) ==
++                    MathUtils.hash(new double[] { 1d, 1d }));
++    }
++
+     public void testIndicatorByte() {
+         assertEquals((byte)1, MathUtils.indicator((byte)2));
+         assertEquals((byte)1, MathUtils.indicator((byte)0));

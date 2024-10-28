@@ -1,0 +1,126 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math.optimization.general.LevenbergMarquardtOptimizerTest::testCircleFitting",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math.optimization.general.AbstractLeastSquaresOptimizer",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "65",
+  "workingDir": "../bugs/Math_65_tmp",
+  "bug_name": "Math_65",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math.optimization.general.LevenbergMarquardtOptimizerTest",
+      "test_function": "testCircleFitting",
+      "assertion_line": "442",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c0.004\u003e but was:\u003c0.0019737107108948474\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/optimization/general/AbstractLeastSquaresOptimizer.java",
+        "src/main/java/org/apache/commons/math/optimization/general/AbstractLeastSquaresOptimizer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.optimization.general.AbstractLeastSquaresOptimizer:getRMS:[]:double",
+            "org.apache.commons.math.optimization.general.AbstractLeastSquaresOptimizer:getChiSquare:[]:double"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.optimization.general.AbstractLeastSquaresOptimizer:getRMS:[]:double",
+            "org.apache.commons.math.optimization.general.AbstractLeastSquaresOptimizer:getChiSquare:[]:double"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "240",
+            "253"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "240",
+            "241",
+            "242",
+            "243",
+            "244",
+            "245",
+            "258"
+          ],
+          "num": 7
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/optimization/general/AbstractLeastSquaresOptimizer.java b/src/main/java/org/apache/commons/math/optimization/general/AbstractLeastSquaresOptimizer.java\nindex 5a60da8..30ebfff 100644\n--- a/src/main/java/org/apache/commons/math/optimization/general/AbstractLeastSquaresOptimizer.java\n+++ b/src/main/java/org/apache/commons/math/optimization/general/AbstractLeastSquaresOptimizer.java\n@@ -237,7 +237,12 @@\n      * @return RMS value\n      */\n     public double getRMS() {\n-        return Math.sqrt(getChiSquare() / rows);\n+        double criterion \u003d 0;\n+        for (int i \u003d 0; i \u003c rows; ++i) {\n+            final double residual \u003d residuals[i];\n+            criterion +\u003d residual * residual * residualsWeights[i];\n+        }\n+        return Math.sqrt(criterion / rows);\n     }\n \n     /**\n@@ -250,7 +255,7 @@\n         double chiSquare \u003d 0;\n         for (int i \u003d 0; i \u003c rows; ++i) {\n             final double residual \u003d residuals[i];\n-            chiSquare +\u003d residual * residual * residualsWeights[i];\n+            chiSquare +\u003d residual * residual / residualsWeights[i];\n         }\n         return chiSquare;\n     }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [8394,8415]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ForStatement [8424,8584]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [9034,9089]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: criterion [8610,8619]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [8411,8425]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [8840,8895]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

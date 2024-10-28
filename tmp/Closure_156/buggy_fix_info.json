@@ -1,0 +1,239 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.CollapsePropertiesTest::testAliasedTopLevelEnum,com.google.javascript.jscomp.CollapsePropertiesTest::testIssue389",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.CollapseProperties",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "156",
+  "workingDir": "../bugs/Closure_156_tmp",
+  "bug_name": "Closure_156",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.CollapsePropertiesTest",
+      "test_function": "testAliasedTopLevelEnum",
+      "assertion_line": "1309",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function alias(){}var dojo\u003d{};dojo.gfx\u003d{};dojo.declare\u003dfunction(){};var dojo$gfx$Shape\u003d{SQUARE:2};dojo$gfx$Shape\u003ddojo.declare(\"dojo.gfx.Shape\");alias(dojo);alias(dojo$gfx$Shape.SQUARE)\nResult: function alias(){}var dojo\u003d{};dojo.gfx\u003d{};dojo.declare\u003dfunction(){};dojo.gfx.Shape\u003d{SQUARE:2};dojo$gfx$Shape\u003ddojo.declare(\"dojo.gfx.Shape\");alias(dojo);alias(dojo$gfx$Shape.SQUARE)"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.CollapsePropertiesTest",
+      "test_function": "testIssue389",
+      "assertion_line": "1275",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function alias(){}var dojo\u003d{};dojo.gfx\u003d{};dojo.declare\u003dfunction(){};var dojo$gfx$Shape\u003dfunction(){};dojo$gfx$Shape\u003ddojo.declare(\"dojo.gfx.Shape\");alias(dojo)\nResult: function alias(){}var dojo\u003d{};dojo.gfx\u003d{};dojo.declare\u003dfunction(){};dojo.gfx.Shape\u003dfunction(){};dojo$gfx$Shape\u003ddojo.declare(\"dojo.gfx.Shape\");alias(dojo)"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CollapseProperties.java",
+        "src/com/google/javascript/jscomp/CollapseProperties.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CollapseProperties:updateObjLitOrFunctionDeclaration:[Name n, String alias, boolean canCollapseChildNames]:void",
+            "com.google.javascript.jscomp.CollapseProperties:updateFunctionDeclarationAtFunctionNode:[Name n, boolean canCollapseChildNames]:void",
+            "com.google.javascript.jscomp.CollapseProperties:updateObjLitOrFunctionDeclarationAtAssignNode:[Name n, String alias, boolean canCollapseChildNames]:void",
+            "com.google.javascript.jscomp.CollapseProperties:updateObjLitOrFunctionDeclarationAtVarNode:[Name n, boolean canCollapseChildNames]:void",
+            "com.google.javascript.jscomp.CollapseProperties:collapseDeclarationOfNameAndDescendants:[Name n, String alias]:void"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CollapseProperties:collapseDeclarationOfNameAndDescendants:[Name n, String alias]:void",
+            "com.google.javascript.jscomp.CollapseProperties:updateObjLitOrFunctionDeclaration:[Name n, String alias]:void",
+            "com.google.javascript.jscomp.CollapseProperties:updateFunctionDeclarationAtFunctionNode:[Name n]:void",
+            "com.google.javascript.jscomp.CollapseProperties:updateObjLitOrFunctionDeclarationAtVarNode:[Name n]:void",
+            "com.google.javascript.jscomp.CollapseProperties:updateObjLitOrFunctionDeclarationAtAssignNode:[Name n, String alias]:void"
+          ],
+          "num": 5
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "455",
+            "456",
+            "574",
+            "575",
+            "590",
+            "591",
+            "594",
+            "597",
+            "611",
+            "655",
+            "656",
+            "660",
+            "662",
+            "703",
+            "704",
+            "705",
+            "706",
+            "707",
+            "750",
+            "751",
+            "752",
+            "753",
+            "754"
+          ],
+          "num": 23
+        },
+        {
+          "qualified_names": [
+            "455",
+            "456",
+            "574",
+            "589",
+            "592",
+            "595",
+            "609",
+            "653",
+            "659",
+            "699",
+            "742"
+          ],
+          "num": 11
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/CollapseProperties.java b/src/com/google/javascript/jscomp/CollapseProperties.java\nindex abe0159..01295cd 100644\n--- a/src/com/google/javascript/jscomp/CollapseProperties.java\n+++ b/src/com/google/javascript/jscomp/CollapseProperties.java\n@@ -452,8 +452,8 @@\n     boolean canCollapseChildNames \u003d n.canCollapseUnannotatedChildNames();\n \n     // Handle this name first so that nested object literals get unrolled.\n-    if (n.canCollapse()) {\n-      updateObjLitOrFunctionDeclaration(n, alias, canCollapseChildNames);\n+    if (n.canCollapse() \u0026\u0026 canCollapseChildNames) {\n+      updateObjLitOrFunctionDeclaration(n, alias);\n     }\n \n     if (n.props !\u003d null) {\n@@ -571,8 +571,7 @@\n    *     this name. (This is mostly passed for convenience; it\u0027s equivalent to\n    *     n.canCollapseChildNames()).\n    */\n-  private void updateObjLitOrFunctionDeclaration(\n-      Name n, String alias, boolean canCollapseChildNames) {\n+  private void updateObjLitOrFunctionDeclaration(Name n, String alias) {\n     if (n.declaration \u003d\u003d null) {\n       // Some names do not have declarations, because they\n       // are only defined in local scopes.\n@@ -587,14 +586,13 @@\n \n     switch (n.declaration.node.getParent().getType()) {\n       case Token.ASSIGN:\n-        updateObjLitOrFunctionDeclarationAtAssignNode(\n-            n, alias, canCollapseChildNames);\n+        updateObjLitOrFunctionDeclarationAtAssignNode(n, alias);\n         break;\n       case Token.VAR:\n-        updateObjLitOrFunctionDeclarationAtVarNode(n, canCollapseChildNames);\n+        updateObjLitOrFunctionDeclarationAtVarNode(n);\n         break;\n       case Token.FUNCTION:\n-        updateFunctionDeclarationAtFunctionNode(n, canCollapseChildNames);\n+        updateFunctionDeclarationAtFunctionNode(n);\n         break;\n     }\n   }\n@@ -608,7 +606,7 @@\n    * @param alias The flattened name for {@code n} (e.g. \"a\", \"a$b$c\")\n    */\n   private void updateObjLitOrFunctionDeclarationAtAssignNode(\n-      Name n, String alias, boolean canCollapseChildNames) {\n+      Name n, String alias) {\n     // NOTE: It\u0027s important that we don\u0027t add additional nodes\n     // (e.g. a var node before the exprstmt) because the exprstmt might be\n     // the child of an if statement that\u0027s not inside a block).\n@@ -652,15 +650,13 @@\n       insertedVarNode \u003d true;\n     }\n \n-    if (canCollapseChildNames) {\n-      if (isObjLit) {\n+    if (isObjLit) {\n         declareVarsForObjLitValues(\n             n, alias, rvalue,\n             varNode, varParent.getChildBefore(varNode), varParent);\n-      }\n \n-      addStubsForUndeclaredProperties(n, alias, varParent, varNode);\n     }\n+      addStubsForUndeclaredProperties(n, alias, varParent, varNode);\n \n     if (insertedVarNode) {\n       if (!varNode.hasChildren()) {\n@@ -700,11 +696,7 @@\n    *\n    * @param n An object representing a global name (e.g. \"a\")\n    */\n-  private void updateObjLitOrFunctionDeclarationAtVarNode(\n-      Name n, boolean canCollapseChildNames) {\n-    if (!canCollapseChildNames) {\n-      return;\n-    }\n+  private void updateObjLitOrFunctionDeclarationAtVarNode(Name n) {\n \n     Ref ref \u003d n.declaration;\n     String name \u003d ref.node.getString();\n@@ -747,11 +739,7 @@\n    *\n    * @param n An object representing a global name (e.g. \"a\")\n    */\n-  private void updateFunctionDeclarationAtFunctionNode(\n-      Name n, boolean canCollapseChildNames) {\n-    if (!canCollapseChildNames) {\n-      return;\n-    }\n+  private void updateFunctionDeclarationAtFunctionNode(Name n) {\n \n     Ref ref \u003d n.declaration;\n     String fnName \u003d ref.node.getString();\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [16949,16989]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [16965,16967]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: canCollapseChildNames [16968,16989]"
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: canCollapseChildNames [17018,17039]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [21362,21391]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: canCollapseChildNames [21862,21883]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: canCollapseChildNames [21977,21998]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: canCollapseChildNames [22094,22115]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [22571,22600]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: canCollapseChildNames [24086,24107]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [24109,24350]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [24082,24350]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [25759,25788]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [25796,25845]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [27072,27101]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [27109,27158]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.CollapseProperties:updateObjLitOrFunctionDeclarationAtVarNode:[Name n]:void",
+        "com.google.javascript.jscomp.CollapseProperties:updateFunctionDeclarationAtFunctionNode:[Name n]:void",
+        "com.google.javascript.jscomp.CollapseProperties:updateObjLitOrFunctionDeclaration:[Name n, String alias]:void",
+        "com.google.javascript.jscomp.CollapseProperties:updateObjLitOrFunctionDeclarationAtAssignNode:[Name n, String alias]:void"
+      ],
+      "num": 4
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.CollapseProperties:updateObjLitOrFunctionDeclarationAtVarNode:[Name n, boolean canCollapseChildNames]:void",
+        "com.google.javascript.jscomp.CollapseProperties:updateFunctionDeclarationAtFunctionNode:[Name n, boolean canCollapseChildNames]:void",
+        "com.google.javascript.jscomp.CollapseProperties:updateObjLitOrFunctionDeclaration:[Name n, String alias, boolean canCollapseChildNames]:void",
+        "com.google.javascript.jscomp.CollapseProperties:updateObjLitOrFunctionDeclarationAtAssignNode:[Name n, String alias, boolean canCollapseChildNames]:void"
+      ],
+      "num": 4
+    }
+  }
+}

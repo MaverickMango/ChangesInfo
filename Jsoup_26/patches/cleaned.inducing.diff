@@ -1,0 +1,31 @@
+Only in data/changesInfo//Jsoup_26/properties/modified_classes/inducing/src: main
+Only in data/changesInfo//Jsoup_26/properties/modified_classes/inducing/src/test/java/org/jsoup: nodes
+Only in data/changesInfo//Jsoup_26/properties/modified_classes/inducing/src/test/java/org/jsoup: parser
+diff -u -r data/changesInfo//Jsoup_26/properties/modified_classes/inducing/src/test/java/org/jsoup/safety/CleanerTest.java data/changesInfo//Jsoup_26/cleaned/inducing/src/test/java/org/jsoup/safety/CleanerTest.java
+--- data/changesInfo//Jsoup_26/properties/modified_classes/inducing/src/test/java/org/jsoup/safety/CleanerTest.java	2023-12-27 22:51:35.561908910 -0800
++++ data/changesInfo//Jsoup_26/cleaned/inducing/src/test/java/org/jsoup/safety/CleanerTest.java	2023-08-03 04:19:34.324156456 -0700
+@@ -4,6 +4,7 @@
+ import org.jsoup.TextUtil;
+ import org.jsoup.safety.Whitelist;
+ import org.junit.Test;
++import org.jsoup.nodes.Document;
+ import static org.junit.Assert.*;
+ 
+ /**
+@@ -107,4 +108,15 @@
+         String clean = Jsoup.clean(html, Whitelist.basic());
+         assertEquals("<a rel=\"nofollow\">Link</a>", clean);
+     }
++
++    @Test public void handlesFramesets() {
++        String dirty = "<html><head><script></script><noscript></noscript></head><frameset><frame src=\"foo\" /><frame src=\"foo\" /></frameset></html>";
++        String clean = Jsoup.clean(dirty, Whitelist.basic());
++        assertEquals("", clean); // nothing good can come out of that
++
++        Document dirtyDoc = Jsoup.parse(dirty);
++        Document cleanDoc = new Cleaner(Whitelist.basic()).clean(dirtyDoc);
++        assertFalse(cleanDoc == null);
++        assertEquals(0, cleanDoc.body().childNodes().size());
++    }
+ }
+Only in data/changesInfo//Jsoup_26/properties/modified_classes/inducing/src/test/java/org/jsoup: select

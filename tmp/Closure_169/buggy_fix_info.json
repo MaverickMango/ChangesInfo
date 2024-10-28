@@ -1,0 +1,726 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.TypeCheckTest::testIssue791,com.google.javascript.rhino.jstype.RecordTypeTest::testSubtypeWithUnknowns2",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.rhino.jstype.ArrowType,com.google.javascript.rhino.jstype.EquivalenceMethod,com.google.javascript.rhino.jstype.FunctionType,com.google.javascript.rhino.jstype.JSType,com.google.javascript.rhino.jstype.RecordType,com.google.javascript.rhino.jstype.UnionType",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "169",
+  "workingDir": "../bugs/Closure_169_tmp",
+  "bug_name": "Closure_169",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testIssue791",
+      "assertion_line": "6423",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "unexpected warnings(s):"
+    },
+    {
+      "test_class": "com.google.javascript.rhino.jstype.RecordTypeTest",
+      "test_function": "testSubtypeWithUnknowns2",
+      "assertion_line": "139",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/ArrowType.java",
+        "src/com/google/javascript/rhino/jstype/ArrowType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.jstype.ArrowType:checkArrowEquivalenceHelper:[ArrowType that, EquivalenceMethod eqMethod]:boolean",
+            "com.google.javascript.rhino.jstype.ArrowType:hasEqualParameters:[ArrowType that, EquivalenceMethod eqMethod]:boolean"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.jstype.ArrowType:checkArrowEquivalenceHelper:[ArrowType that, boolean tolerateUnknowns]:boolean",
+            "com.google.javascript.rhino.jstype.ArrowType:hasEqualParameters:[ArrowType that, boolean tolerateUnknowns]:boolean"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "177",
+            "187",
+            "204",
+            "206",
+            "209"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "177",
+            "187",
+            "204",
+            "206",
+            "209"
+          ],
+          "num": 5
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/ArrowType.java b/src/com/google/javascript/rhino/jstype/ArrowType.java\nindex 8919efa..c4109b0 100644\n--- a/src/com/google/javascript/rhino/jstype/ArrowType.java\n+++ b/src/com/google/javascript/rhino/jstype/ArrowType.java\n@@ -174,7 +174,7 @@\n    * @return True if our parameter spec is equal to {@code that}\u0027s parameter\n    *     spec.\n    */\n-  boolean hasEqualParameters(ArrowType that, EquivalenceMethod eqMethod) {\n+  boolean hasEqualParameters(ArrowType that, boolean tolerateUnknowns) {\n     Node thisParam \u003d parameters.getFirstChild();\n     Node otherParam \u003d that.parameters.getFirstChild();\n     while (thisParam !\u003d null \u0026\u0026 otherParam !\u003d null) {\n@@ -184,7 +184,7 @@\n         // Both parameter lists give a type for this param, it should be equal\n         if (otherParamType !\u003d null \u0026\u0026\n             !thisParamType.checkEquivalenceHelper(\n-                otherParamType, eqMethod)) {\n+                otherParamType, tolerateUnknowns)) {\n           return false;\n         }\n       } else {\n@@ -201,12 +201,12 @@\n   }\n \n   boolean checkArrowEquivalenceHelper(\n-      ArrowType that, EquivalenceMethod eqMethod) {\n+      ArrowType that, boolean tolerateUnknowns) {\n     // Please keep this method in sync with the hashCode() method below.\n-    if (!returnType.checkEquivalenceHelper(that.returnType, eqMethod)) {\n+    if (!returnType.checkEquivalenceHelper(that.returnType, tolerateUnknowns)) {\n       return false;\n     }\n-    return hasEqualParameters(that, eqMethod);\n+    return hasEqualParameters(that, tolerateUnknowns);\n   }\n \n   @Override\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrimitiveType: boolean [6289,6296]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrimitiveType: boolean [7278,7285]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [6289,6306]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [7272,7289]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/FunctionType.java",
+        "src/com/google/javascript/rhino/jstype/FunctionType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.jstype.FunctionType:hasEqualCallType:[FunctionType otherType]:boolean",
+            "com.google.javascript.rhino.jstype.FunctionType:checkFunctionEquivalenceHelper:[FunctionType that, EquivalenceMethod eqMethod]:boolean",
+            "com.google.javascript.rhino.jstype.FunctionType:tryMergeFunctionPiecewise:[FunctionType other, boolean leastSuper]:FunctionType"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.jstype.FunctionType:tryMergeFunctionPiecewise:[FunctionType other, boolean leastSuper]:FunctionType",
+            "com.google.javascript.rhino.jstype.FunctionType:checkFunctionEquivalenceHelper:[FunctionType that, boolean tolerateUnknowns]:boolean",
+            "com.google.javascript.rhino.jstype.FunctionType:hasEqualCallType:[FunctionType otherType]:boolean"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "792",
+            "890",
+            "908",
+            "909",
+            "918",
+            "919"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "792",
+            "890",
+            "908",
+            "909",
+            "918"
+          ],
+          "num": 5
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/FunctionType.java b/src/com/google/javascript/rhino/jstype/FunctionType.java\nindex 4c62e15..e354e56 100644\n--- a/src/com/google/javascript/rhino/jstype/FunctionType.java\n+++ b/src/com/google/javascript/rhino/jstype/FunctionType.java\n@@ -789,7 +789,7 @@\n   private FunctionType tryMergeFunctionPiecewise(\n       FunctionType other, boolean leastSuper) {\n     Node newParamsNode \u003d null;\n-    if (call.hasEqualParameters(other.call, EquivalenceMethod.IDENTITY)) {\n+    if (call.hasEqualParameters(other.call, false)) {\n       newParamsNode \u003d call.parameters;\n     } else {\n       // If the parameters are not equal, don\u0027t try to merge them.\n@@ -887,7 +887,7 @@\n    * have signatures, two interfaces are equal if their names match.\n    */\n   boolean checkFunctionEquivalenceHelper(\n-      FunctionType that, EquivalenceMethod eqMethod) {\n+      FunctionType that, boolean tolerateUnknowns) {\n     if (isConstructor()) {\n       if (that.isConstructor()) {\n         return this \u003d\u003d that;\n@@ -905,8 +905,8 @@\n     }\n \n     return typeOfThis.checkEquivalenceHelper(\n-        that.typeOfThis, eqMethod) \u0026\u0026\n-        call.checkArrowEquivalenceHelper(that.call, eqMethod);\n+        that.typeOfThis, tolerateUnknowns) \u0026\u0026\n+        call.checkArrowEquivalenceHelper(that.call, tolerateUnknowns);\n   }\n \n   @Override\n@@ -915,8 +915,7 @@\n   }\n \n   public boolean hasEqualCallType(FunctionType otherType) {\n-    return this.call.checkArrowEquivalenceHelper(\n-        otherType.call, EquivalenceMethod.IDENTITY);\n+    return this.call.checkArrowEquivalenceHelper(otherType.call, false);\n   }\n \n   /**\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrimitiveType: boolean [29283,29290]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "BooleanLiteral: false [25910,25915]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "BooleanLiteral: false [30062,30067]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "QualifiedName: EquivalenceMethod.IDENTITY [25910,25936]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [29304,29321]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "QualifiedName: EquivalenceMethod.IDENTITY [30078,30104]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/JSType.java",
+        "src/com/google/javascript/rhino/jstype/JSType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.jstype.JSType:differsFrom:[JSType that]:boolean",
+            "com.google.javascript.rhino.jstype.JSType:isInvariant:[JSType that]:boolean",
+            "com.google.javascript.rhino.jstype.JSType:checkEquivalenceHelper:[JSType that, EquivalenceMethod eqMethod]:boolean",
+            "com.google.javascript.rhino.jstype.JSType:isEquivalentTo:[JSType that]:boolean"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.jstype.JSType:isEquivalentTo:[JSType that]:boolean",
+            "com.google.javascript.rhino.jstype.JSType:isInvariant:[JSType that]:boolean",
+            "com.google.javascript.rhino.jstype.JSType:checkEquivalenceHelper:[JSType that, boolean tolerateUnknowns]:boolean",
+            "com.google.javascript.rhino.jstype.JSType:differsFrom:[JSType that]:boolean"
+          ],
+          "num": 4
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "492",
+            "500",
+            "514",
+            "520",
+            "528",
+            "531",
+            "532",
+            "547",
+            "552",
+            "557",
+            "567",
+            "568",
+            "569",
+            "570",
+            "582",
+            "594",
+            "600"
+          ],
+          "num": 17
+        },
+        {
+          "qualified_names": [
+            "492",
+            "500",
+            "514",
+            "520",
+            "528",
+            "545",
+            "550",
+            "555",
+            "565",
+            "566",
+            "571",
+            "572",
+            "580",
+            "592",
+            "598"
+          ],
+          "num": 15
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/JSType.java b/src/com/google/javascript/rhino/jstype/JSType.java\nindex 9c8e989..081a3d7 100644\n--- a/src/com/google/javascript/rhino/jstype/JSType.java\n+++ b/src/com/google/javascript/rhino/jstype/JSType.java\n@@ -489,7 +489,7 @@\n    * Checks if two types are equivalent.\n    */\n   public final boolean isEquivalentTo(JSType that) {\n-    return checkEquivalenceHelper(that, EquivalenceMethod.IDENTITY);\n+    return checkEquivalenceHelper(that, false);\n   }\n \n   /**\n@@ -497,7 +497,7 @@\n    * @see EquivalenceMethod\n    */\n   public final boolean isInvariant(JSType that) {\n-    return checkEquivalenceHelper(that, EquivalenceMethod.INVARIANT);\n+    return checkEquivalenceHelper(that, false);\n   }\n \n   /**\n@@ -511,13 +511,13 @@\n    *     unknowns\u003c/a\u003e\n    */\n   public final boolean differsFrom(JSType that) {\n-    return !checkEquivalenceHelper(that, EquivalenceMethod.DATA_FLOW);\n+    return !checkEquivalenceHelper(that, true);\n   }\n \n   /**\n    * An equivalence visitor.\n    */\n-  boolean checkEquivalenceHelper(JSType that, EquivalenceMethod eqMethod) {\n+  boolean checkEquivalenceHelper(JSType that, boolean tolerateUnknowns) {\n     if (this \u003d\u003d that) {\n       return true;\n     }\n@@ -525,11 +525,9 @@\n     boolean thisUnknown \u003d isUnknownType();\n     boolean thatUnknown \u003d that.isUnknownType();\n     if (thisUnknown || thatUnknown) {\n-      if (eqMethod \u003d\u003d EquivalenceMethod.INVARIANT) {\n+      if (tolerateUnknowns) {\n         // If we\u0027re checking for invariance, the unknown type is invariant\n         // with everyone.\n-        return true;\n-      } else if (eqMethod \u003d\u003d EquivalenceMethod.DATA_FLOW) {\n         // If we\u0027re checking data flow, then two types are the same if they\u0027re\n         // both unknown.\n         return thisUnknown \u0026\u0026 thatUnknown;\n@@ -544,17 +542,17 @@\n \n     if (isUnionType() \u0026\u0026 that.isUnionType()) {\n       return this.toMaybeUnionType().checkUnionEquivalenceHelper(\n-          that.toMaybeUnionType(), eqMethod);\n+          that.toMaybeUnionType(), tolerateUnknowns);\n     }\n \n     if (isFunctionType() \u0026\u0026 that.isFunctionType()) {\n       return this.toMaybeFunctionType().checkFunctionEquivalenceHelper(\n-          that.toMaybeFunctionType(), eqMethod);\n+          that.toMaybeFunctionType(), tolerateUnknowns);\n     }\n \n     if (isRecordType() \u0026\u0026 that.isRecordType()) {\n       return this.toMaybeRecordType().checkRecordEquivalenceHelper(\n-          that.toMaybeRecordType(), eqMethod);\n+          that.toMaybeRecordType(), tolerateUnknowns);\n     }\n \n     ParameterizedType thisParamType \u003d toMaybeParameterizedType();\n@@ -564,14 +562,14 @@\n       boolean paramsMatch \u003d false;\n       if (thisParamType !\u003d null \u0026\u0026 thatParamType !\u003d null) {\n         paramsMatch \u003d thisParamType.getParameterType().checkEquivalenceHelper(\n-            thatParamType.getParameterType(), eqMethod);\n-      } else if (eqMethod \u003d\u003d EquivalenceMethod.IDENTITY) {\n-        paramsMatch \u003d false;\n-      } else {\n+            thatParamType.getParameterType(), tolerateUnknowns);\n+      } else if (tolerateUnknowns) {\n         // If one of the type parameters is unknown, but the other is not,\n         // then we consider these the same for the purposes of data flow\n         // and invariance.\n         paramsMatch \u003d true;\n+      } else {\n+        paramsMatch \u003d false;\n       }\n \n       JSType thisRootType \u003d thisParamType \u003d\u003d null ?\n@@ -579,7 +577,7 @@\n       JSType thatRootType \u003d thatParamType \u003d\u003d null ?\n           that : thatParamType.getReferencedTypeInternal();\n       return paramsMatch \u0026\u0026\n-          thisRootType.checkEquivalenceHelper(thatRootType, eqMethod);\n+          thisRootType.checkEquivalenceHelper(thatRootType, tolerateUnknowns);\n     }\n \n     if (isNominalType() \u0026\u0026 that.isNominalType()) {\n@@ -591,13 +589,13 @@\n     if (this instanceof ProxyObjectType) {\n       return ((ProxyObjectType) this)\n           .getReferencedTypeInternal().checkEquivalenceHelper(\n-              that, eqMethod);\n+              that, tolerateUnknowns);\n     }\n \n     if (that instanceof ProxyObjectType) {\n       return checkEquivalenceHelper(\n           ((ProxyObjectType) that).getReferencedTypeInternal(),\n-          eqMethod);\n+          tolerateUnknowns);\n     }\n \n     // Relies on the fact that for the base {@link JSType}, only one\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrimitiveType: boolean [13957,13964]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "BooleanLiteral: false [13190,13195]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "BooleanLiteral: false [13373,13378]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: tolerateUnknowns [14174,14190]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "BooleanLiteral: true [13858,13862]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: tolerateUnknowns [15843,15859]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "QualifiedName: EquivalenceMethod.IDENTITY [13190,13216]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "QualifiedName: EquivalenceMethod.INVARIANT [13394,13421]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "QualifiedName: EquivalenceMethod.DATA_FLOW [13901,13928]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [14023,14040]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [14242,14281]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [14394,14406]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [14424,14463]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [14465,14621]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [14420,14947]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [15983,16021]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/RecordType.java",
+        "src/com/google/javascript/rhino/jstype/RecordType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.jstype.RecordType:checkRecordEquivalenceHelper:[RecordType otherRecord, EquivalenceMethod eqMethod]:boolean",
+            "com.google.javascript.rhino.jstype.RecordType:isSubtype:[ObjectType typeA, RecordType typeB]:boolean",
+            "com.google.javascript.rhino.jstype.RecordType:getGreatestSubtypeHelper:[JSType that]:JSType"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.jstype.RecordType:getGreatestSubtypeHelper:[JSType that]:JSType",
+            "com.google.javascript.rhino.jstype.RecordType:isSubtype:[ObjectType typeA, RecordType typeB]:boolean",
+            "com.google.javascript.rhino.jstype.RecordType:checkRecordEquivalenceHelper:[RecordType otherRecord, boolean tolerateUnknowns]:boolean"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "118",
+            "126",
+            "204",
+            "266",
+            "277"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "118",
+            "126",
+            "204",
+            "205",
+            "268",
+            "280"
+          ],
+          "num": 6
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/RecordType.java b/src/com/google/javascript/rhino/jstype/RecordType.java\nindex d70db70..50423d5 100755\n--- a/src/com/google/javascript/rhino/jstype/RecordType.java\n+++ b/src/com/google/javascript/rhino/jstype/RecordType.java\n@@ -115,7 +115,7 @@\n   }\n \n   boolean checkRecordEquivalenceHelper(\n-      RecordType otherRecord, EquivalenceMethod eqMethod) {\n+      RecordType otherRecord, boolean tolerateUnknowns) {\n     Set\u003cString\u003e keySet \u003d properties.keySet();\n     Map\u003cString, JSType\u003e otherProps \u003d otherRecord.properties;\n     if (!otherProps.keySet().equals(keySet)) {\n@@ -123,7 +123,7 @@\n     }\n     for (String key : keySet) {\n       if (!otherProps.get(key).checkEquivalenceHelper(\n-              properties.get(key), eqMethod)) {\n+              properties.get(key), tolerateUnknowns)) {\n         return false;\n       }\n     }\n@@ -201,7 +201,8 @@\n           JSType altPropType \u003d alt.getPropertyType(propName);\n           if (altPropType !\u003d null \u0026\u0026 !alt.isEquivalentTo(this) \u0026\u0026\n               alt.isSubtype(that) \u0026\u0026\n-              propType.isInvariant(altPropType)) {\n+              (propType.isUnknownType() || altPropType.isUnknownType() ||\n+                  altPropType.isEquivalentTo(propType))) {\n             builder.addAlternate(alt);\n           }\n         }\n@@ -264,6 +265,7 @@\n \n       JSType propA \u003d typeA.getPropertyType(property);\n       JSType propB \u003d typeB.getPropertyType(property);\n+      if (!propA.isUnknownType() \u0026\u0026 !propB.isUnknownType()) {\n       if (typeA.isPropertyTypeDeclared(property)) {\n         // If one declared property isn\u0027t invariant,\n         // then the whole record isn\u0027t covariant.\n@@ -275,6 +277,7 @@\n         // then the whole record isn\u0027t covariant.\n         if (!propA.isSubtype(propB)) {\n           return false;\n+          }\n         }\n       }\n     }\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrimitiveType: boolean [4343,4350]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [9671,10167]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [9675,9723]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [9725,10167]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ParenthesizedExpression [7461,7576]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [7462,7575]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: || [7487,7489]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [7490,7517]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [7539,7575]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [7539,7550]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: isEquivalentTo [7551,7565]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [7566,7574]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [4343,4360]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [7476,7487]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/UnionType.java",
+        "src/com/google/javascript/rhino/jstype/UnionType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.jstype.UnionType:hasAlternate:[JSType type, EquivalenceMethod eqMethod]:boolean",
+            "com.google.javascript.rhino.jstype.UnionType:checkUnionEquivalenceHelper:[UnionType that, EquivalenceMethod eqMethod]:boolean"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.jstype.UnionType:hasAlternate:[JSType type, boolean tolerateUnknowns]:boolean",
+            "com.google.javascript.rhino.jstype.UnionType:checkUnionEquivalenceHelper:[UnionType that, boolean tolerateUnknowns]:boolean"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "334",
+            "335",
+            "340",
+            "347",
+            "349"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "334",
+            "335",
+            "340",
+            "347",
+            "349"
+          ],
+          "num": 5
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/UnionType.java b/src/com/google/javascript/rhino/jstype/UnionType.java\nindex 0fd8b24..5a81698 100644\n--- a/src/com/google/javascript/rhino/jstype/UnionType.java\n+++ b/src/com/google/javascript/rhino/jstype/UnionType.java\n@@ -331,22 +331,22 @@\n    * and all alternates are equal.\n    */\n   boolean checkUnionEquivalenceHelper(\n-      UnionType that, EquivalenceMethod eqMethod) {\n-    if (eqMethod \u003d\u003d EquivalenceMethod.IDENTITY\n+      UnionType that, boolean tolerateUnknowns) {\n+    if (!tolerateUnknowns\n         \u0026\u0026 alternates.size() !\u003d that.alternates.size()) {\n       return false;\n     }\n     for (JSType alternate : that.alternates) {\n-      if (!hasAlternate(alternate, eqMethod)) {\n+      if (!hasAlternate(alternate, tolerateUnknowns)) {\n         return false;\n       }\n     }\n     return true;\n   }\n \n-  private boolean hasAlternate(JSType type, EquivalenceMethod eqMethod) {\n+  private boolean hasAlternate(JSType type, boolean tolerateUnknowns) {\n     for (JSType alternate : alternates) {\n-      if (alternate.checkEquivalenceHelper(type, eqMethod)) {\n+      if (alternate.checkEquivalenceHelper(type, tolerateUnknowns)) {\n         return true;\n       }\n     }\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrimitiveType: boolean [9593,9600]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrimitiveType: boolean [9936,9943]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PrefixExpression [9629,9646]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [9593,9610]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [9631,9669]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [9951,9968]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [
+        "src/com/google/javascript/rhino/jstype/EquivalenceMethod.java"
+      ],
+      "num": 1
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.google.javascript.rhino.jstype.UnionType:hasAlternate:[JSType type, boolean tolerateUnknowns]:boolean",
+        "com.google.javascript.rhino.jstype.JSType:checkEquivalenceHelper:[JSType that, boolean tolerateUnknowns]:boolean",
+        "com.google.javascript.rhino.jstype.UnionType:checkUnionEquivalenceHelper:[UnionType that, boolean tolerateUnknowns]:boolean",
+        "com.google.javascript.rhino.jstype.ArrowType:hasEqualParameters:[ArrowType that, boolean tolerateUnknowns]:boolean",
+        "com.google.javascript.rhino.jstype.RecordType:checkRecordEquivalenceHelper:[RecordType otherRecord, boolean tolerateUnknowns]:boolean",
+        "com.google.javascript.rhino.jstype.FunctionType:checkFunctionEquivalenceHelper:[FunctionType that, boolean tolerateUnknowns]:boolean",
+        "com.google.javascript.rhino.jstype.ArrowType:checkArrowEquivalenceHelper:[ArrowType that, boolean tolerateUnknowns]:boolean"
+      ],
+      "num": 7
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.javascript.rhino.jstype.UnionType:hasAlternate:[JSType type, EquivalenceMethod eqMethod]:boolean",
+        "com.google.javascript.rhino.jstype.RecordType:checkRecordEquivalenceHelper:[RecordType otherRecord, EquivalenceMethod eqMethod]:boolean",
+        "com.google.javascript.rhino.jstype.ArrowType:hasEqualParameters:[ArrowType that, EquivalenceMethod eqMethod]:boolean",
+        "com.google.javascript.rhino.jstype.FunctionType:checkFunctionEquivalenceHelper:[FunctionType that, EquivalenceMethod eqMethod]:boolean",
+        "com.google.javascript.rhino.jstype.UnionType:checkUnionEquivalenceHelper:[UnionType that, EquivalenceMethod eqMethod]:boolean",
+        "com.google.javascript.rhino.jstype.ArrowType:checkArrowEquivalenceHelper:[ArrowType that, EquivalenceMethod eqMethod]:boolean",
+        "com.google.javascript.rhino.jstype.JSType:checkEquivalenceHelper:[JSType that, EquivalenceMethod eqMethod]:boolean"
+      ],
+      "num": 7
+    }
+  }
+}

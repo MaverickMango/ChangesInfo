@@ -1,0 +1,341 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Lang",
+  "id": "51",
+  "workingDir": "../bugs/Lang_51_buggy",
+  "inducingCommit": "49b8c603ef302a4b8d44070e9649770f6afe655d",
+  "originalCommit": "ea58760e593ebcfca1db1d3d486ad4931afb1e41",
+  "bug_name": "Lang_51",
+  "derive": "defects4j",
+  "original_fixing_commit": "a5589b39e985e64861bd920aa7b13ab32c215b06",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/lang/BooleanUtils.java",
+        "src/java/org/apache/commons/lang/BooleanUtils.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "toBoolean",
+            "toBooleanObject"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "toBoolean",
+            "toBooleanObject"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "69",
+            "504",
+            "577",
+            "594",
+            "595",
+            "596",
+            "597",
+            "598",
+            "601",
+            "604"
+          ],
+          "num": 10
+        },
+        {
+          "qualified_names": [
+            "69",
+            "505",
+            "512",
+            "579",
+            "584",
+            "585",
+            "586",
+            "587",
+            "590",
+            "592",
+            "593",
+            "597",
+            "604",
+            "605",
+            "606",
+            "607",
+            "608",
+            "609",
+            "610",
+            "613",
+            "614",
+            "615",
+            "616",
+            "617",
+            "618",
+            "619",
+            "620",
+            "621",
+            "622",
+            "623",
+            "624",
+            "625",
+            "626",
+            "627",
+            "628",
+            "629",
+            "630",
+            "631",
+            "632",
+            "633",
+            "634",
+            "635",
+            "636",
+            "637",
+            "638",
+            "639",
+            "640",
+            "641",
+            "642",
+            "643",
+            "644",
+            "645",
+            "646",
+            "647",
+            "648",
+            "649",
+            "650",
+            "651",
+            "652",
+            "655",
+            "656",
+            "657",
+            "658",
+            "659",
+            "660",
+            "661",
+            "662",
+            "663",
+            "664",
+            "665",
+            "666"
+          ],
+          "num": 71
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/lang/BooleanUtils.java b/src/java/org/apache/commons/lang/BooleanUtils.java\nindex 4b2a06f..14b1607 100644\n--- a/src/java/org/apache/commons/lang/BooleanUtils.java\n+++ b/src/java/org/apache/commons/lang/BooleanUtils.java\n@@ -66,7 +66,7 @@\n  * @author Matthew Hawthorne\n  * @author Gary Gregory\n  * @since 2.0\n- * @version $Id: BooleanUtils.java,v 1.16 2003/09/23 19:45:14 fredrik Exp $\n+ * @version $Id: BooleanUtils.java,v 1.17 2003/10/21 23:23:06 scolebourne Exp $\n  */\n public class BooleanUtils {\n \n@@ -502,12 +502,14 @@\n      * Otherwise, \u003ccode\u003enull\u003c/code\u003e is returned.\u003c/p\u003e\n      *\n      * \u003cpre\u003e\n+     *   BooleanUtils.toBooleanObject(null)    \u003d null\n      *   BooleanUtils.toBooleanObject(\"true\")  \u003d Boolean.TRUE\n      *   BooleanUtils.toBooleanObject(\"false\") \u003d Boolean.FALSE\n      *   BooleanUtils.toBooleanObject(\"on\")    \u003d Boolean.TRUE\n      *   BooleanUtils.toBooleanObject(\"ON\")    \u003d Boolean.TRUE\n      *   BooleanUtils.toBooleanObject(\"off\")   \u003d Boolean.FALSE\n      *   BooleanUtils.toBooleanObject(\"oFf\")   \u003d Boolean.FALSE\n+     *   BooleanUtils.toBooleanObject(\"blue\")  \u003d null\n      * \u003c/pre\u003e\n      *\n      * @param str  the String to check\n@@ -574,34 +576,94 @@\n     // String to boolean methods\n     //-----------------------------------------------------------------------\n     /**\n-     * \u003cp\u003eConverts a String to a boolean.\u003c/p\u003e\n+     * \u003cp\u003eConverts a String to a boolean (optimised for performance).\u003c/p\u003e\n      * \n      * \u003cp\u003e\u003ccode\u003e\u0027true\u0027\u003c/code\u003e, \u003ccode\u003e\u0027on\u0027\u003c/code\u003e or \u003ccode\u003e\u0027yes\u0027\u003c/code\u003e\n      * (case insensitive) will return \u003ccode\u003etrue\u003c/code\u003e. Otherwise,\n      * \u003ccode\u003efalse\u003c/code\u003e is returned.\u003c/p\u003e\n+     * \n+     * \u003cp\u003eThis method performs 4 times faster (JDK1.4) than\n+     * \u003ccode\u003eBoolean.valueOf(String)\u003c/code\u003e. However, this method accepts\n+     * \u0027on\u0027 and \u0027yes\u0027 as true values.\n      *\n      * \u003cpre\u003e\n+     *   BooleanUtils.toBoolean(null)    \u003d false\n      *   BooleanUtils.toBoolean(\"true\")  \u003d true\n+     *   BooleanUtils.toBoolean(\"TRUE\")  \u003d true\n+     *   BooleanUtils.toBoolean(\"tRUe\")  \u003d true\n      *   BooleanUtils.toBoolean(\"on\")    \u003d true\n      *   BooleanUtils.toBoolean(\"yes\")   \u003d true\n      *   BooleanUtils.toBoolean(\"false\") \u003d false\n+     *   BooleanUtils.toBoolean(\"x gti\") \u003d false\n      * \u003c/pre\u003e\n      *\n      * @param str  the String to check\n      * @return the boolean value of the string, \u003ccode\u003efalse\u003c/code\u003e if no match\n      */\n     public static boolean toBoolean(String str) {\n-        if (\"true\".equalsIgnoreCase(str)) {\n-            return true;\n-        } else if (\"on\".equalsIgnoreCase(str)) {\n-            return true;\n-        } else if (\"yes\".equalsIgnoreCase(str)) {\n+        // Previously used equalsIgnoreCase, which was fast for interned \u0027true\u0027.\n+        // Non interned \u0027true\u0027 matched 15 times slower.\n+        // \n+        // Optimisation provides same performance as before for interned \u0027true\u0027.\n+        // Similar performance for null, \u0027false\u0027, and other strings not length 2/3/4.\n+        // \u0027true\u0027/\u0027TRUE\u0027 match 4 times slower, \u0027tRUE\u0027/\u0027True\u0027 7 times slower.\n+        if (str \u003d\u003d \"true\") {\n             return true;\n         }\n-        // no match\n+        if (str \u003d\u003d null) {\n+            return false;\n+        }\n+        switch (str.length()) {\n+            case 2: {\n+                char ch0 \u003d str.charAt(0);\n+                char ch1 \u003d str.charAt(1);\n+                return \n+                    (ch0 \u003d\u003d \u0027o\u0027 || ch0 \u003d\u003d \u0027O\u0027) \u0026\u0026\n+                    (ch1 \u003d\u003d \u0027n\u0027 || ch1 \u003d\u003d \u0027N\u0027);\n+            }\n+            case 3: {\n+                char ch \u003d str.charAt(0);\n+                if (ch \u003d\u003d \u0027y\u0027) {\n+                    return \n+                        (str.charAt(1) \u003d\u003d \u0027e\u0027 || str.charAt(1) \u003d\u003d \u0027E\u0027) \u0026\u0026\n+                        (str.charAt(2) \u003d\u003d \u0027s\u0027 || str.charAt(2) \u003d\u003d \u0027S\u0027);\n+                }\n+                if (ch \u003d\u003d \u0027Y\u0027) {\n+                    return \n+                        (str.charAt(1) \u003d\u003d \u0027E\u0027 || str.charAt(1) \u003d\u003d \u0027e\u0027) \u0026\u0026\n+                        (str.charAt(2) \u003d\u003d \u0027S\u0027 || str.charAt(2) \u003d\u003d \u0027s\u0027);\n+                }\n+            }\n+            case 4: {\n+                char ch \u003d str.charAt(0);\n+                if (ch \u003d\u003d \u0027t\u0027) {\n+                    return \n+                        (str.charAt(1) \u003d\u003d \u0027r\u0027 || str.charAt(1) \u003d\u003d \u0027R\u0027) \u0026\u0026\n+                        (str.charAt(2) \u003d\u003d \u0027u\u0027 || str.charAt(2) \u003d\u003d \u0027U\u0027) \u0026\u0026\n+                        (str.charAt(3) \u003d\u003d \u0027e\u0027 || str.charAt(3) \u003d\u003d \u0027E\u0027);\n+                }\n+                if (ch \u003d\u003d \u0027T\u0027) {\n+                    return \n+                        (str.charAt(1) \u003d\u003d \u0027R\u0027 || str.charAt(1) \u003d\u003d \u0027r\u0027) \u0026\u0026\n+                        (str.charAt(2) \u003d\u003d \u0027U\u0027 || str.charAt(2) \u003d\u003d \u0027u\u0027) \u0026\u0026\n+                        (str.charAt(3) \u003d\u003d \u0027E\u0027 || str.charAt(3) \u003d\u003d \u0027e\u0027);\n+                }\n+            }\n+        }\n         return false;\n     }\n-\n+    \n+//    public static void main(String[] args) {\n+//        long start \u003d System.currentTimeMillis();\n+//        boolean flag \u003d true;\n+//        int count \u003d 0;\n+//        for (int i \u003d 0; i \u003c 100000000; i++) {\n+//            flag \u003d toBoolean(\"YES\");\n+//        }\n+//        long end \u003d System.currentTimeMillis();\n+//        System.out.println((end - start) + \" \" + flag + \" \" + count);\n+//    }\n+    \n     /**\n      * \u003cp\u003eConverts a String to a Boolean throwing an exception if no match found.\u003c/p\u003e\n      * \n",
+      "operations": [
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [24015,24070]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [24079,24133]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SwitchStatement [24142,25619]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: BooleanUtils.toBooleanObject(null)    \u003d null [19536,19580]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: BooleanUtils.toBooleanObject(\"blue\")  \u003d null [19965,20009]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003cp\u003eThis method performs 4 times faster (JDK1.4) than [22845,22897]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003ccode\u003eBoolean.valueOf(String)\u003c/code\u003e. However, this method accepts [22905,22971]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u0027on\u0027 and \u0027yes\u0027 as true values. [22979,23009]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: BooleanUtils.toBoolean(null)    \u003d false [23039,23078]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: BooleanUtils.toBoolean(\"TRUE\")  \u003d true [23136,23174]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: BooleanUtils.toBoolean(\"tRUe\")  \u003d true [23184,23222]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: BooleanUtils.toBoolean(\"x gti\") \u003d false [23377,23416]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [24019,24032]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [24083,24094]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [23112,23140]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [23188,23214]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [23258,23327]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [23184,23327]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [23108,23327]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/lang/BooleanUtils.java",
+        "src/java/org/apache/commons/lang/BooleanUtils.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "toBoolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "toBoolean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "635"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "636"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Lang_51/properties/modified_classes/inducing/src/java/org/apache/commons/lang/BooleanUtils.java data/changesInfo//Lang_51/cleaned/fixing/src/java/org/apache/commons/lang/BooleanUtils.java\n--- data/changesInfo//Lang_51/properties/modified_classes/inducing/src/java/org/apache/commons/lang/BooleanUtils.java\t2023-08-25 13:40:17.161483199 +0800\n+++ data/changesInfo//Lang_51/cleaned/fixing/src/java/org/apache/commons/lang/BooleanUtils.java\t2023-06-20 21:58:47.225609583 +0800\n@@ -633,6 +633,7 @@\n                         (str.charAt(1) \u003d\u003d \u0027E\u0027 || str.charAt(1) \u003d\u003d \u0027e\u0027) \u0026\u0026\n                         (str.charAt(2) \u003d\u003d \u0027S\u0027 || str.charAt(2) \u003d\u003d \u0027s\u0027);\n                 }\n+                return false;\n             }\n             case 4: {\n                 char ch \u003d str.charAt(0);\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [24937,24950]"
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

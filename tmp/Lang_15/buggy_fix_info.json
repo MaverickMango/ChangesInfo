@@ -1,0 +1,172 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.lang3.reflect.TypeUtilsTest::testGetTypeArguments,org.apache.commons.lang3.reflect.TypeUtilsTest::testIsAssignable",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.lang3.reflect.TypeUtils",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Lang",
+  "id": "15",
+  "workingDir": "../bugs/Lang_15_tmp",
+  "bug_name": "Lang_15",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.lang3.reflect.TypeUtilsTest",
+      "test_function": "testGetTypeArguments",
+      "assertion_line": "505",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c2\u003e but was:\u003c0\u003e"
+    },
+    {
+      "test_class": "org.apache.commons.lang3.reflect.TypeUtilsTest",
+      "test_function": "testIsAssignable",
+      "assertion_line": "344",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "type class org.apache.commons.lang3.reflect.TypeUtilsTest$Thing not assignable to org.apache.commons.lang3.reflect.TypeUtilsTest$This\u003cjava.lang.String, java.lang.String\u003e!"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/lang3/reflect/TypeUtils.java",
+        "src/main/java/org/apache/commons/lang3/reflect/TypeUtils.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.lang3.reflect.TypeUtils:isAssignable:[Type type, ParameterizedType toParameterizedType, Map\u003cTypeVariable\u003c?\u003e,Type\u003e typeVarAssigns]:boolean",
+            "org.apache.commons.lang3.reflect.TypeUtils:getTypeArguments:[Class\u003c?\u003e cls, Class\u003c?\u003e toClass, Map\u003cTypeVariable\u003c?\u003e,Type\u003e subtypeVarAssigns]:Map\u003cTypeVariable\u003c?\u003e,Type\u003e"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.lang3.reflect.TypeUtils:isAssignable:[Type type, ParameterizedType toParameterizedType, Map\u003cTypeVariable\u003c?\u003e,Type\u003e typeVarAssigns]:boolean",
+            "org.apache.commons.lang3.reflect.TypeUtils:getTypeArguments:[Class\u003c?\u003e cls, Class\u003c?\u003e toClass, Map\u003cTypeVariable\u003c?\u003e,Type\u003e subtypeVarAssigns]:Map\u003cTypeVariable\u003c?\u003e,Type\u003e"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "219",
+            "220",
+            "221",
+            "675"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "219",
+            "220",
+            "221",
+            "675"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/lang3/reflect/TypeUtils.java b/src/main/java/org/apache/commons/lang3/reflect/TypeUtils.java\nindex 8db8abf..415cefa 100644\n--- a/src/main/java/org/apache/commons/lang3/reflect/TypeUtils.java\n+++ b/src/main/java/org/apache/commons/lang3/reflect/TypeUtils.java\n@@ -216,9 +216,9 @@\n                 toClass, typeVarAssigns);\n \n         // now to check each type argument\n-        for (TypeVariable\u003c?\u003e var : toTypeVarAssigns.keySet()) {\n-            Type toTypeArg \u003d unrollVariableAssignments(var, toTypeVarAssigns);\n-            Type fromTypeArg \u003d unrollVariableAssignments(var, fromTypeVarAssigns);\n+        for (Map.Entry\u003cTypeVariable\u003c?\u003e, Type\u003e entry : toTypeVarAssigns.entrySet()) {\n+            Type toTypeArg \u003d entry.getValue();\n+            Type fromTypeArg \u003d fromTypeVarAssigns.get(entry.getKey());\n \n             // parameters must either be absent from the subject type, within\n             // the bounds of the wildcard type, or be an exact match to the\n@@ -672,7 +672,7 @@\n                 : new HashMap\u003cTypeVariable\u003c?\u003e, Type\u003e(subtypeVarAssigns);\n \n         // has target class been reached?\n-        if (toClass.equals(cls)) {\n+        if (cls.getTypeParameters().length \u003e 0 || toClass.equals(cls)) {\n             return typeVarAssigns;\n         }\n \n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [26481,26538]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ParameterizedType [8131,8163]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [8215,8249]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [8262,8320]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [26481,26515]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: || [26516,26518]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [8131,8140]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [8158,8162]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [8194,8260]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [8273,8343]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

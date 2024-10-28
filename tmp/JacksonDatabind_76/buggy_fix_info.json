@@ -1,0 +1,138 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.deser.builder.BuilderWithUnwrappedTest::testWithUnwrappedAndCreatorSingleParameterAtBeginning,com.fasterxml.jackson.databind.deser.builder.BuilderWithUnwrappedTest::testWithUnwrappedAndCreatorMultipleParametersAtBeginning,com.fasterxml.jackson.databind.deser.builder.BuilderWithUnwrappedTest::testWithUnwrappedAndCreatorSingleParameterInMiddle,com.fasterxml.jackson.databind.deser.builder.BuilderWithUnwrappedTest::testWithUnwrappedAndCreatorMultipleParametersInMiddle",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.deser.BuilderBasedDeserializer",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "76",
+  "workingDir": "../bugs/JacksonDatabind_76_tmp",
+  "bug_name": "JacksonDatabind_76",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.deser.builder.BuilderWithUnwrappedTest",
+      "test_function": "testWithUnwrappedAndCreatorSingleParameterAtBeginning",
+      "assertion_line": "176",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003cJohn\u003e but was:\u003cnull\u003e"
+    },
+    {
+      "test_class": "com.fasterxml.jackson.databind.deser.builder.BuilderWithUnwrappedTest",
+      "test_function": "testWithUnwrappedAndCreatorMultipleParametersAtBeginning",
+      "assertion_line": "215",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003cJohn\u003e but was:\u003cnull\u003e"
+    },
+    {
+      "test_class": "com.fasterxml.jackson.databind.deser.builder.BuilderWithUnwrappedTest",
+      "test_function": "testWithUnwrappedAndCreatorSingleParameterInMiddle",
+      "assertion_line": "191",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c30\u003e but was:\u003c0\u003e"
+    },
+    {
+      "test_class": "com.fasterxml.jackson.databind.deser.builder.BuilderWithUnwrappedTest",
+      "test_function": "testWithUnwrappedAndCreatorMultipleParametersInMiddle",
+      "assertion_line": "230",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c30\u003e but was:\u003c0\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/deser/BuilderBasedDeserializer.java",
+        "src/main/java/com/fasterxml/jackson/databind/deser/BuilderBasedDeserializer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.BuilderBasedDeserializer:deserializeUsingPropertyBasedWithUnwrapped:[JsonParser p, DeserializationContext ctxt]:Object"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.BuilderBasedDeserializer:deserializeUsingPropertyBasedWithUnwrapped:[JsonParser p, DeserializationContext ctxt]:Object"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "583"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "583",
+            "584",
+            "585",
+            "586",
+            "587",
+            "588",
+            "589",
+            "590",
+            "591",
+            "592",
+            "593",
+            "594",
+            "595",
+            "596",
+            "597",
+            "598",
+            "599",
+            "600",
+            "601",
+            "602",
+            "603"
+          ],
+          "num": 21
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/BuilderBasedDeserializer.java b/src/main/java/com/fasterxml/jackson/databind/deser/BuilderBasedDeserializer.java\nindex 817e29e..1629a42 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/deser/BuilderBasedDeserializer.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/deser/BuilderBasedDeserializer.java\n@@ -580,7 +580,27 @@\n             // creator property?\n             SettableBeanProperty creatorProp \u003d creator.findCreatorProperty(propName);\n             if (creatorProp !\u003d null) {\n-                buffer.assignParameter(creatorProp, creatorProp.deserialize(p, ctxt));\n+                if (buffer.assignParameter(creatorProp, creatorProp.deserialize(p, ctxt))) {\n+                    t \u003d p.nextToken();\n+                    Object bean;\n+                    try {\n+                        bean \u003d creator.build(ctxt, buffer);\n+                    } catch (Exception e) {\n+                        wrapAndThrow(e, _beanType.getRawClass(), propName, ctxt);\n+                        continue;\n+                    }\n+                    while (t \u003d\u003d JsonToken.FIELD_NAME) {\n+                        p.nextToken();\n+                        tokens.copyCurrentStructure(p);\n+                        t \u003d p.nextToken();\n+                    }\n+                    tokens.writeEndObject();\n+                    if (bean.getClass() !\u003d _beanType.getRawClass()) {\n+                        ctxt.reportMappingException(\"Can not create polymorphic instances with unwrapped values\");\n+                        return null;\n+                    }\n+                    return _unwrappedPropertyHandler.processUnwrapped(p, ctxt, bean, tokens);\n+                }\n                 continue;\n             }\n             // Object Id property?\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [22156,23189]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [22156,22226]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,3698 @@
+diff --git a/src/main/java/org/apache/commons/compress/archivers/zip/AsiExtraField.java b/src/main/java/org/apache/commons/compress/archivers/zip/AsiExtraField.java
+index f192246..3a77ec3 100644
+--- a/src/main/java/org/apache/commons/compress/archivers/zip/AsiExtraField.java
++++ b/src/main/java/org/apache/commons/compress/archivers/zip/AsiExtraField.java
+@@ -22,11 +22,10 @@
+ import java.util.zip.ZipException;
+ 
+ /**
+- * Adds Unix file permission and UID/GID fields as well as symbolic
+- * link handling.
++ * Adds Unix file permission and UID/GID fields as well as symbolic link
++ * handling. <p>
+  *
+- * <p>This class uses the ASi extra field in the format:
+- * <pre>
++ * This class uses the ASi extra field in the format: <pre>
+  *         Value         Size            Description
+  *         -----         ----            -----------
+  * (Unix3) 0x756e        Short           tag for this extra block type
+@@ -37,301 +36,371 @@
+  *         UID           Short           user ID
+  *         GID           Short           group ID
+  *         (var.)        variable        symbolic link filename
+- * </pre>
+- * taken from appnote.iz (Info-ZIP note, 981119) found at <a
+- * href="ftp://ftp.uu.net/pub/archiving/zip/doc/">ftp://ftp.uu.net/pub/archiving/zip/doc/</a></p>
+-
++ * </pre> taken from appnote.iz (Info-ZIP note, 981119) found at <a
++ * href="ftp://ftp.uu.net/pub/archiving/zip/doc/">
++ * ftp://ftp.uu.net/pub/archiving/zip/doc/</a> </p> <p>
+  *
+- * <p>Short is two bytes and Long is four bytes in big endian byte and
+- * word order, device numbers are currently not supported.</p>
+- *
++ * Short is two bytes and Long is four bytes in big endian byte and word order,
++ * device numbers are currently not supported.</p>
+  */
+-public class AsiExtraField implements ZipExtraField, UnixStat, Cloneable {
++public class AsiExtraField
++    implements ZipExtraField, UnixStat, Cloneable
++{
++    private static final ZipShort HEADER_ID = new ZipShort( 0x756E );
+ 
+-    private static final ZipShort HEADER_ID = new ZipShort(0x756E);
+-    private static final int      WORD = 4;
+     /**
+      * Standard Unix stat(2) file mode.
+      *
+      * @since 1.1
+      */
+-    private int mode = 0;
++    private int m_mode;
++
+     /**
+      * User ID.
+      *
+      * @since 1.1
+      */
+-    private int uid = 0;
++    private int m_uid;
++
+     /**
+      * Group ID.
+      *
+      * @since 1.1
+      */
+-    private int gid = 0;
++    private int m_gid;
++
+     /**
+-     * File this entry points to, if it is a symbolic link.
++     * File this entry points to, if it is a symbolic link. <p>
+      *
+-     * <p>empty string - if entry is not a symbolic link.</p>
++     * empty string - if entry is not a symbolic link.</p>
+      *
+      * @since 1.1
+      */
+-    private String link = "";
++    private String m_link = "";
++
+     /**
+      * Is this an entry for a directory?
+      *
+      * @since 1.1
+      */
+-    private boolean dirFlag = false;
++    private boolean m_dirFlag;
+ 
+     /**
+      * Instance used to calculate checksums.
+      *
+      * @since 1.1
+      */
+-    private CRC32 crc = new CRC32();
+-
+-    /** Constructor for AsiExtraField. */
+-    public AsiExtraField() {
+-    }
++    private CRC32 m_crc = new CRC32();
+ 
+     /**
+-     * The Header-ID.
+-     * @return the value for the header id for this extrafield
++     * Indicate whether this entry is a directory.
++     *
++     * @param dirFlag The new Directory value
+      * @since 1.1
+      */
+-    public ZipShort getHeaderId() {
+-        return HEADER_ID;
+-    }
+-
+-    /**
+-     * Length of the extra field in the local file data - without
+-     * Header-ID or length specifier.
+-     * @return a <code>ZipShort</code> for the length of the data of this extra field
+-     * @since 1.1
+-     */
+-    public ZipShort getLocalFileDataLength() {
+-        return new ZipShort(WORD         // CRC
+-                          + 2         // Mode
+-                          + WORD         // SizDev
+-                          + 2         // UID
+-                          + 2         // GID
+-                          + getLinkedFile().getBytes().length);
+-    }
+-
+-    /**
+-     * Delegate to local file data.
+-     * @return the centralDirectory length
+-     * @since 1.1
+-     */
+-    public ZipShort getCentralDirectoryLength() {
+-        return getLocalFileDataLength();
+-    }
+-
+-    /**
+-     * The actual data to put into local file data - without Header-ID
+-     * or length specifier.
+-     * @return get the data
+-     * @since 1.1
+-     */
+-    public byte[] getLocalFileDataData() {
+-        // CRC will be added later
+-        byte[] data = new byte[getLocalFileDataLength().getValue() - WORD];
+-        System.arraycopy(ZipShort.getBytes(getMode()), 0, data, 0, 2);
+-
+-        byte[] linkArray = getLinkedFile().getBytes();
+-        // CheckStyle:MagicNumber OFF
+-        System.arraycopy(ZipLong.getBytes(linkArray.length),
+-                         0, data, 2, WORD);
+-
+-        System.arraycopy(ZipShort.getBytes(getUserId()),
+-                         0, data, 6, 2);
+-        System.arraycopy(ZipShort.getBytes(getGroupId()),
+-                         0, data, 8, 2);
+-
+-        System.arraycopy(linkArray, 0, data, 10, linkArray.length);
+-        // CheckStyle:MagicNumber ON
+-
+-        crc.reset();
+-        crc.update(data);
+-        long checksum = crc.getValue();
+-
+-        byte[] result = new byte[data.length + WORD];
+-        System.arraycopy(ZipLong.getBytes(checksum), 0, result, 0, WORD);
+-        System.arraycopy(data, 0, result, WORD, data.length);
+-        return result;
+-    }
+-
+-    /**
+-     * Delegate to local file data.
+-     * @return the local file data
+-     * @since 1.1
+-     */
+-    public byte[] getCentralDirectoryData() {
+-        return getLocalFileDataData();
+-    }
+-
+-    /**
+-     * Set the user id.
+-     * @param uid the user id
+-     * @since 1.1
+-     */
+-    public void setUserId(int uid) {
+-        this.uid = uid;
+-    }
+-
+-    /**
+-     * Get the user id.
+-     * @return the user id
+-     * @since 1.1
+-     */
+-    public int getUserId() {
+-        return uid;
++    public void setDirectory( final boolean dirFlag )
++    {
++        m_dirFlag = dirFlag;
++        m_mode = getMode( m_mode );
+     }
+ 
+     /**
+      * Set the group id.
+-     * @param gid the group id
++     *
++     * @param gid The new GroupId value
+      * @since 1.1
+      */
+-    public void setGroupId(int gid) {
+-        this.gid = gid;
+-    }
+-
+-    /**
+-     * Get the group id.
+-     * @return the group id
+-     * @since 1.1
+-     */
+-    public int getGroupId() {
+-        return gid;
++    public void setGroupId( int gid )
++    {
++        m_gid = gid;
+     }
+ 
+     /**
+      * Indicate that this entry is a symbolic link to the given filename.
+      *
+-     * @param name Name of the file this entry links to, empty String
+-     *             if it is not a symbolic link.
+-     *
++     * @param name Name of the file this entry links to, empty String if it is
++     *      not a symbolic link.
+      * @since 1.1
+      */
+-    public void setLinkedFile(String name) {
+-        link = name;
+-        mode = getMode(mode);
++    public void setLinkedFile( final String name )
++    {
++        m_link = name;
++        m_mode = getMode( m_mode );
++    }
++
++    /**
++     * File mode of this file.
++     *
++     * @param mode The new Mode value
++     * @since 1.1
++     */
++    public void setMode( final int mode )
++    {
++        m_mode = getMode( mode );
++    }
++
++    /**
++     * Set the user id.
++     *
++     * @param uid The new UserId value
++     * @since 1.1
++     * @deprecated Use setUserID(int)
++     * @see #setUserID(int)
++     */
++    public void setUserId( final int uid )
++    {
++        m_uid = uid;
++    }
++
++    /**
++     * Set the user id.
++     *
++     * @param uid The new UserId value
++     */
++    public void setUserID( final int uid )
++    {
++        m_uid = uid;
++    }
++
++    /**
++     * Delegate to local file data.
++     *
++     * @return The CentralDirectoryData value
++     * @since 1.1
++     */
++    public byte[] getCentralDirectoryData()
++    {
++        return getLocalFileDataData();
++    }
++
++    /**
++     * Delegate to local file data.
++     *
++     * @return The CentralDirectoryLength value
++     * @since 1.1
++     */
++    public ZipShort getCentralDirectoryLength()
++    {
++        return getLocalFileDataLength();
++    }
++
++    /**
++     * Get the group id.
++     *
++     * @return The GroupId value
++     * @since 1.1
++     */
++    public int getGroupID()
++    {
++        return m_gid;
++    }
++
++    /**
++     * Get the group id.
++     *
++     * @return The GroupId value
++     * @since 1.1
++     * @deprecated Use getGroupID() instead
++     * @see #getGroupID()
++     */
++    public int getGroupId()
++    {
++        return m_gid;
++    }
++
++    /**
++     * The Header-ID.
++     *
++     * @return The HeaderId value
++     * @since 1.1
++     */
++    public ZipShort getHeaderID()
++    {
++        return HEADER_ID;
+     }
+ 
+     /**
+      * Name of linked file
+      *
+-     * @return name of the file this entry links to if it is a
+-     *         symbolic link, the empty string otherwise.
++     * @return name of the file this entry links to if it is a symbolic link,
++     *      the empty string otherwise.
++     * @since 1.1
++     */
++    public String getLinkedFile()
++    {
++        return m_link;
++    }
++
++    /**
++     * The actual data to put into local file data - without Header-ID or length
++     * specifier.
+      *
++     * @return The LocalFileDataData value
+      * @since 1.1
+      */
+-    public String getLinkedFile() {
+-        return link;
++    public byte[] getLocalFileDataData()
++    {
++        // CRC will be added later
++        byte[] data = new byte[ getLocalFileDataLength().getValue() - 4 ];
++        System.arraycopy( ( new ZipShort( getMode() ) ).getBytes(), 0, data, 0, 2 );
++
++        byte[] linkArray = getLinkedFile().getBytes();
++        System.arraycopy( ( new ZipLong( linkArray.length ) ).getBytes(),
++                          0, data, 2, 4 );
++
++        System.arraycopy( ( new ZipShort( getUserID() ) ).getBytes(),
++                          0, data, 6, 2 );
++        System.arraycopy( ( new ZipShort( getGroupID() ) ).getBytes(),
++                          0, data, 8, 2 );
++
++        System.arraycopy( linkArray, 0, data, 10, linkArray.length );
++
++        m_crc.reset();
++        m_crc.update( data );
++        long checksum = m_crc.getValue();
++
++        byte[] result = new byte[ data.length + 4 ];
++        System.arraycopy( ( new ZipLong( checksum ) ).getBytes(), 0, result, 0, 4 );
++        System.arraycopy( data, 0, result, 4, data.length );
++        return result;
+     }
+ 
+     /**
+-     * Is this entry a symbolic link?
+-     * @return true if this is a symbolic link
++     * Length of the extra field in the local file data - without Header-ID or
++     * length specifier.
++     *
++     * @return The LocalFileDataLength value
+      * @since 1.1
+      */
+-    public boolean isLink() {
+-        return getLinkedFile().length() != 0;
++    public ZipShort getLocalFileDataLength()
++    {
++        return new ZipShort( 4 + // CRC
++                             2 + // Mode
++                             4 + // SizDev
++                             2 + // UID
++                             2 + // GID
++                             getLinkedFile().getBytes().length );
+     }
+ 
+     /**
+      * File mode of this file.
+-     * @param mode the file mode
++     *
++     * @return The Mode value
+      * @since 1.1
+      */
+-    public void setMode(int mode) {
+-        this.mode = getMode(mode);
++    public int getMode()
++    {
++        return m_mode;
+     }
+ 
+     /**
+-     * File mode of this file.
+-     * @return the file mode
++     * Get the user id.
++     *
++     * @return The UserId value
+      * @since 1.1
++     * @deprecated Use getUserID()
++     * @see #getUserID()
+      */
+-    public int getMode() {
+-        return mode;
++    public int getUserId()
++    {
++        return m_uid;
+     }
+ 
+     /**
+-     * Indicate whether this entry is a directory.
+-     * @param dirFlag if true, this entry is a directory
+-     * @since 1.1
++     * Get the user id.
++     *
++     * @return The UserID value
+      */
+-    public void setDirectory(boolean dirFlag) {
+-        this.dirFlag = dirFlag;
+-        mode = getMode(mode);
++    public int getUserID()
++    {
++        return m_uid;
+     }
+ 
+     /**
+      * Is this entry a directory?
+-     * @return true if this entry is a directory
++     *
++     * @return The Directory value
+      * @since 1.1
+      */
+-    public boolean isDirectory() {
+-        return dirFlag && !isLink();
++    public boolean isDirectory()
++    {
++        return m_dirFlag && !isLink();
++    }
++
++    /**
++     * Is this entry a symbolic link?
++     *
++     * @return The Link value
++     * @since 1.1
++     */
++    public boolean isLink()
++    {
++        return getLinkedFile().length() != 0;
+     }
+ 
+     /**
+      * Populate data from this array as if it was in local file data.
+-     * @param data an array of bytes
+-     * @param offset the start offset
+-     * @param length the number of bytes in the array from offset
+-     * @since 1.1
++     *
++     * @param buffer the buffer
++     * @param offset the offset into buffer
++     * @param length the length of data in buffer
+      * @throws ZipException on error
++     * @since 1.1
+      */
+-    public void parseFromLocalFileData(byte[] data, int offset, int length)
+-        throws ZipException {
++    public void parseFromLocalFileData( final byte[] buffer,
++                                        final int offset,
++                                        final int length )
++        throws ZipException
++    {
+ 
+-        long givenChecksum = ZipLong.getValue(data, offset);
+-        byte[] tmp = new byte[length - WORD];
+-        System.arraycopy(data, offset + WORD, tmp, 0, length - WORD);
+-        crc.reset();
+-        crc.update(tmp);
+-        long realChecksum = crc.getValue();
+-        if (givenChecksum != realChecksum) {
+-            throw new ZipException("bad CRC checksum "
+-                                   + Long.toHexString(givenChecksum)
+-                                   + " instead of "
+-                                   + Long.toHexString(realChecksum));
++        long givenChecksum = ( new ZipLong( buffer, offset ) ).getValue();
++        byte[] tmp = new byte[ length - 4 ];
++        System.arraycopy( buffer, offset + 4, tmp, 0, length - 4 );
++        m_crc.reset();
++        m_crc.update( tmp );
++        long realChecksum = m_crc.getValue();
++        if( givenChecksum != realChecksum )
++        {
++            throw new ZipException( "bad CRC checksum " + Long.toHexString( givenChecksum ) +
++                                    " instead of " + Long.toHexString( realChecksum ) );
+         }
+ 
+-        int newMode = ZipShort.getValue(tmp, 0);
+-        // CheckStyle:MagicNumber OFF
+-        byte[] linkArray = new byte[(int) ZipLong.getValue(tmp, 2)];
+-        uid = ZipShort.getValue(tmp, 6);
+-        gid = ZipShort.getValue(tmp, 8);
++        int newMode = ( new ZipShort( tmp, 0 ) ).getValue();
++        byte[] linkArray = new byte[ (int)( new ZipLong( tmp, 2 ) ).getValue() ];
++        m_uid = ( new ZipShort( tmp, 6 ) ).getValue();
++        m_gid = ( new ZipShort( tmp, 8 ) ).getValue();
+ 
+-        if (linkArray.length == 0) {
+-            link = "";
+-        } else {
+-            System.arraycopy(tmp, 10, linkArray, 0, linkArray.length);
+-            link = new String(linkArray);
++        if( linkArray.length == 0 )
++        {
++            m_link = "";
+         }
+-        // CheckStyle:MagicNumber ON
+-        setDirectory((newMode & DIR_FLAG) != 0);
+-        setMode(newMode);
++        else
++        {
++            System.arraycopy( tmp, 10, linkArray, 0, linkArray.length );
++            m_link = new String( linkArray );
++        }
++        setDirectory( ( newMode & DIR_FLAG ) != 0 );
++        setMode( newMode );
+     }
+ 
+     /**
+      * Get the file mode for given permissions with the correct file type.
+-     * @param mode the mode
+-     * @return the type with the mode
++     *
++     * @param mode Description of Parameter
++     * @return The Mode value
+      * @since 1.1
+      */
+-    protected int getMode(int mode) {
++    protected int getMode( final int mode )
++    {
+         int type = FILE_FLAG;
+-        if (isLink()) {
++        if( isLink() )
++        {
+             type = LINK_FLAG;
+-        } else if (isDirectory()) {
++        }
++        else if( isDirectory() )
++        {
+             type = DIR_FLAG;
+         }
+-        return type | (mode & PERM_MASK);
++        return type | ( mode & PERM_MASK );
+     }
+-
+ }
+diff --git a/src/main/java/org/apache/commons/compress/archivers/zip/ExtraFieldUtils.java b/src/main/java/org/apache/commons/compress/archivers/zip/ExtraFieldUtils.java
+index b1a5f0e..8f0c42b 100644
+--- a/src/main/java/org/apache/commons/compress/archivers/zip/ExtraFieldUtils.java
++++ b/src/main/java/org/apache/commons/compress/archivers/zip/ExtraFieldUtils.java
+@@ -1,176 +1,204 @@
+ /*
+- *  Licensed to the Apache Software Foundation (ASF) under one or more
+- *  contributor license agreements.  See the NOTICE file distributed with
+- *  this work for additional information regarding copyright ownership.
+- *  The ASF licenses this file to You under the Apache License, Version 2.0
+- *  (the "License"); you may not use this file except in compliance with
+- *  the License.  You may obtain a copy of the License at
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
+  *
+- *      http://www.apache.org/licenses/LICENSE-2.0
++ * http://www.apache.org/licenses/LICENSE-2.0
+  *
+- *  Unless required by applicable law or agreed to in writing, software
+- *  distributed under the License is distributed on an "AS IS" BASIS,
+- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- *  See the License for the specific language governing permissions and
+- *  limitations under the License.
+- *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
+  */
+ package org.apache.commons.compress.archivers.zip;
+ 
++import java.util.ArrayList;
+ import java.util.Hashtable;
+-import java.util.Vector;
+ import java.util.zip.ZipException;
+ 
+ /**
+  * ZipExtraField related methods
+- *
+  */
+-// CheckStyle:HideUtilityClassConstructorCheck OFF (bc)
+-public class ExtraFieldUtils {
+-
+-    private static final int WORD = 4;
+-
++public class ExtraFieldUtils
++{
+     /**
+      * Static registry of known extra fields.
+      *
+      * @since 1.1
+      */
+-    private static Hashtable implementations;
++    private static final Hashtable c_implementations;
+ 
+-    static {
+-        implementations = new Hashtable();
+-        register(AsiExtraField.class);
+-        register(JarMarker.class);
++    static
++    {
++        c_implementations = new Hashtable();
++        register( AsiExtraField.class );
+     }
+ 
+     /**
+-     * Register a ZipExtraField implementation.
++     * Create an instance of the approriate ExtraField, falls back to {@link
++     * UnrecognizedExtraField UnrecognizedExtraField}.
+      *
+-     * <p>The given class must have a no-arg constructor and implement
+-     * the {@link ZipExtraField ZipExtraField interface}.</p>
+-     * @param c the class to register
++     * Throws java.lang.IllegalAccessException if cant create implementation.
+      *
++     * @param headerID the header ID
++     * @return the extra field implementation
++     * @throws InstantiationException if cant create implementation
++     * @throws IllegalAccessException if cant create implementation
+      * @since 1.1
+      */
+-    public static void register(Class c) {
+-        try {
+-            ZipExtraField ze = (ZipExtraField) c.newInstance();
+-            implementations.put(ze.getHeaderId(), c);
+-        } catch (ClassCastException cc) {
+-            throw new RuntimeException(c + " doesn\'t implement ZipExtraField");
+-        } catch (InstantiationException ie) {
+-            throw new RuntimeException(c + " is not a concrete class");
+-        } catch (IllegalAccessException ie) {
+-            throw new RuntimeException(c + "\'s no-arg constructor is not public");
++    public static ZipExtraField createExtraField( final ZipShort headerID )
++        throws InstantiationException, IllegalAccessException
++    {
++        final Class clazz =
++            (Class)c_implementations.get( headerID );
++        if( clazz != null )
++        {
++            return (ZipExtraField)clazz.newInstance();
+         }
++        final UnrecognizedExtraField unrecognized = new UnrecognizedExtraField();
++        unrecognized.setHeaderID( headerID );
++        return unrecognized;
+     }
+ 
+     /**
+-     * Create an instance of the approriate ExtraField, falls back to
+-     * {@link UnrecognizedExtraField UnrecognizedExtraField}.
+-     * @param headerId the header identifier
+-     * @return an instance of the appropiate ExtraField
+-     * @exception InstantiationException if unable to instantiate the class
+-     * @exception IllegalAccessException if not allowed to instatiate the class
++     * Merges the central directory fields of the given ZipExtraFields.
++     *
++     * @param data the central directory data
++     * @return the merged data
+      * @since 1.1
+      */
+-    public static ZipExtraField createExtraField(ZipShort headerId)
+-        throws InstantiationException, IllegalAccessException {
+-        Class c = (Class) implementations.get(headerId);
+-        if (c != null) {
+-            return (ZipExtraField) c.newInstance();
++    public static byte[] mergeCentralDirectoryData( final ZipExtraField[] data )
++    {
++        int sum = 4 * data.length;
++        for( int i = 0; i < data.length; i++ )
++        {
++            sum += data[ i ].getCentralDirectoryLength().getValue();
+         }
+-        UnrecognizedExtraField u = new UnrecognizedExtraField();
+-        u.setHeaderId(headerId);
+-        return u;
+-    }
+-
+-    /**
+-     * Split the array into ExtraFields and populate them with the
+-     * give data.
+-     * @param data an array of bytes
+-     * @return an array of ExtraFields
+-     * @since 1.1
+-     * @throws ZipException on error
+-     */
+-    public static ZipExtraField[] parse(byte[] data) throws ZipException {
+-        Vector v = new Vector();
++        byte[] result = new byte[ sum ];
+         int start = 0;
+-        while (start <= data.length - WORD) {
+-            ZipShort headerId = new ZipShort(data, start);
+-            int length = (new ZipShort(data, start + 2)).getValue();
+-            if (start + WORD + length > data.length) {
+-                throw new ZipException("data starting at " + start
+-                    + " is in unknown format");
+-            }
+-            try {
+-                ZipExtraField ze = createExtraField(headerId);
+-                ze.parseFromLocalFileData(data, start + WORD, length);
+-                v.addElement(ze);
+-            } catch (InstantiationException ie) {
+-                throw new ZipException(ie.getMessage());
+-            } catch (IllegalAccessException iae) {
+-                throw new ZipException(iae.getMessage());
+-            }
+-            start += (length + WORD);
++        for( int i = 0; i < data.length; i++ )
++        {
++            System.arraycopy( data[ i ].getHeaderID().getBytes(),
++                              0, result, start, 2 );
++            System.arraycopy( data[ i ].getCentralDirectoryLength().getBytes(),
++                              0, result, start + 2, 2 );
++            byte[] local = data[ i ].getCentralDirectoryData();
++            System.arraycopy( local, 0, result, start + 4, local.length );
++            start += ( local.length + 4 );
+         }
+-        if (start != data.length) { // array not exhausted
+-            throw new ZipException("data starting at " + start
+-                + " is in unknown format");
+-        }
+-
+-        ZipExtraField[] result = new ZipExtraField[v.size()];
+-        v.copyInto(result);
+         return result;
+     }
+ 
+     /**
+      * Merges the local file data fields of the given ZipExtraFields.
+-     * @param data an array of ExtraFiles
+-     * @return an array of bytes
++     *
++     * @param data the data
++     * @return the merged data
+      * @since 1.1
+      */
+-    public static byte[] mergeLocalFileDataData(ZipExtraField[] data) {
+-        int sum = WORD * data.length;
+-        for (int i = 0; i < data.length; i++) {
+-            sum += data[i].getLocalFileDataLength().getValue();
++    public static byte[] mergeLocalFileDataData( final ZipExtraField[] data )
++    {
++        int sum = 4 * data.length;
++        for( int i = 0; i < data.length; i++ )
++        {
++            sum += data[ i ].getLocalFileDataLength().getValue();
+         }
+-        byte[] result = new byte[sum];
++        byte[] result = new byte[ sum ];
+         int start = 0;
+-        for (int i = 0; i < data.length; i++) {
+-            System.arraycopy(data[i].getHeaderId().getBytes(),
+-                             0, result, start, 2);
+-            System.arraycopy(data[i].getLocalFileDataLength().getBytes(),
+-                             0, result, start + 2, 2);
+-            byte[] local = data[i].getLocalFileDataData();
+-            System.arraycopy(local, 0, result, start + WORD, local.length);
+-            start += (local.length + WORD);
++        for( int i = 0; i < data.length; i++ )
++        {
++            System.arraycopy( data[ i ].getHeaderID().getBytes(),
++                              0, result, start, 2 );
++            System.arraycopy( data[ i ].getLocalFileDataLength().getBytes(),
++                              0, result, start + 2, 2 );
++            byte[] local = data[ i ].getLocalFileDataData();
++            System.arraycopy( local, 0, result, start + 4, local.length );
++            start += ( local.length + 4 );
+         }
+         return result;
+     }
+ 
+     /**
+-     * Merges the central directory fields of the given ZipExtraFields.
+-     * @param data an array of ExtraFields
+-     * @return an array of bytes
++     * Split the array into ExtraFields and populate them with the give data.
++     *
++     * @param data the data to parse
++     * @return the parsed fields
++     * @exception ZipException on error
+      * @since 1.1
+      */
+-    public static byte[] mergeCentralDirectoryData(ZipExtraField[] data) {
+-        int sum = WORD * data.length;
+-        for (int i = 0; i < data.length; i++) {
+-            sum += data[i].getCentralDirectoryLength().getValue();
+-        }
+-        byte[] result = new byte[sum];
++    public static ZipExtraField[] parse( final byte[] data )
++        throws ZipException
++    {
++        ArrayList v = new ArrayList();
+         int start = 0;
+-        for (int i = 0; i < data.length; i++) {
+-            System.arraycopy(data[i].getHeaderId().getBytes(),
+-                             0, result, start, 2);
+-            System.arraycopy(data[i].getCentralDirectoryLength().getBytes(),
+-                             0, result, start + 2, 2);
+-            byte[] local = data[i].getCentralDirectoryData();
+-            System.arraycopy(local, 0, result, start + WORD, local.length);
+-            start += (local.length + WORD);
++        while( start <= data.length - 4 )
++        {
++            final ZipShort headerID = new ZipShort( data, start );
++            int length = ( new ZipShort( data, start + 2 ) ).getValue();
++            if( start + 4 + length > data.length )
++            {
++                throw new ZipException( "data starting at " + start + " is in unknown format" );
++            }
++            try
++            {
++                ZipExtraField ze = createExtraField( headerID );
++                ze.parseFromLocalFileData( data, start + 4, length );
++                v.add( ze );
++            }
++            catch( InstantiationException ie )
++            {
++                throw new ZipException( ie.getMessage() );
++            }
++            catch( IllegalAccessException iae )
++            {
++                throw new ZipException( iae.getMessage() );
++            }
++            start += ( length + 4 );
+         }
+-        return result;
++        if( start != data.length )
++        {// array not exhausted
++            throw new ZipException( "data starting at " + start + " is in unknown format" );
++        }
++
++        final ZipExtraField[] result = new ZipExtraField[ v.size() ];
++        return (ZipExtraField[])v.toArray( result );
++    }
++
++    /**
++     * Register a ZipExtraField implementation. <p>
++     *
++     * The given class must have a no-arg constructor and implement the {@link
++     * ZipExtraField ZipExtraField interface}.</p>
++     *
++     * @param clazz The Class for particular implementation
++     * @since 1.1
++     */
++    public static void register( final Class clazz )
++    {
++        try
++        {
++            ZipExtraField ze = (ZipExtraField)clazz.newInstance();
++            c_implementations.put( ze.getHeaderID(), clazz );
++        }
++        catch( ClassCastException cc )
++        {
++            throw new RuntimeException( clazz +
++                                        " doesn\'t implement ZipExtraField" );
++        }
++        catch( InstantiationException ie )
++        {
++            throw new RuntimeException( clazz + " is not a concrete class" );
++        }
++        catch( IllegalAccessException ie )
++        {
++            throw new RuntimeException( clazz +
++                                        "\'s no-arg constructor is not public" );
++        }
+     }
+ }
+diff --git a/src/main/java/org/apache/commons/compress/archivers/zip/UnrecognizedExtraField.java b/src/main/java/org/apache/commons/compress/archivers/zip/UnrecognizedExtraField.java
+index 2d146ae..53a0133 100644
+--- a/src/main/java/org/apache/commons/compress/archivers/zip/UnrecognizedExtraField.java
++++ b/src/main/java/org/apache/commons/compress/archivers/zip/UnrecognizedExtraField.java
+@@ -65,7 +65,7 @@
+      *
+      * @param headerID the header ID
+      */
+-    public void setHeaderId( final ZipShort headerID )
++    public void setHeaderID( final ZipShort headerID )
+     {
+         m_headerID = headerID;
+     }
+@@ -113,7 +113,7 @@
+      *
+      * @return the HeaderID
+      */
+-    public ZipShort getHeaderId()
++    public ZipShort getHeaderID()
+     {
+         return m_headerID;
+     }
+diff --git a/src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveEntry.java b/src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveEntry.java
+index 82e3b9a..7b670b0 100644
+--- a/src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveEntry.java
++++ b/src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveEntry.java
+@@ -371,12 +371,12 @@
+      */
+     public void addExtraField( final ZipExtraField extraField )
+     {
+-        final ZipShort type = extraField.getHeaderId();
++        final ZipShort type = extraField.getHeaderID();
+         boolean done = false;
+         for( int i = 0; !done && i < m_extraFields.size(); i++ )
+         {
+             final ZipExtraField other = (ZipExtraField)m_extraFields.get( i );
+-            if( other.getHeaderId().equals( type ) )
++            if( other.getHeaderID().equals( type ) )
+             {
+                 m_extraFields.set( i, extraField );
+                 done = true;
+@@ -426,7 +426,7 @@
+         boolean done = false;
+         for( int i = 0; !done && i < m_extraFields.size(); i++ )
+         {
+-            if( ( (ZipExtraField)m_extraFields.get( i ) ).getHeaderId().equals( type ) )
++            if( ( (ZipExtraField)m_extraFields.get( i ) ).getHeaderID().equals( type ) )
+             {
+                 m_extraFields.remove( i );
+                 done = true;
+diff --git a/src/main/java/org/apache/commons/compress/archivers/zip/ZipEntry.java b/src/main/java/org/apache/commons/compress/archivers/zip/ZipEntry.java
+index 7f2fb32..9cd5c19 100644
+--- a/src/main/java/org/apache/commons/compress/archivers/zip/ZipEntry.java
++++ b/src/main/java/org/apache/commons/compress/archivers/zip/ZipEntry.java
+@@ -1,64 +1,124 @@
+ /*
+- *  Licensed to the Apache Software Foundation (ASF) under one or more
+- *  contributor license agreements.  See the NOTICE file distributed with
+- *  this work for additional information regarding copyright ownership.
+- *  The ASF licenses this file to You under the Apache License, Version 2.0
+- *  (the "License"); you may not use this file except in compliance with
+- *  the License.  You may obtain a copy of the License at
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
+  *
+- *      http://www.apache.org/licenses/LICENSE-2.0
++ * http://www.apache.org/licenses/LICENSE-2.0
+  *
+- *  Unless required by applicable law or agreed to in writing, software
+- *  distributed under the License is distributed on an "AS IS" BASIS,
+- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- *  See the License for the specific language governing permissions and
+- *  limitations under the License.
+- *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
+  */
+ package org.apache.commons.compress.archivers.zip;
+ 
+-import java.util.Vector;
++import java.lang.reflect.InvocationTargetException;
++import java.lang.reflect.Method;
++import java.util.ArrayList;
+ import java.util.zip.ZipException;
+ 
+ /**
+- * Extension that adds better handling of extra fields and provides
+- * access to the internal and external file attributes.
+- *
++ * Extension that adds better handling of extra fields and provides access to
++ * the internal and external file attributes.
+  */
+-public class ZipEntry extends java.util.zip.ZipEntry implements Cloneable {
++public class ZipEntry
++    extends java.util.zip.ZipEntry
++{
++    /**
++     * Helper for JDK 1.1
++     *
++     * @since 1.2
++     */
++    private static Method c_setCompressedSizeMethod;
+ 
+-    public static final int PLATFORM_UNIX = 3;
+-    public static final int PLATFORM_FAT  = 0;
+-    private static final int SHORT_MASK = 0xFFFF;
+-    private static final int SHORT_SHIFT = 16;
++    /**
++     * Helper for JDK 1.1
++     *
++     * @since 1.2
++     */
++    private static final Object c_lockReflection = new Object();
+ 
+-    private int internalAttributes = 0;
+-    private int platform = PLATFORM_FAT;
+-    private long externalAttributes = 0;
+-    private Vector/*<ZipExtraField>*/ extraFields = null;
+-    private String name = null;
++    /**
++     * Helper for JDK 1.1
++     *
++     * @since 1.2
++     */
++    private static boolean c_triedToGetMethod;
++
++    private final ArrayList m_extraFields = new ArrayList();
++
++    private int m_internalAttributes;
++    private long m_externalAttributes;
++
++    /**
++     * Helper for JDK 1.1 <-> 1.2 incompatibility.
++     *
++     * @since 1.2
++     */
++    private Long m_compressedSize;
+ 
+     /**
+      * Creates a new zip entry with the specified name.
+-     * @param name the name of the entry
++     *
++     * @param name the name of entry
+      * @since 1.1
+      */
+-    public ZipEntry(String name) {
+-        super(name);
++    public ZipEntry( final String name )
++    {
++        super( name );
+     }
+ 
+     /**
+      * Creates a new zip entry with fields taken from the specified zip entry.
+-     * @param entry the entry to get fields from
++     *
++     * @param entry the JDK ZipEntry to adapt
++     * @exception ZipException if can not create entry
+      * @since 1.1
+-     * @throws ZipException on error
+      */
+-    public ZipEntry(java.util.zip.ZipEntry entry) throws ZipException {
+-        super(entry);
+-        byte[] extra = entry.getExtra();
+-        if (extra != null) {
+-            setExtraFields(ExtraFieldUtils.parse(extra));
+-        } else {
++    public ZipEntry( java.util.zip.ZipEntry entry )
++        throws ZipException
++    {
++        /*
++         * REVISIT: call super(entry) instead of this stuff in Ant2,
++         * "copy constructor" has not been available in JDK 1.1
++         */
++        super( entry.getName() );
++
++        setComment( entry.getComment() );
++        setMethod( entry.getMethod() );
++        setTime( entry.getTime() );
++
++        final long size = entry.getSize();
++        if( size > 0 )
++        {
++            setSize( size );
++        }
++
++        final long cSize = entry.getCompressedSize();
++        if( cSize > 0 )
++        {
++            setComprSize( cSize );
++        }
++
++        final long crc = entry.getCrc();
++        if( crc > 0 )
++        {
++            setCrc( crc );
++        }
++
++        final byte[] extra = entry.getExtra();
++        if( extra != null )
++        {
++            setExtraFields( ExtraFieldUtils.parse( extra ) );
++        }
++        else
++        {
+             // initializes extra data to an empty byte array
+             setExtra();
+         }
+@@ -66,307 +126,326 @@
+ 
+     /**
+      * Creates a new zip entry with fields taken from the specified zip entry.
+-     * @param entry the entry to get fields from
+-     * @throws ZipException on error
++     *
++     * @param entry the entry to adapt
++     * @exception ZipException if can not create entry
+      * @since 1.1
+      */
+-    public ZipEntry(ZipEntry entry) throws ZipException {
+-        this((java.util.zip.ZipEntry) entry);
+-        setInternalAttributes(entry.getInternalAttributes());
+-        setExternalAttributes(entry.getExternalAttributes());
+-        setExtraFields(entry.getExtraFields());
++    public ZipEntry( final ZipEntry entry )
++        throws ZipException
++    {
++        this( (java.util.zip.ZipEntry)entry );
++        setInternalAttributes( entry.getInternalAttributes() );
++        setExternalAttributes( entry.getExternalAttributes() );
++        setExtraFields( entry.getExtraFields() );
+     }
+ 
+     /**
+-     * @since 1.9
++     * Try to get a handle to the setCompressedSize method.
++     *
++     * @since 1.2
+      */
+-    protected ZipEntry() {
+-        super("");
++    private static void checkSCS()
++    {
++        if( !c_triedToGetMethod )
++        {
++            synchronized( c_lockReflection )
++            {
++                c_triedToGetMethod = true;
++                try
++                {
++                    c_setCompressedSizeMethod =
++                        java.util.zip.ZipEntry.class.getMethod( "setCompressedSize",
++                                                                new Class[]{Long.TYPE} );
++                }
++                catch( NoSuchMethodException nse )
++                {
++                }
++            }
++        }
+     }
+ 
+     /**
+-     * Overwrite clone.
+-     * @return a cloned copy of this ZipEntry
++     * Are we running JDK 1.2 or higher?
++     *
++     * @return Description of the Returned Value
++     * @since 1.2
++     */
++    private static boolean haveSetCompressedSize()
++    {
++        checkSCS();
++        return c_setCompressedSizeMethod != null;
++    }
++
++    /**
++     * Invoke setCompressedSize via reflection.
++     *
++     * @param entry Description of Parameter
++     * @param size Description of Parameter
++     * @since 1.2
++     */
++    private static void performSetCompressedSize( final ZipEntry entry,
++                                                  final long size )
++    {
++        final Long[] s = {new Long( size )};
++        try
++        {
++            c_setCompressedSizeMethod.invoke( entry, s );
++        }
++        catch( final InvocationTargetException ite )
++        {
++            final Throwable nested = ite.getTargetException();
++            final String message = "Exception setting the compressed size " +
++                "of " + entry + ": " + nested.getMessage();
++            throw new RuntimeException( message );
++        }
++        catch( final Throwable t )
++        {
++            final String message = "Exception setting the compressed size " +
++                "of " + entry + ": " + t.getMessage();
++            throw new RuntimeException( message );
++        }
++    }
++
++    /**
++     * Make this class work in JDK 1.1 like a 1.2 class. <p>
++     *
++     * This either stores the size for later usage or invokes setCompressedSize
++     * via reflection.</p>
++     *
++     * @param size The new ComprSize value
++     * @since 1.2
++     */
++    public void setComprSize( final long size )
++    {
++        if( haveSetCompressedSize() )
++        {
++            performSetCompressedSize( this, size );
++        }
++        else
++        {
++            m_compressedSize = new Long( size );
++        }
++    }
++
++    /**
++     * Sets the external file attributes.
++     *
++     * @param externalAttributes The new ExternalAttributes value
+      * @since 1.1
+      */
+-    public Object clone() {
+-        ZipEntry e = (ZipEntry) super.clone();
++    public void setExternalAttributes( final long externalAttributes )
++    {
++        m_externalAttributes = externalAttributes;
++    }
+ 
+-        e.extraFields = extraFields != null ? (Vector) extraFields.clone() : null;
+-        e.setInternalAttributes(getInternalAttributes());
+-        e.setExternalAttributes(getExternalAttributes());
+-        e.setExtraFields(getExtraFields());
+-        return e;
++    /**
++     * Throws an Exception if extra data cannot be parsed into extra fields.
++     *
++     * @param extra The new Extra value
++     * @throws RuntimeException if fail to set extra data
++     * @since 1.1
++     */
++    public void setExtra( final byte[] extra )
++        throws RuntimeException
++    {
++        try
++        {
++            setExtraFields( ExtraFieldUtils.parse( extra ) );
++        }
++        catch( final Exception e )
++        {
++            throw new RuntimeException( e.getMessage() );
++        }
++    }
++
++    /**
++     * Replaces all currently attached extra fields with the new array.
++     *
++     * @param fields The new ExtraFields value
++     * @since 1.1
++     */
++    public void setExtraFields( final ZipExtraField[] fields )
++    {
++        m_extraFields.clear();
++        for( int i = 0; i < fields.length; i++ )
++        {
++            m_extraFields.add( fields[ i ] );
++        }
++        setExtra();
++    }
++
++    /**
++     * Sets the internal file attributes.
++     *
++     * @param value The new InternalAttributes value
++     * @since 1.1
++     */
++    public void setInternalAttributes( final int value )
++    {
++        m_internalAttributes = value;
++    }
++
++    /**
++     * Retrieves the extra data for the central directory.
++     *
++     * @return The CentralDirectoryExtra value
++     * @since 1.1
++     */
++    public byte[] getCentralDirectoryExtra()
++    {
++        return ExtraFieldUtils.mergeCentralDirectoryData( getExtraFields() );
++    }
++
++    /**
++     * Override to make this class work in JDK 1.1 like a 1.2 class.
++     *
++     * @return The CompressedSize value
++     * @since 1.2
++     */
++    public long getCompressedSize()
++    {
++        if( m_compressedSize != null )
++        {
++            // has been set explicitly and we are running in a 1.1 VM
++            return m_compressedSize.longValue();
++        }
++        return super.getCompressedSize();
++    }
++
++    /**
++     * Retrieves the external file attributes.
++     *
++     * @return The ExternalAttributes value
++     * @since 1.1
++     */
++    public long getExternalAttributes()
++    {
++        return m_externalAttributes;
++    }
++
++    /**
++     * Retrieves extra fields.
++     *
++     * @return The ExtraFields value
++     * @since 1.1
++     */
++    public ZipExtraField[] getExtraFields()
++    {
++        final ZipExtraField[] result = new ZipExtraField[ m_extraFields.size() ];
++        return (ZipExtraField[])m_extraFields.toArray( result );
+     }
+ 
+     /**
+      * Retrieves the internal file attributes.
+      *
+-     * @return the internal file attributes
++     * @return The InternalAttributes value
+      * @since 1.1
+      */
+-    public int getInternalAttributes() {
+-        return internalAttributes;
++    public int getInternalAttributes()
++    {
++        return m_internalAttributes;
+     }
+ 
+     /**
+-     * Sets the internal file attributes.
+-     * @param value an <code>int</code> value
+-     * @since 1.1
+-     */
+-    public void setInternalAttributes(int value) {
+-        internalAttributes = value;
+-    }
+-
+-    /**
+-     * Retrieves the external file attributes.
+-     * @return the external file attributes
+-     * @since 1.1
+-     */
+-    public long getExternalAttributes() {
+-        return externalAttributes;
+-    }
+-
+-    /**
+-     * Sets the external file attributes.
+-     * @param value an <code>long</code> value
+-     * @since 1.1
+-     */
+-    public void setExternalAttributes(long value) {
+-        externalAttributes = value;
+-    }
+-
+-    /**
+-     * Sets Unix permissions in a way that is understood by Info-Zip's
+-     * unzip command.
+-     * @param mode an <code>int</code> value
+-     * @since Ant 1.5.2
+-     */
+-    public void setUnixMode(int mode) {
+-        // CheckStyle:MagicNumberCheck OFF - no point
+-        setExternalAttributes((mode << SHORT_SHIFT)
+-                              // MS-DOS read-only attribute
+-                              | ((mode & 0200) == 0 ? 1 : 0)
+-                              // MS-DOS directory flag
+-                              | (isDirectory() ? 0x10 : 0));
+-        // CheckStyle:MagicNumberCheck ON
+-        platform = PLATFORM_UNIX;
+-    }
+-
+-    /**
+-     * Unix permission.
+-     * @return the unix permissions
+-     * @since Ant 1.6
+-     */
+-    public int getUnixMode() {
+-        return platform != PLATFORM_UNIX ? 0 :
+-            (int) ((getExternalAttributes() >> SHORT_SHIFT) & SHORT_MASK);
+-    }
+-
+-    /**
+-     * Platform specification to put into the &quot;version made
+-     * by&quot; part of the central file header.
++     * Retrieves the extra data for the local file data.
+      *
+-     * @return PLATFORM_FAT unless {@link #setUnixMode setUnixMode}
+-     * has been called, in which case PLATORM_UNIX will be returned.
++     * @return The LocalFileDataExtra value
++     * @since 1.1
++     */
++    public byte[] getLocalFileDataExtra()
++    {
++        byte[] extra = getExtra();
++        return extra != null ? extra : new byte[ 0 ];
++    }
++
++    /**
++     * Adds an extra fields - replacing an already present extra field of the
++     * same type.
+      *
+-     * @since Ant 1.5.2
+-     */
+-    public int getPlatform() {
+-        return platform;
+-    }
+-
+-    /**
+-     * Set the platform (UNIX or FAT).
+-     * @param platform an <code>int</code> value - 0 is FAT, 3 is UNIX
+-     * @since 1.9
+-     */
+-    protected void setPlatform(int platform) {
+-        this.platform = platform;
+-    }
+-
+-    /**
+-     * Replaces all currently attached extra fields with the new array.
+-     * @param fields an array of extra fields
++     * @param extraField The feature to be added to the ExtraField attribute
+      * @since 1.1
+      */
+-    public void setExtraFields(ZipExtraField[] fields) {
+-        extraFields = new Vector();
+-        for (int i = 0; i < fields.length; i++) {
+-            extraFields.addElement(fields[i]);
+-        }
+-        setExtra();
+-    }
+-
+-    /**
+-     * Retrieves extra fields.
+-     * @return an array of the extra fields
+-     * @since 1.1
+-     */
+-    public ZipExtraField[] getExtraFields() {
+-        if (extraFields == null) {
+-            return new ZipExtraField[0];
+-        }
+-        ZipExtraField[] result = new ZipExtraField[extraFields.size()];
+-        extraFields.copyInto(result);
+-        return result;
+-    }
+-
+-    /**
+-     * Adds an extra fields - replacing an already present extra field
+-     * of the same type.
+-     * @param ze an extra field
+-     * @since 1.1
+-     */
+-    public void addExtraField(ZipExtraField ze) {
+-        if (extraFields == null) {
+-            extraFields = new Vector();
+-        }
+-        ZipShort type = ze.getHeaderId();
++    public void addExtraField( final ZipExtraField extraField )
++    {
++        final ZipShort type = extraField.getHeaderID();
+         boolean done = false;
+-        for (int i = 0, fieldsSize = extraFields.size(); !done && i < fieldsSize; i++) {
+-            if (((ZipExtraField) extraFields.elementAt(i)).getHeaderId().equals(type)) {
+-                extraFields.setElementAt(ze, i);
++        for( int i = 0; !done && i < m_extraFields.size(); i++ )
++        {
++            final ZipExtraField other = (ZipExtraField)m_extraFields.get( i );
++            if( other.getHeaderID().equals( type ) )
++            {
++                m_extraFields.set( i, extraField );
+                 done = true;
+             }
+         }
+-        if (!done) {
+-            extraFields.addElement(ze);
++        if( !done )
++        {
++            m_extraFields.add( extraField );
+         }
+         setExtra();
+     }
+ 
+     /**
++     * Overwrite clone
++     *
++     * @return Description of the Returned Value
++     * @since 1.1
++     */
++    public Object clone()
++    {
++        ZipEntry entry = null;
++        try
++        {
++            entry = new ZipEntry( (java.util.zip.ZipEntry)super.clone() );
++        }
++        catch( final Exception e )
++        {
++            // impossible as extra data is in correct format
++            e.printStackTrace();
++            return null;
++        }
++
++        entry.setInternalAttributes( getInternalAttributes() );
++        entry.setExternalAttributes( getExternalAttributes() );
++        entry.setExtraFields( getExtraFields() );
++        return entry;
++    }
++
++    /**
+      * Remove an extra fields.
+-     * @param type the type of extra field to remove
++     *
++     * @param type Description of Parameter
+      * @since 1.1
+      */
+-    public void removeExtraField(ZipShort type) {
+-        if (extraFields == null) {
+-            extraFields = new Vector();
+-        }
++    public void removeExtraField( final ZipShort type )
++    {
+         boolean done = false;
+-        for (int i = 0, fieldsSize = extraFields.size(); !done && i < fieldsSize; i++) {
+-            if (((ZipExtraField) extraFields.elementAt(i)).getHeaderId().equals(type)) {
+-                extraFields.removeElementAt(i);
++        for( int i = 0; !done && i < m_extraFields.size(); i++ )
++        {
++            if( ( (ZipExtraField)m_extraFields.get( i ) ).getHeaderID().equals( type ) )
++            {
++                m_extraFields.remove( i );
+                 done = true;
+             }
+         }
+-        if (!done) {
++        if( !done )
++        {
+             throw new java.util.NoSuchElementException();
+         }
+         setExtra();
+     }
+ 
+     /**
+-     * Throws an Exception if extra data cannot be parsed into extra fields.
+-     * @param extra an array of bytes to be parsed into extra fields
+-     * @throws RuntimeException if the bytes cannot be parsed
+-     * @since 1.1
+-     * @throws RuntimeException on error
+-     */
+-    public void setExtra(byte[] extra) throws RuntimeException {
+-        try {
+-            setExtraFields(ExtraFieldUtils.parse(extra));
+-        } catch (Exception e) {
+-            throw new RuntimeException(e.getMessage());
+-        }
+-    }
+-
+-    /**
+      * Unfortunately {@link java.util.zip.ZipOutputStream
+-     * java.util.zip.ZipOutputStream} seems to access the extra data
+-     * directly, so overriding getExtra doesn't help - we need to
+-     * modify super's data directly.
++     * java.util.zip.ZipOutputStream} seems to access the extra data directly,
++     * so overriding getExtra doesn't help - we need to modify super's data
++     * directly.
+      *
+      * @since 1.1
+      */
+-    protected void setExtra() {
+-        super.setExtra(ExtraFieldUtils.mergeLocalFileDataData(getExtraFields()));
++    protected void setExtra()
++    {
++        super.setExtra( ExtraFieldUtils.mergeLocalFileDataData( getExtraFields() ) );
+     }
+-
+-    /**
+-     * Retrieves the extra data for the local file data.
+-     * @return the extra data for local file
+-     * @since 1.1
+-     */
+-    public byte[] getLocalFileDataExtra() {
+-        byte[] extra = getExtra();
+-        return extra != null ? extra : new byte[0];
+-    }
+-
+-    /**
+-     * Retrieves the extra data for the central directory.
+-     * @return the central directory extra data
+-     * @since 1.1
+-     */
+-    public byte[] getCentralDirectoryExtra() {
+-        return ExtraFieldUtils.mergeCentralDirectoryData(getExtraFields());
+-    }
+-
+-    /**
+-     * Make this class work in JDK 1.1 like a 1.2 class.
+-     *
+-     * <p>This either stores the size for later usage or invokes
+-     * setCompressedSize via reflection.</p>
+-     * @param size the size to use
+-     * @deprecated since 1.7.
+-     *             Use setCompressedSize directly.
+-     * @since 1.2
+-     */
+-    public void setComprSize(long size) {
+-        setCompressedSize(size);
+-    }
+-
+-    /**
+-     * Get the name of the entry.
+-     * @return the entry name
+-     * @since 1.9
+-     */
+-    public String getName() {
+-        return name == null ? super.getName() : name;
+-    }
+-
+-    /**
+-     * Is this entry a directory?
+-     * @return true if the entry is a directory
+-     * @since 1.10
+-     */
+-    public boolean isDirectory() {
+-        return getName().endsWith("/");
+-    }
+-
+-    /**
+-     * Set the name of the entry.
+-     * @param name the name to use
+-     */
+-    protected void setName(String name) {
+-        this.name = name;
+-    }
+-
+-    /**
+-     * Get the hashCode of the entry.
+-     * This uses the name as the hashcode.
+-     * @return a hashcode.
+-     * @since Ant 1.7
+-     */
+-    public int hashCode() {
+-        // this method has severe consequences on performance. We cannot rely
+-        // on the super.hashCode() method since super.getName() always return
+-        // the empty string in the current implemention (there's no setter)
+-        // so it is basically draining the performance of a hashmap lookup
+-        return getName().hashCode();
+-    }
+-
+-    /**
+-     * The equality method. In this case, the implementation returns 'this == o'
+-     * which is basically the equals method of the Object class.
+-     * @param o the object to compare to
+-     * @return true if this object is the same as <code>o</code>
+-     * @since Ant 1.7
+-     */
+-    public boolean equals(Object o) {
+-        return (this == o);
+-    }
+-
+ }
+diff --git a/src/main/java/org/apache/commons/compress/archivers/zip/ZipExtraField.java b/src/main/java/org/apache/commons/compress/archivers/zip/ZipExtraField.java
+index bce85c1..9e4a6f0 100644
+--- a/src/main/java/org/apache/commons/compress/archivers/zip/ZipExtraField.java
++++ b/src/main/java/org/apache/commons/compress/archivers/zip/ZipExtraField.java
+@@ -36,7 +36,7 @@
+      * @return The HeaderId value
+      * @since 1.1
+      */
+-    ZipShort getHeaderId();
++    ZipShort getHeaderID();
+ 
+     /**
+      * Length of the extra field in the local file data - without Header-ID or
+diff --git a/src/main/java/org/apache/commons/compress/archivers/zip/ZipLong.java b/src/main/java/org/apache/commons/compress/archivers/zip/ZipLong.java
+index 01c5f27..39724f4 100644
+--- a/src/main/java/org/apache/commons/compress/archivers/zip/ZipLong.java
++++ b/src/main/java/org/apache/commons/compress/archivers/zip/ZipLong.java
+@@ -1,149 +1,119 @@
+ /*
+- *  Licensed to the Apache Software Foundation (ASF) under one or more
+- *  contributor license agreements.  See the NOTICE file distributed with
+- *  this work for additional information regarding copyright ownership.
+- *  The ASF licenses this file to You under the Apache License, Version 2.0
+- *  (the "License"); you may not use this file except in compliance with
+- *  the License.  You may obtain a copy of the License at
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
+  *
+- *      http://www.apache.org/licenses/LICENSE-2.0
++ * http://www.apache.org/licenses/LICENSE-2.0
+  *
+- *  Unless required by applicable law or agreed to in writing, software
+- *  distributed under the License is distributed on an "AS IS" BASIS,
+- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- *  See the License for the specific language governing permissions and
+- *  limitations under the License.
+- *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
+  */
+ package org.apache.commons.compress.archivers.zip;
+ 
+ /**
+- * Utility class that represents a four byte integer with conversion
+- * rules for the big endian byte order of ZIP files.
+- *
++ * Utility class that represents a four byte integer with conversion rules for
++ * the big endian byte order of ZIP files.
+  */
+-public final class ZipLong implements Cloneable {
+-
+-    private static final int WORD = 4;
+-    //private static final int BYTE_BIT_SIZE = 8;
+-    private static final int BYTE_MASK = 0xFF;
+-
+-    private static final int BYTE_1 = 1;
+-    private static final int BYTE_1_MASK = 0xFF00;
+-    private static final int BYTE_1_SHIFT = 8;
+-
+-    private static final int BYTE_2 = 2;
+-    private static final int BYTE_2_MASK = 0xFF0000;
+-    private static final int BYTE_2_SHIFT = 16;
+-
+-    private static final int BYTE_3 = 3;
+-    private static final long BYTE_3_MASK = 0xFF000000L;
+-    private static final int BYTE_3_SHIFT = 24;
+-
+-    private long value;
++public final class ZipLong implements Cloneable
++{
++    private long m_value;
+ 
+     /**
+      * Create instance from a number.
+-     * @param value the long to store as a ZipLong
++     *
++     * @param value the value
+      * @since 1.1
+      */
+-    public ZipLong(long value) {
+-        this.value = value;
++    public ZipLong( final long value )
++    {
++        m_value = value;
+     }
+ 
+     /**
+      * Create instance from bytes.
+-     * @param bytes the bytes to store as a ZipLong
++     *
++     * @param buffer the buffer to read data from
+      * @since 1.1
+      */
+-    public ZipLong (byte[] bytes) {
+-        this(bytes, 0);
++    public ZipLong( final byte[] buffer )
++    {
++        this( buffer, 0 );
+     }
+ 
+     /**
+      * Create instance from the four bytes starting at offset.
+-     * @param bytes the bytes to store as a ZipLong
+-     * @param offset the offset to start
++     *
++     * @param buffer buffer to read data from
++     * @param offset offset into buffer
+      * @since 1.1
+      */
+-    public ZipLong (byte[] bytes, int offset) {
+-        value = ZipLong.getValue(bytes, offset);
++    public ZipLong( final byte[] buffer, final int offset )
++    {
++        m_value = ( buffer[ offset + 3 ] << 24 ) & 0xFF000000l;
++        m_value += ( buffer[ offset + 2 ] << 16 ) & 0xFF0000;
++        m_value += ( buffer[ offset + 1 ] << 8 ) & 0xFF00;
++        m_value += ( buffer[ offset ] & 0xFF );
+     }
+ 
+     /**
+-     * Get value as four bytes in big endian byte order.
++     * Get value as two bytes in big endian byte order.
++     *
++     * @return The value as bytes
+      * @since 1.1
+-     * @return value as four bytes in big endian order
+      */
+-    public byte[] getBytes() {
+-        return ZipLong.getBytes(value);
+-    }
+-
+-    /**
+-     * Get value as Java long.
+-     * @since 1.1
+-     * @return value as a long
+-     */
+-    public long getValue() {
+-        return value;
+-    }
+-
+-    /**
+-     * Get value as four bytes in big endian byte order.
+-     * @param value the value to convert
+-     * @return value as four bytes in big endian byte order
+-     */
+-    public static byte[] getBytes(long value) {
+-        byte[] result = new byte[WORD];
+-        result[0] = (byte) ((value & BYTE_MASK));
+-        result[BYTE_1] = (byte) ((value & BYTE_1_MASK) >> BYTE_1_SHIFT);
+-        result[BYTE_2] = (byte) ((value & BYTE_2_MASK) >> BYTE_2_SHIFT);
+-        result[BYTE_3] = (byte) ((value & BYTE_3_MASK) >> BYTE_3_SHIFT);
++    public byte[] getBytes()
++    {
++        byte[] result = new byte[ 4 ];
++        result[ 0 ] = (byte)( ( m_value & 0xFF ) );
++        result[ 1 ] = (byte)( ( m_value & 0xFF00 ) >> 8 );
++        result[ 2 ] = (byte)( ( m_value & 0xFF0000 ) >> 16 );
++        result[ 3 ] = (byte)( ( m_value & 0xFF000000l ) >> 24 );
+         return result;
+     }
+ 
+     /**
+-     * Helper method to get the value as a Java long from four bytes starting at given array offset
+-     * @param bytes the array of bytes
+-     * @param offset the offset to start
+-     * @return the correspondanding Java long value
++     * Get value as Java int.
++     *
++     * @return The value
++     * @since 1.1
+      */
+-    public static long getValue(byte[] bytes, int offset) {
+-        long value = (bytes[offset + BYTE_3] << BYTE_3_SHIFT) & BYTE_3_MASK;
+-        value += (bytes[offset + BYTE_2] << BYTE_2_SHIFT) & BYTE_2_MASK;
+-        value += (bytes[offset + BYTE_1] << BYTE_1_SHIFT) & BYTE_1_MASK;
+-        value += (bytes[offset] & BYTE_MASK);
+-        return value;
+-    }
+-
+-    /**
+-     * Helper method to get the value as a Java long from a four-byte array
+-     * @param bytes the array of bytes
+-     * @return the correspondanding Java long value
+-     */
+-    public static long getValue(byte[] bytes) {
+-        return getValue(bytes, 0);
++    public long getValue()
++    {
++        return m_value;
+     }
+ 
+     /**
+      * Override to make two instances with same value equal.
+-     * @param o an object to compare
+-     * @return true if the objects are equal
++     *
++     * @param o the object to compare against
++     * @return true if equyal, false otherwise
+      * @since 1.1
+      */
+-    public boolean equals(Object o) {
+-        if (o == null || !(o instanceof ZipLong)) {
++    public boolean equals( final Object o )
++    {
++        if( o == null || !( o instanceof ZipLong ) )
++        {
+             return false;
+         }
+-        return value == ((ZipLong) o).getValue();
++        return m_value == ( (ZipLong)o ).getValue();
+     }
+ 
+     /**
+      * Override to make two instances with same value equal.
+-     * @return the value stored in the ZipLong
++     *
++     * @return the hashcode
+      * @since 1.1
+      */
+-    public int hashCode() {
+-        return (int) value;
++    public int hashCode()
++    {
++        return (int)m_value;
+     }
+ }
+diff --git a/src/main/java/org/apache/commons/compress/archivers/zip/ZipOutputStream.java b/src/main/java/org/apache/commons/compress/archivers/zip/ZipOutputStream.java
+index 8fab25c..07220ec 100644
+--- a/src/main/java/org/apache/commons/compress/archivers/zip/ZipOutputStream.java
++++ b/src/main/java/org/apache/commons/compress/archivers/zip/ZipOutputStream.java
+@@ -1,178 +1,50 @@
+ /*
+- *  Licensed to the Apache Software Foundation (ASF) under one or more
+- *  contributor license agreements.  See the NOTICE file distributed with
+- *  this work for additional information regarding copyright ownership.
+- *  The ASF licenses this file to You under the Apache License, Version 2.0
+- *  (the "License"); you may not use this file except in compliance with
+- *  the License.  You may obtain a copy of the License at
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
+  *
+- *      http://www.apache.org/licenses/LICENSE-2.0
++ * http://www.apache.org/licenses/LICENSE-2.0
+  *
+- *  Unless required by applicable law or agreed to in writing, software
+- *  distributed under the License is distributed on an "AS IS" BASIS,
+- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- *  See the License for the specific language governing permissions and
+- *  limitations under the License.
+- *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
+  */
+ package org.apache.commons.compress.archivers.zip;
+ 
+-import java.io.File;
+-import java.io.FileOutputStream;
+-import java.io.FilterOutputStream;
+ import java.io.IOException;
+ import java.io.OutputStream;
+-import java.io.RandomAccessFile;
+ import java.io.UnsupportedEncodingException;
++import java.util.ArrayList;
++import java.util.Calendar;
+ import java.util.Date;
+ import java.util.Hashtable;
+-import java.util.Vector;
+ import java.util.zip.CRC32;
+ import java.util.zip.Deflater;
++import java.util.zip.DeflaterOutputStream;
+ import java.util.zip.ZipException;
+ 
+ /**
+  * Reimplementation of {@link java.util.zip.ZipOutputStream
+- * java.util.zip.ZipOutputStream} that does handle the extended
+- * functionality of this package, especially internal/external file
+- * attributes and extra fields with different layouts for local file
+- * data and central directory entries.
++ * java.util.zip.ZipOutputStream} that does handle the extended functionality of
++ * this package, especially internal/external file attributes and extra fields
++ * with different layouts for local file data and central directory entries. <p>
+  *
+- * <p>This class will try to use {@link java.io.RandomAccessFile
+- * RandomAccessFile} when you know that the output is going to go to a
+- * file.</p>
+- *
+- * <p>If RandomAccessFile cannot be used, this implementation will use
+- * a Data Descriptor to store size and CRC information for {@link
+- * #DEFLATED DEFLATED} entries, this means, you don't need to
+- * calculate them yourself.  Unfortunately this is not possible for
+- * the {@link #STORED STORED} method, here setting the CRC and
+- * uncompressed size information is required before {@link
+- * #putNextEntry putNextEntry} can be called.</p>
+- *
++ * This implementation will use a Data Descriptor to store size and CRC
++ * information for DEFLATED entries, this means, you don't need to calculate
++ * them yourself. Unfortunately this is not possible for the STORED method, here
++ * setting the CRC and uncompressed size information is required before {@link
++ * #putNextEntry putNextEntry} will be called.</p>
+  */
+-public class ZipOutputStream extends FilterOutputStream {
+-
+-    private static final int BYTE_MASK = 0xFF;
+-    private static final int SHORT = 2;
+-    private static final int WORD = 4;
+-    private static final int BUFFER_SIZE = 512;
+-    /* 
+-     * Apparently Deflater.setInput gets slowed down a lot on Sun JVMs
+-     * when it gets handed a really big buffer.  See
+-     * https://issues.apache.org/bugzilla/show_bug.cgi?id=45396
+-     *
+-     * Using a buffer size of 8 kB proved to be a good compromise
+-     */
+-    private static final int DEFLATER_BLOCK_SIZE = 8192;
+-
+-    /**
+-     * Compression method for deflated entries.
+-     *
+-     * @since 1.1
+-     */
+-    public static final int DEFLATED = java.util.zip.ZipEntry.DEFLATED;
+-
+-    /**
+-     * Default compression level for deflated entries.
+-     *
+-     * @since Ant 1.7
+-     */
+-    public static final int DEFAULT_COMPRESSION = Deflater.DEFAULT_COMPRESSION;
+-
+-    /**
+-     * Compression method for stored entries.
+-     *
+-     * @since 1.1
+-     */
+-    public static final int STORED = java.util.zip.ZipEntry.STORED;
+-
+-    /**
+-     * Current entry.
+-     *
+-     * @since 1.1
+-     */
+-    private ZipEntry entry;
+-
+-    /**
+-     * The file comment.
+-     *
+-     * @since 1.1
+-     */
+-    private String comment = "";
+-
+-    /**
+-     * Compression level for next entry.
+-     *
+-     * @since 1.1
+-     */
+-    private int level = DEFAULT_COMPRESSION;
+-
+-    /**
+-     * Has the compression level changed when compared to the last
+-     * entry?
+-     *
+-     * @since 1.5
+-     */
+-    private boolean hasCompressionLevelChanged = false;
+-
+-    /**
+-     * Default compression method for next entry.
+-     *
+-     * @since 1.1
+-     */
+-    private int method = java.util.zip.ZipEntry.DEFLATED;
+-
+-    /**
+-     * List of ZipEntries written so far.
+-     *
+-     * @since 1.1
+-     */
+-    private Vector entries = new Vector();
+-
+-    /**
+-     * CRC instance to avoid parsing DEFLATED data twice.
+-     *
+-     * @since 1.1
+-     */
+-    private CRC32 crc = new CRC32();
+-
+-    /**
+-     * Count the bytes written to out.
+-     *
+-     * @since 1.1
+-     */
+-    private long written = 0;
+-
+-    /**
+-     * Data for local header data
+-     *
+-     * @since 1.1
+-     */
+-    private long dataStart = 0;
+-
+-    /**
+-     * Offset for CRC entry in the local file header data for the
+-     * current entry starts here.
+-     *
+-     * @since 1.15
+-     */
+-    private long localDataStart = 0;
+-
+-    /**
+-     * Start of central directory.
+-     *
+-     * @since 1.1
+-     */
+-    private long cdOffset = 0;
+-
+-    /**
+-     * Length of central directory.
+-     *
+-     * @since 1.1
+-     */
+-    private long cdLength = 0;
+-
++public class ZipOutputStream
++    extends DeflaterOutputStream
++{
+     /**
+      * Helper, a 0 as ZipShort.
+      *
+@@ -188,376 +60,18 @@
+     private static final byte[] LZERO = {0, 0, 0, 0};
+ 
+     /**
+-     * Holds the offsets of the LFH starts for each entry.
++     * Compression method for deflated entries.
+      *
+      * @since 1.1
+      */
+-    private Hashtable offsets = new Hashtable();
++    public static final int DEFLATED = ZipEntry.DEFLATED;
+ 
+     /**
+-     * The encoding to use for filenames and the file comment.
+-     *
+-     * <p>For a list of possible values see <a
+-     * href="http://java.sun.com/j2se/1.5.0/docs/guide/intl/encoding.doc.html">http://java.sun.com/j2se/1.5.0/docs/guide/intl/encoding.doc.html</a>.
+-     * Defaults to the platform's default character encoding.</p>
+-     *
+-     * @since 1.3
+-     */
+-    private String encoding = null;
+-
+-    // CheckStyle:VisibilityModifier OFF - bc
+-
+-    /**
+-     * This Deflater object is used for output.
+-     *
+-     * <p>This attribute is only protected to provide a level of API
+-     * backwards compatibility.  This class used to extend {@link
+-     * java.util.zip.DeflaterOutputStream DeflaterOutputStream} up to
+-     * Revision 1.13.</p>
+-     *
+-     * @since 1.14
+-     */
+-    protected Deflater def = new Deflater(level, true);
+-
+-    /**
+-     * This buffer servers as a Deflater.
+-     *
+-     * <p>This attribute is only protected to provide a level of API
+-     * backwards compatibility.  This class used to extend {@link
+-     * java.util.zip.DeflaterOutputStream DeflaterOutputStream} up to
+-     * Revision 1.13.</p>
+-     *
+-     * @since 1.14
+-     */
+-    protected byte[] buf = new byte[BUFFER_SIZE];
+-
+-    // CheckStyle:VisibilityModifier ON
+-
+-    /**
+-     * Optional random access output.
+-     *
+-     * @since 1.14
+-     */
+-    private RandomAccessFile raf = null;
+-
+-    /**
+-     * Creates a new ZIP OutputStream filtering the underlying stream.
+-     * @param out the outputstream to zip
+-     * @since 1.1
+-     */
+-    public ZipOutputStream(OutputStream out) {
+-        super(out);
+-    }
+-
+-    /**
+-     * Creates a new ZIP OutputStream writing to a File.  Will use
+-     * random access if possible.
+-     * @param file the file to zip to
+-     * @since 1.14
+-     * @throws IOException on error
+-     */
+-    public ZipOutputStream(File file) throws IOException {
+-        super(null);
+-
+-        try {
+-            raf = new RandomAccessFile(file, "rw");
+-            raf.setLength(0);
+-        } catch (IOException e) {
+-            if (raf != null) {
+-                try {
+-                    raf.close();
+-                } catch (IOException inner) {
+-                    // ignore
+-                }
+-                raf = null;
+-            }
+-            out = new FileOutputStream(file);
+-        }
+-    }
+-
+-    /**
+-     * This method indicates whether this archive is writing to a seekable stream (i.e., to a random
+-     * access file).
+-     *
+-     * <p>For seekable streams, you don't need to calculate the CRC or
+-     * uncompressed size for {@link #STORED} entries before
+-     * invoking {@link #putNextEntry}.
+-     * @return true if seekable
+-     * @since 1.17
+-     */
+-    public boolean isSeekable() {
+-        return raf != null;
+-    }
+-
+-    /**
+-     * The encoding to use for filenames and the file comment.
+-     *
+-     * <p>For a list of possible values see <a
+-     * href="http://java.sun.com/j2se/1.5.0/docs/guide/intl/encoding.doc.html">http://java.sun.com/j2se/1.5.0/docs/guide/intl/encoding.doc.html</a>.
+-     * Defaults to the platform's default character encoding.</p>
+-     * @param encoding the encoding value
+-     * @since 1.3
+-     */
+-    public void setEncoding(String encoding) {
+-        this.encoding = encoding;
+-    }
+-
+-    /**
+-     * The encoding to use for filenames and the file comment.
+-     *
+-     * @return null if using the platform's default character encoding.
+-     *
+-     * @since 1.3
+-     */
+-    public String getEncoding() {
+-        return encoding;
+-    }
+-
+-    /**
+-     * Finishs writing the contents and closes this as well as the
+-     * underlying stream.
++     * Compression method for deflated entries.
+      *
+      * @since 1.1
+-     * @throws IOException on error
+      */
+-    public void finish() throws IOException {
+-        closeEntry();
+-        cdOffset = written;
+-        for (int i = 0, entriesSize = entries.size(); i < entriesSize; i++) {
+-            writeCentralFileHeader((ZipEntry) entries.elementAt(i));
+-        }
+-        cdLength = written - cdOffset;
+-        writeCentralDirectoryEnd();
+-        offsets.clear();
+-        entries.removeAllElements();
+-    }
+-
+-    /**
+-     * Writes all necessary data for this entry.
+-     *
+-     * @since 1.1
+-     * @throws IOException on error
+-     */
+-    public void closeEntry() throws IOException {
+-        if (entry == null) {
+-            return;
+-        }
+-
+-        long realCrc = crc.getValue();
+-        crc.reset();
+-
+-        if (entry.getMethod() == DEFLATED) {
+-            def.finish();
+-            while (!def.finished()) {
+-                deflate();
+-            }
+-
+-            entry.setSize(adjustToLong(def.getTotalIn()));
+-            entry.setCompressedSize(adjustToLong(def.getTotalOut()));
+-            entry.setCrc(realCrc);
+-
+-            def.reset();
+-
+-            written += entry.getCompressedSize();
+-        } else if (raf == null) {
+-            if (entry.getCrc() != realCrc) {
+-                throw new ZipException("bad CRC checksum for entry "
+-                                       + entry.getName() + ": "
+-                                       + Long.toHexString(entry.getCrc())
+-                                       + " instead of "
+-                                       + Long.toHexString(realCrc));
+-            }
+-
+-            if (entry.getSize() != written - dataStart) {
+-                throw new ZipException("bad size for entry "
+-                                       + entry.getName() + ": "
+-                                       + entry.getSize()
+-                                       + " instead of "
+-                                       + (written - dataStart));
+-            }
+-        } else { /* method is STORED and we used RandomAccessFile */
+-            long size = written - dataStart;
+-
+-            entry.setSize(size);
+-            entry.setCompressedSize(size);
+-            entry.setCrc(realCrc);
+-        }
+-
+-        // If random access output, write the local file header containing
+-        // the correct CRC and compressed/uncompressed sizes
+-        if (raf != null) {
+-            long save = raf.getFilePointer();
+-
+-            raf.seek(localDataStart);
+-            writeOut(ZipLong.getBytes(entry.getCrc()));
+-            writeOut(ZipLong.getBytes(entry.getCompressedSize()));
+-            writeOut(ZipLong.getBytes(entry.getSize()));
+-            raf.seek(save);
+-        }
+-
+-        writeDataDescriptor(entry);
+-        entry = null;
+-    }
+-
+-    /**
+-     * Begin writing next entry.
+-     * @param ze the entry to write
+-     * @since 1.1
+-     * @throws IOException on error
+-     */
+-    public void putNextEntry(ZipEntry ze) throws IOException {
+-        closeEntry();
+-
+-        entry = ze;
+-        entries.addElement(entry);
+-
+-        if (entry.getMethod() == -1) { // not specified
+-            entry.setMethod(method);
+-        }
+-
+-        if (entry.getTime() == -1) { // not specified
+-            entry.setTime(System.currentTimeMillis());
+-        }
+-
+-        // Size/CRC not required if RandomAccessFile is used
+-        if (entry.getMethod() == STORED && raf == null) {
+-            if (entry.getSize() == -1) {
+-                throw new ZipException("uncompressed size is required for"
+-                                       + " STORED method when not writing to a"
+-                                       + " file");
+-            }
+-            if (entry.getCrc() == -1) {
+-                throw new ZipException("crc checksum is required for STORED"
+-                                       + " method when not writing to a file");
+-            }
+-            entry.setCompressedSize(entry.getSize());
+-        }
+-
+-        if (entry.getMethod() == DEFLATED && hasCompressionLevelChanged) {
+-            def.setLevel(level);
+-            hasCompressionLevelChanged = false;
+-        }
+-        writeLocalFileHeader(entry);
+-    }
+-
+-    /**
+-     * Set the file comment.
+-     * @param comment the comment
+-     * @since 1.1
+-     */
+-    public void setComment(String comment) {
+-        this.comment = comment;
+-    }
+-
+-    /**
+-     * Sets the compression level for subsequent entries.
+-     *
+-     * <p>Default is Deflater.DEFAULT_COMPRESSION.</p>
+-     * @param level the compression level.
+-     * @throws IllegalArgumentException if an invalid compression level is specified.
+-     * @since 1.1
+-     */
+-    public void setLevel(int level) {
+-        if (level < Deflater.DEFAULT_COMPRESSION
+-            || level > Deflater.BEST_COMPRESSION) {
+-            throw new IllegalArgumentException(
+-                "Invalid compression level: " + level);
+-        }
+-        hasCompressionLevelChanged = (this.level != level);
+-        this.level = level;
+-    }
+-
+-    /**
+-     * Sets the default compression method for subsequent entries.
+-     *
+-     * <p>Default is DEFLATED.</p>
+-     * @param method an <code>int</code> from java.util.zip.ZipEntry
+-     * @since 1.1
+-     */
+-    public void setMethod(int method) {
+-        this.method = method;
+-    }
+-
+-    /**
+-     * Writes bytes to ZIP entry.
+-     * @param b the byte array to write
+-     * @param offset the start position to write from
+-     * @param length the number of bytes to write
+-     * @throws IOException on error
+-     */
+-    public void write(byte[] b, int offset, int length) throws IOException {
+-        if (entry.getMethod() == DEFLATED) {
+-            if (length > 0) {
+-                if (!def.finished()) {
+-                    if (length <= DEFLATER_BLOCK_SIZE) {
+-                        def.setInput(b, offset, length);
+-                        deflateUntilInputIsNeeded();
+-                    } else {
+-                        final int fullblocks = length / DEFLATER_BLOCK_SIZE;
+-                        for (int i = 0; i < fullblocks; i++) {
+-                            def.setInput(b, offset + i * DEFLATER_BLOCK_SIZE,
+-                                         DEFLATER_BLOCK_SIZE);
+-                            deflateUntilInputIsNeeded();
+-                        }
+-                        final int done = fullblocks * DEFLATER_BLOCK_SIZE;
+-                        if (done < length) {
+-                            def.setInput(b, offset + done, length - done);
+-                            deflateUntilInputIsNeeded();
+-                        }
+-                    }
+-                }
+-            }
+-        } else {
+-            writeOut(b, offset, length);
+-            written += length;
+-        }
+-        crc.update(b, offset, length);
+-    }
+-
+-    /**
+-     * Writes a single byte to ZIP entry.
+-     *
+-     * <p>Delegates to the three arg method.</p>
+-     * @param b the byte to write
+-     * @since 1.14
+-     * @throws IOException on error
+-     */
+-    public void write(int b) throws IOException {
+-        byte[] buff = new byte[1];
+-        buff[0] = (byte) (b & BYTE_MASK);
+-        write(buff, 0, 1);
+-    }
+-
+-    /**
+-     * Closes this output stream and releases any system resources
+-     * associated with the stream.
+-     *
+-     * @exception  IOException  if an I/O error occurs.
+-     * @since 1.14
+-     */
+-    public void close() throws IOException {
+-        finish();
+-
+-        if (raf != null) {
+-            raf.close();
+-        }
+-        if (out != null) {
+-            out.close();
+-        }
+-    }
+-
+-    /**
+-     * Flushes this output stream and forces any buffered output bytes
+-     * to be written out to the stream.
+-     *
+-     * @exception  IOException  if an I/O error occurs.
+-     * @since 1.14
+-     */
+-    public void flush() throws IOException {
+-        if (out != null) {
+-            out.flush();
+-        }
+-    }
++    public static final int STORED = ZipEntry.STORED;
+ 
+     /*
+      * Various ZIP constants
+@@ -567,377 +81,648 @@
+      *
+      * @since 1.1
+      */
+-    protected static final byte[] LFH_SIG = ZipLong.getBytes(0X04034B50L);
++    protected static final ZipLong LFH_SIG = new ZipLong( 0X04034B50L );
+     /**
+      * data descriptor signature
+      *
+      * @since 1.1
+      */
+-    protected static final byte[] DD_SIG = ZipLong.getBytes(0X08074B50L);
++    protected static final ZipLong DD_SIG = new ZipLong( 0X08074B50L );
+     /**
+      * central file header signature
+      *
+      * @since 1.1
+      */
+-    protected static final byte[] CFH_SIG = ZipLong.getBytes(0X02014B50L);
++    protected static final ZipLong CFH_SIG = new ZipLong( 0X02014B50L );
+     /**
+      * end of central dir signature
+      *
+      * @since 1.1
+      */
+-    protected static final byte[] EOCD_SIG = ZipLong.getBytes(0X06054B50L);
+-
+-    /**
+-     * Writes next block of compressed data to the output stream.
+-     * @throws IOException on error
+-     *
+-     * @since 1.14
+-     */
+-    protected final void deflate() throws IOException {
+-        int len = def.deflate(buf, 0, buf.length);
+-        if (len > 0) {
+-            writeOut(buf, 0, len);
+-        }
+-    }
+-
+-    /**
+-     * Writes the local file header entry
+-     * @param ze the entry to write
+-     * @throws IOException on error
+-     *
+-     * @since 1.1
+-     */
+-    protected void writeLocalFileHeader(ZipEntry ze) throws IOException {
+-        offsets.put(ze, ZipLong.getBytes(written));
+-
+-        writeOut(LFH_SIG);
+-        written += WORD;
+-
+-        //store method in local variable to prevent multiple method calls
+-        final int zipMethod = ze.getMethod();
+-
+-        // version needed to extract
+-        // general purpose bit flag
+-        // CheckStyle:MagicNumber OFF
+-        if (zipMethod == DEFLATED && raf == null) {
+-            // requires version 2 as we are going to store length info
+-            // in the data descriptor
+-            writeOut(ZipShort.getBytes(20));
+-
+-            // bit3 set to signal, we use a data descriptor
+-            writeOut(ZipShort.getBytes(8));
+-        } else {
+-            writeOut(ZipShort.getBytes(10));
+-            writeOut(ZERO);
+-        }
+-        // CheckStyle:MagicNumber ON
+-        written += WORD;
+-
+-        // compression method
+-        writeOut(ZipShort.getBytes(zipMethod));
+-        written += SHORT;
+-
+-        // last mod. time and date
+-        writeOut(toDosTime(ze.getTime()));
+-        written += WORD;
+-
+-        // CRC
+-        // compressed length
+-        // uncompressed length
+-        localDataStart = written;
+-        if (zipMethod == DEFLATED || raf != null) {
+-            writeOut(LZERO);
+-            writeOut(LZERO);
+-            writeOut(LZERO);
+-        } else {
+-            writeOut(ZipLong.getBytes(ze.getCrc()));
+-            writeOut(ZipLong.getBytes(ze.getSize()));
+-            writeOut(ZipLong.getBytes(ze.getSize()));
+-        }
+-        // CheckStyle:MagicNumber OFF
+-        written += 12;
+-        // CheckStyle:MagicNumber ON
+-
+-        // file name length
+-        byte[] name = getBytes(ze.getName());
+-        writeOut(ZipShort.getBytes(name.length));
+-        written += SHORT;
+-
+-        // extra field length
+-        byte[] extra = ze.getLocalFileDataExtra();
+-        writeOut(ZipShort.getBytes(extra.length));
+-        written += SHORT;
+-
+-        // file name
+-        writeOut(name);
+-        written += name.length;
+-
+-        // extra field
+-        writeOut(extra);
+-        written += extra.length;
+-
+-        dataStart = written;
+-    }
+-
+-    /**
+-     * Writes the data descriptor entry.
+-     * @param ze the entry to write
+-     * @throws IOException on error
+-     *
+-     * @since 1.1
+-     */
+-    protected void writeDataDescriptor(ZipEntry ze) throws IOException {
+-        if (ze.getMethod() != DEFLATED || raf != null) {
+-            return;
+-        }
+-        writeOut(DD_SIG);
+-        writeOut(ZipLong.getBytes(entry.getCrc()));
+-        writeOut(ZipLong.getBytes(entry.getCompressedSize()));
+-        writeOut(ZipLong.getBytes(entry.getSize()));
+-        // CheckStyle:MagicNumber OFF
+-        written += 16;
+-        // CheckStyle:MagicNumber ON
+-    }
+-
+-    /**
+-     * Writes the central file header entry.
+-     * @param ze the entry to write
+-     * @throws IOException on error
+-     *
+-     * @since 1.1
+-     */
+-    protected void writeCentralFileHeader(ZipEntry ze) throws IOException {
+-        writeOut(CFH_SIG);
+-        written += WORD;
+-
+-        // version made by
+-        // CheckStyle:MagicNumber OFF
+-        writeOut(ZipShort.getBytes((ze.getPlatform() << 8) | 20));
+-        written += SHORT;
+-
+-        // version needed to extract
+-        // general purpose bit flag
+-        if (ze.getMethod() == DEFLATED && raf == null) {
+-            // requires version 2 as we are going to store length info
+-            // in the data descriptor
+-            writeOut(ZipShort.getBytes(20));
+-
+-            // bit3 set to signal, we use a data descriptor
+-            writeOut(ZipShort.getBytes(8));
+-        } else {
+-            writeOut(ZipShort.getBytes(10));
+-            writeOut(ZERO);
+-        }
+-        // CheckStyle:MagicNumber ON
+-        written += WORD;
+-
+-        // compression method
+-        writeOut(ZipShort.getBytes(ze.getMethod()));
+-        written += SHORT;
+-
+-        // last mod. time and date
+-        writeOut(toDosTime(ze.getTime()));
+-        written += WORD;
+-
+-        // CRC
+-        // compressed length
+-        // uncompressed length
+-        writeOut(ZipLong.getBytes(ze.getCrc()));
+-        writeOut(ZipLong.getBytes(ze.getCompressedSize()));
+-        writeOut(ZipLong.getBytes(ze.getSize()));
+-        // CheckStyle:MagicNumber OFF
+-        written += 12;
+-        // CheckStyle:MagicNumber ON
+-
+-        // file name length
+-        byte[] name = getBytes(ze.getName());
+-        writeOut(ZipShort.getBytes(name.length));
+-        written += SHORT;
+-
+-        // extra field length
+-        byte[] extra = ze.getCentralDirectoryExtra();
+-        writeOut(ZipShort.getBytes(extra.length));
+-        written += SHORT;
+-
+-        // file comment length
+-        String comm = ze.getComment();
+-        if (comm == null) {
+-            comm = "";
+-        }
+-        byte[] commentB = getBytes(comm);
+-        writeOut(ZipShort.getBytes(commentB.length));
+-        written += SHORT;
+-
+-        // disk number start
+-        writeOut(ZERO);
+-        written += SHORT;
+-
+-        // internal file attributes
+-        writeOut(ZipShort.getBytes(ze.getInternalAttributes()));
+-        written += SHORT;
+-
+-        // external file attributes
+-        writeOut(ZipLong.getBytes(ze.getExternalAttributes()));
+-        written += WORD;
+-
+-        // relative offset of LFH
+-        writeOut((byte[]) offsets.get(ze));
+-        written += WORD;
+-
+-        // file name
+-        writeOut(name);
+-        written += name.length;
+-
+-        // extra field
+-        writeOut(extra);
+-        written += extra.length;
+-
+-        // file comment
+-        writeOut(commentB);
+-        written += commentB.length;
+-    }
+-
+-    /**
+-     * Writes the &quot;End of central dir record&quot;.
+-     * @throws IOException on error
+-     *
+-     * @since 1.1
+-     */
+-    protected void writeCentralDirectoryEnd() throws IOException {
+-        writeOut(EOCD_SIG);
+-
+-        // disk numbers
+-        writeOut(ZERO);
+-        writeOut(ZERO);
+-
+-        // number of entries
+-        byte[] num = ZipShort.getBytes(entries.size());
+-        writeOut(num);
+-        writeOut(num);
+-
+-        // length and location of CD
+-        writeOut(ZipLong.getBytes(cdLength));
+-        writeOut(ZipLong.getBytes(cdOffset));
+-
+-        // ZIP file comment
+-        byte[] data = getBytes(comment);
+-        writeOut(ZipShort.getBytes(data.length));
+-        writeOut(data);
+-    }
++    protected static final ZipLong EOCD_SIG = new ZipLong( 0X06054B50L );
+ 
+     /**
+      * Smallest date/time ZIP can handle.
+      *
+      * @since 1.1
+      */
+-    private static final byte[] DOS_TIME_MIN = ZipLong.getBytes(0x00002100L);
++    private static final ZipLong DOS_TIME_MIN = new ZipLong( 0x00002100L );
+ 
+     /**
+-     * Convert a Date object to a DOS date/time field.
+-     * @param time the <code>Date</code> to convert
+-     * @return the date as a <code>ZipLong</code>
++     * The file comment.
++     *
+      * @since 1.1
+      */
+-    protected static ZipLong toDosTime(Date time) {
+-        return new ZipLong(toDosTime(time.getTime()));
+-    }
++    private String m_comment = "";
+ 
+     /**
+-     * Convert a Date object to a DOS date/time field.
++     * Compression level for next entry.
+      *
+-     * <p>Stolen from InfoZip's <code>fileio.c</code></p>
+-     * @param t number of milliseconds since the epoch
+-     * @return the date as a byte array
+-     * @since 1.26
++     * @since 1.1
+      */
+-    protected static byte[] toDosTime(long t) {
+-        Date time = new Date(t);
+-        // CheckStyle:MagicNumberCheck OFF - I do not think that using constants
+-        //                                   here will improve the readablity
+-        int year = time.getYear() + 1900;
+-        if (year < 1980) {
+-            return DOS_TIME_MIN;
+-        }
+-        int month = time.getMonth() + 1;
+-        long value =  ((year - 1980) << 25)
+-            |         (month << 21)
+-            |         (time.getDate() << 16)
+-            |         (time.getHours() << 11)
+-            |         (time.getMinutes() << 5)
+-            |         (time.getSeconds() >> 1);
+-        return ZipLong.getBytes(value);
+-        // CheckStyle:MagicNumberCheck ON
+-    }
++    private int m_level = Deflater.DEFAULT_COMPRESSION;
+ 
+     /**
+-     * Retrieve the bytes for the given String in the encoding set for
+-     * this Stream.
+-     * @param name the string to get bytes from
+-     * @return the bytes as a byte array
+-     * @throws ZipException on error
++     * Default compression method for next entry.
++     *
++     * @since 1.1
++     */
++    private int m_method = DEFLATED;
++
++    /**
++     * List of ZipEntries written so far.
++     *
++     * @since 1.1
++     */
++    private final ArrayList m_entries = new ArrayList();
++
++    /**
++     * CRC instance to avoid parsing DEFLATED data twice.
++     *
++     * @since 1.1
++     */
++    private final CRC32 m_crc = new CRC32();
++
++    /**
++     * Count the bytes written to out.
++     *
++     * @since 1.1
++     */
++    private long m_written;
++
++    /**
++     * Data for current entry started here.
++     *
++     * @since 1.1
++     */
++    private long m_dataStart;
++
++    /**
++     * Start of central directory.
++     *
++     * @since 1.1
++     */
++    private ZipLong m_cdOffset = new ZipLong( 0 );
++
++    /**
++     * Length of central directory.
++     *
++     * @since 1.1
++     */
++    private ZipLong m_cdLength = new ZipLong( 0 );
++
++    /**
++     * Holds the offsets of the LFH starts for each entry
++     *
++     * @since 1.1
++     */
++    private final Hashtable m_offsets = new Hashtable();
++
++    /**
++     * The encoding to use for filenames and the file comment. <p>
++     *
++     * For a list of possible values see <a
++     * href="http://java.sun.com/products/jdk/1.2/docs/guide/internat/encoding.doc.html">
++     * http://java.sun.com/products/jdk/1.2/docs/guide/internat/encoding.doc.html
++     * </a>. Defaults to the platform's default character encoding.</p>
+      *
+      * @since 1.3
+      */
+-    protected byte[] getBytes(String name) throws ZipException {
+-        if (encoding == null) {
++    private String m_encoding;
++
++    /**
++     * Current entry.
++     *
++     * @since 1.1
++     */
++    private ZipArchiveEntry m_entry;
++
++    /**
++     * Creates a new ZIP OutputStream filtering the underlying stream.
++     *
++     * @param output the output stream to write to
++     * @since 1.1
++     */
++    public ZipOutputStream( final OutputStream output )
++    {
++        super( output, new Deflater( Deflater.DEFAULT_COMPRESSION, true ) );
++    }
++
++    /**
++     * Convert a Date object to a DOS date/time field. <p>
++     *
++     * Stolen from InfoZip's <code>fileio.c</code></p>
++     *
++     * @param time Description of Parameter
++     * @return Description of the Returned Value
++     * @since 1.1
++     */
++    protected static ZipLong toDosTime( Date time )
++    {
++        Calendar cal = Calendar.getInstance();
++        cal.setTime( time );
++        int year = cal.get(Calendar.YEAR);
++        int month = cal.get(Calendar.MONTH) + 1;
++        if( year < 1980 )
++        {
++            return DOS_TIME_MIN;
++        }
++        long value = ( ( year - 1980 ) << 25 )
++            | ( month << 21 )
++            | ( cal.get(Calendar.DAY_OF_MONTH) << 16 )
++            | ( cal.get(Calendar.HOUR_OF_DAY) << 11 )
++            | ( cal.get(Calendar.MINUTE) << 5 )
++            | ( cal.get(Calendar.SECOND) >> 1 );
++
++        byte[] result = new byte[ 4 ];
++        result[ 0 ] = (byte)( ( value & 0xFF ) );
++        result[ 1 ] = (byte)( ( value & 0xFF00 ) >> 8 );
++        result[ 2 ] = (byte)( ( value & 0xFF0000 ) >> 16 );
++        result[ 3 ] = (byte)( ( value & 0xFF000000l ) >> 24 );
++        return new ZipLong( result );
++    }
++
++    /**
++     * Set the file comment.
++     *
++     * @param comment The new Comment value
++     * @since 1.1
++     */
++    public void setComment( String comment )
++    {
++        m_comment = comment;
++    }
++
++    /**
++     * The encoding to use for filenames and the file comment. <p>
++     *
++     * For a list of possible values see <a
++     * href="http://java.sun.com/products/jdk/1.2/docs/guide/internat/encoding.doc.html">
++     * http://java.sun.com/products/jdk/1.2/docs/guide/internat/encoding.doc.html
++     * </a>. Defaults to the platform's default character encoding.</p>
++     *
++     * @param encoding The new Encoding value
++     * @since 1.3
++     */
++    public void setEncoding( String encoding )
++    {
++        m_encoding = encoding;
++    }
++
++    /**
++     * Sets the compression level for subsequent entries. <p>
++     *
++     * Default is Deflater.DEFAULT_COMPRESSION.</p>
++     *
++     * @param level The new Level value
++     * @since 1.1
++     */
++    public void setLevel( int level )
++    {
++        m_level = level;
++    }
++
++    /**
++     * Sets the default compression method for subsequent entries. <p>
++     *
++     * Default is DEFLATED.</p>
++     *
++     * @param method The new Method value
++     * @since 1.1
++     */
++    public void setMethod( final int method )
++    {
++        m_method = method;
++    }
++
++    /**
++     * The encoding to use for filenames and the file comment.
++     *
++     * @return null if using the platform's default character encoding.
++     * @since 1.3
++     */
++    public String getEncoding()
++    {
++        return m_encoding;
++    }
++
++    /**
++     * Writes all necessary data for this entry.
++     *
++     * @throws IOException if an IO failure causes operation to fail
++     * @since 1.1
++     */
++    public void closeEntry()
++        throws IOException
++    {
++        if( m_entry == null )
++        {
++            return;
++        }
++
++        long realCrc = m_crc.getValue();
++        m_crc.reset();
++
++        if( m_entry.getMethod() == DEFLATED )
++        {
++            def.finish();
++            while( !def.finished() )
++            {
++                deflate();
++            }
++
++            m_entry.setSize( def.getTotalIn() );
++            m_entry.setComprSize( def.getTotalOut() );
++            m_entry.setCrc( realCrc );
++
++            def.reset();
++
++            m_written += m_entry.getCompressedSize();
++        }
++        else
++        {
++            if( m_entry.getCrc() != realCrc )
++            {
++                throw new ZipException( "bad CRC checksum for entry "
++                                        + m_entry.getName() + ": "
++                                        + Long.toHexString( m_entry.getCrc() )
++                                        + " instead of "
++                                        + Long.toHexString( realCrc ) );
++            }
++
++            if( m_entry.getSize() != m_written - m_dataStart )
++            {
++                throw new ZipException( "bad size for entry "
++                                        + m_entry.getName() + ": "
++                                        + m_entry.getSize()
++                                        + " instead of "
++                                        + ( m_written - m_dataStart ) );
++            }
++
++        }
++
++        writeDataDescriptor( m_entry );
++        m_entry = null;
++    }
++
++    /*
++     * Found out by experiment, that DeflaterOutputStream.close()
++     * will call finish() - so we don't need to override close
++     * ourselves.
++     */
++    /**
++     * Finishs writing the contents and closes this as well as the underlying
++     * stream.
++     *
++     * @throws IOException if an IO failure causes operation to fail
++     * @since 1.1
++     */
++    public void finish()
++        throws IOException
++    {
++        closeEntry();
++        m_cdOffset = new ZipLong( m_written );
++        final int size = m_entries.size();
++        for( int i = 0; i < size; i++ )
++        {
++            final ZipArchiveEntry entry = (ZipArchiveEntry)m_entries.get( i );
++            writeCentralFileHeader( entry );
++        }
++        m_cdLength = new ZipLong( m_written - m_cdOffset.getValue() );
++        writeCentralDirectoryEnd();
++        m_offsets.clear();
++        m_entries.clear();
++    }
++
++    /**
++     * Begin writing next entry.
++     *
++     * @param entry the entry
++     * @throws IOException if an IO failure causes operation to fail
++     * @since 1.1
++     */
++    public void putNextEntry( final ZipArchiveEntry entry )
++        throws IOException
++    {
++        closeEntry();
++
++        m_entry = entry;
++        m_entries.add( m_entry );
++
++        if( m_entry.getMethod() == -1 )
++        {// not specified
++            m_entry.setMethod( m_method );
++        }
++
++        if( m_entry.getTime() == -1 )
++        {// not specified
++            m_entry.setTime( System.currentTimeMillis() );
++        }
++
++        if( m_entry.getMethod() == STORED )
++        {
++            if( m_entry.getSize() == -1 )
++            {
++                throw new ZipException( "uncompressed size is required for STORED method" );
++            }
++            if( m_entry.getCrc() == -1 )
++            {
++                throw new ZipException( "crc checksum is required for STORED method" );
++            }
++            m_entry.setComprSize( m_entry.getSize() );
++        }
++        else
++        {
++            def.setLevel( m_level );
++        }
++        writeLocalFileHeader( m_entry );
++    }
++
++    /**
++     * Writes bytes to ZIP entry. <p>
++     *
++     * Override is necessary to support STORED entries, as well as calculationg
++     * CRC automatically for DEFLATED entries.</p>
++     *
++     * @param buffer the buffer to write to
++     * @param offset the offset to write to
++     * @param length the length of data to write
++     * @exception IOException if an IO error causes operation to fail
++     */
++    public void write( final byte[] buffer,
++                       final int offset,
++                       final int length )
++        throws IOException
++    {
++        if( m_entry.getMethod() == DEFLATED )
++        {
++            super.write( buffer, offset, length );
++        }
++        else
++        {
++            out.write( buffer, offset, length );
++            m_written += length;
++        }
++        m_crc.update( buffer, offset, length );
++    }
++
++    /**
++     * Retrieve the bytes for the given String in the encoding set for this
++     * Stream.
++     *
++     * @param name the name to decode
++     * @return the bytes for string
++     * @exception ZipException if fail to retrieve bytes for specified string
++     * @since 1.3
++     */
++    protected byte[] getBytes( String name )
++        throws ZipException
++    {
++        if( m_encoding == null )
++        {
+             return name.getBytes();
+-        } else {
+-            try {
+-                return name.getBytes(encoding);
+-            } catch (UnsupportedEncodingException uee) {
+-                throw new ZipException(uee.getMessage());
++        }
++        else
++        {
++            try
++            {
++                return name.getBytes( m_encoding );
++            }
++            catch( UnsupportedEncodingException uee )
++            {
++                throw new ZipException( uee.getMessage() );
+             }
+         }
+     }
+ 
+     /**
+-     * Write bytes to output or random access file.
+-     * @param data the byte array to write
+-     * @throws IOException on error
++     * Writes the &quot;End of central dir record&quot;
+      *
+-     * @since 1.14
++     * @exception IOException when an IO erro causes operation to fail
++     * @since 1.1
+      */
+-    protected final void writeOut(byte[] data) throws IOException {
+-        writeOut(data, 0, data.length);
++    protected void writeCentralDirectoryEnd()
++        throws IOException
++    {
++        out.write( EOCD_SIG.getBytes() );
++
++        // disk numbers
++        out.write( ZERO );
++        out.write( ZERO );
++
++        // number of entries
++        byte[] num = ( new ZipShort( m_entries.size() ) ).getBytes();
++        out.write( num );
++        out.write( num );
++
++        // length and location of CD
++        out.write( m_cdLength.getBytes() );
++        out.write( m_cdOffset.getBytes() );
++
++        // ZIP file comment
++        byte[] data = getBytes( m_comment );
++        out.write( ( new ZipShort( data.length ) ).getBytes() );
++        out.write( data );
+     }
+ 
+     /**
+-     * Write bytes to output or random access file.
+-     * @param data the byte array to write
+-     * @param offset the start position to write from
+-     * @param length the number of bytes to write
+-     * @throws IOException on error
++     * Writes the central file header entry
+      *
+-     * @since 1.14
++     * @param entry the zip entry
++     * @throws IOException when an IO error causes operation to fail
++     * @since 1.1
+      */
+-    protected final void writeOut(byte[] data, int offset, int length)
+-        throws IOException {
+-        if (raf != null) {
+-            raf.write(data, offset, length);
+-        } else {
+-            out.write(data, offset, length);
++    protected void writeCentralFileHeader( final ZipArchiveEntry entry )
++        throws IOException
++    {
++        out.write( CFH_SIG.getBytes() );
++        m_written += 4;
++
++        // version made by
++        out.write( ( new ZipShort( 20 ) ).getBytes() );
++        m_written += 2;
++
++        // version needed to extract
++        // general purpose bit flag
++        if( entry.getMethod() == DEFLATED )
++        {
++            // requires version 2 as we are going to store length info
++            // in the data descriptor
++            out.write( ( new ZipShort( 20 ) ).getBytes() );
++
++            // bit3 set to signal, we use a data descriptor
++            out.write( ( new ZipShort( 8 ) ).getBytes() );
+         }
++        else
++        {
++            out.write( ( new ZipShort( 10 ) ).getBytes() );
++            out.write( ZERO );
++        }
++        m_written += 4;
++
++        // compression method
++        out.write( ( new ZipShort( entry.getMethod() ) ).getBytes() );
++        m_written += 2;
++
++        // last mod. time and date
++        out.write( toDosTime( new Date( entry.getTime() ) ).getBytes() );
++        m_written += 4;
++
++        // CRC
++        // compressed length
++        // uncompressed length
++        out.write( ( new ZipLong( entry.getCrc() ) ).getBytes() );
++        out.write( ( new ZipLong( entry.getCompressedSize() ) ).getBytes() );
++        out.write( ( new ZipLong( entry.getSize() ) ).getBytes() );
++        m_written += 12;
++
++        // file name length
++        byte[] name = getBytes( entry.getName() );
++        out.write( ( new ZipShort( name.length ) ).getBytes() );
++        m_written += 2;
++
++        // extra field length
++        byte[] extra = entry.getCentralDirectoryExtra();
++        out.write( ( new ZipShort( extra.length ) ).getBytes() );
++        m_written += 2;
++
++        // file comment length
++        String comm = entry.getComment();
++        if( comm == null )
++        {
++            comm = "";
++        }
++        byte[] comment = getBytes( comm );
++        out.write( ( new ZipShort( comment.length ) ).getBytes() );
++        m_written += 2;
++
++        // disk number start
++        out.write( ZERO );
++        m_written += 2;
++
++        // internal file attributes
++        out.write( ( new ZipShort( entry.getInternalAttributes() ) ).getBytes() );
++        m_written += 2;
++
++        // external file attributes
++        out.write( ( new ZipLong( entry.getExternalAttributes() ) ).getBytes() );
++        m_written += 4;
++
++        // relative offset of LFH
++        out.write( ( (ZipLong)m_offsets.get( entry ) ).getBytes() );
++        m_written += 4;
++
++        // file name
++        out.write( name );
++        m_written += name.length;
++
++        // extra field
++        out.write( extra );
++        m_written += extra.length;
++
++        // file comment
++        out.write( comment );
++        m_written += comment.length;
+     }
+ 
+     /**
+-     * Assumes a negative integer really is a positive integer that
+-     * has wrapped around and re-creates the original value.
+-     * @param i the value to treat as unsigned int.
+-     * @return the unsigned int as a long.
+-     * @since 1.34
++     * Writes the data descriptor entry
++     *
++     * @param ze Description of Parameter
++     * @throws IOException if an IO failure causes operation to fail
++     * @since 1.1
+      */
+-    protected static long adjustToLong(int i) {
+-        if (i < 0) {
+-            return 2 * ((long) Integer.MAX_VALUE) + 2 + i;
+-        } else {
+-            return i;
++    protected void writeDataDescriptor( ZipArchiveEntry ze )
++        throws IOException
++    {
++        if( ze.getMethod() != DEFLATED )
++        {
++            return;
+         }
++        out.write( DD_SIG.getBytes() );
++        out.write( ( new ZipLong( m_entry.getCrc() ) ).getBytes() );
++        out.write( ( new ZipLong( m_entry.getCompressedSize() ) ).getBytes() );
++        out.write( ( new ZipLong( m_entry.getSize() ) ).getBytes() );
++        m_written += 16;
+     }
+ 
+-    private void deflateUntilInputIsNeeded() throws IOException {
+-        while (!def.needsInput()) {
+-            deflate();
++    /**
++     * Writes the local file header entry
++     *
++     * @param entry the zip entry
++     * @exception IOException when an IO error causes operation to fail
++     * @since 1.1
++     */
++    protected void writeLocalFileHeader( final ZipArchiveEntry entry )
++        throws IOException
++    {
++        m_offsets.put( entry, new ZipLong( m_written ) );
++
++        out.write( LFH_SIG.getBytes() );
++        m_written += 4;
++
++        // version needed to extract
++        // general purpose bit flag
++        if( entry.getMethod() == DEFLATED )
++        {
++            // requires version 2 as we are going to store length info
++            // in the data descriptor
++            out.write( ( new ZipShort( 20 ) ).getBytes() );
++
++            // bit3 set to signal, we use a data descriptor
++            out.write( ( new ZipShort( 8 ) ).getBytes() );
+         }
++        else
++        {
++            out.write( ( new ZipShort( 10 ) ).getBytes() );
++            out.write( ZERO );
++        }
++        m_written += 4;
++
++        // compression method
++        out.write( ( new ZipShort( entry.getMethod() ) ).getBytes() );
++        m_written += 2;
++
++        // last mod. time and date
++        out.write( toDosTime( new Date( entry.getTime() ) ).getBytes() );
++        m_written += 4;
++
++        // CRC
++        // compressed length
++        // uncompressed length
++        if( entry.getMethod() == DEFLATED )
++        {
++            out.write( LZERO );
++            out.write( LZERO );
++            out.write( LZERO );
++        }
++        else
++        {
++            out.write( ( new ZipLong( entry.getCrc() ) ).getBytes() );
++            out.write( ( new ZipLong( entry.getSize() ) ).getBytes() );
++            out.write( ( new ZipLong( entry.getSize() ) ).getBytes() );
++        }
++        m_written += 12;
++
++        // file name length
++        byte[] name = getBytes( entry.getName() );
++        out.write( ( new ZipShort( name.length ) ).getBytes() );
++        m_written += 2;
++
++        // extra field length
++        byte[] extra = entry.getLocalFileDataExtra();
++        out.write( ( new ZipShort( extra.length ) ).getBytes() );
++        m_written += 2;
++
++        // file name
++        out.write( name );
++        m_written += name.length;
++
++        // extra field
++        out.write( extra );
++        m_written += extra.length;
++
++        m_dataStart = m_written;
+     }
+ 
+ }
+diff --git a/src/main/java/org/apache/commons/compress/archivers/zip/ZipShort.java b/src/main/java/org/apache/commons/compress/archivers/zip/ZipShort.java
+index 55cc797..5b92336 100644
+--- a/src/main/java/org/apache/commons/compress/archivers/zip/ZipShort.java
++++ b/src/main/java/org/apache/commons/compress/archivers/zip/ZipShort.java
+@@ -1,135 +1,115 @@
+ /*
+- *  Licensed to the Apache Software Foundation (ASF) under one or more
+- *  contributor license agreements.  See the NOTICE file distributed with
+- *  this work for additional information regarding copyright ownership.
+- *  The ASF licenses this file to You under the Apache License, Version 2.0
+- *  (the "License"); you may not use this file except in compliance with
+- *  the License.  You may obtain a copy of the License at
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
+  *
+- *      http://www.apache.org/licenses/LICENSE-2.0
++ * http://www.apache.org/licenses/LICENSE-2.0
+  *
+- *  Unless required by applicable law or agreed to in writing, software
+- *  distributed under the License is distributed on an "AS IS" BASIS,
+- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- *  See the License for the specific language governing permissions and
+- *  limitations under the License.
+- *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
+  */
+ package org.apache.commons.compress.archivers.zip;
+ 
+ /**
+- * Utility class that represents a two byte integer with conversion
+- * rules for the big endian byte order of ZIP files.
+- *
++ * Utility class that represents a two byte integer with conversion rules for
++ * the big endian byte order of ZIP files.
+  */
+-public final class ZipShort implements Cloneable {
+-    private static final int BYTE_MASK = 0xFF;
+-    private static final int BYTE_1_MASK = 0xFF00;
+-    private static final int BYTE_1_SHIFT = 8;
+-
+-    private int value;
++public final class ZipShort implements Cloneable
++{
++    private int m_value;
+ 
+     /**
+      * Create instance from a number.
+-     * @param value the int to store as a ZipShort
++     *
++     * @param value Description of Parameter
+      * @since 1.1
+      */
+-    public ZipShort (int value) {
+-        this.value = value;
++    public ZipShort( int value )
++    {
++        this.m_value = value;
+     }
+ 
+     /**
+      * Create instance from bytes.
+-     * @param bytes the bytes to store as a ZipShort
++     *
++     * @param bytes Description of Parameter
+      * @since 1.1
+      */
+-    public ZipShort (byte[] bytes) {
+-        this(bytes, 0);
++    public ZipShort( byte[] bytes )
++    {
++        this( bytes, 0 );
+     }
+ 
+     /**
+      * Create instance from the two bytes starting at offset.
+-     * @param bytes the bytes to store as a ZipShort
+-     * @param offset the offset to start
++     *
++     * @param bytes Description of Parameter
++     * @param offset Description of Parameter
+      * @since 1.1
+      */
+-    public ZipShort (byte[] bytes, int offset) {
+-        value = ZipShort.getValue(bytes, offset);
++    public ZipShort( byte[] bytes, int offset )
++    {
++        m_value = ( bytes[ offset + 1 ] << 8 ) & 0xFF00;
++        m_value += ( bytes[ offset ] & 0xFF );
+     }
+ 
+     /**
+      * Get value as two bytes in big endian byte order.
+-     * @return the value as a a two byte array in big endian byte order
++     *
++     * @return The Bytes value
+      * @since 1.1
+      */
+-    public byte[] getBytes() {
+-        byte[] result = new byte[2];
+-        result[0] = (byte) (value & BYTE_MASK);
+-        result[1] = (byte) ((value & BYTE_1_MASK) >> BYTE_1_SHIFT);
++    public byte[] getBytes()
++    {
++        byte[] result = new byte[ 2 ];
++        result[ 0 ] = (byte)( m_value & 0xFF );
++        result[ 1 ] = (byte)( ( m_value & 0xFF00 ) >> 8 );
+         return result;
+     }
+ 
+     /**
+      * Get value as Java int.
+-     * @return value as a Java int
++     *
++     * @return The Value value
+      * @since 1.1
+      */
+-    public int getValue() {
+-        return value;
+-    }
+-
+-    /**
+-     * Get value as two bytes in big endian byte order.
+-     * @param value the Java int to convert to bytes
+-     * @return the converted int as a byte array in big endian byte order
+-     */
+-    public static byte[] getBytes(int value) {
+-        byte[] result = new byte[2];
+-        result[0] = (byte) (value & BYTE_MASK);
+-        result[1] = (byte) ((value & BYTE_1_MASK) >> BYTE_1_SHIFT);
+-        return result;
+-    }
+-
+-    /**
+-     * Helper method to get the value as a java int from two bytes starting at given array offset
+-     * @param bytes the array of bytes
+-     * @param offset the offset to start
+-     * @return the correspondanding java int value
+-     */
+-    public static int getValue(byte[] bytes, int offset) {
+-        int value = (bytes[offset + 1] << BYTE_1_SHIFT) & BYTE_1_MASK;
+-        value += (bytes[offset] & BYTE_MASK);
+-        return value;
+-    }
+-
+-    /**
+-     * Helper method to get the value as a java int from a two-byte array
+-     * @param bytes the array of bytes
+-     * @return the correspondanding java int value
+-     */
+-    public static int getValue(byte[] bytes) {
+-        return getValue(bytes, 0);
++    public int getValue()
++    {
++        return m_value;
+     }
+ 
+     /**
+      * Override to make two instances with same value equal.
+-     * @param o an object to compare
+-     * @return true if the objects are equal
++     *
++     * @param o Description of Parameter
++     * @return Description of the Returned Value
+      * @since 1.1
+      */
+-    public boolean equals(Object o) {
+-        if (o == null || !(o instanceof ZipShort)) {
++    public boolean equals( Object o )
++    {
++        if( o == null || !( o instanceof ZipShort ) )
++        {
+             return false;
+         }
+-        return value == ((ZipShort) o).getValue();
++        return m_value == ( (ZipShort)o ).getValue();
+     }
+ 
+     /**
+      * Override to make two instances with same value equal.
+-     * @return the value stored in the ZipShort
++     *
++     * @return Description of the Returned Value
+      * @since 1.1
+      */
+-    public int hashCode() {
+-        return value;
++    public int hashCode()
++    {
++        return m_value;
+     }
+ }

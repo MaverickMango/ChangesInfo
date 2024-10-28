@@ -1,0 +1,144 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "JacksonCore",
+  "id": "14",
+  "workingDir": "../bugs/JacksonCore_14_buggy",
+  "inducingCommit": "288b1f323ecaa19345474d78d8263cc443eac3d3",
+  "originalCommit": "fedd7950785eb43e4c6a815a44cbd0d8c34adc2c",
+  "bug_name": "JacksonCore_14",
+  "derive": "defects4j",
+  "original_fixing_commit": "3c2c9610b6c76e2b348eb057d0a8268681d573a6",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/core/io/IOContext.java",
+        "src/main/java/com/fasterxml/jackson/core/io/IOContext.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "releaseNameCopyBuffer",
+            "_verifyAlloc",
+            "releaseConcatBuffer",
+            "_verifyRelease"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "_verifyRelease",
+            "releaseNameCopyBuffer",
+            "_verifyAlloc",
+            "_verifyRelease",
+            "wrongBuf",
+            "releaseConcatBuffer"
+          ],
+          "num": 6
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "229",
+            "237",
+            "251",
+            "252",
+            "253",
+            "256",
+            "257",
+            "258",
+            "259"
+          ],
+          "num": 9
+        },
+        {
+          "qualified_names": [
+            "230",
+            "239",
+            "253",
+            "256",
+            "257",
+            "259",
+            "260",
+            "261",
+            "262",
+            "263",
+            "264"
+          ],
+          "num": 11
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/core/io/IOContext.java b/src/main/java/com/fasterxml/jackson/core/io/IOContext.java\nindex 49496c3..7ce6f2f 100644\n--- a/src/main/java/com/fasterxml/jackson/core/io/IOContext.java\n+++ b/src/main/java/com/fasterxml/jackson/core/io/IOContext.java\n@@ -227,6 +227,7 @@\n \n     public void releaseConcatBuffer(char[] buf) {\n         if (buf !\u003d null) {\n+            // 14-Jan-2014, tatu: Let\u0027s actually allow upgrade of the original buffer.\n             _verifyRelease(buf, _concatCBuffer);\n             _concatCBuffer \u003d null;\n             _bufferRecycler.releaseCharBuffer(BufferRecycler.CHAR_CONCAT_BUFFER, buf);\n@@ -235,6 +236,7 @@\n \n     public void releaseNameCopyBuffer(char[] buf) {\n         if (buf !\u003d null) {\n+            // 14-Jan-2014, tatu: Let\u0027s actually allow upgrade of the original buffer.\n             _verifyRelease(buf, _nameCopyBuffer);\n             _nameCopyBuffer \u003d null;\n             _bufferRecycler.releaseCharBuffer(BufferRecycler.CHAR_NAME_COPY_BUFFER, buf);\n@@ -248,14 +250,16 @@\n      */\n \n     protected void _verifyAlloc(Object buffer) {\n-        if (buffer !\u003d null) {\n-            throw new IllegalStateException(\"Trying to call same allocXxx() method second time\");\n-        }\n+        if (buffer !\u003d null) { throw new IllegalStateException(\"Trying to call same allocXxx() method second time\"); }\n     }\n \n-    protected void _verifyRelease(Object toRelease, Object src) {\n-        if (toRelease !\u003d src) {\n-            throw new IllegalArgumentException(\"Trying to release buffer not owned by the context\");\n-        }\n+    protected void _verifyRelease(byte[] toRelease, byte[] src) {\n+        if ((toRelease !\u003d src) \u0026\u0026 (toRelease.length \u003c\u003d src.length)) { throw wrongBuf(); }\n     }\n+\n+    protected void _verifyRelease(char[] toRelease, char[] src) {\n+        if ((toRelease !\u003d src) \u0026\u0026 (toRelease.length \u003c\u003d src.length)) { throw wrongBuf(); }\n+    }\n+\n+    private IllegalArgumentException wrongBuf() { return new IllegalArgumentException(\"Trying to release buffer not owned by the context\"); }\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [8615,8772]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [8778,8935]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [8941,9078]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [8461,8671]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "wrongBuf"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [],
+  "fixing_changes": [],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

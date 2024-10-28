@@ -1,0 +1,83 @@
+Only in data/changesInfo//Closure_60/properties/modified_classes/inducing/: src
+diff -u -r data/changesInfo//Closure_60/properties/modified_classes/inducing/test/com/google/javascript/jscomp/CommandLineRunnerTest.java data/changesInfo//Closure_60/cleaned/inducing/test/com/google/javascript/jscomp/CommandLineRunnerTest.java
+--- data/changesInfo//Closure_60/properties/modified_classes/inducing/test/com/google/javascript/jscomp/CommandLineRunnerTest.java	2023-08-10 05:44:45.320551148 -0700
++++ data/changesInfo//Closure_60/cleaned/inducing/test/com/google/javascript/jscomp/CommandLineRunnerTest.java	2023-06-26 23:19:58.727000000 -0700
+@@ -214,6 +214,16 @@
+          "  return arguments[0]; " +
+          "}");
+   }
++  
++  public void testIssue504() {
++    args.add("--compilation_level=ADVANCED_OPTIMIZATIONS");
++    test("void function() { alert('hi'); }();",
++            "alert('hi');", CheckSideEffects.USELESS_CODE_ERROR);
++  }
++
++  private void test(String original, String expected, DiagnosticType warning) {
++    test(new String[] { original }, new String[] { expected }, warning);
++  }
+ 
+   public void testDebugFlag1() {
+     args.add("--compilation_level=SIMPLE_OPTIMIZATIONS");
+@@ -364,8 +374,6 @@
+   }
+ 
+   public void testSourceMapExpansion1() {
+-    args.add("--js_output_file");
+-    args.add("/path/to/out.js");
+     args.add("--create_source_map=%outname%.map");
+     testSame("var x = 3;");
+     assertEquals("/path/to/out.js.map",
+@@ -454,27 +462,11 @@
+     assertEquals(
+         0,
+         new String(errReader.toByteArray()).indexOf(
+-            "Closure Compiler (http://code.google.com/closure/compiler)\n" +
++            "Closure Compiler (http://code.google.com/p/closure/compiler)\n" +
+             "Version: HEAD\n" +
+             "Built on:"));
+   }
+ 
+-  public void testPrintAstFlag() {
+-    args.add("--print_ast=true");
+-    testSame("");
+-    assertEquals(
+-        "digraph AST {\n" +
+-        "  node [color=lightblue2, style=filled];\n" +
+-        "  node0 [label=\"BLOCK\"];\n" +
+-        "  node1 [label=\"SCRIPT\"];\n" +
+-        "  node0 -> node1 [weight=1];\n" +
+-        "  node1 -> RETURN [label=\"UNCOND\", fontcolor=\"red\", weight=0.01, color=\"red\"];\n" +
+-        "  node0 -> RETURN [label=\"SYN_BLOCK\", fontcolor=\"red\", weight=0.01, color=\"red\"];\n" +
+-        "  node0 -> node1 [label=\"UNCOND\", fontcolor=\"red\", weight=0.01, color=\"red\"];\n" +
+-        "}\n\n",
+-        new String(outReader.toByteArray()));
+-  }
+-
+   /* Helper functions */
+ 
+   private void testSame(String original) {
+@@ -561,6 +553,9 @@
+   }
+ 
+   private CommandLineRunner createCommandLineRunner(String[] original) {
++    args.add("--js_output_file");
++    args.add("/path/to/out.js");
++
+     for (int i = 0; i < original.length; i++) {
+       args.add("--js");
+       args.add("/path/to/input" + i + ".js");
+diff -u -r data/changesInfo//Closure_60/properties/modified_classes/inducing/test/com/google/javascript/jscomp/NodeUtilTest.java data/changesInfo//Closure_60/cleaned/inducing/test/com/google/javascript/jscomp/NodeUtilTest.java
+--- data/changesInfo//Closure_60/properties/modified_classes/inducing/test/com/google/javascript/jscomp/NodeUtilTest.java	2023-08-10 05:44:45.320551148 -0700
++++ data/changesInfo//Closure_60/cleaned/inducing/test/com/google/javascript/jscomp/NodeUtilTest.java	2023-06-28 00:27:50.344000000 -0700
+@@ -99,6 +99,9 @@
+     assertBooleanFalse("void foo()");
+     assertBooleanUnknown("b");
+     assertBooleanUnknown("-'0.0'");
++
++    assertBooleanUnknown("{a:foo()}");
++    assertBooleanUnknown("[foo()]");
+   }
+ 
+   private void assertBooleanTrue(String val) {
+Only in data/changesInfo//Closure_60/properties/modified_classes/inducing/test/com/google/javascript/jscomp: PureFunctionIdentifierTest.java

@@ -1,0 +1,178 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.gson.internal.bind.RecursiveTypesResolveTest::testDoubleSupertype,com.google.gson.internal.bind.RecursiveTypesResolveTest::testIssue440WeakReference,com.google.gson.internal.bind.RecursiveTypesResolveTest::testSubSupertype,com.google.gson.internal.bind.RecursiveTypesResolveTest::testDoubleSubtype,com.google.gson.internal.bind.RecursiveTypesResolveTest::testIssue603PrintStream,com.google.gson.internal.bind.RecursiveTypesResolveTest::testSuperSubtype,com.google.gson.internal.bind.RecursiveTypesResolveTest::testRecursiveResolveSimple",
+    "test.dir": "gson/src/test/java",
+    "clz.modified": "com.google.gson.internal.$Gson$Types",
+    "src.dir": "gson/src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Gson",
+  "id": "14",
+  "workingDir": "../bugs/Gson_14_tmp",
+  "bug_name": "Gson_14",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.gson.internal.bind.RecursiveTypesResolveTest",
+      "test_function": "testDoubleSupertype",
+      "assertion_line": "71",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c? super java.lang.Number\u003e but was:\u003c? super ? super java.lang.Number\u003e"
+    },
+    {
+      "test_class": "com.google.gson.internal.bind.RecursiveTypesResolveTest",
+      "test_function": "testIssue440WeakReference",
+      "assertion_line": "86",
+      "exception": "java.lang.StackOverflowError",
+      "message": ""
+    },
+    {
+      "test_class": "com.google.gson.internal.bind.RecursiveTypesResolveTest",
+      "test_function": "testDoubleSubtype",
+      "assertion_line": "76",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c? extends java.lang.Number\u003e but was:\u003c? extends ? extends java.lang.Number\u003e"
+    },
+    {
+      "test_class": "com.google.gson.internal.bind.RecursiveTypesResolveTest",
+      "test_function": "testIssue603PrintStream",
+      "assertion_line": "81",
+      "exception": "java.lang.StackOverflowError",
+      "message": ""
+    },
+    {
+      "test_class": "com.google.gson.internal.bind.RecursiveTypesResolveTest",
+      "test_function": "testRecursiveResolveSimple",
+      "exception": "java.lang.StackOverflowError",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "gson/src/main/java/com/google/gson/internal/$Gson$Types.java",
+        "gson/src/main/java/com/google/gson/internal/$Gson$Types.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.gson.internal.$Gson$Types:supertypeOf:[Type bound]:WildcardType",
+            "com.google.gson.internal.$Gson$Types:subtypeOf:[Type bound]:WildcardType"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.google.gson.internal.$Gson$Types:canonicalize:[Type type]:Type",
+            "com.google.gson.internal.$Gson$Types:subtypeOf:[Type bound]:WildcardType"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "79",
+            "80",
+            "81",
+            "83",
+            "94",
+            "95",
+            "96",
+            "98"
+          ],
+          "num": 8
+        },
+        {
+          "qualified_names": [
+            "78",
+            "97"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/gson/src/main/java/com/google/gson/internal/$Gson$Types.java b/gson/src/main/java/com/google/gson/internal/$Gson$Types.java\nindex 6739453..c2372c7 100644\n--- a/gson/src/main/java/com/google/gson/internal/$Gson$Types.java\n+++ b/gson/src/main/java/com/google/gson/internal/$Gson$Types.java\n@@ -76,11 +76,7 @@\n    */\n   public static WildcardType subtypeOf(Type bound) {\n     Type[] upperBounds;\n-    if (bound instanceof WildcardType) {\n-      upperBounds \u003d ((WildcardType) bound).getUpperBounds();\n-    } else {\n       upperBounds \u003d new Type[] { bound };\n-    }\n     return new WildcardTypeImpl(upperBounds, EMPTY_TYPE_ARRAY);\n   }\n \n@@ -91,11 +87,7 @@\n    */\n   public static WildcardType supertypeOf(Type bound) {\n     Type[] lowerBounds;\n-    if (bound instanceof WildcardType) {\n-      lowerBounds \u003d ((WildcardType) bound).getLowerBounds();\n-    } else {\n       lowerBounds \u003d new Type[] { bound };\n-    }\n     return new WildcardTypeImpl(new Type[] { Object.class }, lowerBounds);\n   }\n \n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InstanceofExpression [2673,2702]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [2704,2772]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [2778,2827]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [2669,2827]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InstanceofExpression [3173,3202]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [3204,3272]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [3278,3327]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [3169,3327]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.google.gson.internal.$Gson$Types:canonicalize:[Type type]:Type"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.gson.internal.$Gson$Types:supertypeOf:[Type bound]:WildcardType"
+      ],
+      "num": 1
+    }
+  }
+}

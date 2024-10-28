@@ -1,0 +1,228 @@
+diff -r -u original/src/java/org/apache/commons/math/optimization/linear/SimplexTableau.java buggy/src/java/org/apache/commons/math/optimization/linear/SimplexTableau.java
+--- original/src/java/org/apache/commons/math/optimization/linear/SimplexTableau.java	2023-06-13 15:31:59.411180063 +0800
++++ buggy/src/java/org/apache/commons/math/optimization/linear/SimplexTableau.java	2023-06-12 11:40:47.701759291 +0800
+@@ -17,16 +17,21 @@
+ 
+ package org.apache.commons.math.optimization.linear;
+ 
++import java.io.IOException;
++import java.io.ObjectInputStream;
++import java.io.ObjectOutputStream;
+ import java.io.Serializable;
+ import java.util.ArrayList;
+ import java.util.Collection;
+ import java.util.List;
+ 
++import org.apache.commons.math.linear.MatrixUtils;
+ import org.apache.commons.math.linear.RealMatrix;
+ import org.apache.commons.math.linear.RealMatrixImpl;
+ import org.apache.commons.math.linear.RealVector;
+ import org.apache.commons.math.optimization.GoalType;
+ import org.apache.commons.math.optimization.RealPointValuePair;
++import org.apache.commons.math.util.MathUtils;
+ 
+ /**
+  * A tableau for use in the Simplex method.
+@@ -68,7 +73,7 @@
+     private final boolean restrictToNonNegative;
+ 
+     /** Simple tableau. */
+-    protected RealMatrix tableau;
++    protected transient RealMatrix tableau;
+ 
+     /** Number of decision variables. */
+     protected final int numDecisionVariables;
+@@ -79,6 +84,9 @@
+     /** Number of artificial variables. */
+     protected int numArtificialVariables;
+ 
++    /** Amount of error to accept in floating point comparisons. */ 
++    protected final double epsilon;
++    
+     /**
+      * Build a tableau for a linear problem.
+      * @param f linear objective function
+@@ -86,13 +94,16 @@
+      * @param goalType type of optimization goal: either {@link GoalType#MAXIMIZE}
+      * or {@link GoalType#MINIMIZE}
+      * @param restrictToNonNegative whether to restrict the variables to non-negative values
++     * @param epsilon amount of error to accept in floating point comparisons
+      */
+     SimplexTableau(final LinearObjectiveFunction f,
+                    final Collection<LinearConstraint> constraints,
+-                   final GoalType goalType, final boolean restrictToNonNegative) {
++                   final GoalType goalType, final boolean restrictToNonNegative,
++                   final double epsilon) {
+         this.f                      = f;
+         this.constraints            = constraints;
+         this.restrictToNonNegative  = restrictToNonNegative;
++        this.epsilon                = epsilon;
+         this.numDecisionVariables   = getNumVariables() + (restrictToNonNegative ? 0 : 1);
+         this.numSlackVariables      = getConstraintTypeCounts(Relationship.LEQ) +
+                                       getConstraintTypeCounts(Relationship.GEQ);
+@@ -259,7 +270,7 @@
+     private Integer getBasicRow(final int col) {
+         Integer row = null;
+         for (int i = getNumObjectiveFunctions(); i < getHeight(); i++) {
+-            if (getEntry(i, col) != 0.0) {
++            if (!MathUtils.equals(getEntry(i, col), 0.0, epsilon)) {
+                 if (row == null) {
+                     row = i;
+                 } else {
+@@ -327,9 +338,20 @@
+      * @return The value of the given decision variable.
+      */
+     protected double getDecisionVariableValue(final int decisionVariable) {
+-        Integer basicRow = getBasicRow(getNumObjectiveFunctions() + decisionVariable);
+-        return basicRow == null ? 0 : getEntry(basicRow, getRhsOffset()); 
+-    }
++      int col = getNumObjectiveFunctions() + decisionVariable;  
++      Integer basicRow = getBasicRow(col);
++      if (basicRow == null) {
++          return 0;
++      }
++      // if there are multiple variables that can take the value on the RHS
++      // then we'll give the first variable that value
++      for (int i = getNumObjectiveFunctions(); i < col; i++) {
++          if (tableau.getEntry(basicRow, i) == 1) {
++              return 0;
++          }
++      }
++      return getEntry(basicRow, getRhsOffset()); 
++  }
+ 
+     /**
+      * Subtracts a multiple of one row from another.
+@@ -470,4 +492,68 @@
+         return tableau.getData();
+     }
+ 
++    /** {@inheritDoc} */
++    @Override
++    public boolean equals(Object other) {
++
++      if (this == other) { 
++        return true;
++      }
++
++      if (other == null) {
++        return false;
++      }
++
++      try {
++
++          SimplexTableau rhs = (SimplexTableau) other;
++          return (restrictToNonNegative  == rhs.restrictToNonNegative) &&
++                 (numDecisionVariables   == rhs.numDecisionVariables) &&
++                 (numSlackVariables      == rhs.numSlackVariables) &&
++                 (numArtificialVariables == rhs.numArtificialVariables) &&
++                 (epsilon                == rhs.epsilon) &&
++                 f.equals(rhs.f) &&
++                 constraints.equals(rhs.constraints) &&
++                 tableau.equals(rhs.tableau);
++
++      } catch (ClassCastException ex) {
++          // ignore exception
++          return false;
++      }
++
++    }
++    
++    /** {@inheritDoc} */
++    @Override
++    public int hashCode() {
++        return Boolean.valueOf(restrictToNonNegative).hashCode() ^
++               numDecisionVariables ^
++               numSlackVariables ^
++               numArtificialVariables ^
++               Double.valueOf(epsilon).hashCode() ^
++               f.hashCode() ^
++               constraints.hashCode() ^
++               tableau.hashCode();
++    }
++
++    /** Serialize the instance.
++     * @param oos stream where object should be written
++     * @throws IOException if object cannot be written to stream
++     */
++    private void writeObject(ObjectOutputStream oos)
++        throws IOException {
++        oos.defaultWriteObject();
++        MatrixUtils.serializeRealMatrix(tableau, oos);
++    }
++
++    /** Deserialize the instance.
++     * @param ois stream from which the object should be read
++     * @throws ClassNotFoundException if a class in the stream cannot be found
++     * @throws IOException if object cannot be read from the stream
++     */
++    private void readObject(ObjectInputStream ois)
++      throws ClassNotFoundException, IOException {
++        ois.defaultReadObject();
++        MatrixUtils.deserializeRealMatrix(this, "tableau", ois);
++    }
+ }
+diff -r -u original/src/test/org/apache/commons/math/optimization/linear/SimplexSolverTest.java buggy/src/test/org/apache/commons/math/optimization/linear/SimplexSolverTest.java
+--- original/src/test/org/apache/commons/math/optimization/linear/SimplexSolverTest.java	2023-06-13 15:31:59.411180063 +0800
++++ buggy/src/test/org/apache/commons/math/optimization/linear/SimplexSolverTest.java	2023-06-12 11:40:47.701759291 +0800
+@@ -31,7 +31,6 @@
+ public class SimplexSolverTest extends TestCase {
+ 
+     public void testSimplexSolver() throws OptimizationException {
+-
+         LinearObjectiveFunction f =
+             new LinearObjectiveFunction(new double[] { 15, 10 }, 7);
+         Collection<LinearConstraint> constraints = new ArrayList<LinearConstraint>();
+@@ -91,7 +90,7 @@
+         assertEquals(12.0, solution.getValue());
+     }
+ 
+-    public void testInfeasibleSolution() throws UnboundedSolutionException {
++    public void testInfeasibleSolution() {
+         LinearObjectiveFunction f = new LinearObjectiveFunction(new double[] { 15 }, 0);
+         Collection<LinearConstraint> constraints = new ArrayList<LinearConstraint>();
+         constraints.add(new LinearConstraint(new double[] { 1 }, Relationship.LEQ, 1));
+@@ -108,7 +107,7 @@
+         }
+     }
+ 
+-    public void testUnboundedSolution() throws NoFeasibleSolutionException {
++    public void testUnboundedSolution() {
+         LinearObjectiveFunction f = new LinearObjectiveFunction(new double[] { 15, 10 }, 0);
+         Collection<LinearConstraint> constraints = new ArrayList<LinearConstraint>();
+         constraints.add(new LinearConstraint(new double[] { 1, 0 }, Relationship.EQ, 2));
+@@ -143,7 +142,23 @@
+         assertEquals(1438556.7491409, solution.getValue(), .0000001);
+     }
+ 
+-    public void testSomething() throws OptimizationException {
++    public void testEpsilon() throws OptimizationException {
++      LinearObjectiveFunction f =
++          new LinearObjectiveFunction(new double[] { 10, 5, 1 }, 0);
++      Collection<LinearConstraint> constraints = new ArrayList<LinearConstraint>();
++      constraints.add(new LinearConstraint(new double[] {  9, 8, 0 }, Relationship.EQ,  17));
++      constraints.add(new LinearConstraint(new double[] {  0, 7, 8 }, Relationship.LEQ,  7));
++      constraints.add(new LinearConstraint(new double[] { 10, 0, 2 }, Relationship.LEQ, 10));
++
++      SimplexSolver solver = new SimplexSolver();
++      RealPointValuePair solution = solver.optimize(f, constraints, GoalType.MAXIMIZE, false);
++      assertEquals(1.0, solution.getPoint()[0]);
++      assertEquals(1.0, solution.getPoint()[1]);
++      assertEquals(0.0, solution.getPoint()[2]);
++      assertEquals(15.0, solution.getValue());
++  }
++    
++    public void testTrivialModel() throws OptimizationException {
+         LinearObjectiveFunction f = new LinearObjectiveFunction(new double[] { 1, 1 }, 0);
+         Collection<LinearConstraint> constraints = new ArrayList<LinearConstraint>();
+         constraints.add(new LinearConstraint(new double[] { 1, 1 }, Relationship.EQ,  0));
+@@ -276,8 +291,7 @@
+ 
+         SimplexSolver solver = new SimplexSolver();
+         RealPointValuePair solution = solver.optimize(f, constraints, GoalType.MINIMIZE, true);
+-        assertEquals(13366.0, solution.getValue(), .0000001);
+-        //assertEquals(7518.0, solution.getValue(), .0000001);
++        assertEquals(7518.0, solution.getValue(), .0000001);
+     }
+     
+     /**

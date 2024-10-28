@@ -1,0 +1,99 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.jsoup.parser.HtmlParserTest::testHandlesDeepSpans",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.jsoup.parser.HtmlTreeBuilder",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Jsoup",
+  "id": "68",
+  "workingDir": "../bugs/Jsoup_68_tmp",
+  "bug_name": "Jsoup_68",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.jsoup.parser.HtmlParserTest",
+      "test_function": "testHandlesDeepSpans",
+      "exception": "java.lang.StackOverflowError",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/parser/HtmlTreeBuilder.java",
+        "src/main/java/org/jsoup/parser/HtmlTreeBuilder.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.parser.HtmlTreeBuilder:inSpecificScope:[String[] targetNames, String[] baseTypes, String[] extraTypes]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.jsoup.parser.HtmlTreeBuilder:inSpecificScope:[String[] targetNames, String[] baseTypes, String[] extraTypes]:boolean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "468"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "468",
+            "469",
+            "470",
+            "471"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/parser/HtmlTreeBuilder.java b/src/main/java/org/jsoup/parser/HtmlTreeBuilder.java\nindex b8cc1f0..08444ef 100644\n--- a/src/main/java/org/jsoup/parser/HtmlTreeBuilder.java\n+++ b/src/main/java/org/jsoup/parser/HtmlTreeBuilder.java\n@@ -465,7 +465,10 @@\n \n     private boolean inSpecificScope(String[] targetNames, String[] baseTypes, String[] extraTypes) {\n         // https://html.spec.whatwg.org/multipage/parsing.html#has-an-element-in-the-specific-scope\n-        final int bottom \u003d stack.size() -1;\n+        int bottom \u003d stack.size() -1;\n+        if (bottom \u003e MaxScopeSearchDepth) {\n+            bottom \u003d MaxScopeSearchDepth;\n+        }\n         final int top \u003d bottom \u003e MaxScopeSearchDepth ? bottom - MaxScopeSearchDepth : 0;\n         // don\u0027t walk too far up the tree\n \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [16959,17046]"
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: final [16921,16926]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,259 @@
+diff -r -u buggy/src/java/org/apache/commons/lang/StringEscapeUtils.java inducing/src/java/org/apache/commons/lang/StringEscapeUtils.java
+--- buggy/src/java/org/apache/commons/lang/StringEscapeUtils.java	2023-06-12 11:34:38.862447277 +0800
++++ inducing/src/java/org/apache/commons/lang/StringEscapeUtils.java	2023-06-12 11:34:38.974449323 +0800
+@@ -40,11 +40,6 @@
+  */
+ public class StringEscapeUtils {
+ 
+-    private static final char CSV_DELIMITER = ',';
+-    private static final char CSV_QUOTE = '"';
+-    private static final String CSV_QUOTE_STR = String.valueOf(CSV_QUOTE);
+-    private static final char[] CSV_SEARCH_CHARS = new char[] {CSV_DELIMITER, CSV_QUOTE, CharUtils.CR, CharUtils.LF};
+-
+     /**
+      * <p><code>StringEscapeUtils</code> instances should NOT be constructed in
+      * standard programming.</p>
+@@ -693,168 +688,4 @@
+         return StringUtils.replace(str, "'", "''");
+     }
+ 
+-    //-----------------------------------------------------------------------
+-
+-    /**
+-     * <p>Returns a <code>String</code> value for a CSV column enclosed in double quotes,
+-     * if required.</p>
+-     *
+-     * <p>If the value contains a comma, newline or double quote, then the
+-     *    String value is returned enclosed in double quotes.</p>
+-     * </p>
+-     *
+-     * <p>Any double quote characters in the value are escaped with another double quote.</p>
+-     *
+-     * <p>If the value does not contain a comma, newline or double quote, then the
+-     *    String value is returned unchanged.</p>
+-     * </p>
+-     *
+-     * see <a href="http://en.wikipedia.org/wiki/Comma-separated_values">Wikipedia</a> and
+-     * <a href="http://tools.ietf.org/html/rfc4180">RFC 4180</a>.
+-     *
+-     * @param str the input CSV column String, may be null
+-     * @return the input String, enclosed in double quotes if the value contains a comma,
+-     * newline or double quote, <code>null</code> if null string input
+-     * @since 2.4
+-     */
+-    public static String escapeCsv(String str) {
+-        if (StringUtils.containsNone(str, CSV_SEARCH_CHARS)) {
+-            return str;
+-        }
+-        try {
+-            StringWriter writer = new StringWriter();
+-            escapeCsv(writer, str);
+-            return writer.toString();
+-        } catch (IOException ioe) {
+-            // this should never ever happen while writing to a StringWriter
+-            ioe.printStackTrace();
+-            return null;
+-        }
+-    }
+-
+-    /**
+-     * <p>Writes a <code>String</code> value for a CSV column enclosed in double quotes,
+-     * if required.</p>
+-     *
+-     * <p>If the value contains a comma, newline or double quote, then the
+-     *    String value is written enclosed in double quotes.</p>
+-     * </p>
+-     *
+-     * <p>Any double quote characters in the value are escaped with another double quote.</p>
+-     *
+-     * <p>If the value does not contain a comma, newline or double quote, then the
+-     *    String value is written unchanged (null values are ignored).</p>
+-     * </p>
+-     *
+-     * see <a href="http://en.wikipedia.org/wiki/Comma-separated_values">Wikipedia</a> and
+-     * <a href="http://tools.ietf.org/html/rfc4180">RFC 4180</a>.
+-     *
+-     * @param str the input CSV column String, may be null
+-     * @param out Writer to write input string to, enclosed in double quotes if it contains
+-     * a comma, newline or double quote
+-     * @throws IOException if error occurs on underlying Writer
+-     * @since 2.4
+-     */
+-    public static void escapeCsv(Writer out, String str) throws IOException {
+-        if (StringUtils.containsNone(str, CSV_SEARCH_CHARS)) {
+-            if (str != null) {
+-                out.write(str);
+-            }
+-            return;
+-        }
+-        out.write(CSV_QUOTE);
+-        for (int i = 0; i < str.length(); i++) {
+-            char c = str.charAt(i);
+-            if (c == CSV_QUOTE) {
+-                out.write(CSV_QUOTE); // escape double quote
+-            }
+-            out.write(c);
+-        }
+-        out.write(CSV_QUOTE);
+-    }
+-
+-    /**
+-     * <p>Returns a <code>String</code> value for an unescaped CSV column. </p>
+-     *
+-     * <p>If the value is enclosed in double quotes, and contains a comma, newline 
+-     *    or double quote, then quotes are removed. 
+-     * </p>
+-     *
+-     * <p>Any double quote escaped characters (a pair of double quotes) are unescaped 
+-     *    to just one double quote. </p>
+-     *
+-     * <p>If the value is not enclosed in double quotes, or is and does not contain a 
+-     *    comma, newline or double quote, then the String value is returned unchanged.</p>
+-     * </p>
+-     *
+-     * see <a href="http://en.wikipedia.org/wiki/Comma-separated_values">Wikipedia</a> and
+-     * <a href="http://tools.ietf.org/html/rfc4180">RFC 4180</a>.
+-     *
+-     * @param str the input CSV column String, may be null
+-     * @return the input String, with enclosing double quotes removed and embedded double 
+-     * quotes unescaped, <code>null</code> if null string input
+-     * @since 2.4
+-     */
+-    public static String unescapeCsv(String str) {
+-        if (str == null) {
+-            return null;
+-        }
+-        try {
+-            StringWriter writer = new StringWriter();
+-            unescapeCsv(writer, str);
+-            return writer.toString();
+-        } catch (IOException ioe) {
+-            // this should never ever happen while writing to a StringWriter
+-            ioe.printStackTrace();
+-            return null;
+-        }
+-    }
+-
+-    /**
+-     * <p>Returns a <code>String</code> value for an unescaped CSV column. </p>
+-     *
+-     * <p>If the value is enclosed in double quotes, and contains a comma, newline 
+-     *    or double quote, then quotes are removed. 
+-     * </p>
+-     *
+-     * <p>Any double quote escaped characters (a pair of double quotes) are unescaped 
+-     *    to just one double quote. </p>
+-     *
+-     * <p>If the value is not enclosed in double quotes, or is and does not contain a 
+-     *    comma, newline or double quote, then the String value is returned unchanged.</p>
+-     * </p>
+-     *
+-     * see <a href="http://en.wikipedia.org/wiki/Comma-separated_values">Wikipedia</a> and
+-     * <a href="http://tools.ietf.org/html/rfc4180">RFC 4180</a>.
+-     *
+-     * @param str the input CSV column String, may be null
+-     * @param out Writer to write the input String to, with enclosing double quotes 
+-     * removed and embedded double quotes unescaped, <code>null</code> if null string input
+-     * @throws IOException if error occurs on underlying Writer
+-     * @since 2.4
+-     */
+-    public static void unescapeCsv(Writer out, String str) throws IOException {
+-        if (str == null) {
+-            return;
+-        }
+-        if (str.length() < 2) {
+-            out.write(str);
+-            return;
+-        }
+-        if ( str.charAt(0) != CSV_QUOTE || str.charAt(str.length() - 1) != CSV_QUOTE ) {
+-            out.write(str);
+-            return;
+-        }
+-
+-        // strip quotes
+-        String quoteless = str.substring(1, str.length() - 1);
+-
+-        if ( StringUtils.containsAny(quoteless, CSV_SEARCH_CHARS) ) {
+-            // deal with escaped quotes; ie) ""
+-            str = StringUtils.replace(quoteless, CSV_QUOTE_STR + CSV_QUOTE_STR, CSV_QUOTE_STR);
+-        }
+-
+-        out.write(str);
+-    }
+-
+ }
+diff -r -u buggy/src/test/org/apache/commons/lang/StringEscapeUtilsTest.java inducing/src/test/org/apache/commons/lang/StringEscapeUtilsTest.java
+--- buggy/src/test/org/apache/commons/lang/StringEscapeUtilsTest.java	2023-06-12 11:34:38.870447423 +0800
++++ inducing/src/test/org/apache/commons/lang/StringEscapeUtilsTest.java	2023-06-12 11:34:39.006449907 +0800
+@@ -332,71 +332,4 @@
+         assertEquals("& &", StringEscapeUtils.unescapeHtml("& &amp;"));
+     }
+ 
+-    public void testEscapeCsvString() throws Exception
+-    {
+-        assertEquals("foo.bar",          StringEscapeUtils.escapeCsv("foo.bar"));
+-        assertEquals("\"foo,bar\"",      StringEscapeUtils.escapeCsv("foo,bar"));
+-        assertEquals("\"foo\nbar\"",     StringEscapeUtils.escapeCsv("foo\nbar"));
+-        assertEquals("\"foo\rbar\"",     StringEscapeUtils.escapeCsv("foo\rbar"));
+-        assertEquals("\"foo\"\"bar\"",   StringEscapeUtils.escapeCsv("foo\"bar"));
+-        assertEquals("",   StringEscapeUtils.escapeCsv(""));
+-        assertEquals(null, StringEscapeUtils.escapeCsv(null));
+-    }
+-
+-    public void testEscapeCsvWriter() throws Exception
+-    {
+-        checkCsvEscapeWriter("foo.bar",        "foo.bar");
+-        checkCsvEscapeWriter("\"foo,bar\"",    "foo,bar");
+-        checkCsvEscapeWriter("\"foo\nbar\"",   "foo\nbar");
+-        checkCsvEscapeWriter("\"foo\rbar\"",   "foo\rbar");
+-        checkCsvEscapeWriter("\"foo\"\"bar\"", "foo\"bar");
+-        checkCsvEscapeWriter("", null);
+-        checkCsvEscapeWriter("", "");
+-    }
+-
+-    private void checkCsvEscapeWriter(String expected, String value) {
+-        try {
+-            StringWriter writer = new StringWriter();
+-            StringEscapeUtils.escapeCsv(writer, value);
+-            assertEquals(expected, writer.toString());
+-        } catch (IOException e) {
+-            fail("Threw: " + e);
+-        }
+-    }
+-
+-    public void testUnescapeCsvString() throws Exception
+-    {
+-        assertEquals("foo.bar",          StringEscapeUtils.unescapeCsv("foo.bar"));
+-        assertEquals("foo,bar",      StringEscapeUtils.unescapeCsv("\"foo,bar\""));
+-        assertEquals("foo\nbar",     StringEscapeUtils.unescapeCsv("\"foo\nbar\""));
+-        assertEquals("foo\rbar",     StringEscapeUtils.unescapeCsv("\"foo\rbar\""));
+-        assertEquals("foo\"bar",   StringEscapeUtils.unescapeCsv("\"foo\"\"bar\""));
+-        assertEquals("",   StringEscapeUtils.unescapeCsv(""));
+-        assertEquals(null, StringEscapeUtils.unescapeCsv(null));
+-
+-        assertEquals("\"foo.bar\"",          StringEscapeUtils.unescapeCsv("\"foo.bar\""));
+-    }
+-
+-    public void testUnescapeCsvWriter() throws Exception
+-    {
+-        checkCsvUnescapeWriter("foo.bar",        "foo.bar");
+-        checkCsvUnescapeWriter("foo,bar",    "\"foo,bar\"");
+-        checkCsvUnescapeWriter("foo\nbar",   "\"foo\nbar\"");
+-        checkCsvUnescapeWriter("foo\rbar",   "\"foo\rbar\"");
+-        checkCsvUnescapeWriter("foo\"bar", "\"foo\"\"bar\"");
+-        checkCsvUnescapeWriter("", null);
+-        checkCsvUnescapeWriter("", "");
+-
+-        checkCsvUnescapeWriter("\"foo.bar\"",        "\"foo.bar\"");
+-    }
+-
+-    private void checkCsvUnescapeWriter(String expected, String value) {
+-        try {
+-            StringWriter writer = new StringWriter();
+-            StringEscapeUtils.unescapeCsv(writer, value);
+-            assertEquals(expected, writer.toString());
+-        } catch (IOException e) {
+-            fail("Threw: " + e);
+-        }
+-    }
+ }

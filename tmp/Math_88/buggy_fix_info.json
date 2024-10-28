@@ -1,0 +1,181 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math.optimization.linear.SimplexSolverTest::testMath272",
+    "test.dir": "src/test",
+    "clz.modified": "org.apache.commons.math.optimization.linear.SimplexTableau",
+    "src.dir": "src/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "88",
+  "workingDir": "../bugs/Math_88_tmp",
+  "bug_name": "Math_88",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math.optimization.linear.SimplexSolverTest",
+      "test_function": "testMath272",
+      "assertion_line": "47",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c1.0\u003e but was:\u003c0.0\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/math/optimization/linear/SimplexTableau.java",
+        "src/java/org/apache/commons/math/optimization/linear/SimplexTableau.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.optimization.linear.SimplexTableau:getSolution:[]:RealPointValuePair"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.optimization.linear.SimplexTableau:getSolution:[]:RealPointValuePair"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "329",
+            "332",
+            "335",
+            "336",
+            "337"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "336",
+            "337",
+            "338",
+            "339",
+            "340",
+            "341"
+          ],
+          "num": 6
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/math/optimization/linear/SimplexTableau.java b/src/java/org/apache/commons/math/optimization/linear/SimplexTableau.java\nindex a6d7419..3bcb17f 100644\n--- a/src/java/org/apache/commons/math/optimization/linear/SimplexTableau.java\n+++ b/src/java/org/apache/commons/math/optimization/linear/SimplexTableau.java\n@@ -326,18 +326,19 @@\n         Integer basicRow \u003d\n             getBasicRow(getNumObjectiveFunctions() + getOriginalNumDecisionVariables());\n         double mostNegative \u003d basicRow \u003d\u003d null ? 0 : getEntry(basicRow, getRhsOffset());\n-        Set\u003cInteger\u003e basicRows \u003d new HashSet\u003cInteger\u003e();\n         for (int i \u003d 0; i \u003c coefficients.length; i++) {\n             basicRow \u003d getBasicRow(getNumObjectiveFunctions() + i);\n-            if (basicRows.contains(basicRow)) {\n                 // if multiple variables can take a given value \n                 // then we choose the first and set the rest equal to 0\n-                coefficients[i] \u003d 0;\n-            } else {\n-                basicRows.add(basicRow);\n                 coefficients[i] \u003d\n                     (basicRow \u003d\u003d null ? 0 : getEntry(basicRow, getRhsOffset())) -\n                     (restrictToNonNegative ? 0 : mostNegative);\n+            if (basicRow !\u003d null) {\n+                for (int j \u003d getNumObjectiveFunctions(); j \u003c getNumObjectiveFunctions() + i; j++) {\n+                    if (tableau.getEntry(basicRow, j) \u003d\u003d 1) {\n+                         coefficients[i] \u003d 0;\n+                    }\n+                }\n             }\n         }\n         return new RealPointValuePair(coefficients, f.getValue(coefficients));\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [13405,13690]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [13409,13425]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [13427,13690]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ForStatement [13445,13676]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationExpression [13450,13484]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [13486,13520]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PostfixExpression [13522,13525]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [13527,13676]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [13549,13658]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [13553,13587]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [12960,13008]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [13149,13177]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [13392,13416]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [13374,13610]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [13145,13610]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

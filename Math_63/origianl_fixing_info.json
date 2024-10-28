@@ -1,0 +1,649 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "/home/liumengjiao/Desktop/CI/Benchmark/data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math.util.MathUtilsTest::testArrayEquals",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math.util.MathUtils",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "63",
+  "workingDir": "../bugs/Math_63_buggy",
+  "buggyCommit": "91b44a1ef7563f54e8acdf29906bd872985a2a6e",
+  "inducingCommit": "b8a46f6657147be4ddc194c04bcbd5aa00abf23f",
+  "originalCommit": "a669eda90cdcfefe3a8082f72d6d15e1bbb525bf",
+  "bug_name": "Math_63",
+  "derive": "defects4j",
+  "original_fixing_commit": "d2a5bc02c002acfa220ce8bad23b9e8af137f47d",
+  "buildFiles_changed": true,
+  "regression": true,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/math/util/MathUtils.java",
+        "src/java/org/apache/commons/math/util/MathUtils.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.util.MathUtils:factorial:[final int n]:long",
+            "org.apache.commons.math.util.MathUtils:indicator:[final byte x]:byte"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.util.MathUtils:hash:[double[] value]:int",
+            "org.apache.commons.math.util.MathUtils:equals:[double[] x, double[] y]:boolean",
+            "org.apache.commons.math.util.MathUtils:factorial:[final int n]:long",
+            "org.apache.commons.math.util.MathUtils:indicator:[final byte x]:byte"
+          ],
+          "num": 4
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "278",
+            "435"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "279",
+            "280",
+            "281",
+            "282",
+            "283",
+            "284",
+            "285",
+            "286",
+            "287",
+            "288",
+            "289",
+            "290",
+            "291",
+            "292",
+            "293",
+            "294",
+            "295",
+            "296",
+            "297",
+            "298",
+            "299",
+            "300",
+            "301",
+            "302",
+            "460",
+            "461",
+            "462",
+            "463",
+            "464",
+            "465",
+            "466",
+            "467",
+            "468",
+            "469",
+            "470",
+            "471",
+            "472",
+            "473",
+            "474",
+            "475",
+            "476"
+          ],
+          "num": 41
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/math/util/MathUtils.java b/src/java/org/apache/commons/math/util/MathUtils.java\nindex 09bbd4f..d354b87 100644\n--- a/src/java/org/apache/commons/math/util/MathUtils.java\n+++ b/src/java/org/apache/commons/math/util/MathUtils.java\n@@ -276,6 +276,30 @@\n     }\n \n     /**\n+     * Returns true iff both arguments aren null or have same dimensions\n+     * and all their elements are {@link #equals(double,double) equals}\n+     * \n+     * @param x first array\n+     * @param y second array\n+     * @return true if the values are both null or have same dimension\n+     * and equal elements\n+     */\n+    public static boolean equals(double[] x, double[] y) {\n+        if ((x \u003d\u003d null) || (y \u003d\u003d null)) {\n+            return !((x \u003d\u003d null) ^ (y \u003d\u003d null));\n+        }\n+        if (x.length !\u003d y.length) {\n+            return false;\n+        }\n+        for (int i \u003d 0; i \u003c x.length; ++i) {\n+            if (!equals(x[i], y[i])) {\n+                return false;\n+            }\n+        }\n+        return true;\n+    }\n+\n+    /**\n      * Returns n!. Shorthand for \u003ccode\u003en\u003c/code\u003e \u003ca\n      * href\u003d\"http://mathworld.wolfram.com/Factorial.html\"\u003e Factorial\u003c/a\u003e, the\n      * product of the numbers \u003ccode\u003e1,...,n\u003c/code\u003e.\n@@ -433,6 +457,23 @@\n     }\n \n     /**\n+     * Returns an integer hash code representing the given double array value.\n+     * \n+     * @param value the value to be hashed (may be null)\n+     * @return the hash code\n+     */\n+    public static int hash(double[] value) {\n+        if (value \u003d\u003d null) {\n+            return 0;\n+        }\n+        int result \u003d value.length;\n+        for (int i \u003d 0; i \u003c value.length; ++i) {\n+            result \u003d result * 31 + hash(value[i]);\n+        }\n+        return result;\n+    }\n+\n+    /**\n      * For a byte value x, this method returns (byte)(+1) if x \u003e\u003d 0 and\n      * (byte)(-1) if x \u003c 0.\n      * \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [9247,9962]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [15462,15926]"
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.apache.commons.math.util.MathUtils:hash:[double[] value]:int",
+        "org.apache.commons.math.util.MathUtils:equals:[double[] x, double[] y]:boolean"
+      ],
+      "num": 2
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math.util.MathUtilsTest",
+      "test_function": "testArrayEquals",
+      "assertion_line": "456",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/util/MathUtils.java",
+        "src/main/java/org/apache/commons/math/util/MathUtils.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.util.MathUtils:roundUnscaled:[double unscaled, double sign, int roundingMethod]:double",
+            "org.apache.commons.math.util.MathUtils:equals:[double x, double y]:boolean",
+            "org.apache.commons.math.util.MathUtils:equals:[double[] x, double[] y]:boolean",
+            "org.apache.commons.math.util.MathUtils:checkOrder:[double[] val, int dir, boolean strict]:void",
+            "org.apache.commons.math.util.MathUtils:safeNorm:[double[] v]:double",
+            "org.apache.commons.math.util.MathUtils:nextAfter:[double d, double direction]:double",
+            "org.apache.commons.math.util.MathUtils:scalb:[final double d, final int scaleFactor]:double"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.util.MathUtils:equals:[double x, double y]:boolean",
+            "org.apache.commons.math.util.MathUtils:equals:[double[] x, double[] y]:boolean",
+            "org.apache.commons.math.util.MathUtils:safeNorm:[double[] v]:double",
+            "org.apache.commons.math.util.MathUtils:roundUnscaled:[double unscaled, double sign, int roundingMethod]:double",
+            "org.apache.commons.math.util.MathUtils:scalb:[final double d, final int scaleFactor]:double"
+          ],
+          "num": 5
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "410",
+            "415",
+            "416",
+            "417",
+            "418",
+            "419",
+            "420",
+            "423",
+            "527",
+            "528",
+            "529",
+            "530",
+            "531",
+            "532",
+            "1105",
+            "1106",
+            "1107",
+            "1108",
+            "1109",
+            "1110",
+            "1111",
+            "1112",
+            "1113",
+            "1114",
+            "1115",
+            "1116",
+            "1117",
+            "1118",
+            "1119",
+            "1120",
+            "1121",
+            "1122",
+            "1123",
+            "1124",
+            "1125",
+            "1126",
+            "1127",
+            "1321",
+            "1323",
+            "1327",
+            "1331",
+            "1333",
+            "1337",
+            "1364",
+            "1379",
+            "1908",
+            "1909",
+            "1910",
+            "1911",
+            "1912",
+            "1913",
+            "1914",
+            "1915",
+            "1916",
+            "1917",
+            "1918",
+            "1919",
+            "1920",
+            "1921",
+            "1922",
+            "1923",
+            "1924",
+            "1925"
+          ],
+          "num": 63
+        },
+        {
+          "qualified_names": [
+            "410",
+            "417",
+            "532",
+            "1116",
+            "1286",
+            "1288",
+            "1292",
+            "1296",
+            "1298",
+            "1302",
+            "1329",
+            "1344",
+            "1942"
+          ],
+          "num": 13
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/util/MathUtils.java b/src/main/java/org/apache/commons/math/util/MathUtils.java\nindex 887dc66..ab0fe33 100644\n--- a/src/main/java/org/apache/commons/math/util/MathUtils.java\n+++ b/src/main/java/org/apache/commons/math/util/MathUtils.java\n@@ -407,20 +407,14 @@\n \n     /**\n      * Returns true iff they are equal as defined by\n-     * {@link #equals(double,double,int) this method}.\n+     * {@link #equals(double,double,int) equals(x, y, 1)}.\n      *\n      * @param x first value\n      * @param y second value\n      * @return {@code true} if the values are equal.\n-     * @deprecated This method considers that {@code NaN \u003d\u003d NaN}. In release\n-     * 3.0, the semantics will change in order to comply with IEEE754 where it\n-     * is specified that {@code NaN !\u003d NaN}.\n-     * New methods have been added for those cases wher the old semantics is\n-     * useful (see e.g. {@link #equalsIncludingNaN(double,double)\n-     * equalsIncludingNaN}.\n      */\n     public static boolean equals(double x, double y) {\n-        return (Double.isNaN(x) \u0026\u0026 Double.isNaN(y)) || x \u003d\u003d y;\n+        return equals(x, y, 1);\n     }\n \n     /**\n@@ -524,12 +518,6 @@\n      * @param y second array\n      * @return true if the values are both null or have same dimension\n      * and equal elements.\n-     * @deprecated This method considers that {@code NaN \u003d\u003d NaN}. In release\n-     * 3.0, the semantics will change in order to comply with IEEE754 where it\n-     * is specified that {@code NaN !\u003d NaN}.\n-     * New methods have been added for those cases wher the old semantics is\n-     * useful (see e.g. {@link #equalsIncludingNaN(double[],double[])\n-     * equalsIncludingNaN}.\n      */\n     public static boolean equals(double[] x, double[] y) {\n         if ((x \u003d\u003d null) || (y \u003d\u003d null)) {\n@@ -1102,29 +1090,6 @@\n     }\n \n     /**\n-     * Get the next machine representable number after a number, moving\n-     * in the direction of another number.\n-     * \u003cp\u003e\n-     * If \u003ccode\u003edirection\u003c/code\u003e is greater than or equal to\u003ccode\u003ed\u003c/code\u003e,\n-     * the smallest machine representable number strictly greater than\n-     * \u003ccode\u003ed\u003c/code\u003e is returned; otherwise the largest representable number\n-     * strictly less than \u003ccode\u003ed\u003c/code\u003e is returned.\u003c/p\u003e\n-     * \u003cp\u003e\n-     * If \u003ccode\u003ed\u003c/code\u003e is NaN or Infinite, it is returned unchanged.\u003c/p\u003e\n-     *\n-     * @param d base number\n-     * @param direction (the only important thing is whether\n-     * direction is greater or smaller than d)\n-     * @return the next machine representable number in the specified direction\n-     * @since 1.2\n-     * @deprecated as of 2.2, replaced by {@link FastMath#nextAfter(double, double)}\n-     */\n-    @Deprecated\n-    public static double nextAfter(double d, double direction) {\n-        return FastMath.nextAfter(d, direction);\n-    }\n-\n-    /**\n      * Scale a number by 2\u003csup\u003escaleFactor\u003c/sup\u003e.\n      * \u003cp\u003eIf \u003ccode\u003ed\u003c/code\u003e is 0 or NaN or Infinite, it is returned unchanged.\u003c/p\u003e\n      *\n@@ -1318,23 +1283,23 @@\n         switch (roundingMethod) {\n         case BigDecimal.ROUND_CEILING :\n             if (sign \u003d\u003d -1) {\n-                unscaled \u003d FastMath.floor(nextAfter(unscaled, Double.NEGATIVE_INFINITY));\n+                unscaled \u003d FastMath.floor(FastMath.nextAfter(unscaled, Double.NEGATIVE_INFINITY));\n             } else {\n-                unscaled \u003d FastMath.ceil(nextAfter(unscaled, Double.POSITIVE_INFINITY));\n+                unscaled \u003d FastMath.ceil(FastMath.nextAfter(unscaled, Double.POSITIVE_INFINITY));\n             }\n             break;\n         case BigDecimal.ROUND_DOWN :\n-            unscaled \u003d FastMath.floor(nextAfter(unscaled, Double.NEGATIVE_INFINITY));\n+            unscaled \u003d FastMath.floor(FastMath.nextAfter(unscaled, Double.NEGATIVE_INFINITY));\n             break;\n         case BigDecimal.ROUND_FLOOR :\n             if (sign \u003d\u003d -1) {\n-                unscaled \u003d FastMath.ceil(nextAfter(unscaled, Double.POSITIVE_INFINITY));\n+                unscaled \u003d FastMath.ceil(FastMath.nextAfter(unscaled, Double.POSITIVE_INFINITY));\n             } else {\n-                unscaled \u003d FastMath.floor(nextAfter(unscaled, Double.NEGATIVE_INFINITY));\n+                unscaled \u003d FastMath.floor(FastMath.nextAfter(unscaled, Double.NEGATIVE_INFINITY));\n             }\n             break;\n         case BigDecimal.ROUND_HALF_DOWN : {\n-            unscaled \u003d nextAfter(unscaled, Double.NEGATIVE_INFINITY);\n+            unscaled \u003d FastMath.nextAfter(unscaled, Double.NEGATIVE_INFINITY);\n             double fraction \u003d unscaled - FastMath.floor(unscaled);\n             if (fraction \u003e 0.5) {\n                 unscaled \u003d FastMath.ceil(unscaled);\n@@ -1361,7 +1326,7 @@\n             break;\n         }\n         case BigDecimal.ROUND_HALF_UP : {\n-            unscaled \u003d nextAfter(unscaled, Double.POSITIVE_INFINITY);\n+            unscaled \u003d FastMath.nextAfter(unscaled, Double.POSITIVE_INFINITY);\n             double fraction \u003d unscaled - FastMath.floor(unscaled);\n             if (fraction \u003e\u003d 0.5) {\n                 unscaled \u003d FastMath.ceil(unscaled);\n@@ -1376,7 +1341,7 @@\n             }\n             break;\n         case BigDecimal.ROUND_UP :\n-            unscaled \u003d FastMath.ceil(nextAfter(unscaled,  Double.POSITIVE_INFINITY));\n+            unscaled \u003d FastMath.ceil(FastMath.nextAfter(unscaled,  Double.POSITIVE_INFINITY));\n             break;\n         default :\n             throw MathRuntimeException.createIllegalArgumentException(\n@@ -1905,24 +1870,6 @@\n     }\n \n     /**\n-     * Checks that the given array is sorted.\n-     *\n-     * @param val Values\n-     * @param dir Order direction (-1 for decreasing, 1 for increasing)\n-     * @param strict Whether the order should be strict\n-     * @throws NonMonotonousSequenceException if the array is not sorted.\n-     * @deprecated as of 2.2 (please use the new {@link #checkOrder(double[],OrderDirection,boolean)\n-     * checkOrder} method). To be removed in 3.0.\n-     */\n-    public static void checkOrder(double[] val, int dir, boolean strict) {\n-        if (dir \u003e 0) {\n-            checkOrder(val, OrderDirection.INCREASING, strict);\n-        } else {\n-            checkOrder(val, OrderDirection.DECREASING, strict);\n-        }\n-    }\n-\n-    /**\n      * Returns the Cartesian norm (2-norm), handling both overflow and underflow.\n      * Translation of the minpack enorm subroutine.\n      *\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [14429,14452]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ExpressionStatement [46665,46731]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [46199,46269]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Assignment [46665,46730]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [48406,48476]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [46199,46207]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: floor [46208,46213]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [46214,46268]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: unscaled [46665,46673]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ASSIGNMENT_OPERATOR: \u003d [46674,46675]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [48406,48414]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: ceil [48415,48419]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [48420,48475]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [45915,45923]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [46035,46043]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [46214,46222]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [46385,46393]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [46504,46512]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "QualifiedName: Double.NEGATIVE_INFINITY [46705,46729]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [48420,48428]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [14361,14725]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [14797,14851]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [18792,19160]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Javadoc [38940,39772]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MarkerAnnotation [39777,39788]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: public [39793,39799]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: static [39800,39806]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PrimitiveType: double [39807,39813]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: nextAfter [39814,39823]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [39824,39832]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [39834,39850]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ReturnStatement [39862,39902]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [39852,39908]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodDeclaration [38940,39908]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [48206,48279]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: direction [39891,39900]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: ceil [48116,48120]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [48121,48166]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [48107,48167]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [50081,50154]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [65935,66636]",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.apache.commons.math.util.MathUtils:nextAfter:[double d, double direction]:double",
+        "org.apache.commons.math.util.MathUtils:checkOrder:[double[] val, int dir, boolean strict]:void"
+      ],
+      "num": 2
+    }
+  },
+  "patch_changed_mths": {
+    "qualified_names": [
+      "org.apache.commons.math.util.MathUtils:equals(DD)Z:regression",
+      "org.apache.commons.math.util.MathUtils:equals([D[D)Z:regression",
+      "org.apache.commons.math.util.MathUtils:roundUnscaled(DDI)D:regression"
+    ],
+    "num": 3
+  }
+}

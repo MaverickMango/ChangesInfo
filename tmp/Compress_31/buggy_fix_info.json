@@ -1,0 +1,101 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.compress.archivers.TarTestCase::testCOMPRESS178,org.apache.commons.compress.archivers.tar.TarUtilsTest::testParseOctalInvalid",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.compress.archivers.tar.TarUtils",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Compress",
+  "id": "31",
+  "workingDir": "../bugs/Compress_31_tmp",
+  "bug_name": "Compress_31",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.compress.archivers.TarTestCase",
+      "test_function": "testCOMPRESS178",
+      "assertion_line": "325",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected IOException"
+    },
+    {
+      "test_class": "org.apache.commons.compress.archivers.tar.TarUtilsTest",
+      "test_function": "testParseOctalInvalid",
+      "assertion_line": "108",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected IllegalArgumentException - embedded NUL"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/compress/archivers/tar/TarUtils.java",
+        "src/main/java/org/apache/commons/compress/archivers/tar/TarUtils.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.tar.TarUtils:parseOctal:[final byte[] buffer, final int offset, final int length]:long"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.tar.TarUtils:parseOctal:[final byte[] buffer, final int offset, final int length]:long"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "134"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "135",
+            "136",
+            "137"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/compress/archivers/tar/TarUtils.java b/src/main/java/org/apache/commons/compress/archivers/tar/TarUtils.java\nindex 94e175c..40e7871 100644\n--- a/src/main/java/org/apache/commons/compress/archivers/tar/TarUtils.java\n+++ b/src/main/java/org/apache/commons/compress/archivers/tar/TarUtils.java\n@@ -132,6 +132,9 @@\n \n         for ( ;start \u003c end; start++) {\n             final byte currentByte \u003d buffer[start];\n+            if (currentByte \u003d\u003d 0) {\n+                break;\n+            }\n             // CheckStyle:MagicNumber OFF\n             if (currentByte \u003c \u00270\u0027 || currentByte \u003e \u00277\u0027){\n                 throw new IllegalArgumentException(\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [4796,4856]"
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,172 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.LooseTypeCheckTest::testTypeRedefinition,com.google.javascript.jscomp.TypeCheckTest::testIssue635b,com.google.javascript.jscomp.TypeCheckTest::testTypeRedefinition",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.TypeValidator",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "6",
+  "workingDir": "../bugs/Closure_6_tmp",
+  "bug_name": "Closure_6",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.LooseTypeCheckTest",
+      "test_function": "testTypeRedefinition",
+      "assertion_line": "2121",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c2\u003e but was:\u003c1\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testIssue635b",
+      "assertion_line": "10911",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected a warning"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testTypeRedefinition",
+      "assertion_line": "10876",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "unexpected warning(s) : JSC_DUP_VAR_DECLARATION. variable a.A redefined with type function (new:a.A): undefined, original definition at [testcode]:1 with type enum{a.A} at [testcode] line 1 : 61 expected:\u003c2\u003e but was:\u003c1\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/TypeValidator.java",
+        "src/com/google/javascript/jscomp/TypeValidator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypeValidator:expectCanAssignToPropertyOf:[NodeTraversal t, Node n, JSType rightType, JSType leftType, Node owner, String propName]:boolean",
+            "com.google.javascript.jscomp.TypeValidator:expectCanAssignTo:[NodeTraversal t, Node n, JSType rightType, JSType leftType, String msg]:boolean"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypeValidator:expectCanAssignToPropertyOf:[NodeTraversal t, Node n, JSType rightType, JSType leftType, Node owner, String propName]:boolean",
+            "com.google.javascript.jscomp.TypeValidator:expectCanAssignTo:[NodeTraversal t, Node n, JSType rightType, JSType leftType, String msg]:boolean"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "365",
+            "381",
+            "400"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "366",
+            "367",
+            "368",
+            "385",
+            "405",
+            "406",
+            "407",
+            "409"
+          ],
+          "num": 8
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/TypeValidator.java b/src/com/google/javascript/jscomp/TypeValidator.java\nindex 12ce5b3..8cdb02a 100644\n--- a/src/com/google/javascript/jscomp/TypeValidator.java\n+++ b/src/com/google/javascript/jscomp/TypeValidator.java\n@@ -363,6 +363,9 @@\n       JSType leftType, Node owner, String propName) {\n     // The NoType check is a hack to make typedefs work OK.\n     if (!leftType.isNoType() \u0026\u0026 !rightType.canAssignTo(leftType)) {\n+      if ((leftType.isConstructor() || leftType.isEnumType()) \u0026\u0026 (rightType.isConstructor() || rightType.isEnumType())) {\n+        registerMismatch(rightType, leftType, null);\n+      } else {\n       // Do not type-check interface methods, because we expect that\n       // they will have dummy implementations that do not match the type\n       // annotations.\n@@ -379,6 +382,7 @@\n           \"assignment to property \" + propName + \" of \" +\n           getReadableJSTypeName(owner, true),\n           rightType, leftType);\n+      }\n       return false;\n     }\n     return true;\n@@ -398,7 +402,11 @@\n   boolean expectCanAssignTo(NodeTraversal t, Node n, JSType rightType,\n       JSType leftType, String msg) {\n     if (!rightType.canAssignTo(leftType)) {\n+      if ((leftType.isConstructor() || leftType.isEnumType()) \u0026\u0026 (rightType.isConstructor() || rightType.isEnumType())) {\n+        registerMismatch(rightType, leftType, null);\n+      } else {\n       mismatch(t, n, msg, rightType, leftType);\n+      }\n       return false;\n     }\n     return true;\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [13832,14662]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [15307,15546]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [13836,13944]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Block [13946,14008]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [14014,14662]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [15311,15419]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Block [15421,15483]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [15489,15546]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

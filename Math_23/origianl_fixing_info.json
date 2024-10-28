@@ -1,0 +1,476 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "/home/liumengjiao/Desktop/CI/Benchmark/data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math3.optimization.univariate.BrentOptimizerTest::testKeepInitIfBest",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math3.optimization.univariate.BrentOptimizer",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "23",
+  "workingDir": "../bugs/Math_23_buggy",
+  "buggyCommit": "2b4c1f87a73448323d21cd459f967013a41870ca",
+  "inducingCommit": "36d811b2d4cfe1b867823bd60ccca25abbc80b46",
+  "originalCommit": "b5839871867024885927edc2b087e0c718fb73b3",
+  "bug_name": "Math_23",
+  "derive": "defects4j",
+  "original_fixing_commit": "f1b04e990f4fc86544b6230fab1aa8ecfb74fbb1",
+  "regression": true,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java",
+        "src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.optimization.univariate.BrentOptimizer:doOptimize:[]:UnivariatePointValuePair"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.optimization.univariate.BrentOptimizer:doOptimize:[]:UnivariatePointValuePair"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "222",
+            "236",
+            "237",
+            "238",
+            "239",
+            "240",
+            "241",
+            "242",
+            "243",
+            "244",
+            "245"
+          ],
+          "num": 11
+        },
+        {
+          "qualified_names": [
+            "223",
+            "224",
+            "225",
+            "226",
+            "227",
+            "228",
+            "229",
+            "230",
+            "231",
+            "232"
+          ],
+          "num": 10
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java b/src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java\nindex 15a498c..ee2227c 100644\n--- a/src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java\n+++ b/src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java\n@@ -220,6 +220,16 @@\n                     fu \u003d -fu;\n                 }\n \n+                // User-defined convergence checker.\n+                previous \u003d current;\n+                current \u003d new UnivariatePointValuePair(u, isMinim ? fu : -fu);\n+\n+                if (checker !\u003d null) {\n+                    if (checker.converged(iter, previous, current)) {\n+                        return current;\n+                    }\n+                }\n+\n                 // Update a, b, v, w and x.\n                 if (fu \u003c\u003d fx) {\n                     if (u \u003c x) {\n@@ -233,16 +243,6 @@\n                     fw \u003d fx;\n                     x \u003d u;\n                     fx \u003d fu;\n-\n-                    // User-defined convergence checker.\n-                    previous \u003d current;\n-                    current \u003d new UnivariatePointValuePair(x, isMinim ? fx : -fx);\n-\n-                    if (checker !\u003d null) {\n-                        if (checker.converged(iter, previous, current)) {\n-                            return current;\n-                        }\n-                    }\n                 } else {\n                     if (u \u003c x) {\n                         a \u003d u;\n",
+      "operations": []
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math3.optimization.univariate.BrentOptimizerTest",
+      "test_function": "testKeepInitIfBest",
+      "assertion_line": "221",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Best point not reported"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java",
+        "src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.optimization.univariate.BrentOptimizer:best:[UnivariatePointValuePair a, UnivariatePointValuePair b, boolean isMinim]:UnivariatePointValuePair",
+            "org.apache.commons.math3.optimization.univariate.BrentOptimizer:doOptimize:[]:UnivariatePointValuePair"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.optimization.univariate.BrentOptimizer:doOptimize:[]:UnivariatePointValuePair",
+            "org.apache.commons.math3.optimization.univariate.BrentOptimizer:best:[UnivariatePointValuePair a, UnivariatePointValuePair b, boolean isMinim]:UnivariatePointValuePair"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "27",
+            "29",
+            "30",
+            "31",
+            "32",
+            "33",
+            "143",
+            "230",
+            "267",
+            "281",
+            "294",
+            "296"
+          ],
+          "num": 12
+        },
+        {
+          "qualified_names": [
+            "27",
+            "28",
+            "29",
+            "30",
+            "32",
+            "33",
+            "34",
+            "35",
+            "36",
+            "37",
+            "38",
+            "39",
+            "150",
+            "151",
+            "235",
+            "236",
+            "237",
+            "238",
+            "239",
+            "243",
+            "280",
+            "281",
+            "282",
+            "283",
+            "284",
+            "298",
+            "299",
+            "312",
+            "314"
+          ],
+          "num": 29
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java b/src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java\nindex cff5bfd..25f2f50 100644\n--- a/src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java\n+++ b/src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java\n@@ -24,13 +24,19 @@\n import org.apache.commons.math3.optimization.GoalType;\n \n /**\n- * Implements Richard Brent\u0027s algorithm (from his book \"Algorithms for\n+ * For a function defined on some interval {@code (lo, hi)}, this class\n+ * finds an approximation {@code x} to the point at which the function\n+ * attains its minimum.\n+ * It implements Richard Brent\u0027s algorithm (from his book \"Algorithms for\n  * Minimization without Derivatives\", p. 79) for finding minima of real\n- * univariate functions. This implementation is an adaptation partly\n- * based on the Python code from SciPy (module \"optimize.py\" v0.5).\n- * If the function is defined on some interval {@code (lo, hi)}, then\n- * this method finds an approximation {@code x} to the point at which\n- * the function attains its minimum.\n+ * univariate functions.\n+ * \u003cbr/\u003e\n+ * This code is an adaptation, partly based on the Python code from SciPy\n+ * (module \"optimize.py\" v0.5); the original algorithm is also modified\n+ * \u003cul\u003e\n+ *  \u003cli\u003eto use an initial guess provided by the user,\u003c/li\u003e\n+ *  \u003cli\u003eto ensure that the best point encountered is the one returned.\u003c/li\u003e\n+ * \u003c/ul\u003e\n  *\n  * @version $Id$\n  * @since 2.0\n@@ -141,6 +147,8 @@\n         UnivariatePointValuePair previous \u003d null;\n         UnivariatePointValuePair current\n             \u003d new UnivariatePointValuePair(x, isMinim ? fx : -fx);\n+        // Best point encountered so far (which is the initial guess).\n+        UnivariatePointValuePair best \u003d current;\n \n         int iter \u003d 0;\n         while (true) {\n@@ -224,10 +232,15 @@\n                 // User-defined convergence checker.\n                 previous \u003d current;\n                 current \u003d new UnivariatePointValuePair(u, isMinim ? fu : -fu);\n+                best \u003d best(best,\n+                            best(current,\n+                                 previous,\n+                                 isMinim),\n+                            isMinim);\n \n                 if (checker !\u003d null) {\n                     if (checker.converged(iter, previous, current)) {\n-                        return best(current, previous, isMinim);\n+                        return best;\n                     }\n                 }\n \n@@ -264,7 +277,11 @@\n                     }\n                 }\n             } else { // Default termination (Brent\u0027s criterion).\n-                return best(current, previous, isMinim);\n+                return best(best,\n+                            best(current,\n+                                 previous,\n+                                 isMinim),\n+                            isMinim);\n             }\n             ++iter;\n         }\n@@ -278,7 +295,8 @@\n      * @param isMinim {@code true} if the selected point must be the one with\n      * the lowest value.\n      * @return the best point, or {@code null} if {@code a} and {@code b} are\n-     * both {@code null}.\n+     * both {@code null}. When {@code a} and {@code b} have the same function\n+     * value, {@code a} is returned.\n      */\n     private UnivariatePointValuePair best(UnivariatePointValuePair a,\n                                           UnivariatePointValuePair b,\n@@ -291,9 +309,9 @@\n         }\n \n         if (isMinim) {\n-            return a.getValue() \u003c b.getValue() ? a : b;\n+            return a.getValue() \u003c\u003d b.getValue() ? a : b;\n         } else {\n-            return a.getValue() \u003e b.getValue() ? a : b;\n+            return a.getValue() \u003e\u003d b.getValue() ? a : b;\n         }\n     }\n }\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Javadoc [1219,1905]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TagElement [1226,1867]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: For a function defined on some interval  [1226,1266]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: , this class [1282,1294]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: finds an approximation  [1298,1321]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement:  to the point at which the function [1330,1365]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: attains its minimum. [1369,1389]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: It implements Richard Brent\u0027s algorithm (from his book \"Algorithms for [1393,1463]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: univariate functions. [1539,1560]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003cbr/\u003e [1564,1569]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: This code is an adaptation, partly based on the Python code from SciPy [1573,1643]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: (module \"optimize.py\" v0.5); the original algorithm is also modified [1647,1715]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003cul\u003e [1719,1723]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003cli\u003eto use an initial guess provided by the user,\u003c/li\u003e [1728,1782]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003cli\u003eto ensure that the best point encountered is the one returned.\u003c/li\u003e [1787,1858]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003c/ul\u003e [1862,1867]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [5509,5549]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [10432,10441]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement:  and  [10441,10446]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [10446,10455]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement:  have the same function [10455,10478]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: value,  [10486,10493]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [10493,10502]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement:  is returned. [10502,10515]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [8376,8559]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [9872,10047]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: best [9872,9876]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [9877,10046]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: best [9877,9881]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: isMinim [10039,10046]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: Implements Richard Brent\u0027s algorithm (from his book \"Algorithms for [1226,1293]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: univariate functions. This implementation is an adaptation partly [1369,1434]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: based on the Python code from SciPy (module \"optimize.py\" v0.5). [1438,1502]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: If the function is defined on some interval  [1506,1550]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: , then [1566,1572]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: this method finds an approximation  [1576,1611]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement:  to the point at which [1620,1642]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: the function attains its minimum. [1646,1679]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TagElement [1226,1679]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Javadoc [1219,1717]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_ARGUMENTS [8198,8224]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [8193,8225]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "patch_changed_mths": {
+    "qualified_names": [
+      "org.apache.commons.math3.optimization.univariate.BrentOptimizer:doOptimize()Lorg/apache/commons/math3/optimization/univariate/UnivariatePointValuePair;:regression",
+      "org.apache.commons.math3.optimization.univariate.BrentOptimizer:best(Lorg/apache/commons/math3/optimization/univariate/UnivariatePointValuePair;Lorg/apache/commons/math3/optimization/univariate/UnivariatePointValuePair;Z)Lorg/apache/commons/math3/optimization/univariate/UnivariatePointValuePair;:regression"
+    ],
+    "num": 2
+  }
+}

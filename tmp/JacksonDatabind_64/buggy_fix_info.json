@@ -1,0 +1,164 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.filter.JsonIncludeTest::testIssue1351",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.ser.PropertyBuilder",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "64",
+  "workingDir": "../bugs/JacksonDatabind_64_tmp",
+  "bug_name": "JacksonDatabind_64",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.filter.JsonIncludeTest",
+      "test_function": "testIssue1351",
+      "assertion_line": "320",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c{[]}\u003e but was:\u003c{[\"str\":null]}\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/ser/PropertyBuilder.java",
+        "src/main/java/com/fasterxml/jackson/databind/ser/PropertyBuilder.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.PropertyBuilder:buildWriter:[SerializerProvider prov, BeanPropertyDefinition propDef, JavaType declaredType, JsonSerializer\u003c?\u003e ser, TypeSerializer typeSer, TypeSerializer contentTypeSer, AnnotatedMember am, boolean defaultUseStaticTyping]:BeanPropertyWriter"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.PropertyBuilder:buildWriter:[SerializerProvider prov, BeanPropertyDefinition propDef, JavaType declaredType, JsonSerializer\u003c?\u003e ser, TypeSerializer typeSer, TypeSerializer contentTypeSer, AnnotatedMember am, boolean defaultUseStaticTyping]:BeanPropertyWriter"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "152",
+            "158",
+            "163",
+            "164",
+            "165",
+            "166",
+            "167"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "157",
+            "162"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/ser/PropertyBuilder.java b/src/main/java/com/fasterxml/jackson/databind/ser/PropertyBuilder.java\nindex 6363421..2bd2405 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/ser/PropertyBuilder.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/ser/PropertyBuilder.java\n@@ -149,22 +149,17 @@\n             //    whereas for global defaults OR per-property overrides, we have more\n             //    static definition. Sigh.\n             // First: case of class/type specifying it; try to find POJO property defaults\n-            Object defaultBean;\n \n             // 16-Oct-2016, tatu: Note: if we can not for some reason create \"default instance\",\n             //    revert logic to the case of general/per-property handling, so both\n             //    type-default AND null are to be excluded.\n             //    (as per [databind#1417]\n-            if (_useRealPropertyDefaults \u0026\u0026 (defaultBean \u003d getDefaultBean()) !\u003d null) {\n+            if (_useRealPropertyDefaults) {\n                 // 07-Sep-2016, tatu: may also need to front-load access forcing now\n                 if (prov.isEnabled(MapperFeature.CAN_OVERRIDE_ACCESS_MODIFIERS)) {\n                     am.fixAccess(_config.isEnabled(MapperFeature.OVERRIDE_PUBLIC_ACCESS_MODIFIERS));\n                 }\n-                try {\n-                    valueToSuppress \u003d am.getValue(defaultBean);\n-                } catch (Exception e) {\n-                    _throwWrapped(e, propDef.getName(), defaultBean);\n-                }\n+                valueToSuppress \u003d getPropertyDefaultValue(propDef.getName(), am, actualType);\n             } else {\n                 valueToSuppress \u003d getDefaultValue(actualType);\n                 suppressNulls \u003d true;\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [7457,7474]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [6795,6814]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [7141,7143]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [7144,7184]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [7116,7184]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_RECEIVER [7535,7537]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [7495,7578]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "CatchClause [7579,7688]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TryStatement [7491,7688]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

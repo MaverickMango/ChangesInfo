@@ -1,0 +1,176 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.jsoup.parser.XmlTreeBuilderTest::handlesXmlDeclarationAsDeclaration",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.jsoup.parser.Token,org.jsoup.parser.TokeniserState,org.jsoup.parser.XmlTreeBuilder",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Jsoup",
+  "id": "31",
+  "workingDir": "../bugs/Jsoup_31_tmp",
+  "bug_name": "Jsoup_31",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.jsoup.parser.XmlTreeBuilderTest",
+      "test_function": "handlesXmlDeclarationAsDeclaration",
+      "assertion_line": "100",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c\u003c[?xml encoding\u003d\u0027UTF-8\u0027 ?]\u003e \u003cbody\u003e One \u003c/body\u003e...\u003e but was:\u003c\u003c[!--?xml encoding\u003d\u0027UTF-8\u0027 ?--]\u003e \u003cbody\u003e One \u003c/body\u003e...\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/parser/Token.java",
+        "src/main/java/org/jsoup/parser/Token.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "171"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "170"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/parser/Token.java b/src/main/java/org/jsoup/parser/Token.java\nindex 1679007..2d5643b 100644\n--- a/src/main/java/org/jsoup/parser/Token.java\n+++ b/src/main/java/org/jsoup/parser/Token.java\n@@ -168,7 +168,6 @@\n \n     static class Comment extends Token {\n         final StringBuilder data \u003d new StringBuilder();\n-        boolean bogus \u003d false;\n \n         Comment() {\n             type \u003d TokenType.Comment;\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [4947,4969]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/parser/TokeniserState.java",
+        "src/main/java/org/jsoup/parser/TokeniserState.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1094"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "1093"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/parser/TokeniserState.java b/src/main/java/org/jsoup/parser/TokeniserState.java\nindex cad7933..2a46cf2 100644\n--- a/src/main/java/org/jsoup/parser/TokeniserState.java\n+++ b/src/main/java/org/jsoup/parser/TokeniserState.java\n@@ -1091,7 +1091,6 @@\n             // rewind to capture character that lead us here\n             r.unconsume();\n             Token.Comment comment \u003d new Token.Comment();\n-            comment.bogus \u003d true;\n             comment.data.append(r.consumeTo(\u0027\u003e\u0027));\n             // todo: replace nullChar with replaceChar\n             t.emit(comment);\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [36958,36979]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/parser/XmlTreeBuilder.java",
+        "src/main/java/org/jsoup/parser/XmlTreeBuilder.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.parser.XmlTreeBuilder:insert:[Token.Comment commentToken]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.jsoup.parser.XmlTreeBuilder:insert:[Token.Comment commentToken]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "67",
+            "68",
+            "69",
+            "70",
+            "71",
+            "72",
+            "73"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "66"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/parser/XmlTreeBuilder.java b/src/main/java/org/jsoup/parser/XmlTreeBuilder.java\nindex dd2cb9f..11eae8b 100644\n--- a/src/main/java/org/jsoup/parser/XmlTreeBuilder.java\n+++ b/src/main/java/org/jsoup/parser/XmlTreeBuilder.java\n@@ -64,13 +64,6 @@\n     void insert(Token.Comment commentToken) {\n         Comment comment \u003d new Comment(commentToken.getData(), baseUri);\n         Node insert \u003d comment;\n-        if (commentToken.bogus) { // xml declarations are emitted as bogus comments (which is right for html, but not xml)\n-            String data \u003d comment.getData();\n-            if (data.length() \u003e 1 \u0026\u0026 (data.startsWith(\"!\") || data.startsWith(\"?\"))) {\n-                String declaration \u003d data.substring(1);\n-                insert \u003d new XmlDeclaration(declaration, comment.baseUri(), data.startsWith(\"!\"));\n-            }\n-        }\n         insertNode(insert);\n     }\n \n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [2173,2598]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

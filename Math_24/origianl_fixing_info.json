@@ -1,0 +1,390 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "/home/liumengjiao/Desktop/CI/Benchmark/data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math3.optimization.univariate.BrentOptimizerTest::testMath855",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math3.optimization.univariate.BrentOptimizer",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "24",
+  "workingDir": "../bugs/Math_24_buggy",
+  "buggyCommit": "4e21bb6f6c4bc7380dc58bd8d23c99ea8f4ef5bd",
+  "inducingCommit": "36d811b2d4cfe1b867823bd60ccca25abbc80b46",
+  "originalCommit": "b5839871867024885927edc2b087e0c718fb73b3",
+  "bug_name": "Math_24",
+  "derive": "defects4j",
+  "original_fixing_commit": "d5ff460ba69e4261f066d7856e2f90b886924513",
+  "buildFiles_changed": false,
+  "regression": true,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java",
+        "src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.optimization.univariate.BrentOptimizer:doOptimize:[]:UnivariatePointValuePair"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.optimization.univariate.BrentOptimizer:doOptimize:[]:UnivariatePointValuePair"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "222",
+            "236",
+            "237",
+            "238",
+            "239",
+            "240",
+            "241",
+            "242",
+            "243",
+            "244",
+            "245"
+          ],
+          "num": 11
+        },
+        {
+          "qualified_names": [
+            "223",
+            "224",
+            "225",
+            "226",
+            "227",
+            "228",
+            "229",
+            "230",
+            "231",
+            "232"
+          ],
+          "num": 10
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java b/src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java\nindex 15a498c..ee2227c 100644\n--- a/src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java\n+++ b/src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java\n@@ -220,6 +220,16 @@\n                     fu \u003d -fu;\n                 }\n \n+                // User-defined convergence checker.\n+                previous \u003d current;\n+                current \u003d new UnivariatePointValuePair(u, isMinim ? fu : -fu);\n+\n+                if (checker !\u003d null) {\n+                    if (checker.converged(iter, previous, current)) {\n+                        return current;\n+                    }\n+                }\n+\n                 // Update a, b, v, w and x.\n                 if (fu \u003c\u003d fx) {\n                     if (u \u003c x) {\n@@ -233,16 +243,6 @@\n                     fw \u003d fx;\n                     x \u003d u;\n                     fx \u003d fu;\n-\n-                    // User-defined convergence checker.\n-                    previous \u003d current;\n-                    current \u003d new UnivariatePointValuePair(x, isMinim ? fx : -fx);\n-\n-                    if (checker !\u003d null) {\n-                        if (checker.converged(iter, previous, current)) {\n-                            return current;\n-                        }\n-                    }\n                 } else {\n                     if (u \u003c x) {\n                         a \u003d u;\n",
+      "operations": []
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math3.optimization.univariate.BrentOptimizerTest",
+      "test_function": "testMath855",
+      "assertion_line": "213",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Best point not reported"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java",
+        "src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.optimization.univariate.BrentOptimizer:doOptimize:[]:UnivariatePointValuePair",
+            "org.apache.commons.math3.optimization.univariate.BrentOptimizer:BrentOptimizer:[double rel, double abs]:null"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.optimization.univariate.BrentOptimizer:doOptimize:[]:UnivariatePointValuePair",
+            "org.apache.commons.math3.optimization.univariate.BrentOptimizer:best:[UnivariatePointValuePair a, UnivariatePointValuePair b, boolean isMinim]:UnivariatePointValuePair",
+            "org.apache.commons.math3.optimization.univariate.BrentOptimizer:BrentOptimizer:[double rel, double abs, ConvergenceChecker\u003cUnivariatePointValuePair\u003e checker]:null",
+            "org.apache.commons.math3.optimization.univariate.BrentOptimizer:BrentOptimizer:[double rel, double abs]:null"
+          ],
+          "num": 4
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "88",
+            "229",
+            "266"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "83",
+            "89",
+            "230",
+            "267",
+            "272",
+            "273",
+            "274",
+            "275",
+            "276",
+            "277",
+            "278",
+            "279",
+            "280",
+            "281",
+            "282",
+            "283",
+            "284",
+            "285",
+            "286",
+            "287",
+            "288",
+            "289",
+            "290",
+            "291",
+            "292",
+            "293",
+            "294",
+            "295",
+            "296",
+            "297",
+            "298"
+          ],
+          "num": 31
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java b/src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java\nindex ee2227c..cff5bfd 100644\n--- a/src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java\n+++ b/src/main/java/org/apache/commons/math3/optimization/univariate/BrentOptimizer.java\n@@ -80,12 +80,13 @@\n         if (abs \u003c\u003d 0) {\n             throw new NotStrictlyPositiveException(abs);\n         }\n+\n         relativeThreshold \u003d rel;\n         absoluteThreshold \u003d abs;\n     }\n \n     /**\n-     * The arguments are used implement the original stopping criterion\n+     * The arguments are used for implementing the original stopping criterion\n      * of Brent\u0027s algorithm.\n      * {@code abs} and {@code rel} define a tolerance\n      * {@code tol \u003d rel |x| + abs}. {@code rel} should be no smaller than\n@@ -226,7 +227,7 @@\n \n                 if (checker !\u003d null) {\n                     if (checker.converged(iter, previous, current)) {\n-                        return current;\n+                        return best(current, previous, isMinim);\n                     }\n                 }\n \n@@ -263,9 +264,36 @@\n                     }\n                 }\n             } else { // Default termination (Brent\u0027s criterion).\n-                return current;\n+                return best(current, previous, isMinim);\n             }\n             ++iter;\n         }\n     }\n+\n+    /**\n+     * Selects the best of two points.\n+     *\n+     * @param a Point and value.\n+     * @param b Point and value.\n+     * @param isMinim {@code true} if the selected point must be the one with\n+     * the lowest value.\n+     * @return the best point, or {@code null} if {@code a} and {@code b} are\n+     * both {@code null}.\n+     */\n+    private UnivariatePointValuePair best(UnivariatePointValuePair a,\n+                                          UnivariatePointValuePair b,\n+                                          boolean isMinim) {\n+        if (a \u003d\u003d null) {\n+            return b;\n+        }\n+        if (b \u003d\u003d null) {\n+            return a;\n+        }\n+\n+        if (isMinim) {\n+            return a.getValue() \u003c b.getValue() ? a : b;\n+        } else {\n+            return a.getValue() \u003e b.getValue() ? a : b;\n+        }\n+    }\n }\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodDeclaration [9481,10295]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [9481,9811]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: private [9816,9823]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [9824,9848]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: best [9849,9853]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [9854,9880]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [9924,9950]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [9994,10009]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [10011,10295]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [10021,10069]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [10078,10126]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [10136,10289]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [10025,10034]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [10036,10069]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [10082,10091]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [10093,10126]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: a [10114,10115]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ReturnStatement [9385,9425]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [9392,9424]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: best [9392,9396]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [9397,9423]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: previous [9406,9414]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: isMinim [9416,9423]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ReturnStatement [8186,8226]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [8193,8225]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: best [8193,8197]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [8198,8224]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: previous [8207,8215]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: isMinim [8217,8224]"
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.apache.commons.math3.optimization.univariate.BrentOptimizer:best:[UnivariatePointValuePair a, UnivariatePointValuePair b, boolean isMinim]:UnivariatePointValuePair",
+        "org.apache.commons.math3.optimization.univariate.BrentOptimizer:BrentOptimizer:[double rel, double abs, ConvergenceChecker\u003cUnivariatePointValuePair\u003e checker]:null"
+      ],
+      "num": 2
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "patch_changed_mths": {
+    "qualified_names": [
+      "org.apache.commons.math3.optimization.univariate.BrentOptimizer:BrentOptimizer(DD)V:regression",
+      "org.apache.commons.math3.optimization.univariate.BrentOptimizer:doOptimize()Lorg/apache/commons/math3/optimization/univariate/UnivariatePointValuePair;:regression"
+    ],
+    "num": 2
+  }
+}

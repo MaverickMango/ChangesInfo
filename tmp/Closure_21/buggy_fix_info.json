@@ -1,0 +1,151 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.CheckSideEffectsTest::testUselessCode",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.CheckSideEffects",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "21",
+  "workingDir": "../bugs/Closure_21_tmp",
+  "bug_name": "Closure_21",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.CheckSideEffectsTest",
+      "test_function": "testUselessCode",
+      "assertion_line": "71",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "There should be one warning, repeated 1 time(s). expected:\u003c1\u003e but was:\u003c0\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CheckSideEffects.java",
+        "src/com/google/javascript/jscomp/CheckSideEffects.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CheckSideEffects:visit:[NodeTraversal t, Node n, Node parent]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CheckSideEffects:visit:[NodeTraversal t, Node n, Node parent]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "101",
+            "113"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "101",
+            "113",
+            "114",
+            "115",
+            "116",
+            "117",
+            "118",
+            "119",
+            "120",
+            "121",
+            "122",
+            "123",
+            "124",
+            "125",
+            "126",
+            "127",
+            "128",
+            "129",
+            "130"
+          ],
+          "num": 19
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/CheckSideEffects.java b/src/com/google/javascript/jscomp/CheckSideEffects.java\nindex 722d225..0d1e95a 100644\n--- a/src/com/google/javascript/jscomp/CheckSideEffects.java\n+++ b/src/com/google/javascript/jscomp/CheckSideEffects.java\n@@ -98,7 +98,7 @@\n     // Do not try to remove a block or an expr result. We already handle\n     // these cases when we visit the child, and the peephole passes will\n     // fix up the tree in more clever ways when these are removed.\n-    if (n.isExprResult() || n.isBlock()) {\n+    if (n.isExprResult()) {\n       return;\n     }\n \n@@ -110,7 +110,24 @@\n \n     boolean isResultUsed \u003d NodeUtil.isExpressionResultUsed(n);\n     boolean isSimpleOp \u003d NodeUtil.isSimpleOperatorType(n.getType());\n-    if (!isResultUsed \u0026\u0026\n+    if (parent.getType() \u003d\u003d Token.COMMA) {\n+      if (isResultUsed) {\n+        return;\n+      }\n+      if (n \u003d\u003d parent.getLastChild()) {\n+        for (Node an : parent.getAncestors()) {\n+          int ancestorType \u003d an.getType();\n+          if (ancestorType \u003d\u003d Token.COMMA) continue;\n+          if (ancestorType !\u003d Token.EXPR_RESULT \u0026\u0026 ancestorType !\u003d Token.BLOCK) return;\n+          else break;\n+        }\n+      }\n+    } else if (parent.getType() !\u003d Token.EXPR_RESULT \u0026\u0026 parent.getType() !\u003d Token.BLOCK) {\n+      if (! (parent.getType() \u003d\u003d Token.FOR \u0026\u0026 parent.getChildCount() \u003d\u003d 4 \u0026\u0026 (n \u003d\u003d parent.getFirstChild() || n \u003d\u003d parent.getFirstChild().getNext().getNext()))) {\n+        return;\n+      }\n+    }\n+    if (\n         (isSimpleOp || !NodeUtil.mayHaveSideEffects(n, t.getCompiler()))) {\n       String msg \u003d \"This code lacks side-effects. Is there a bug?\";\n       if (n.isString()) {\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [3705,4388]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: || [3322,3324]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [3325,3336]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [3305,3336]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "PrefixExpression [3724,3737]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [3738,3740]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [3724,3813]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,33 @@
+diff -r -u original/src/com/google/javascript/jscomp/CheckGlobalThis.java buggy/src/com/google/javascript/jscomp/CheckGlobalThis.java
+--- original/src/com/google/javascript/jscomp/CheckGlobalThis.java	2023-06-13 15:31:44.531106637 +0800
++++ buggy/src/com/google/javascript/jscomp/CheckGlobalThis.java	2023-06-12 11:40:28.234633548 +0800
+@@ -53,8 +53,6 @@
+  * </pre>
+  * which would get flagged.
+  *
+-*
+-*
+  */
+ final class CheckGlobalThis implements Callback {
+ 
+@@ -99,12 +97,17 @@
+       // be able to have a @this annotation associated with them. e.g.,
+       // var a = function() { }; // or
+       // function a() {} // or
+-      // a.x = function() {};
++      // a.x = function() {}; // or
++      // var a = {x: function() {}};
+       int pType = parent.getType();
+       if (!(pType == Token.BLOCK ||
+             pType == Token.SCRIPT ||
+             pType == Token.NAME ||
+-            pType == Token.ASSIGN)) {
++            pType == Token.ASSIGN ||
++
++            // object literal keys
++            pType == Token.STRING ||
++            pType == Token.NUMBER)) {
+         return false;
+       }
+     }
+Only in original/: test

@@ -1,0 +1,208 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.InlineGettersTest::testIssue2508576_1,com.google.javascript.jscomp.InlineGettersTest::testIssue2508576_3,com.google.javascript.jscomp.MethodCheckTest::testSeparateMethods,com.google.javascript.jscomp.RenameVarsTest::testDollarSignSuperExport2",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.MethodCompilerPass,com.google.javascript.jscomp.RenameVars",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "136",
+  "workingDir": "../bugs/Closure_136_tmp",
+  "bug_name": "Closure_136",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.InlineGettersTest",
+      "test_function": "testIssue2508576_1",
+      "assertion_line": "238",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c[({a:alert,b:alert}).a(\"a\")]\u003e but was:\u003c[]\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.InlineGettersTest",
+      "test_function": "testIssue2508576_3",
+      "assertion_line": "248",
+      "exception": "java.lang.RuntimeException",
+      "message": "INTERNAL COMPILER ERROR."
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.MethodCheckTest",
+      "test_function": "testSeparateMethods",
+      "assertion_line": "61",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Unexpected error(s): JSC_WRONG_ARGUMENT_COUNT. Function oneOrTwoArg2: called with 3 argument(s). All definitions of this function require at least 1 argument(s) and no more than 2 argument(s). at testcode line 1 expected:\u003c0\u003e but was:\u003c1\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.RenameVarsTest",
+      "test_function": "testDollarSignSuperExport2",
+      "assertion_line": "465",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: var c\u003dfunction($super,a,b){};var d\u003dfunction($super,a){}\nResult: var c\u003dfunction($super,a,b){};var d\u003dfunction($super$$1,a){}"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/MethodCompilerPass.java",
+        "src/com/google/javascript/jscomp/MethodCompilerPass.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.MethodCompilerPass:addPossibleSignature:[String name, Node node, NodeTraversal t]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.MethodCompilerPass:addPossibleSignature:[String name, Node node, NodeTraversal t]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "105"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "102",
+            "106",
+            "107",
+            "108",
+            "109",
+            "110",
+            "111",
+            "112",
+            "113",
+            "114",
+            "115",
+            "116",
+            "117",
+            "118",
+            "119",
+            "120",
+            "121",
+            "122",
+            "123",
+            "124",
+            "125"
+          ],
+          "num": 21
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/MethodCompilerPass.java b/src/com/google/javascript/jscomp/MethodCompilerPass.java\nindex 5e0268f..cd39b6e 100644\n--- a/src/com/google/javascript/jscomp/MethodCompilerPass.java\n+++ b/src/com/google/javascript/jscomp/MethodCompilerPass.java\n@@ -99,10 +99,30 @@\n    * itself or the name of a function).\n    */\n   private void addPossibleSignature(String name, Node node, NodeTraversal t) {\n+    boolean signatureAdded \u003d false;\n     if (node.getType() \u003d\u003d Token.FUNCTION) {\n       // The node we\u0027re looking at is a function, so we can add it directly\n       addSignature(name, node, t.getSourceName());\n-    } else {\n+      signatureAdded \u003d true;\n+    } else if (node.getType() \u003d\u003d Token.NAME) {\n+      String functionName \u003d node.getString();\n+      Scope.Var v \u003d t.getScope().getVar(functionName);\n+      if (v \u003d\u003d null) {\n+        if (compiler.isIdeMode()) {\n+          return;\n+        } else {\n+          throw new IllegalStateException(\n+              \"VarCheck should have caught this undefined function\");\n+        }\n+      }\n+      Node function \u003d v.getInitialValue();\n+      if (function !\u003d null \u0026\u0026\n+          function.getType() \u003d\u003d Token.FUNCTION) {\n+        addSignature(name, function, v.getInputName());\n+        signatureAdded \u003d true;\n+      }\n+    }\n+    if (!signatureAdded) {\n       nonMethodProperties.add(name);\n     }\n   }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [3246,3277]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [4079,4144]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [3489,4074]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PrefixExpression [4083,4098]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [3455,3477]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/RenameVars.java",
+        "src/com/google/javascript/jscomp/RenameVars.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.RenameVars\\$ProcessVars:visit:[NodeTraversal t, Node n, Node parent]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.RenameVars\\$ProcessVars:visit:[NodeTraversal t, Node n, Node parent]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "203",
+            "205",
+            "206",
+            "207",
+            "208",
+            "209",
+            "210",
+            "211"
+          ],
+          "num": 8
+        },
+        {
+          "qualified_names": [
+            "202"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/RenameVars.java b/src/com/google/javascript/jscomp/RenameVars.java\nindex fb13e4d..29f4d7a 100644\n--- a/src/com/google/javascript/jscomp/RenameVars.java\n+++ b/src/com/google/javascript/jscomp/RenameVars.java\n@@ -200,15 +200,7 @@\n \n       // Check if we can rename this.\n       if (!okToRenameVar(name, local)) {\n-        if (local) {\n           // Blindly de-uniquify for the Prototype library for issue 103.\n-          String newName \u003d\n-            MakeDeclaredNamesUnique.ContextualRenameInverter.getOrginalName(\n-                name);\n-          if (!newName.equals(name)) {\n-            n.setString(newName);\n-          }\n-        }\n         return;\n       }\n \n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [6332,6640]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,172 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.jfree.data.category.junit.DefaultIntervalCategoryDatasetTests::testGetCategoryIndex,org.jfree.data.category.junit.DefaultIntervalCategoryDatasetTests::testSetCategoryKeys,org.jfree.data.category.junit.DefaultIntervalCategoryDatasetTests::testGetSeriesIndex,org.jfree.data.category.junit.DefaultIntervalCategoryDatasetTests::testGetRowCount,org.jfree.data.category.junit.DefaultIntervalCategoryDatasetTests::testGetRowIndex,org.jfree.data.category.junit.DefaultIntervalCategoryDatasetTests::testGetColumnCount,org.jfree.data.category.junit.DefaultIntervalCategoryDatasetTests::testGetColumnIndex,org.jfree.data.category.junit.DefaultIntervalCategoryDatasetTests::testCloning2",
+    "test.dir": "tests",
+    "clz.modified": "org.jfree.data.category.DefaultIntervalCategoryDataset",
+    "src.dir": "source"
+  },
+  "timeoutSecond": 100,
+  "proj": "Chart",
+  "id": "16",
+  "workingDir": "../bugs/Chart_16_tmp",
+  "bug_name": "Chart_16",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.jfree.data.category.junit.DefaultIntervalCategoryDatasetTests",
+      "test_function": "testGetCategoryIndex",
+      "assertion_line": "415",
+      "exception": "java.lang.NullPointerException",
+      "message": ""
+    },
+    {
+      "test_class": "org.jfree.data.category.junit.DefaultIntervalCategoryDatasetTests",
+      "test_function": "testSetCategoryKeys",
+      "assertion_line": "444",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    },
+    {
+      "test_class": "org.jfree.data.category.junit.DefaultIntervalCategoryDatasetTests",
+      "test_function": "testGetSeriesIndex",
+      "assertion_line": "375",
+      "exception": "java.lang.NullPointerException",
+      "message": ""
+    },
+    {
+      "test_class": "org.jfree.data.category.junit.DefaultIntervalCategoryDatasetTests",
+      "test_function": "testGetRowCount",
+      "assertion_line": "490",
+      "exception": "java.lang.NullPointerException",
+      "message": ""
+    },
+    {
+      "test_class": "org.jfree.data.category.junit.DefaultIntervalCategoryDatasetTests",
+      "test_function": "testGetRowIndex",
+      "assertion_line": "386",
+      "exception": "java.lang.NullPointerException",
+      "message": ""
+    },
+    {
+      "test_class": "org.jfree.data.category.junit.DefaultIntervalCategoryDatasetTests",
+      "test_function": "testGetColumnCount",
+      "assertion_line": "479",
+      "exception": "java.lang.NullPointerException",
+      "message": ""
+    },
+    {
+      "test_class": "org.jfree.data.category.junit.DefaultIntervalCategoryDatasetTests",
+      "test_function": "testGetColumnIndex",
+      "assertion_line": "426",
+      "exception": "java.lang.NullPointerException",
+      "message": ""
+    },
+    {
+      "test_class": "org.jfree.data.category.junit.DefaultIntervalCategoryDatasetTests",
+      "test_function": "testCloning2",
+      "assertion_line": "265",
+      "exception": "java.lang.NullPointerException",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "source/org/jfree/data/category/DefaultIntervalCategoryDataset.java",
+        "source/org/jfree/data/category/DefaultIntervalCategoryDataset.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jfree.data.category.DefaultIntervalCategoryDataset:DefaultIntervalCategoryDataset:[Comparable[] seriesKeys, Comparable[] categoryKeys, Number[][] starts, Number[][] ends]:null",
+            "org.jfree.data.category.DefaultIntervalCategoryDataset:setCategoryKeys:[Comparable[] categoryKeys]:void"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.jfree.data.category.DefaultIntervalCategoryDataset:DefaultIntervalCategoryDataset:[Comparable[] seriesKeys, Comparable[] categoryKeys, Number[][] starts, Number[][] ends]:null",
+            "org.jfree.data.category.DefaultIntervalCategoryDataset:setCategoryKeys:[Comparable[] categoryKeys]:void"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "207",
+            "208",
+            "338"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "207",
+            "208",
+            "338"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/source/org/jfree/data/category/DefaultIntervalCategoryDataset.java b/source/org/jfree/data/category/DefaultIntervalCategoryDataset.java\nindex bde3922..2efdfcb 100644\n--- a/source/org/jfree/data/category/DefaultIntervalCategoryDataset.java\n+++ b/source/org/jfree/data/category/DefaultIntervalCategoryDataset.java\n@@ -204,8 +204,8 @@\n \r\n             }\r\n             else {\r\n-                this.seriesKeys \u003d new Comparable[0];\r\n-                this.categoryKeys \u003d new Comparable[0];\r\n+                this.seriesKeys \u003d null;\r\n+                this.categoryKeys \u003d null;\r\n             }\r\n         }\r\n \r\n@@ -335,7 +335,7 @@\n         if (categoryKeys \u003d\u003d null) {\r\n             throw new IllegalArgumentException(\"Null \u0027categoryKeys\u0027 argument.\");\r\n         }\r\n-        if (categoryKeys.length !\u003d getCategoryCount()) {\r\n+        if (categoryKeys.length !\u003d this.startData[0].length) {\r\n             throw new IllegalArgumentException(\r\n                     \"The number of categories does not match the data.\");\r\n         }\r\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldAccess [12565,12589]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [8653,8676]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [8694,8719]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [8653,8689]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [8707,8745]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [12591,12609]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,1582 @@
+diff --git a/CHANGES b/CHANGES
+index 2af84a3..5ca9470 100644
+--- a/CHANGES
++++ b/CHANGES
+@@ -1,5 +1,11 @@
+ jsoup changelog
+ 
++*** Release 1.10.1 [PENDING]
++ * New feature: added the option to preserve case for tags and/or attributes, with ParseSettings. By default, the HTML
++   parser will continue to normalize tag names and attribute names to lower case, and the XML parser will now preserve
++   case, according to the relevant spec. The CSS selectors for tags and attributes remain case insensitive, per the CSS
++   spec.
++
+ *** Release 1.9.2 [2016-May-17]
+  * Fixed an issue where tag names that contained non-ascii characters but started with an ascii character
+    would cause the parser to get stuck in an infinite loop.
+diff --git a/src/main/java/org/jsoup/nodes/Attribute.java b/src/main/java/org/jsoup/nodes/Attribute.java
+index 7f6096c..25ca4ce 100644
+--- a/src/main/java/org/jsoup/nodes/Attribute.java
++++ b/src/main/java/org/jsoup/nodes/Attribute.java
+@@ -24,14 +24,14 @@
+ 
+     /**
+      * Create a new attribute from unencoded (raw) key and value.
+-     * @param key attribute key
++     * @param key attribute key; case is preserved.
+      * @param value attribute value
+      * @see #createFromEncoded
+      */
+     public Attribute(String key, String value) {
+         Validate.notEmpty(key);
+         Validate.notNull(value);
+-        this.key = key.trim().toLowerCase();
++        this.key = key.trim();
+         this.value = value;
+     }
+ 
+@@ -44,12 +44,12 @@
+     }
+ 
+     /**
+-     Set the attribute key. Gets normalised as per the constructor method.
++     Set the attribute key; case is preserved.
+      @param key the new key; must not be null
+      */
+     public void setKey(String key) {
+         Validate.notEmpty(key);
+-        this.key = key.trim().toLowerCase();
++        this.key = key.trim();
+     }
+ 
+     /**
+diff --git a/src/main/java/org/jsoup/nodes/Attributes.java b/src/main/java/org/jsoup/nodes/Attributes.java
+index 28b013e..cc21fb6 100644
+--- a/src/main/java/org/jsoup/nodes/Attributes.java
++++ b/src/main/java/org/jsoup/nodes/Attributes.java
+@@ -4,30 +4,39 @@
+ import org.jsoup.helper.Validate;
+ 
+ import java.io.IOException;
+-import java.util.*;
++import java.util.AbstractMap;
++import java.util.AbstractSet;
++import java.util.ArrayList;
++import java.util.Collections;
++import java.util.Iterator;
++import java.util.LinkedHashMap;
++import java.util.List;
++import java.util.Map;
++import java.util.Set;
+ 
+ /**
+  * The attributes of an Element.
+  * <p>
+- * Attributes are treated as a map: there can be only one value associated with an attribute key.
++ * Attributes are treated as a map: there can be only one value associated with an attribute key/name.
+  * </p>
+  * <p>
+- * Attribute key and value comparisons are done case insensitively, and keys are normalised to
+- * lower-case.
++ * Attribute name and value comparisons are  <b>case sensitive</b>. By default for HTML, attribute names are
++ * normalized to lower-case on parsing. That means you should use lower-case strings when referring to attributes by
++ * name.
+  * </p>
+- * 
++ *
+  * @author Jonathan Hedley, jonathan@hedley.net
+  */
+ public class Attributes implements Iterable<Attribute>, Cloneable {
+     protected static final String dataPrefix = "data-";
+-    
++
+     private LinkedHashMap<String, Attribute> attributes = null;
+     // linked hash map to preserve insertion order.
+     // null be default as so many elements have no attributes -- saves a good chunk of memory
+ 
+     /**
+      Get an attribute value by key.
+-     @param key the attribute key
++     @param key the (case-sensitive) attribute key
+      @return the attribute value if set; or empty string if not set.
+      @see #hasKey(String)
+      */
+@@ -37,11 +46,28 @@
+         if (attributes == null)
+             return "";
+ 
+-        Attribute attr = attributes.get(key.toLowerCase());
++        Attribute attr = attributes.get(key);
+         return attr != null ? attr.getValue() : "";
+     }
+ 
+     /**
++     * Get an attribute's value by case-insensitive key
++     * @param key the attribute name
++     * @return the first matching attribute value if set; or empty string if not set.
++     */
++    public String getIgnoreCase(String key) {
++        Validate.notEmpty(key);
++        if (attributes == null)
++            return "";
++
++        for (String attrKey : attributes.keySet()) {
++            if (attrKey.equalsIgnoreCase(key))
++                return attributes.get(attrKey).getValue();
++        }
++        return "";
++    }
++
++    /**
+      Set a new attribute, or replace an existing one by key.
+      @param key attribute key
+      @param value attribute value
+@@ -50,7 +76,7 @@
+         Attribute attr = new Attribute(key, value);
+         put(attr);
+     }
+-    
++
+     /**
+     Set a new boolean attribute, remove attribute if value is false.
+     @param key attribute key
+@@ -75,14 +101,37 @@
+     }
+ 
+     /**
+-     Remove an attribute by key.
++     Remove an attribute by key. <b>Case sensitive.</b>
+      @param key attribute key to remove
+      */
+     public void remove(String key) {
+         Validate.notEmpty(key);
+         if (attributes == null)
+             return;
+-        attributes.remove(key.toLowerCase());
++        attributes.remove(key);
++    }
++
++    /**
++     Remove an attribute by key. <b>Case insensitive.</b>
++     @param key attribute key to remove
++     */
++    public void removeIgnoreCase(String key) {
++        Validate.notEmpty(key);
++        if (attributes == null)
++            return;
++        for (String attrKey : attributes.keySet()) {
++            if (attrKey.equalsIgnoreCase(key))
++                attributes.remove(attrKey);
++        }
++    }
++
++    /**
++     Tests if these attributes contain an attribute with this key.
++     @param key case-sensitive key to check for
++     @return true if key exists, false otherwise
++     */
++    public boolean hasKey(String key) {
++        return attributes != null && attributes.containsKey(key);
+     }
+ 
+     /**
+@@ -90,8 +139,14 @@
+      @param key key to check for
+      @return true if key exists, false otherwise
+      */
+-    public boolean hasKey(String key) {
+-        return attributes != null && attributes.containsKey(key.toLowerCase());
++    public boolean hasKeyIgnoreCase(String key) {
++        if (attributes == null)
++            return false;
++        for (String attrKey : attributes.keySet()) {
++            if (attrKey.equalsIgnoreCase(key))
++                return true;
++        }
++        return false;
+     }
+ 
+     /**
+@@ -115,7 +170,7 @@
+             attributes = new LinkedHashMap<String, Attribute>(incoming.size());
+         attributes.putAll(incoming.attributes);
+     }
+-    
++
+     public Iterator<Attribute> iterator() {
+         return asList().iterator();
+     }
+@@ -159,18 +214,18 @@
+         }
+         return accum.toString();
+     }
+-    
++
+     void html(Appendable accum, Document.OutputSettings out) throws IOException {
+         if (attributes == null)
+             return;
+-        
++
+         for (Map.Entry<String, Attribute> entry : attributes.entrySet()) {
+             Attribute attribute = entry.getValue();
+             accum.append(" ");
+             attribute.html(accum, out);
+         }
+     }
+-    
++
+     @Override
+     public String toString() {
+         return html();
+@@ -185,9 +240,9 @@
+     public boolean equals(Object o) {
+         if (this == o) return true;
+         if (!(o instanceof Attributes)) return false;
+-        
++
+         Attributes that = (Attributes) o;
+-        
++
+         return !(attributes != null ? !attributes.equals(that.attributes) : that.attributes != null);
+     }
+ 
+diff --git a/src/main/java/org/jsoup/nodes/Document.java b/src/main/java/org/jsoup/nodes/Document.java
+index 5751622..c558c4c 100644
+--- a/src/main/java/org/jsoup/nodes/Document.java
++++ b/src/main/java/org/jsoup/nodes/Document.java
+@@ -2,6 +2,7 @@
+ 
+ import org.jsoup.helper.StringUtil;
+ import org.jsoup.helper.Validate;
++import org.jsoup.parser.ParseSettings;
+ import org.jsoup.parser.Tag;
+ import org.jsoup.select.Elements;
+ 
+@@ -27,7 +28,7 @@
+      @see #createShell
+      */
+     public Document(String baseUri) {
+-        super(Tag.valueOf("#root"), baseUri);
++        super(Tag.valueOf("#root", ParseSettings.htmlDefault), baseUri);
+         this.location = baseUri;
+     }
+ 
+@@ -103,7 +104,7 @@
+      @return new element
+      */
+     public Element createElement(String tagName) {
+-        return new Element(Tag.valueOf(tagName), this.baseUri());
++        return new Element(Tag.valueOf(tagName, ParseSettings.preserveCase), this.baseUri());
+     }
+ 
+     /**
+diff --git a/src/main/java/org/jsoup/nodes/Element.java b/src/main/java/org/jsoup/nodes/Element.java
+index c6ea7fa..205e410 100644
+--- a/src/main/java/org/jsoup/nodes/Element.java
++++ b/src/main/java/org/jsoup/nodes/Element.java
+@@ -2,6 +2,7 @@
+ 
+ import org.jsoup.helper.StringUtil;
+ import org.jsoup.helper.Validate;
++import org.jsoup.parser.ParseSettings;
+ import org.jsoup.parser.Parser;
+ import org.jsoup.parser.Tag;
+ import org.jsoup.select.Collector;
+@@ -58,7 +59,7 @@
+      * @param tag element tag
+      * @param baseUri the base URI of this element. It is acceptable for the base URI to be an empty
+      *            string, but not null.
+-     * @see Tag#valueOf(String)
++     * @see Tag#valueOf(String, ParseSettings)
+      */
+     public Element(Tag tag, String baseUri) {
+         this(tag, baseUri, new Attributes());
+@@ -87,7 +88,7 @@
+      */
+     public Element tagName(String tagName) {
+         Validate.notEmpty(tagName, "Tag name must not be empty.");
+-        tag = Tag.valueOf(tagName);
++        tag = Tag.valueOf(tagName, ParseSettings.preserveCase); // preserve the requested tag case
+         return this;
+     }
+ 
+@@ -116,7 +117,7 @@
+      * @return The id attribute, if present, or an empty string if not.
+      */
+     public String id() {
+-        return attributes.get("id");
++        return attributes.getIgnoreCase("id");
+     }
+ 
+     /**
+@@ -668,7 +669,7 @@
+      */
+     public Elements getElementsByAttribute(String key) {
+         Validate.notEmpty(key);
+-        key = key.trim().toLowerCase();
++        key = key.trim();
+ 
+         return Collector.collect(new Evaluator.Attribute(key), this);
+     }
+@@ -681,7 +682,7 @@
+      */
+     public Elements getElementsByAttributeStarting(String keyPrefix) {
+         Validate.notEmpty(keyPrefix);
+-        keyPrefix = keyPrefix.trim().toLowerCase();
++        keyPrefix = keyPrefix.trim();
+ 
+         return Collector.collect(new Evaluator.AttributeStarting(keyPrefix), this);
+     }
+diff --git a/src/main/java/org/jsoup/nodes/Node.java b/src/main/java/org/jsoup/nodes/Node.java
+index fb718f2..124f739 100644
+--- a/src/main/java/org/jsoup/nodes/Node.java
++++ b/src/main/java/org/jsoup/nodes/Node.java
+@@ -58,7 +58,7 @@
+     public abstract String nodeName();
+ 
+     /**
+-     * Get an attribute's value by its key.
++     * Get an attribute's value by its key. <b>Case insensitive</b>
+      * <p>
+      * To get an absolute URL from an attribute that may be a relative URL, prefix the key with <code><b>abs</b></code>,
+      * which is a shortcut to the {@link #absUrl} method.
+@@ -75,8 +75,9 @@
+     public String attr(String attributeKey) {
+         Validate.notNull(attributeKey);
+ 
+-        if (attributes.hasKey(attributeKey))
+-            return attributes.get(attributeKey);
++        String val = attributes.getIgnoreCase(attributeKey);
++        if (val.length() > 0)
++            return val;
+         else if (attributeKey.toLowerCase().startsWith("abs:"))
+             return absUrl(attributeKey.substring("abs:".length()));
+         else return "";
+@@ -102,7 +103,7 @@
+     }
+ 
+     /**
+-     * Test if this element has an attribute.
++     * Test if this element has an attribute. <b>Case insensitive</b>
+      * @param attributeKey The attribute key to check.
+      * @return true if the attribute exists, false if not.
+      */
+@@ -111,10 +112,10 @@
+ 
+         if (attributeKey.startsWith("abs:")) {
+             String key = attributeKey.substring("abs:".length());
+-            if (attributes.hasKey(key) && !absUrl(key).equals(""))
++            if (attributes.hasKeyIgnoreCase(key) && !absUrl(key).equals(""))
+                 return true;
+         }
+-        return attributes.hasKey(attributeKey);
++        return attributes.hasKeyIgnoreCase(attributeKey);
+     }
+ 
+     /**
+@@ -124,7 +125,7 @@
+      */
+     public Node removeAttr(String attributeKey) {
+         Validate.notNull(attributeKey);
+-        attributes.remove(attributeKey);
++        attributes.removeIgnoreCase(attributeKey);
+         return this;
+     }
+ 
+diff --git a/src/main/java/org/jsoup/parser/HtmlTreeBuilder.java b/src/main/java/org/jsoup/parser/HtmlTreeBuilder.java
+index b3fd8f5..2078a9b 100644
+--- a/src/main/java/org/jsoup/parser/HtmlTreeBuilder.java
++++ b/src/main/java/org/jsoup/parser/HtmlTreeBuilder.java
+@@ -45,17 +45,21 @@
+ 
+     HtmlTreeBuilder() {}
+ 
+-    @Override
+-    Document parse(String input, String baseUri, ParseErrorList errors) {
+-        state = HtmlTreeBuilderState.Initial;
+-        baseUriSetFromDoc = false;
+-        return super.parse(input, baseUri, errors);
++    ParseSettings defaultSettings() {
++        return ParseSettings.htmlDefault;
+     }
+ 
+-    List<Node> parseFragment(String inputFragment, Element context, String baseUri, ParseErrorList errors) {
++    @Override
++    Document parse(String input, String baseUri, ParseErrorList errors, ParseSettings settings) {
++        state = HtmlTreeBuilderState.Initial;
++        baseUriSetFromDoc = false;
++        return super.parse(input, baseUri, errors, settings);
++    }
++
++    List<Node> parseFragment(String inputFragment, Element context, String baseUri, ParseErrorList errors, ParseSettings settings) {
+         // context may be null
+         state = HtmlTreeBuilderState.Initial;
+-        initialiseParse(inputFragment, baseUri, errors);
++        initialiseParse(inputFragment, baseUri, errors, settings);
+         contextElement = context;
+         fragmentParsing = true;
+         Element root = null;
+@@ -79,7 +83,7 @@
+             else
+                 tokeniser.transition(TokeniserState.Data); // default
+ 
+-            root = new Element(Tag.valueOf("html"), baseUri);
++            root = new Element(Tag.valueOf("html", settings), baseUri);
+             doc.appendChild(root);
+             stack.add(root);
+             resetInsertionMode();
+@@ -178,13 +182,13 @@
+             return el;
+         }
+         
+-        Element el = new Element(Tag.valueOf(startTag.name()), baseUri, startTag.attributes);
++        Element el = new Element(Tag.valueOf(startTag.name(), settings), baseUri, settings.normalizeAttributes(startTag.attributes));
+         insert(el);
+         return el;
+     }
+ 
+     Element insertStartTag(String startTagName) {
+-        Element el = new Element(Tag.valueOf(startTagName), baseUri);
++        Element el = new Element(Tag.valueOf(startTagName, settings), baseUri);
+         insert(el);
+         return el;
+     }
+@@ -195,7 +199,7 @@
+     }
+ 
+     Element insertEmpty(Token.StartTag startTag) {
+-        Tag tag = Tag.valueOf(startTag.name());
++        Tag tag = Tag.valueOf(startTag.name(), settings);
+         Element el = new Element(tag, baseUri, startTag.attributes);
+         insertNode(el);
+         if (startTag.isSelfClosing()) {
+@@ -211,7 +215,7 @@
+     }
+ 
+     FormElement insertForm(Token.StartTag startTag, boolean onStack) {
+-        Tag tag = Tag.valueOf(startTag.name());
++        Tag tag = Tag.valueOf(startTag.name(), settings);
+         FormElement el = new FormElement(tag, baseUri, startTag.attributes);
+         setFormElement(el);
+         insertNode(el);
+diff --git a/src/main/java/org/jsoup/parser/HtmlTreeBuilderState.java b/src/main/java/org/jsoup/parser/HtmlTreeBuilderState.java
+index 1d6d4e3..9a40814 100644
+--- a/src/main/java/org/jsoup/parser/HtmlTreeBuilderState.java
++++ b/src/main/java/org/jsoup/parser/HtmlTreeBuilderState.java
+@@ -19,7 +19,8 @@
+                 // todo: parse error check on expected doctypes
+                 // todo: quirk state check on doctype ids
+                 Token.Doctype d = t.asDoctype();
+-                DocumentType doctype = new DocumentType(d.getName(), d.getPublicIdentifier(), d.getSystemIdentifier(), tb.getBaseUri());
++                DocumentType doctype = new DocumentType(
++                    tb.settings.normalizeTag(d.getName()), d.getPublicIdentifier(), d.getSystemIdentifier(), tb.getBaseUri());
+                 tb.getDocument().appendChild(doctype);
+                 if (d.isForceQuirks())
+                     tb.getDocument().quirksMode(Document.QuirksMode.quirks);
+@@ -41,10 +42,10 @@
+                 tb.insert(t.asComment());
+             } else if (isWhitespace(t)) {
+                 return true; // ignore whitespace
+-            } else if (t.isStartTag() && t.asStartTag().name().equals("html")) {
++            } else if (t.isStartTag() && t.asStartTag().normalName().equals("html")) {
+                 tb.insert(t.asStartTag());
+                 tb.transition(BeforeHead);
+-            } else if (t.isEndTag() && (StringUtil.in(t.asEndTag().name(), "head", "body", "html", "br"))) {
++            } else if (t.isEndTag() && (StringUtil.in(t.asEndTag().normalName(), "head", "body", "html", "br"))) {
+                 return anythingElse(t, tb);
+             } else if (t.isEndTag()) {
+                 tb.error(this);
+@@ -70,13 +71,13 @@
+             } else if (t.isDoctype()) {
+                 tb.error(this);
+                 return false;
+-            } else if (t.isStartTag() && t.asStartTag().name().equals("html")) {
++            } else if (t.isStartTag() && t.asStartTag().normalName().equals("html")) {
+                 return InBody.process(t, tb); // does not transition
+-            } else if (t.isStartTag() && t.asStartTag().name().equals("head")) {
++            } else if (t.isStartTag() && t.asStartTag().normalName().equals("head")) {
+                 Element head = tb.insert(t.asStartTag());
+                 tb.setHeadElement(head);
+                 tb.transition(InHead);
+-            } else if (t.isEndTag() && (StringUtil.in(t.asEndTag().name(), "head", "body", "html", "br"))) {
++            } else if (t.isEndTag() && (StringUtil.in(t.asEndTag().normalName(), "head", "body", "html", "br"))) {
+                 tb.processStartTag("head");
+                 return tb.process(t);
+             } else if (t.isEndTag()) {
+@@ -104,7 +105,7 @@
+                     return false;
+                 case StartTag:
+                     Token.StartTag start = t.asStartTag();
+-                    String name = start.name();
++                    String name = start.normalName();
+                     if (name.equals("html")) {
+                         return InBody.process(t, tb);
+                     } else if (StringUtil.in(name, "base", "basefont", "bgsound", "command", "link")) {
+@@ -139,7 +140,7 @@
+                     break;
+                 case EndTag:
+                     Token.EndTag end = t.asEndTag();
+-                    name = end.name();
++                    name = end.normalName();
+                     if (name.equals("head")) {
+                         tb.pop();
+                         tb.transition(AfterHead);
+@@ -165,17 +166,17 @@
+         boolean process(Token t, HtmlTreeBuilder tb) {
+             if (t.isDoctype()) {
+                 tb.error(this);
+-            } else if (t.isStartTag() && t.asStartTag().name().equals("html")) {
++            } else if (t.isStartTag() && t.asStartTag().normalName().equals("html")) {
+                 return tb.process(t, InBody);
+-            } else if (t.isEndTag() && t.asEndTag().name().equals("noscript")) {
++            } else if (t.isEndTag() && t.asEndTag().normalName().equals("noscript")) {
+                 tb.pop();
+                 tb.transition(InHead);
+-            } else if (isWhitespace(t) || t.isComment() || (t.isStartTag() && StringUtil.in(t.asStartTag().name(),
++            } else if (isWhitespace(t) || t.isComment() || (t.isStartTag() && StringUtil.in(t.asStartTag().normalName(),
+                     "basefont", "bgsound", "link", "meta", "noframes", "style"))) {
+                 return tb.process(t, InHead);
+-            } else if (t.isEndTag() && t.asEndTag().name().equals("br")) {
++            } else if (t.isEndTag() && t.asEndTag().normalName().equals("br")) {
+                 return anythingElse(t, tb);
+-            } else if ((t.isStartTag() && StringUtil.in(t.asStartTag().name(), "head", "noscript")) || t.isEndTag()) {
++            } else if ((t.isStartTag() && StringUtil.in(t.asStartTag().normalName(), "head", "noscript")) || t.isEndTag()) {
+                 tb.error(this);
+                 return false;
+             } else {
+@@ -200,7 +201,7 @@
+                 tb.error(this);
+             } else if (t.isStartTag()) {
+                 Token.StartTag startTag = t.asStartTag();
+-                String name = startTag.name();
++                String name = startTag.normalName();
+                 if (name.equals("html")) {
+                     return tb.process(t, InBody);
+                 } else if (name.equals("body")) {
+@@ -223,7 +224,7 @@
+                     anythingElse(t, tb);
+                 }
+             } else if (t.isEndTag()) {
+-                if (StringUtil.in(t.asEndTag().name(), "body", "html")) {
++                if (StringUtil.in(t.asEndTag().normalName(), "body", "html")) {
+                     anythingElse(t, tb);
+                 } else {
+                     tb.error(this);
+@@ -270,7 +271,7 @@
+                 }
+                 case StartTag:
+                     Token.StartTag startTag = t.asStartTag();
+-                    String name = startTag.name();
++                    String name = startTag.normalName();
+                     if (name.equals("a")) {
+                         if (tb.getActiveFormattingElement("a") != null) {
+                             tb.error(this);
+@@ -555,7 +556,7 @@
+ 
+                 case EndTag:
+                     Token.EndTag endTag = t.asEndTag();
+-                    name = endTag.name();
++                    name = endTag.normalName();
+                     if (StringUtil.inSorted(name, Constants.InBodyEndAdoptionFormatters)) {
+                         // Adoption Agency Algorithm.
+                         for (int i = 0; i < 8; i++) {
+@@ -608,7 +609,8 @@
+                                 } else if (node == formatEl)
+                                     break;
+ 
+-                                Element replacement = new Element(Tag.valueOf(node.nodeName()), tb.getBaseUri());
++                                Element replacement = new Element(Tag.valueOf(node.nodeName(), ParseSettings.preserveCase), tb.getBaseUri());
++                                // case will follow the original node (so honours ParseSettings)
+                                 tb.replaceActiveFormattingElement(node, replacement);
+                                 tb.replaceOnStack(node, replacement);
+                                 node = replacement;
+@@ -759,7 +761,7 @@
+         }
+ 
+         boolean anyOtherEndTag(Token t, HtmlTreeBuilder tb) {
+-            String name = t.asEndTag().name();
++            String name = t.asEndTag().normalName();
+             ArrayList<Element> stack = tb.getStack();
+             for (int pos = stack.size() -1; pos >= 0; pos--) {
+                 Element node = stack.get(pos);
+@@ -813,7 +815,7 @@
+                 return false;
+             } else if (t.isStartTag()) {
+                 Token.StartTag startTag = t.asStartTag();
+-                String name = startTag.name();
++                String name = startTag.normalName();
+                 if (name.equals("caption")) {
+                     tb.clearStackToTableContext();
+                     tb.insertMarkerToFormattingElements();
+@@ -859,7 +861,7 @@
+                 return true; // todo: check if should return processed http://www.whatwg.org/specs/web-apps/current-work/multipage/tree-construction.html#parsing-main-intable
+             } else if (t.isEndTag()) {
+                 Token.EndTag endTag = t.asEndTag();
+-                String name = endTag.name();
++                String name = endTag.normalName();
+ 
+                 if (name.equals("table")) {
+                     if (!tb.inTableScope(name)) {
+@@ -937,9 +939,9 @@
+     },
+     InCaption {
+         boolean process(Token t, HtmlTreeBuilder tb) {
+-            if (t.isEndTag() && t.asEndTag().name().equals("caption")) {
++            if (t.isEndTag() && t.asEndTag().normalName().equals("caption")) {
+                 Token.EndTag endTag = t.asEndTag();
+-                String name = endTag.name();
++                String name = endTag.normalName();
+                 if (!tb.inTableScope(name)) {
+                     tb.error(this);
+                     return false;
+@@ -952,15 +954,15 @@
+                     tb.transition(InTable);
+                 }
+             } else if ((
+-                    t.isStartTag() && StringUtil.in(t.asStartTag().name(),
++                    t.isStartTag() && StringUtil.in(t.asStartTag().normalName(),
+                             "caption", "col", "colgroup", "tbody", "td", "tfoot", "th", "thead", "tr") ||
+-                            t.isEndTag() && t.asEndTag().name().equals("table"))
++                            t.isEndTag() && t.asEndTag().normalName().equals("table"))
+                     ) {
+                 tb.error(this);
+                 boolean processed = tb.processEndTag("caption");
+                 if (processed)
+                     return tb.process(t);
+-            } else if (t.isEndTag() && StringUtil.in(t.asEndTag().name(),
++            } else if (t.isEndTag() && StringUtil.in(t.asEndTag().normalName(),
+                     "body", "col", "colgroup", "html", "tbody", "td", "tfoot", "th", "thead", "tr")) {
+                 tb.error(this);
+                 return false;
+@@ -985,7 +987,7 @@
+                     break;
+                 case StartTag:
+                     Token.StartTag startTag = t.asStartTag();
+-                    String name = startTag.name();
++                    String name = startTag.normalName();
+                     if (name.equals("html"))
+                         return tb.process(t, InBody);
+                     else if (name.equals("col"))
+@@ -995,7 +997,7 @@
+                     break;
+                 case EndTag:
+                     Token.EndTag endTag = t.asEndTag();
+-                    name = endTag.name();
++                    name = endTag.normalName();
+                     if (name.equals("colgroup")) {
+                         if (tb.currentElement().nodeName().equals("html")) { // frag case
+                             tb.error(this);
+@@ -1030,7 +1032,7 @@
+             switch (t.type) {
+                 case StartTag:
+                     Token.StartTag startTag = t.asStartTag();
+-                    String name = startTag.name();
++                    String name = startTag.normalName();
+                     if (name.equals("tr")) {
+                         tb.clearStackToTableBodyContext();
+                         tb.insert(startTag);
+@@ -1046,7 +1048,7 @@
+                     break;
+                 case EndTag:
+                     Token.EndTag endTag = t.asEndTag();
+-                    name = endTag.name();
++                    name = endTag.normalName();
+                     if (StringUtil.in(name, "tbody", "tfoot", "thead")) {
+                         if (!tb.inTableScope(name)) {
+                             tb.error(this);
+@@ -1089,7 +1091,7 @@
+         boolean process(Token t, HtmlTreeBuilder tb) {
+             if (t.isStartTag()) {
+                 Token.StartTag startTag = t.asStartTag();
+-                String name = startTag.name();
++                String name = startTag.normalName();
+ 
+                 if (StringUtil.in(name, "th", "td")) {
+                     tb.clearStackToTableRowContext();
+@@ -1103,7 +1105,7 @@
+                 }
+             } else if (t.isEndTag()) {
+                 Token.EndTag endTag = t.asEndTag();
+-                String name = endTag.name();
++                String name = endTag.normalName();
+ 
+                 if (name.equals("tr")) {
+                     if (!tb.inTableScope(name)) {
+@@ -1150,7 +1152,7 @@
+         boolean process(Token t, HtmlTreeBuilder tb) {
+             if (t.isEndTag()) {
+                 Token.EndTag endTag = t.asEndTag();
+-                String name = endTag.name();
++                String name = endTag.normalName();
+ 
+                 if (StringUtil.in(name, "td", "th")) {
+                     if (!tb.inTableScope(name)) {
+@@ -1178,7 +1180,7 @@
+                     return anythingElse(t, tb);
+                 }
+             } else if (t.isStartTag() &&
+-                    StringUtil.in(t.asStartTag().name(),
++                    StringUtil.in(t.asStartTag().normalName(),
+                             "caption", "col", "colgroup", "tbody", "td", "tfoot", "th", "thead", "tr")) {
+                 if (!(tb.inTableScope("td") || tb.inTableScope("th"))) {
+                     tb.error(this);
+@@ -1223,7 +1225,7 @@
+                     return false;
+                 case StartTag:
+                     Token.StartTag start = t.asStartTag();
+-                    String name = start.name();
++                    String name = start.normalName();
+                     if (name.equals("html"))
+                         return tb.process(start, InBody);
+                     else if (name.equals("option")) {
+@@ -1252,7 +1254,7 @@
+                     break;
+                 case EndTag:
+                     Token.EndTag end = t.asEndTag();
+-                    name = end.name();
++                    name = end.normalName();
+                     if (name.equals("optgroup")) {
+                         if (tb.currentElement().nodeName().equals("option") && tb.aboveOnStack(tb.currentElement()) != null && tb.aboveOnStack(tb.currentElement()).nodeName().equals("optgroup"))
+                             tb.processEndTag("option");
+@@ -1293,13 +1295,13 @@
+     },
+     InSelectInTable {
+         boolean process(Token t, HtmlTreeBuilder tb) {
+-            if (t.isStartTag() && StringUtil.in(t.asStartTag().name(), "caption", "table", "tbody", "tfoot", "thead", "tr", "td", "th")) {
++            if (t.isStartTag() && StringUtil.in(t.asStartTag().normalName(), "caption", "table", "tbody", "tfoot", "thead", "tr", "td", "th")) {
+                 tb.error(this);
+                 tb.processEndTag("select");
+                 return tb.process(t);
+-            } else if (t.isEndTag() && StringUtil.in(t.asEndTag().name(), "caption", "table", "tbody", "tfoot", "thead", "tr", "td", "th")) {
++            } else if (t.isEndTag() && StringUtil.in(t.asEndTag().normalName(), "caption", "table", "tbody", "tfoot", "thead", "tr", "td", "th")) {
+                 tb.error(this);
+-                if (tb.inTableScope(t.asEndTag().name())) {
++                if (tb.inTableScope(t.asEndTag().normalName())) {
+                     tb.processEndTag("select");
+                     return (tb.process(t));
+                 } else
+@@ -1318,9 +1320,9 @@
+             } else if (t.isDoctype()) {
+                 tb.error(this);
+                 return false;
+-            } else if (t.isStartTag() && t.asStartTag().name().equals("html")) {
++            } else if (t.isStartTag() && t.asStartTag().normalName().equals("html")) {
+                 return tb.process(t, InBody);
+-            } else if (t.isEndTag() && t.asEndTag().name().equals("html")) {
++            } else if (t.isEndTag() && t.asEndTag().normalName().equals("html")) {
+                 if (tb.isFragmentParsing()) {
+                     tb.error(this);
+                     return false;
+@@ -1348,7 +1350,7 @@
+                 return false;
+             } else if (t.isStartTag()) {
+                 Token.StartTag start = t.asStartTag();
+-                String name = start.name();
++                String name = start.normalName();
+                 if (name.equals("html")) {
+                     return tb.process(start, InBody);
+                 } else if (name.equals("frameset")) {
+@@ -1361,7 +1363,7 @@
+                     tb.error(this);
+                     return false;
+                 }
+-            } else if (t.isEndTag() && t.asEndTag().name().equals("frameset")) {
++            } else if (t.isEndTag() && t.asEndTag().normalName().equals("frameset")) {
+                 if (tb.currentElement().nodeName().equals("html")) { // frag
+                     tb.error(this);
+                     return false;
+@@ -1392,11 +1394,11 @@
+             } else if (t.isDoctype()) {
+                 tb.error(this);
+                 return false;
+-            } else if (t.isStartTag() && t.asStartTag().name().equals("html")) {
++            } else if (t.isStartTag() && t.asStartTag().normalName().equals("html")) {
+                 return tb.process(t, InBody);
+-            } else if (t.isEndTag() && t.asEndTag().name().equals("html")) {
++            } else if (t.isEndTag() && t.asEndTag().normalName().equals("html")) {
+                 tb.transition(AfterAfterFrameset);
+-            } else if (t.isStartTag() && t.asStartTag().name().equals("noframes")) {
++            } else if (t.isStartTag() && t.asStartTag().normalName().equals("noframes")) {
+                 return tb.process(t, InHead);
+             } else if (t.isEOF()) {
+                 // cool your heels, we're complete
+@@ -1411,7 +1413,7 @@
+         boolean process(Token t, HtmlTreeBuilder tb) {
+             if (t.isComment()) {
+                 tb.insert(t.asComment());
+-            } else if (t.isDoctype() || isWhitespace(t) || (t.isStartTag() && t.asStartTag().name().equals("html"))) {
++            } else if (t.isDoctype() || isWhitespace(t) || (t.isStartTag() && t.asStartTag().normalName().equals("html"))) {
+                 return tb.process(t, InBody);
+             } else if (t.isEOF()) {
+                 // nice work chuck
+@@ -1427,11 +1429,11 @@
+         boolean process(Token t, HtmlTreeBuilder tb) {
+             if (t.isComment()) {
+                 tb.insert(t.asComment());
+-            } else if (t.isDoctype() || isWhitespace(t) || (t.isStartTag() && t.asStartTag().name().equals("html"))) {
++            } else if (t.isDoctype() || isWhitespace(t) || (t.isStartTag() && t.asStartTag().normalName().equals("html"))) {
+                 return tb.process(t, InBody);
+             } else if (t.isEOF()) {
+                 // nice work chuck
+-            } else if (t.isStartTag() && t.asStartTag().name().equals("noframes")) {
++            } else if (t.isStartTag() && t.asStartTag().normalName().equals("noframes")) {
+                 return tb.process(t, InHead);
+             } else {
+                 tb.error(this);
+diff --git a/src/main/java/org/jsoup/parser/ParseSettings.java b/src/main/java/org/jsoup/parser/ParseSettings.java
+new file mode 100644
+index 0000000..9ac7e6b
+--- /dev/null
++++ b/src/main/java/org/jsoup/parser/ParseSettings.java
+@@ -0,0 +1,59 @@
++package org.jsoup.parser;
++
++import org.jsoup.nodes.Attribute;
++import org.jsoup.nodes.Attributes;
++
++/**
++ * Controls parser settings, to optionally preserve tag and/or attribute name case.
++ */
++public class ParseSettings {
++    /**
++     * HTML default settings: both tag and attribute names are lower-cased during parsing.
++     */
++    public static final ParseSettings htmlDefault;
++    /**
++     * Preserve both tag and attribute case.
++     */
++    public static final ParseSettings preserveCase;
++
++    static {
++        htmlDefault = new ParseSettings(false, false);
++        preserveCase = new ParseSettings(true, true);
++    }
++
++    private final boolean preserveTagCase;
++    private final boolean preserveAttributeCase;
++
++    /**
++     * Define parse settings.
++     * @param tag preserve tag case?
++     * @param attribute preserve attribute name case?
++     */
++    public ParseSettings(boolean tag, boolean attribute) {
++        preserveTagCase = tag;
++        preserveAttributeCase = attribute;
++    }
++
++    String normalizeTag(String name) {
++        name = name.trim();
++        if (!preserveTagCase)
++            name = name.toLowerCase();
++        return name;
++    }
++
++    String normalizeAttribute(String name) {
++        name = name.trim();
++        if (!preserveAttributeCase)
++            name = name.toLowerCase();
++        return name;
++    }
++
++    Attributes normalizeAttributes(Attributes attributes) {
++        if (!preserveAttributeCase) {
++            for (Attribute attr : attributes) {
++                attr.setKey(attr.getKey().toLowerCase());
++            }
++        }
++        return attributes;
++    }
++}
+diff --git a/src/main/java/org/jsoup/parser/Parser.java b/src/main/java/org/jsoup/parser/Parser.java
+index 90e5c74..868ef41 100644
+--- a/src/main/java/org/jsoup/parser/Parser.java
++++ b/src/main/java/org/jsoup/parser/Parser.java
+@@ -16,6 +16,7 @@
+     private TreeBuilder treeBuilder;
+     private int maxErrors = DEFAULT_MAX_ERRORS;
+     private ParseErrorList errors;
++    private ParseSettings settings;
+ 
+     /**
+      * Create a new Parser, using the specified TreeBuilder
+@@ -23,11 +24,12 @@
+      */
+     public Parser(TreeBuilder treeBuilder) {
+         this.treeBuilder = treeBuilder;
++        settings = treeBuilder.defaultSettings();
+     }
+     
+     public Document parseInput(String html, String baseUri) {
+         errors = isTrackErrors() ? ParseErrorList.tracking(maxErrors) : ParseErrorList.noTracking();
+-        return treeBuilder.parse(html, baseUri, errors);
++        return treeBuilder.parse(html, baseUri, errors, settings);
+     }
+ 
+     // gets & sets
+@@ -75,6 +77,15 @@
+         return errors;
+     }
+ 
++    public Parser settings(ParseSettings settings) {
++        this.settings = settings;
++        return this;
++    }
++
++    public ParseSettings settings() {
++        return settings;
++    }
++
+     // static parse functions below
+     /**
+      * Parse HTML into a Document.
+@@ -86,7 +97,7 @@
+      */
+     public static Document parse(String html, String baseUri) {
+         TreeBuilder treeBuilder = new HtmlTreeBuilder();
+-        return treeBuilder.parse(html, baseUri, ParseErrorList.noTracking());
++        return treeBuilder.parse(html, baseUri, ParseErrorList.noTracking(), treeBuilder.defaultSettings());
+     }
+ 
+     /**
+@@ -101,7 +112,7 @@
+      */
+     public static List<Node> parseFragment(String fragmentHtml, Element context, String baseUri) {
+         HtmlTreeBuilder treeBuilder = new HtmlTreeBuilder();
+-        return treeBuilder.parseFragment(fragmentHtml, context, baseUri, ParseErrorList.noTracking());
++        return treeBuilder.parseFragment(fragmentHtml, context, baseUri, ParseErrorList.noTracking(), treeBuilder.defaultSettings());
+     }
+ 
+     /**
+@@ -113,7 +124,7 @@
+      */
+     public static List<Node> parseXmlFragment(String fragmentXml, String baseUri) {
+         XmlTreeBuilder treeBuilder = new XmlTreeBuilder();
+-        return treeBuilder.parseFragment(fragmentXml, baseUri, ParseErrorList.noTracking());
++        return treeBuilder.parseFragment(fragmentXml, baseUri, ParseErrorList.noTracking(), treeBuilder.defaultSettings());
+     }
+ 
+     /**
+diff --git a/src/main/java/org/jsoup/parser/Tag.java b/src/main/java/org/jsoup/parser/Tag.java
+index 30a0440..646ba9b 100644
+--- a/src/main/java/org/jsoup/parser/Tag.java
++++ b/src/main/java/org/jsoup/parser/Tag.java
+@@ -25,7 +25,7 @@
+     private boolean formSubmit = false; // a control that can be submitted in a form: input etc
+ 
+     private Tag(String tagName) {
+-        this.tagName = tagName.toLowerCase();
++        this.tagName = tagName;
+     }
+ 
+     /**
+@@ -44,14 +44,15 @@
+      * </p>
+      * 
+      * @param tagName Name of tag, e.g. "p". Case insensitive.
++     * @param settings used to control tag name sensitivity
+      * @return The tag, either defined or new generic.
+      */
+-    public static Tag valueOf(String tagName) {
++    public static Tag valueOf(String tagName, ParseSettings settings) {
+         Validate.notNull(tagName);
+         Tag tag = tags.get(tagName);
+ 
+         if (tag == null) {
+-            tagName = tagName.trim().toLowerCase();
++            tagName = settings.normalizeTag(tagName);
+             Validate.notEmpty(tagName);
+             tag = tags.get(tagName);
+ 
+@@ -66,6 +67,19 @@
+     }
+ 
+     /**
++     * Get a Tag by name. If not previously defined (unknown), returns a new generic tag, that can do anything.
++     * <p>
++     * Pre-defined tags (P, DIV etc) will be ==, but unknown tags are not registered and will only .equals().
++     * </p>
++     *
++     * @param tagName Name of tag, e.g. "p". <b>Case sensitive</b>.
++     * @return The tag, either defined or new generic.
++     */
++    public static Tag valueOf(String tagName) {
++        return valueOf(tagName, ParseSettings.preserveCase);
++    }
++
++    /**
+      * Gets if this is a block tag.
+      *
+      * @return if block tag
+diff --git a/src/main/java/org/jsoup/parser/Token.java b/src/main/java/org/jsoup/parser/Token.java
+index daff2a0..3ea0d2d 100644
+--- a/src/main/java/org/jsoup/parser/Token.java
++++ b/src/main/java/org/jsoup/parser/Token.java
+@@ -68,6 +68,7 @@
+ 
+     static abstract class Tag extends Token {
+         protected String tagName;
++        protected String normalName; // lc version of tag name, for case insensitive tree build
+         private String pendingAttributeName; // attribute names are generally caught in one hop, not accumulated
+         private StringBuilder pendingAttributeValue = new StringBuilder(); // but values are accumulated, from e.g. & in hrefs
+         private String pendingAttributeValueS; // try to get attr vals in one shot, vs Builder
+@@ -79,6 +80,7 @@
+         @Override
+         Tag reset() {
+             tagName = null;
++            normalName = null;
+             pendingAttributeName = null;
+             reset(pendingAttributeValue);
+             pendingAttributeValueS = null;
+@@ -119,13 +121,18 @@
+             }
+         }
+ 
+-        final String name() {
++        final String name() { // preserves case, for input into Tag.valueOf (which may drop case)
+             Validate.isFalse(tagName == null || tagName.length() == 0);
+             return tagName;
+         }
+ 
++        final String normalName() { // loses case, used in tree building for working out where in tree it should go
++            return normalName;
++        }
++
+         final Tag name(String name) {
+             tagName = name;
++            normalName = name.toLowerCase();
+             return this;
+         }
+ 
+@@ -141,6 +148,7 @@
+         // these appenders are rarely hit in not null state-- caused by null chars.
+         final void appendTagName(String append) {
+             tagName = tagName == null ? append : tagName.concat(append);
++            normalName = tagName.toLowerCase();
+         }
+ 
+         final void appendTagName(char append) {
+@@ -206,6 +214,7 @@
+         StartTag nameAttr(String name, Attributes attributes) {
+             this.tagName = name;
+             this.attributes = attributes;
++            normalName = tagName.toLowerCase();
+             return this;
+         }
+ 
+diff --git a/src/main/java/org/jsoup/parser/Tokeniser.java b/src/main/java/org/jsoup/parser/Tokeniser.java
+index 1797dae..b62e293 100644
+--- a/src/main/java/org/jsoup/parser/Tokeniser.java
++++ b/src/main/java/org/jsoup/parser/Tokeniser.java
+@@ -16,8 +16,8 @@
+         Arrays.sort(notCharRefCharsSorted);
+     }
+ 
+-    private CharacterReader reader; // html input
+-    private ParseErrorList errors; // errors found while tokenising
++    private final CharacterReader reader; // html input
++    private final ParseErrorList errors; // errors found while tokenising
+ 
+     private TokeniserState state = TokeniserState.Data; // current tokenisation state
+     private Token emitPending; // the token we are about to emit on next read
+@@ -218,7 +218,7 @@
+     }
+ 
+     boolean isAppropriateEndTagToken() {
+-        return lastStartTag != null && tagPending.tagName.equals(lastStartTag);
++        return lastStartTag != null && tagPending.name().equalsIgnoreCase(lastStartTag);
+     }
+ 
+     String appropriateEndTagName() {
+diff --git a/src/main/java/org/jsoup/parser/TokeniserState.java b/src/main/java/org/jsoup/parser/TokeniserState.java
+index a4b7ada..c10dd2c 100644
+--- a/src/main/java/org/jsoup/parser/TokeniserState.java
++++ b/src/main/java/org/jsoup/parser/TokeniserState.java
+@@ -143,7 +143,7 @@
+         void read(Tokeniser t, CharacterReader r) {
+             // previous TagOpen state did NOT consume, will have a letter char in current
+             //String tagName = r.consumeToAnySorted(tagCharsSorted).toLowerCase();
+-            String tagName = r.consumeTagName().toLowerCase();
++            String tagName = r.consumeTagName();
+             t.tagPending.appendTagName(tagName);
+ 
+             switch (r.consume()) {
+@@ -194,8 +194,8 @@
+         void read(Tokeniser t, CharacterReader r) {
+             if (r.matchesLetter()) {
+                 t.createTagPending(false);
+-                t.tagPending.appendTagName(Character.toLowerCase(r.current()));
+-                t.dataBuffer.append(Character.toLowerCase(r.current()));
++                t.tagPending.appendTagName(r.current());
++                t.dataBuffer.append(r.current());
+                 t.advanceTransition(RCDATAEndTagName);
+             } else {
+                 t.emit("</");
+@@ -207,7 +207,7 @@
+         void read(Tokeniser t, CharacterReader r) {
+             if (r.matchesLetter()) {
+                 String name = r.consumeLetterSequence();
+-                t.tagPending.appendTagName(name.toLowerCase());
++                t.tagPending.appendTagName(name);
+                 t.dataBuffer.append(name);
+                 return;
+             }
+@@ -408,7 +408,7 @@
+         void read(Tokeniser t, CharacterReader r) {
+             if (r.matchesLetter()) {
+                 t.createTempBuffer();
+-                t.dataBuffer.append(Character.toLowerCase(r.current()));
++                t.dataBuffer.append(r.current());
+                 t.emit("<" + r.current());
+                 t.advanceTransition(ScriptDataDoubleEscapeStart);
+             } else if (r.matches('/')) {
+@@ -424,7 +424,7 @@
+         void read(Tokeniser t, CharacterReader r) {
+             if (r.matchesLetter()) {
+                 t.createTagPending(false);
+-                t.tagPending.appendTagName(Character.toLowerCase(r.current()));
++                t.tagPending.appendTagName(r.current());
+                 t.dataBuffer.append(r.current());
+                 t.advanceTransition(ScriptDataEscapedEndTagName);
+             } else {
+@@ -591,7 +591,7 @@
+         // from before attribute name
+         void read(Tokeniser t, CharacterReader r) {
+             String name = r.consumeToAnySorted(attributeNameCharsSorted);
+-            t.tagPending.appendAttributeName(name.toLowerCase());
++            t.tagPending.appendAttributeName(name);
+ 
+             char c = r.consume();
+             switch (c) {
+@@ -1143,7 +1143,7 @@
+         void read(Tokeniser t, CharacterReader r) {
+             if (r.matchesLetter()) {
+                 String name = r.consumeLetterSequence();
+-                t.doctypePending.name.append(name.toLowerCase());
++                t.doctypePending.name.append(name);
+                 return;
+             }
+             char c = r.consume();
+@@ -1622,7 +1622,7 @@
+     private static void handleDataEndTag(Tokeniser t, CharacterReader r, TokeniserState elseTransition) {
+         if (r.matchesLetter()) {
+             String name = r.consumeLetterSequence();
+-            t.tagPending.appendTagName(name.toLowerCase());
++            t.tagPending.appendTagName(name);
+             t.dataBuffer.append(name);
+             return;
+         }
+@@ -1701,7 +1701,7 @@
+     private static void handleDataDoubleEscapeTag(Tokeniser t, CharacterReader r, TokeniserState primary, TokeniserState fallback) {
+         if (r.matchesLetter()) {
+             String name = r.consumeLetterSequence();
+-            t.dataBuffer.append(name.toLowerCase());
++            t.dataBuffer.append(name);
+             t.emit(name);
+             return;
+         }
+diff --git a/src/main/java/org/jsoup/parser/TreeBuilder.java b/src/main/java/org/jsoup/parser/TreeBuilder.java
+index c6f5f20..445c57e 100644
+--- a/src/main/java/org/jsoup/parser/TreeBuilder.java
++++ b/src/main/java/org/jsoup/parser/TreeBuilder.java
+@@ -18,15 +18,19 @@
+     protected String baseUri; // current base uri, for creating new elements
+     protected Token currentToken; // currentToken is used only for error tracking.
+     protected ParseErrorList errors; // null when not tracking errors
++    protected ParseSettings settings;
+ 
+     private Token.StartTag start = new Token.StartTag(); // start tag to process
+     private Token.EndTag end  = new Token.EndTag();
+ 
+-    protected void initialiseParse(String input, String baseUri, ParseErrorList errors) {
++    abstract ParseSettings defaultSettings();
++
++    protected void initialiseParse(String input, String baseUri, ParseErrorList errors, ParseSettings settings) {
+         Validate.notNull(input, "String input must not be null");
+         Validate.notNull(baseUri, "BaseURI must not be null");
+ 
+         doc = new Document(baseUri);
++        this.settings = settings;
+         reader = new CharacterReader(input);
+         this.errors = errors;
+         tokeniser = new Tokeniser(reader, errors);
+@@ -34,12 +38,8 @@
+         this.baseUri = baseUri;
+     }
+ 
+-    Document parse(String input, String baseUri) {
+-        return parse(input, baseUri, ParseErrorList.noTracking());
+-    }
+-
+-    Document parse(String input, String baseUri, ParseErrorList errors) {
+-        initialiseParse(input, baseUri, errors);
++    Document parse(String input, String baseUri, ParseErrorList errors, ParseSettings settings) {
++        initialiseParse(input, baseUri, errors, settings);
+         runParser();
+         return doc;
+     }
+diff --git a/src/main/java/org/jsoup/parser/XmlTreeBuilder.java b/src/main/java/org/jsoup/parser/XmlTreeBuilder.java
+index 3ccd7df..2ac525f 100644
+--- a/src/main/java/org/jsoup/parser/XmlTreeBuilder.java
++++ b/src/main/java/org/jsoup/parser/XmlTreeBuilder.java
+@@ -14,9 +14,17 @@
+  * @author Jonathan Hedley
+  */
+ public class XmlTreeBuilder extends TreeBuilder {
++    ParseSettings defaultSettings() {
++        return ParseSettings.preserveCase;
++    }
++
++    Document parse(String input, String baseUri) {
++        return parse(input, baseUri, ParseErrorList.noTracking(), ParseSettings.preserveCase);
++    }
++
+     @Override
+-    protected void initialiseParse(String input, String baseUri, ParseErrorList errors) {
+-        super.initialiseParse(input, baseUri, errors);
++    protected void initialiseParse(String input, String baseUri, ParseErrorList errors, ParseSettings settings) {
++        super.initialiseParse(input, baseUri, errors, settings);
+         stack.add(doc); // place the document onto the stack. differs from HtmlTreeBuilder (not on stack)
+         doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml);
+     }
+@@ -53,9 +61,9 @@
+     }
+ 
+     Element insert(Token.StartTag startTag) {
+-        Tag tag = Tag.valueOf(startTag.name());
++        Tag tag = Tag.valueOf(startTag.name(), settings);
+         // todo: wonder if for xml parsing, should treat all tags as unknown? because it's not html.
+-        Element el = new Element(tag, baseUri, startTag.attributes);
++        Element el = new Element(tag, baseUri, settings.normalizeAttributes(startTag.attributes));
+         insertNode(el);
+         if (startTag.isSelfClosing()) {
+             tokeniser.acknowledgeSelfClosingFlag();
+@@ -76,7 +84,7 @@
+             if (data.length() > 1 && (data.startsWith("!") || data.startsWith("?"))) {
+                 Document doc = Jsoup.parse("<" + data.substring(1, data.length() -1) + ">", baseUri, Parser.xmlParser());
+                 Element el = doc.child(0);
+-                insert = new XmlDeclaration(el.tagName(), comment.baseUri(), data.startsWith("!"));
++                insert = new XmlDeclaration(settings.normalizeTag(el.tagName()), comment.baseUri(), data.startsWith("!"));
+                 insert.attributes().addAll(el.attributes());
+             }
+         }
+@@ -89,7 +97,7 @@
+     }
+ 
+     void insert(Token.Doctype d) {
+-        DocumentType doctypeNode = new DocumentType(d.getName(), d.getPublicIdentifier(), d.getSystemIdentifier(), baseUri);
++        DocumentType doctypeNode = new DocumentType(settings.normalizeTag(d.getName()), d.getPublicIdentifier(), d.getSystemIdentifier(), baseUri);
+         insertNode(doctypeNode);
+     }
+ 
+@@ -121,8 +129,8 @@
+         }
+     }
+ 
+-    List<Node> parseFragment(String inputFragment, String baseUri, ParseErrorList errors) {
+-        initialiseParse(inputFragment, baseUri, errors);
++    List<Node> parseFragment(String inputFragment, String baseUri, ParseErrorList errors, ParseSettings settings) {
++        initialiseParse(inputFragment, baseUri, errors, settings);
+         runParser();
+         return doc.childNodes();
+     }
+diff --git a/src/main/java/org/jsoup/select/Evaluator.java b/src/main/java/org/jsoup/select/Evaluator.java
+index 4283a67..dba2e5d 100644
+--- a/src/main/java/org/jsoup/select/Evaluator.java
++++ b/src/main/java/org/jsoup/select/Evaluator.java
+@@ -42,7 +42,7 @@
+ 
+         @Override
+         public boolean matches(Element root, Element element) {
+-            return (element.tagName().equals(tagName));
++            return (element.tagName().equalsIgnoreCase(tagName));
+         }
+ 
+         @Override
+@@ -124,14 +124,15 @@
+         private String keyPrefix;
+ 
+         public AttributeStarting(String keyPrefix) {
+-            this.keyPrefix = keyPrefix;
++            Validate.notEmpty(keyPrefix);
++            this.keyPrefix = keyPrefix.toLowerCase();
+         }
+ 
+         @Override
+         public boolean matches(Element root, Element element) {
+             List<org.jsoup.nodes.Attribute> values = element.attributes().asList();
+             for (org.jsoup.nodes.Attribute attribute : values) {
+-                if (attribute.getKey().startsWith(keyPrefix))
++                if (attribute.getKey().toLowerCase().startsWith(keyPrefix))
+                     return true;
+             }
+             return false;
+diff --git a/src/main/java/org/jsoup/select/QueryParser.java b/src/main/java/org/jsoup/select/QueryParser.java
+index 66a899c..f25387b 100644
+--- a/src/main/java/org/jsoup/select/QueryParser.java
++++ b/src/main/java/org/jsoup/select/QueryParser.java
+@@ -206,7 +206,7 @@
+     private void byClass() {
+         String className = tq.consumeCssIdentifier();
+         Validate.notEmpty(className);
+-        evals.add(new Evaluator.Class(className.trim().toLowerCase()));
++        evals.add(new Evaluator.Class(className.trim()));
+     }
+ 
+     private void byTag() {
+@@ -217,7 +217,7 @@
+         if (tagName.contains("|"))
+             tagName = tagName.replace("|", ":");
+ 
+-        evals.add(new Evaluator.Tag(tagName.trim().toLowerCase()));
++        evals.add(new Evaluator.Tag(tagName.trim()));
+     }
+ 
+     private void byAttribute() {
+diff --git a/src/main/java/org/jsoup/select/Selector.java b/src/main/java/org/jsoup/select/Selector.java
+index 6dc3954..4ab4a52 100644
+--- a/src/main/java/org/jsoup/select/Selector.java
++++ b/src/main/java/org/jsoup/select/Selector.java
+@@ -12,7 +12,7 @@
+  * 
+  * <h2>Selector syntax</h2>
+  * <p>
+- * A selector is a chain of simple selectors, separated by combinators. Selectors are case insensitive (including against
++ * A selector is a chain of simple selectors, separated by combinators. Selectors are <b>case insensitive</b> (including against
+  * elements, attributes, and attribute values).
+  * </p>
+  * <p>
+diff --git a/src/test/java/org/jsoup/nodes/AttributesTest.java b/src/test/java/org/jsoup/nodes/AttributesTest.java
+index 66e3c76..6f76e92 100644
+--- a/src/test/java/org/jsoup/nodes/AttributesTest.java
++++ b/src/test/java/org/jsoup/nodes/AttributesTest.java
+@@ -17,14 +17,20 @@
+         a.put("data-name", "Jsoup");
+ 
+         assertEquals(3, a.size());
+-        assertTrue(a.hasKey("tot"));
++        assertTrue(a.hasKey("Tot"));
+         assertTrue(a.hasKey("Hello"));
+         assertTrue(a.hasKey("data-name"));
++        assertFalse(a.hasKey("tot"));
++        assertTrue(a.hasKeyIgnoreCase("tot"));
++        assertEquals("There", a.getIgnoreCase("hEllo"));
++
+         assertEquals(1, a.dataset().size());
+         assertEquals("Jsoup", a.dataset().get("name"));
+-        assertEquals("a&p", a.get("tot"));
++        assertEquals("", a.get("tot"));
++        assertEquals("a&p", a.get("Tot"));
++        assertEquals("a&p", a.getIgnoreCase("tot"));
+ 
+-        assertEquals(" tot=\"a&amp;p\" hello=\"There\" data-name=\"Jsoup\"", a.html());
++        assertEquals(" Tot=\"a&amp;p\" Hello=\"There\" data-name=\"Jsoup\"", a.html());
+         assertEquals(a.html(), a.toString());
+     }
+ 
+diff --git a/src/test/java/org/jsoup/nodes/ElementTest.java b/src/test/java/org/jsoup/nodes/ElementTest.java
+index f756e09..2afb5f3 100644
+--- a/src/test/java/org/jsoup/nodes/ElementTest.java
++++ b/src/test/java/org/jsoup/nodes/ElementTest.java
+@@ -299,8 +299,9 @@
+         Document doc = Jsoup.parse("<div id=1><p>Hello</p></div>");
+         Element div = doc.getElementById("1");
+         div.appendElement("p").text("there");
+-        div.appendElement("P").attr("class", "second").text("now");
+-        assertEquals("<html><head></head><body><div id=\"1\"><p>Hello</p><p>there</p><p class=\"second\">now</p></div></body></html>",
++        div.appendElement("P").attr("CLASS", "second").text("now");
++        // manually specifying tag and attributes should now preserve case, regardless of parse mode
++        assertEquals("<html><head></head><body><div id=\"1\"><p>Hello</p><p>there</p><P CLASS=\"second\">now</P></div></body></html>",
+                 TextUtil.stripNewlines(doc.html()));
+ 
+         // check sibling index (with short circuit on reindexChildren):
+diff --git a/src/test/java/org/jsoup/parser/HtmlParserTest.java b/src/test/java/org/jsoup/parser/HtmlParserTest.java
+index fc7b060..b3517c7 100644
+--- a/src/test/java/org/jsoup/parser/HtmlParserTest.java
++++ b/src/test/java/org/jsoup/parser/HtmlParserTest.java
+@@ -899,4 +899,31 @@
+         Elements els = doc.select("div");
+         assertEquals("Check", els.text());
+     }
++
++    @Test public void testHtmlLowerCase() {
++        String html = "<!doctype HTML><DIV ID=1>One</DIV>";
++        Document doc = Jsoup.parse(html);
++        assertEquals("<!doctype html> <html> <head></head> <body> <div id=\"1\"> One </div> </body> </html>", StringUtil.normaliseWhitespace(doc.outerHtml()));
++    }
++
++    @Test public void canPreserveTagCase() {
++        Parser parser = Parser.htmlParser();
++        parser.settings(new ParseSettings(true, false));
++        Document doc = parser.parseInput("<div id=1><SPAN ID=2>", "");
++        assertEquals("<html> <head></head> <body> <div id=\"1\"> <SPAN id=\"2\"></SPAN> </div> </body> </html>", StringUtil.normaliseWhitespace(doc.outerHtml()));
++    }
++
++    @Test public void canPreserveAttributeCase() {
++        Parser parser = Parser.htmlParser();
++        parser.settings(new ParseSettings(false, true));
++        Document doc = parser.parseInput("<div id=1><SPAN ID=2>", "");
++        assertEquals("<html> <head></head> <body> <div id=\"1\"> <span ID=\"2\"></span> </div> </body> </html>", StringUtil.normaliseWhitespace(doc.outerHtml()));
++    }
++
++    @Test public void canPreserveBothCase() {
++        Parser parser = Parser.htmlParser();
++        parser.settings(new ParseSettings(true, true));
++        Document doc = parser.parseInput("<div id=1><SPAN ID=2>", "");
++        assertEquals("<html> <head></head> <body> <div id=\"1\"> <SPAN ID=\"2\"></SPAN> </div> </body> </html>", StringUtil.normaliseWhitespace(doc.outerHtml()));
++    }
+ }
+diff --git a/src/test/java/org/jsoup/parser/ParserSettingsTest.java b/src/test/java/org/jsoup/parser/ParserSettingsTest.java
+new file mode 100644
+index 0000000..ee35091
+--- /dev/null
++++ b/src/test/java/org/jsoup/parser/ParserSettingsTest.java
+@@ -0,0 +1,27 @@
++package org.jsoup.parser;
++
++import org.junit.Test;
++import static org.junit.Assert.assertEquals;
++
++public class ParserSettingsTest {
++    @Test
++    public void caseSupport() {
++        ParseSettings bothOn = new ParseSettings(true, true);
++        ParseSettings bothOff = new ParseSettings(false, false);
++        ParseSettings tagOn = new ParseSettings(true, false);
++        ParseSettings attrOn = new ParseSettings(false, true);
++
++        assertEquals("FOO", bothOn.normalizeTag("FOO"));
++        assertEquals("FOO", bothOn.normalizeAttribute("FOO"));
++
++        assertEquals("foo", bothOff.normalizeTag("FOO"));
++        assertEquals("foo", bothOff.normalizeAttribute("FOO"));
++
++        assertEquals("FOO", tagOn.normalizeTag("FOO"));
++        assertEquals("foo", tagOn.normalizeAttribute("FOO"));
++
++        assertEquals("foo", attrOn.normalizeTag("FOO"));
++        assertEquals("FOO", attrOn.normalizeAttribute("FOO"));
++
++    }
++}
+diff --git a/src/test/java/org/jsoup/parser/TagTest.java b/src/test/java/org/jsoup/parser/TagTest.java
+index bee6400..da6195f 100644
+--- a/src/test/java/org/jsoup/parser/TagTest.java
++++ b/src/test/java/org/jsoup/parser/TagTest.java
+@@ -8,9 +8,15 @@
+  @author Jonathan Hedley, jonathan@hedley.net */
+ public class TagTest {
+ 
+-    @Test public void isCaseInsensitive() {
++    @Test public void isCaseSensitive() {
+         Tag p1 = Tag.valueOf("P");
+         Tag p2 = Tag.valueOf("p");
++        assertFalse(p1.equals(p2));
++    }
++
++    @Test public void canBeInsensitive() {
++        Tag p1 = Tag.valueOf("P", ParseSettings.htmlDefault);
++        Tag p2 = Tag.valueOf("p", ParseSettings.htmlDefault);
+         assertEquals(p1, p2);
+     }
+ 
+@@ -49,7 +55,7 @@
+     }
+ 
+     @Test public void defaultSemantics() {
+-        Tag foo = Tag.valueOf("foo"); // not defined
++        Tag foo = Tag.valueOf("FOO"); // not defined
+         Tag foo2 = Tag.valueOf("FOO");
+ 
+         assertEquals(foo, foo2);
+diff --git a/src/test/java/org/jsoup/parser/XmlTreeBuilderTest.java b/src/test/java/org/jsoup/parser/XmlTreeBuilderTest.java
+index e7b37e7..4246400 100644
+--- a/src/test/java/org/jsoup/parser/XmlTreeBuilderTest.java
++++ b/src/test/java/org/jsoup/parser/XmlTreeBuilderTest.java
+@@ -50,10 +50,10 @@
+ 
+     @Test
+     public void testCommentAndDocType() {
+-        String xml = "<!DOCTYPE html><!-- a comment -->One <qux />Two";
++        String xml = "<!DOCTYPE HTML><!-- a comment -->One <qux />Two";
+         XmlTreeBuilder tb = new XmlTreeBuilder();
+         Document doc = tb.parse(xml, "http://foo.com/");
+-        assertEquals("<!DOCTYPE html><!-- a comment -->One <qux />Two",
++        assertEquals("<!DOCTYPE HTML><!-- a comment -->One <qux />Two",
+                 TextUtil.stripNewlines(doc.html()));
+     }
+ 
+@@ -157,6 +157,13 @@
+     }
+ 
+     @Test
++    public void caseSensitiveDeclaration() {
++        String xml = "<?XML version='1' encoding='UTF-8' something='else'?>";
++        Document doc = Jsoup.parse(xml, "", Parser.xmlParser());
++        assertEquals("<?XML version=\"1\" encoding=\"UTF-8\" something=\"else\"?>", doc.outerHtml());
++    }
++
++    @Test
+     public void testCreatesValidProlog() {
+         Document document = Document.createShell("");
+         document.outputSettings().syntax(Syntax.xml);
+@@ -167,4 +174,18 @@
+             " <body></body>\n" +
+             "</html>", document.outerHtml());
+     }
++
++    @Test
++    public void preservesCaseByDefault() {
++        String xml = "<TEST ID=1>Check</TEST>";
++        Document doc = Jsoup.parse(xml, "", Parser.xmlParser());
++        assertEquals("<TEST ID=\"1\">Check</TEST>", TextUtil.stripNewlines(doc.html()));
++    }
++
++    @Test
++    public void canNormalizeCase() {
++        String xml = "<TEST ID=1>Check</TEST>";
++        Document doc = Jsoup.parse(xml, "", Parser.xmlParser().settings(ParseSettings.htmlDefault));
++        assertEquals("<test id=\"1\">Check</test>", TextUtil.stripNewlines(doc.html()));
++    }
+ }
+diff --git a/src/test/java/org/jsoup/select/SelectorTest.java b/src/test/java/org/jsoup/select/SelectorTest.java
+index 8b5d766..69941c0 100644
+--- a/src/test/java/org/jsoup/select/SelectorTest.java
++++ b/src/test/java/org/jsoup/select/SelectorTest.java
+@@ -14,7 +14,8 @@
+  */
+ public class SelectorTest {
+     @Test public void testByTag() {
+-        Elements els = Jsoup.parse("<div id=1><div id=2><p>Hello</p></div></div><div id=3>").select("div");
++        // should be case insensitive
++        Elements els = Jsoup.parse("<div id=1><div id=2><p>Hello</p></div></div><DIV id=3>").select("DIV");
+         assertEquals(3, els.size());
+         assertEquals("1", els.get(0).id());
+         assertEquals("2", els.get(1).id());
+@@ -35,7 +36,7 @@
+     }
+ 
+     @Test public void testByClass() {
+-        Elements els = Jsoup.parse("<p id=0 class='one two'><p id=1 class='one'><p id=2 class='two'>").select("p.one");
++        Elements els = Jsoup.parse("<p id=0 class='ONE two'><p id=1 class='one'><p id=2 class='two'>").select("P.One");
+         assertEquals(2, els.size());
+         assertEquals("0", els.get(0).id());
+         assertEquals("1", els.get(1).id());
+@@ -55,7 +56,7 @@
+         Elements withTitle = doc.select("[title]");
+         assertEquals(4, withTitle.size());
+ 
+-        Elements foo = doc.select("[title=foo]");
++        Elements foo = doc.select("[TITLE=foo]");
+         assertEquals(1, foo.size());
+ 
+         Elements foo2 = doc.select("[title=\"foo\"]");
+@@ -200,7 +201,7 @@
+     @Test public void descendant() {
+         String h = "<div class=head><p class=first>Hello</p><p>There</p></div><p>None</p>";
+         Document doc = Jsoup.parse(h);
+-        Element root = doc.getElementsByClass("head").first();
++        Element root = doc.getElementsByClass("HEAD").first();
+         
+         Elements els = root.select(".head p");
+         assertEquals(2, els.size());

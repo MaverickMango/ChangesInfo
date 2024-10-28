@@ -1,0 +1,437 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Jsoup",
+  "id": "27",
+  "workingDir": "../bugs/Jsoup_27_buggy",
+  "inducingCommit": "7eeb74d133625c8819ba8da52e37f4e4db4b8a26",
+  "originalCommit": "b044a777b1b967e249045a330c3112f079e9d65a",
+  "bug_name": "Jsoup_27",
+  "derive": "defects4j",
+  "original_fixing_commit": "8963e2ac79a97e694c388622e935a0471267e9eb",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/DataUtil.java",
+        "src/main/java/org/jsoup/DataUtil.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "load",
+            "readInputStream"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "getCharsetFromContentType",
+            "readInputStream",
+            "load"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "3",
+            "56",
+            "64",
+            "65",
+            "66",
+            "68",
+            "69",
+            "70",
+            "71",
+            "73",
+            "74",
+            "75",
+            "76"
+          ],
+          "num": 13
+        },
+        {
+          "qualified_names": [
+            "4",
+            "5",
+            "10",
+            "11",
+            "12",
+            "13",
+            "20",
+            "21",
+            "22",
+            "65",
+            "72",
+            "73",
+            "75",
+            "76",
+            "78",
+            "79",
+            "80",
+            "81",
+            "82",
+            "83",
+            "84",
+            "85",
+            "86",
+            "87",
+            "88",
+            "89",
+            "90",
+            "91",
+            "92",
+            "93",
+            "94",
+            "95",
+            "97",
+            "98",
+            "99",
+            "100",
+            "101",
+            "102",
+            "103",
+            "104",
+            "105",
+            "106",
+            "107",
+            "108",
+            "109",
+            "110",
+            "111",
+            "112",
+            "113",
+            "114",
+            "115"
+          ],
+          "num": 51
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/DataUtil.java b/src/main/java/org/jsoup/DataUtil.java\nindex 906b75a..d8ee2ef 100644\n--- a/src/main/java/org/jsoup/DataUtil.java\n+++ b/src/main/java/org/jsoup/DataUtil.java\n@@ -1,16 +1,25 @@\n package org.jsoup;\n \n import org.apache.commons.lang.Validate;\n+import org.jsoup.nodes.Document;\n+import org.jsoup.nodes.Element;\n \n import java.io.*;\n import java.net.URL;\n import java.net.HttpURLConnection;\n+import java.nio.ByteBuffer;\n+import java.nio.charset.Charset;\n+import java.util.regex.Matcher;\n+import java.util.regex.Pattern;\n \n /**\n  * Internal static utilities for handling data.\n  *\n  */\n class DataUtil {\n+    private static final Pattern charsetPattern \u003d Pattern.compile(\"(?i)\\\\bcharset\u003d([^\\\\s;]*)\");\n+    private static final String defaultCharset \u003d \"UTF-8\"; // used if not found in header or http-equiv\n+    private static final int bufferSize \u003d 0x20000; // ~130K.\n     \n     /**\n      * Loads a file to a String.\n@@ -53,27 +62,57 @@\n                     contentType, url.toString()));\n         \n         InputStream inStream \u003d new BufferedInputStream(conn.getInputStream());\n-        String charSet \u003d \"UTF-8\"; // todo[must]: get from content-encoding, or http-equiv (two-pass?)\n+        String charSet \u003d getCharsetFromContentType(contentType); // may be null, readInputStream deals with it\n \n         String data \u003d readInputStream(inStream, charSet);\n         inStream.close();\n         return data;\n     }\n \n+    // reads bytes first into a buffer, then decodes with the appropriate charset. done this way to support\n+    // switching the chartset midstream when a meta http-equiv tag defines the charset.\n     private static String readInputStream(InputStream inStream, String charsetName) throws IOException {\n-        char[] buffer \u003d new char[0x20000]; // ~ 130K\n-        StringBuilder data \u003d new StringBuilder(0x20000);\n-        Reader inReader \u003d new InputStreamReader(inStream, charsetName);\n+        byte[] buffer \u003d new byte[bufferSize];\n+        ByteArrayOutputStream outStream \u003d new ByteArrayOutputStream(bufferSize);\n         int read;\n-        do {\n-            read \u003d inReader.read(buffer, 0, buffer.length);\n-            if (read \u003e 0) {\n-                data.append(buffer, 0, read);\n+        while(true) {\n+            read  \u003d inStream.read(buffer);\n+            if (read \u003d\u003d -1) break;\n+            outStream.write(buffer, 0, read);\n+        }\n+        ByteBuffer byteData \u003d ByteBuffer.wrap(outStream.toByteArray());\n+        \n+        String docData;\n+        if (charsetName \u003d\u003d null) { // determine from http-equiv. safe parse as UTF-8\n+            docData \u003d Charset.forName(defaultCharset).decode(byteData).toString();\n+            Document doc \u003d Jsoup.parse(docData);\n+            Element httpEquiv \u003d doc.select(\"meta[http-equiv]\").first();\n+            if (httpEquiv !\u003d null) { // if not found, will keep utf-8 as best attempt\n+                String foundCharset \u003d getCharsetFromContentType(httpEquiv.attr(\"content\"));\n+                if (foundCharset !\u003d null \u0026\u0026 !foundCharset.equals(defaultCharset)) { // need to re-decode\n+                    byteData.rewind();\n+                    docData \u003d Charset.forName(foundCharset).decode(byteData).toString();\n+                }\n             }\n-\n-        } while (read \u003e\u003d 0);\n-\n-        return data.toString();\n+        } else { // specified by content type header (or by user on file load)\n+            docData \u003d Charset.forName(charsetName).decode(byteData).toString();\n+        }\n+        return docData;\n+    }\n+    \n+    /**\n+     * Parse out a charset from a content type header.\n+     * @param contentType e.g. \"text/html; charset\u003dEUC-JP\"\n+     * @return \"EUC-JP\", or null if not found. Charset is trimmed and uppercased.\n+     */\n+    static String getCharsetFromContentType(String contentType) {\n+        if (contentType \u003d\u003d null) return null;\n+        \n+        Matcher m \u003d charsetPattern.matcher(contentType);\n+        if (m.find()) {\n+            return m.group(1).trim().toUpperCase();\n+        }\n+        return null;\n     }\n     \n     \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [61,93]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [94,125]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [201,228]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [229,261]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [262,293]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [294,325]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [407,498]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [503,556]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [606,652]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [4084,4582]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [2221,2277]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [2746,2783]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [2792,2864]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "WhileStatement [2891,3038]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [3047,3110]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [3128,3143]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [3152,4044]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [4053,4068]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "BooleanLiteral: true [2897,2901]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [2960,2982]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [2995,3028]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [1771,1796]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [2091,2125]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [2144,2192]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [2201,2264]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NumberLiteral: 0 [2337,2338]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "QualifiedName: buffer.length [2340,2353]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [2368,2443]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [2462,2471]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "DoStatement [2291,2473]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [2483,2506]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/Jsoup.java",
+        "src/main/java/org/jsoup/Jsoup.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "parse",
+            "parse",
+            "parse"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "parse",
+            "parse",
+            "parse"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "45",
+            "63",
+            "78"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "46",
+            "47",
+            "65",
+            "66",
+            "81",
+            "82"
+          ],
+          "num": 6
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/Jsoup.java b/src/main/java/org/jsoup/Jsoup.java\nindex f1af368..efe3791 100644\n--- a/src/main/java/org/jsoup/Jsoup.java\n+++ b/src/main/java/org/jsoup/Jsoup.java\n@@ -43,6 +43,8 @@\n \n     /**\n      Fetch a URL, and parse it as HTML.\n+     \u003cp\u003e\n+     The encoding character set is determined by the content-type header or http-equiv meta tag, or falls back to {@code UTF-8}.\n \n      @param url           URL to fetch (with a GET). The protocol must be {@code http} or {@code https}.\n      @param timeoutMillis Connection and read timeout, in milliseconds. If exceeded, IOException is thrown.\n@@ -60,7 +62,8 @@\n      Parse the contents of a file as HTML.\n \n      @param in          file to load HTML from\n-     @param charsetName character set of file contents. If you don\u0027t know the charset, generally the best guess is {@code UTF-8}.\n+     @param charsetName (optional) character set of file contents. Set to null to determine from http-equiv meta tag, if\n+     present, or fall back to {@code UTF-8} (which is often safe to do).\n      @param baseUri     The URL where the HTML was retrieved from, to generate absolute URLs relative to.\n      @return sane HTML\n \n@@ -75,7 +78,8 @@\n      Parse the contents of a file as HTML. The location of the file is used as the base URI to qualify relative URLs.\n \n      @param in          file to load HTML from\n-     @param charsetName character set of file contents. If you don\u0027t know the charset, generally the best guess is {@code UTF-8}.\n+     @param charsetName (optional) character set of file contents. Set to null to determine from http-equiv meta tag, if\n+     present, or fall back to {@code UTF-8} (which is often safe to do).\n      @return sane HTML\n \n      @throws IOException if the file could not be found, or read, or if the charsetName is invalid.\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003cp\u003e [1233,1236]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: The encoding character set is determined by the content-type header or http-equiv meta tag, or falls back to  [1242,1351]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [1351,1364]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: . [1364,1365]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement:  (which is often safe to do). [2225,2254]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement:  (which is often safe to do). [3028,3057]"
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "getCharsetFromContentType"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [],
+  "fixing_changes": [],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

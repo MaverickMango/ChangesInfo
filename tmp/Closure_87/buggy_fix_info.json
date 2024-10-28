@@ -1,0 +1,114 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.PeepholeSubstituteAlternateSyntaxTest::testIssue291",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.PeepholeSubstituteAlternateSyntax",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "87",
+  "workingDir": "../bugs/Closure_87_tmp",
+  "bug_name": "Closure_87",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.PeepholeSubstituteAlternateSyntaxTest",
+      "test_function": "testIssue291",
+      "assertion_line": "568",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: if(f)f.onchange()\nResult: f\u0026\u0026f.onchange()"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/PeepholeSubstituteAlternateSyntax.java",
+        "src/com/google/javascript/jscomp/PeepholeSubstituteAlternateSyntax.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.PeepholeSubstituteAlternateSyntax:isFoldableExpressBlock:[Node n]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.PeepholeSubstituteAlternateSyntax:isFoldableExpressBlock:[Node n]:boolean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "523",
+            "530",
+            "531",
+            "535",
+            "536",
+            "537",
+            "538",
+            "539",
+            "540",
+            "541",
+            "543",
+            "544",
+            "545"
+          ],
+          "num": 13
+        },
+        {
+          "qualified_names": [
+            "533"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/PeepholeSubstituteAlternateSyntax.java b/src/com/google/javascript/jscomp/PeepholeSubstituteAlternateSyntax.java\nindex 6c4ee4a..9498fa6 100644\n--- a/src/com/google/javascript/jscomp/PeepholeSubstituteAlternateSyntax.java\n+++ b/src/com/google/javascript/jscomp/PeepholeSubstituteAlternateSyntax.java\n@@ -520,29 +520,17 @@\n     if (n.getType() \u003d\u003d Token.BLOCK) {\n       if (n.hasOneChild()) {\n         Node maybeExpr \u003d n.getFirstChild();\n-        if (maybeExpr.getType() \u003d\u003d Token.EXPR_RESULT) {\n           // IE has a bug where event handlers behave differently when\n           // their return value is used vs. when their return value is in\n           // an EXPR_RESULT. It\u0027s pretty freaking weird. See:\n           // http://code.google.com/p/closure-compiler/issues/detail?id\u003d291\n           // We try to detect this case, and not fold EXPR_RESULTs\n           // into other expressions.\n-          if (maybeExpr.getFirstChild().getType() \u003d\u003d Token.CALL) {\n-            Node calledFn \u003d maybeExpr.getFirstChild().getFirstChild();\n \n             // We only have to worry about methods with an implicit \u0027this\u0027\n             // param, or this doesn\u0027t happen.\n-            if (calledFn.getType() \u003d\u003d Token.GETELEM) {\n-              return false;\n-            } else if (calledFn.getType() \u003d\u003d Token.GETPROP \u0026\u0026\n-                       calledFn.getLastChild().getString().startsWith(\"on\")) {\n-              return false;\n-            }\n-          }\n \n-          return true;\n-        }\n-        return false;\n+          return NodeUtil.isExpressionNode(maybeExpr);\n       }\n     }\n \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [17634,17678]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [17122,18128]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [18137,18150]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.compress.archivers.tar.TarArchiveInputStreamTest::workaroundForBrokenTimeHeader",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.compress.archivers.tar.TarUtils",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Compress",
+  "id": "14",
+  "workingDir": "../bugs/Compress_14_tmp",
+  "bug_name": "Compress_14",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.compress.archivers.tar.TarArchiveInputStreamTest",
+      "test_function": "workaroundForBrokenTimeHeader",
+      "assertion_line": "57",
+      "exception": "java.io.IOException",
+      "message": "Error detected parsing the header"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/compress/archivers/tar/TarUtils.java",
+        "src/main/java/org/apache/commons/compress/archivers/tar/TarUtils.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.tar.TarUtils:parseOctal:[final byte[] buffer, final int offset, final int length]:long"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.tar.TarUtils:parseOctal:[final byte[] buffer, final int offset, final int length]:long"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "65"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "65",
+            "66",
+            "67",
+            "68",
+            "69",
+            "70",
+            "71",
+            "72"
+          ],
+          "num": 8
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/compress/archivers/tar/TarUtils.java b/src/main/java/org/apache/commons/compress/archivers/tar/TarUtils.java\nindex d989b8a..8239480 100644\n--- a/src/main/java/org/apache/commons/compress/archivers/tar/TarUtils.java\n+++ b/src/main/java/org/apache/commons/compress/archivers/tar/TarUtils.java\n@@ -62,7 +62,14 @@\n             throw new IllegalArgumentException(\"Length \"+length+\" must be at least 2\");\n         }\n \n-        if (buffer[start] \u003d\u003d 0) {\n+        boolean allNUL \u003d true;\n+        for (int i \u003d start; i \u003c end; i++){\n+            if (buffer[i] !\u003d 0){\n+                allNUL \u003d false;\n+                break;\n+            }\n+        }\n+        if (allNUL) {\n             return 0L;\n         }\n \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [2458,2480]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ForStatement [2489,2635]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: allNUL [2648,2654]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [2462,2480]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

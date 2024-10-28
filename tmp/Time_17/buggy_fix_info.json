@@ -1,0 +1,268 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.joda.time.TestDateTimeZoneCutover::testBug3476684_adjustOffset",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.joda.time.DateTimeZone",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Time",
+  "id": "17",
+  "workingDir": "../bugs/Time_17_tmp",
+  "bug_name": "Time_17",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.joda.time.TestDateTimeZoneCutover",
+      "test_function": "testBug3476684_adjustOffset",
+      "assertion_line": "1259",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c2012-02-25T23:15:00.000-03:00\u003e but was:\u003c2012-02-25T23:15:00.000-02:00\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/joda/time/DateTimeZone.java",
+        "src/main/java/org/joda/time/DateTimeZone.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.joda.time.DateTimeZone:adjustOffset:[long instant, boolean earlierOrLater]:long"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.joda.time.DateTimeZone:adjustOffset:[long instant, boolean earlierOrLater]:long"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1167",
+            "1168",
+            "1169",
+            "1170",
+            "1171",
+            "1176",
+            "1177",
+            "1178",
+            "1179",
+            "1180",
+            "1181",
+            "1182",
+            "1185",
+            "1186",
+            "1188",
+            "1189",
+            "1191",
+            "1192"
+          ],
+          "num": 18
+        },
+        {
+          "qualified_names": [
+            "1167",
+            "1168",
+            "1169",
+            "1174",
+            "1175"
+          ],
+          "num": 5
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/joda/time/DateTimeZone.java b/src/main/java/org/joda/time/DateTimeZone.java\nindex 7219899..74a3802 100644\n--- a/src/main/java/org/joda/time/DateTimeZone.java\n+++ b/src/main/java/org/joda/time/DateTimeZone.java\n@@ -1164,32 +1164,19 @@\n         // a bit messy, but will work in all non-pathological cases\n         \n         // evaluate 3 hours before and after to work out if anything is happening\n-        long instantBefore \u003d instant - 3 * DateTimeConstants.MILLIS_PER_HOUR;\n-        long instantAfter \u003d instant + 3 * DateTimeConstants.MILLIS_PER_HOUR;\n-        long offsetBefore \u003d getOffset(instantBefore);\n-        long offsetAfter \u003d getOffset(instantAfter);\n-        if (offsetBefore \u003c\u003d offsetAfter) {\n+        long instantBefore \u003d convertUTCToLocal(instant - 3 * DateTimeConstants.MILLIS_PER_HOUR);\n+        long instantAfter \u003d convertUTCToLocal(instant + 3 * DateTimeConstants.MILLIS_PER_HOUR);\n+        if (instantBefore \u003d\u003d instantAfter) {\n             return instant;  // not an overlap (less than is a gap, equal is normal case)\n         }\n         \n         // work out range of instants that have duplicate local times\n-        long diff \u003d offsetBefore - offsetAfter;\n-        long transition \u003d nextTransition(instantBefore);\n-        long overlapStart \u003d transition - diff;\n-        long overlapEnd \u003d transition + diff;\n-        if (instant \u003c overlapStart || instant \u003e\u003d overlapEnd) {\n-          return instant;  // not an overlap\n-        }\n+        long local \u003d convertUTCToLocal(instant);\n+        return convertLocalToUTC(local, false, earlierOrLater ? instantAfter : instantBefore);\n         \n         // calculate result\n-        long afterStart \u003d instant - overlapStart;\n-        if (afterStart \u003e\u003d diff) {\n           // currently in later offset\n-          return earlierOrLater ? instant : instant - diff;\n-        } else {\n           // currently in earlier offset\n-          return earlierOrLater ? instant + diff : instant;\n-        }\n     }\n //    System.out.println(new DateTime(transitionStart, DateTimeZone.UTC) + \" \" + new DateTime(transitionStart, this));\n \n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [46743,46783]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [46792,46878]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrimitiveType: long [46743,46747]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [46748,46782]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [46347,46413]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [46443,46509]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: local [46748,46753]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [46756,46782]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: convertUTCToLocal [46347,46364]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [46365,46412]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: convertUTCToLocal [46443,46460]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [46461,46508]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: convertUTCToLocal [46756,46773]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [46774,46781]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [46481,46526]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [46535,46578]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [46809,46848]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [46857,46905]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [46914,46952]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [46961,46997]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [47010,47057]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ReturnStatement [47071,47086]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [47059,47115]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [47006,47115]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [47161,47202]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [47211,47463]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,29 @@
+Only in data/changesInfo//Codec_6/properties/modified_classes/inducing/src: java
+diff -u -r data/changesInfo//Codec_6/properties/modified_classes/inducing/src/test/org/apache/commons/codec/binary/Base64InputStreamTest.java data/changesInfo//Codec_6/cleaned/inducing/src/test/org/apache/commons/codec/binary/Base64InputStreamTest.java
+--- data/changesInfo//Codec_6/properties/modified_classes/inducing/src/test/org/apache/commons/codec/binary/Base64InputStreamTest.java	2023-07-26 04:28:26.506278648 -0700
++++ data/changesInfo//Codec_6/cleaned/inducing/src/test/org/apache/commons/codec/binary/Base64InputStreamTest.java	2023-07-26 04:25:51.851000000 -0700
+@@ -43,6 +43,24 @@
+     }
+ 
+     /**
++     * Test for the CODEC-101 bug:  InputStream.read(byte[]) should never return 0
++     * because Java's builtin InputStreamReader hates that.
++     *
++     * @throws Exception for some failure scenarios.
++     */
++    public void testCodec101() throws Exception {
++        byte[] codec101 = StringUtils.getBytesUtf8("123");
++        ByteArrayInputStream bais = new ByteArrayInputStream(codec101);
++        Base64InputStream in = new Base64InputStream(bais);
++        byte[] result = new byte[8192];
++        int c = in.read(result);
++        assertTrue("Codec101: First read successful [c=" + c + "]", c > 0);
++
++        c = in.read(result);
++        assertTrue("Codec101: Second read should report end-of-stream [c=" + c + "]", c < 0);
++    }
++
++    /**
+      * Test the Base64InputStream implementation.
+      *
+      * @throws Exception for some failure scenarios.

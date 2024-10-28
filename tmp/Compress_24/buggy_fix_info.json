@@ -1,0 +1,163 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.compress.archivers.tar.TarUtilsTest::testParseOctal",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.compress.archivers.tar.TarUtils",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Compress",
+  "id": "24",
+  "workingDir": "../bugs/Compress_24_tmp",
+  "bug_name": "Compress_24",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.compress.archivers.tar.TarUtilsTest",
+      "test_function": "testParseOctal",
+      "assertion_line": "53",
+      "exception": "java.lang.IllegalArgumentException",
+      "message": "Invalid byte 55 at offset 11 in \u0027777777777777\u0027 len\u003d12"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/compress/archivers/tar/TarUtils.java",
+        "src/main/java/org/apache/commons/compress/archivers/tar/TarUtils.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.tar.TarUtils:parseOctal:[final byte[] buffer, final int offset, final int length]:long"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.tar.TarUtils:parseOctal:[final byte[] buffer, final int offset, final int length]:long"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "129",
+            "133",
+            "134",
+            "135",
+            "136"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "129",
+            "130",
+            "131",
+            "132",
+            "133",
+            "134",
+            "135",
+            "136"
+          ],
+          "num": 8
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/compress/archivers/tar/TarUtils.java b/src/main/java/org/apache/commons/compress/archivers/tar/TarUtils.java\nindex 4cf32d6..c9d99ae 100644\n--- a/src/main/java/org/apache/commons/compress/archivers/tar/TarUtils.java\n+++ b/src/main/java/org/apache/commons/compress/archivers/tar/TarUtils.java\n@@ -126,14 +126,17 @@\n         // space but some implementations use the extra digit for big\n         // sizes/uids/gids ...\n         byte trailer \u003d buffer[end - 1];\n-        while (start \u003c end \u0026\u0026 (trailer \u003d\u003d 0 || trailer \u003d\u003d \u0027 \u0027)) {\n+        if (trailer \u003d\u003d 0 || trailer \u003d\u003d \u0027 \u0027){\n+            end--;\n+        } else {\n+            throw new IllegalArgumentException(\n+                    exceptionMessage(buffer, offset, length, end-1, trailer));\n+        }\n+        trailer \u003d buffer[end - 1];\n+        while (start \u003c end - 1 \u0026\u0026 (trailer \u003d\u003d 0 || trailer \u003d\u003d \u0027 \u0027)) {\n             end--;\n             trailer \u003d buffer[end - 1];\n         }\n-        if (start \u003d\u003d end) {\n-            throw new IllegalArgumentException(\n-                    exceptionMessage(buffer, offset, length, start, trailer));\n-        }\n \n         for ( ;start \u003c end; start++) {\n             final byte currentByte \u003d buffer[start];\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [4617,4826]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [4835,4861]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [4621,4651]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Block [4652,4682]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [4885,4892]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: - [4889,4890]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NumberLiteral: 1 [4891,4892]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [4799,4804]"
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: start [4880,4885]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [4755,4767]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [4751,4907]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

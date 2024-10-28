@@ -1,0 +1,466 @@
+diff --git a/JodaTime/RELEASE-NOTES.txt b/JodaTime/RELEASE-NOTES.txt
+index 8ee2855..a6b0d8f 100644
+--- a/JodaTime/RELEASE-NOTES.txt
++++ b/JodaTime/RELEASE-NOTES.txt
+@@ -47,6 +47,11 @@
+   These allow the formatter to be controlled
+   They do not always parse the same formats as the constructor taking an object
+ 
++- Parsing of month and day without year now handles February 29th
++  This is achieved by changing the default year from 1970 to 2000 when parsing
++  a month or day without a year. This behaviour can be controlled using the new
++  withDefaultYear() setting on the formatter (set to 1970 for the old behaviour).
++
+ - Add static factory method millis() to Duration [2648777]
+   This checks for and returns the singleton value for ZERO
+ 
+@@ -132,6 +137,15 @@
+ Semantic compatible - Yes, except
+ Previously, DateTimeZone.forID matched time zone names case-insensitively, now it is case-sensitive
+ 
++Previously, parsing a string where only the month and/or day is present would use 1970 as
++the base year. This failed to handle February 29th. The new behaviour is as follows:
++If the parse includes a field with a duration between months and days inclusive and does not include
++any field larger than months, then the default year is changed to the value of getDefaultYear() on
++DateTimeFormatter, which is the year 2000 by default.
++In effect, this means that a pattern "ddMMM" which would previously have parsed to dates
++in 1970 will now parse to dates in 2000 unless further customised.
++The old behaviour can be simulated by calling withDefautYear(1970) on the formatter.
++
+ 
+ Deprecations since 1.6
+ ----------------------
+diff --git a/JodaTime/src/main/java/org/joda/time/format/DateTimeFormatter.java b/JodaTime/src/main/java/org/joda/time/format/DateTimeFormatter.java
+index bbb1e5c..c1e1d9b 100644
+--- a/JodaTime/src/main/java/org/joda/time/format/DateTimeFormatter.java
++++ b/JodaTime/src/main/java/org/joda/time/format/DateTimeFormatter.java
+@@ -90,8 +90,10 @@
+     private final Chronology iChrono;
+     /** The zone to use as an override. */
+     private final DateTimeZone iZone;
+-    /* The pivot year to use for two-digit year parsing. */
++    /** The pivot year to use for two-digit year parsing. */
+     private final Integer iPivotYear;
++    /** The default year for parsing month/day without year. */
++    private final int iDefaultYear;
+ 
+     /**
+      * Creates a new formatter, however you will normally use the factory
+@@ -110,6 +112,7 @@
+         iChrono = null;
+         iZone = null;
+         iPivotYear = null;
++        iDefaultYear = 2000;
+     }
+ 
+     /**
+@@ -119,7 +122,7 @@
+             DateTimePrinter printer, DateTimeParser parser,
+             Locale locale, boolean offsetParsed,
+             Chronology chrono, DateTimeZone zone,
+-            Integer pivotYear) {
++            Integer pivotYear, int defaultYear) {
+         super();
+         iPrinter = printer;
+         iParser = parser;
+@@ -128,6 +131,7 @@
+         iChrono = chrono;
+         iZone = zone;
+         iPivotYear = pivotYear;
++        iDefaultYear = defaultYear;
+     }
+ 
+     //-----------------------------------------------------------------------
+@@ -184,7 +188,7 @@
+             return this;
+         }
+         return new DateTimeFormatter(iPrinter, iParser, locale,
+-                iOffsetParsed, iChrono, iZone, iPivotYear);
++                iOffsetParsed, iChrono, iZone, iPivotYear, iDefaultYear);
+     }
+ 
+     /**
+@@ -217,7 +221,7 @@
+             return this;
+         }
+         return new DateTimeFormatter(iPrinter, iParser, iLocale,
+-                true, iChrono, null, iPivotYear);
++                true, iChrono, null, iPivotYear, iDefaultYear);
+     }
+ 
+     /**
+@@ -252,7 +256,7 @@
+             return this;
+         }
+         return new DateTimeFormatter(iPrinter, iParser, iLocale,
+-                iOffsetParsed, chrono, iZone, iPivotYear);
++                iOffsetParsed, chrono, iZone, iPivotYear, iDefaultYear);
+     }
+ 
+     /**
+@@ -315,7 +319,7 @@
+             return this;
+         }
+         return new DateTimeFormatter(iPrinter, iParser, iLocale,
+-                false, iChrono, zone, iPivotYear);
++                false, iChrono, zone, iPivotYear, iDefaultYear);
+     }
+ 
+     /**
+@@ -362,7 +366,7 @@
+             return this;
+         }
+         return new DateTimeFormatter(iPrinter, iParser, iLocale,
+-                iOffsetParsed, iChrono, iZone, pivotYear);
++                iOffsetParsed, iChrono, iZone, pivotYear, iDefaultYear);
+     }
+ 
+     /**
+@@ -410,6 +414,40 @@
+ 
+     //-----------------------------------------------------------------------
+     /**
++     * Returns a new formatter that will use the specified default year.
++     * <p>
++     * The default year is used when parsing in the case where there is a
++     * month or a day but not a year. Specifically, it is used if there is
++     * a field parsed with a duration between the length of a month and the
++     * length of a day inclusive.
++     * <p>
++     * This value is typically used to move the year from 1970 to a leap year
++     * to enable February 29th to be parsed.
++     * Unless customised, the year 2000 is used.
++     * <p>
++     * This setting has no effect when printing.
++     *
++     * @param defaultYear  the default year to use
++     * @return the new formatter, not null
++     * @since 2.0
++     */
++    public DateTimeFormatter withDefaultYear(int defaultYear) {
++        return new DateTimeFormatter(iPrinter, iParser, iLocale,
++                iOffsetParsed, iChrono, iZone, iPivotYear, defaultYear);
++    }
++
++    /**
++     * Gets the default year for parsing months and days.
++     *
++     * @return the default year for parsing months and days
++     * @since 2.0
++     */
++    public int getDefaultYear() {
++      return iDefaultYear;
++    }
++
++    //-----------------------------------------------------------------------
++    /**
+      * Prints a ReadableInstant, using the chronology supplied by the instant.
+      *
+      * @param buf  the destination to format to, not null
+@@ -662,8 +700,8 @@
+         long instantLocal = instantMillis + chrono.getZone().getOffset(instantMillis);
+         chrono = selectChronology(chrono);
+         
+-        DateTimeParserBucket bucket = new DateTimeParserBucket
+-            (instantLocal, chrono, iLocale, iPivotYear);
++        DateTimeParserBucket bucket = new DateTimeParserBucket(
++            instantLocal, chrono, iLocale, iPivotYear, iDefaultYear);
+         int newPos = parser.parseInto(bucket, text, position);
+         instant.setMillis(bucket.computeMillis(false, text));
+         if (iOffsetParsed && bucket.getZone() == null) {
+@@ -691,7 +729,7 @@
+         DateTimeParser parser = requireParser();
+         
+         Chronology chrono = selectChronology(iChrono);
+-        DateTimeParserBucket bucket = new DateTimeParserBucket(0, chrono, iLocale, iPivotYear);
++        DateTimeParserBucket bucket = new DateTimeParserBucket(0, chrono, iLocale, iPivotYear, iDefaultYear);
+         int newPos = parser.parseInto(bucket, text, 0);
+         if (newPos >= 0) {
+             if (newPos >= text.length()) {
+@@ -757,7 +795,7 @@
+         DateTimeParser parser = requireParser();
+         
+         Chronology chrono = selectChronology(null).withUTC();  // always use UTC, avoiding DST gaps
+-        DateTimeParserBucket bucket = new DateTimeParserBucket(0, chrono, iLocale, iPivotYear);
++        DateTimeParserBucket bucket = new DateTimeParserBucket(0, chrono, iLocale, iPivotYear, iDefaultYear);
+         int newPos = parser.parseInto(bucket, text, 0);
+         if (newPos >= 0) {
+             if (newPos >= text.length()) {
+@@ -796,7 +834,7 @@
+         DateTimeParser parser = requireParser();
+         
+         Chronology chrono = selectChronology(null);
+-        DateTimeParserBucket bucket = new DateTimeParserBucket(0, chrono, iLocale, iPivotYear);
++        DateTimeParserBucket bucket = new DateTimeParserBucket(0, chrono, iLocale, iPivotYear, iDefaultYear);
+         int newPos = parser.parseInto(bucket, text, 0);
+         if (newPos >= 0) {
+             if (newPos >= text.length()) {
+@@ -835,7 +873,7 @@
+         DateTimeParser parser = requireParser();
+         
+         Chronology chrono = selectChronology(null);
+-        DateTimeParserBucket bucket = new DateTimeParserBucket(0, chrono, iLocale, iPivotYear);
++        DateTimeParserBucket bucket = new DateTimeParserBucket(0, chrono, iLocale, iPivotYear, iDefaultYear);
+         int newPos = parser.parseInto(bucket, text, 0);
+         if (newPos >= 0) {
+             if (newPos >= text.length()) {
+diff --git a/JodaTime/src/main/java/org/joda/time/format/DateTimeParserBucket.java b/JodaTime/src/main/java/org/joda/time/format/DateTimeParserBucket.java
+index 2b109f1..44255a6 100644
+--- a/JodaTime/src/main/java/org/joda/time/format/DateTimeParserBucket.java
++++ b/JodaTime/src/main/java/org/joda/time/format/DateTimeParserBucket.java
+@@ -24,6 +24,7 @@
+ import org.joda.time.DateTimeUtils;
+ import org.joda.time.DateTimeZone;
+ import org.joda.time.DurationField;
++import org.joda.time.DurationFieldType;
+ import org.joda.time.IllegalFieldValueException;
+ 
+ /**
+@@ -64,6 +65,8 @@
+     private Locale iLocale;
+     /** Used for parsing two-digit years. */
+     private Integer iPivotYear;
++    /** Used for parsing month/day without year. */
++    private int iDefaultYear;
+ 
+     private SavedField[] iSavedFields = new SavedField[8];
+     private int iSavedFieldsCount;
+@@ -72,18 +75,20 @@
+     private Object iSavedState;
+ 
+     /**
+-     * Constucts a bucket.
++     * Constructs a bucket.
+      * 
+      * @param instantLocal  the initial millis from 1970-01-01T00:00:00, local time
+      * @param chrono  the chronology to use
+      * @param locale  the locale to use
++     * @deprecated Use longer constructor
+      */
++    @Deprecated
+     public DateTimeParserBucket(long instantLocal, Chronology chrono, Locale locale) {
+-        this(instantLocal, chrono, locale, null);
++        this(instantLocal, chrono, locale, null, 2000);
+     }
+ 
+     /**
+-     * Constucts a bucket, with the option of specifying the pivot year for
++     * Constructs a bucket, with the option of specifying the pivot year for
+      * two-digit year parsing.
+      *
+      * @param instantLocal  the initial millis from 1970-01-01T00:00:00, local time
+@@ -91,8 +96,25 @@
+      * @param locale  the locale to use
+      * @param pivotYear  the pivot year to use when parsing two-digit years
+      * @since 1.1
++     * @deprecated Use longer constructor
+      */
++    @Deprecated
+     public DateTimeParserBucket(long instantLocal, Chronology chrono, Locale locale, Integer pivotYear) {
++        this(instantLocal, chrono, locale, pivotYear, 2000);
++    }
++
++    /**
++     * Constructs a bucket, with the option of specifying the pivot year for
++     * two-digit year parsing.
++     *
++     * @param instantLocal  the initial millis from 1970-01-01T00:00:00, local time
++     * @param chrono  the chronology to use
++     * @param locale  the locale to use
++     * @param pivotYear  the pivot year to use when parsing two-digit years
++     * @since 2.0
++     */
++    public DateTimeParserBucket(long instantLocal, Chronology chrono,
++            Locale locale, Integer pivotYear, int defaultYear) {
+         super();
+         chrono = DateTimeUtils.getChronology(chrono);
+         iMillis = instantLocal;
+@@ -100,6 +122,7 @@
+         iLocale = (locale == null ? Locale.getDefault() : locale);
+         setZone(chrono.getZone());
+         iPivotYear = pivotYear;
++        iDefaultYear = defaultYear;
+     }
+ 
+     //-----------------------------------------------------------------------
+@@ -162,9 +185,13 @@
+ 
+     //-----------------------------------------------------------------------
+     /**
+-     * Returns the pivot year used for parsing two-digit years.
++     * Returns the default year used when information is incomplete.
+      * <p>
+-     * If null is returned, this indicates default behaviour
++     * This is used for two-digit years and when the largest parsed field is
++     * months or days.
++     * <p>
++     * A null value for two-digit years means to use the value from DateTimeFormatterBuilder.
++     * A null value for month/day only parsing will cause the default of 2000 to be used.
+      *
+      * @return Integer value of the pivot year, null if not set
+      * @since 1.1
+@@ -309,6 +336,16 @@
+             iSavedFieldsShared = false;
+         }
+         sort(savedFields, count);
++        if (count > 0) {
++            // alter base year for parsing if first field is month or day
++            DurationField months = DurationFieldType.months().getField(iChrono);
++            DurationField days = DurationFieldType.days().getField(iChrono);
++            DurationField first = savedFields[0].iField.getDurationField();
++            if (compareReverse(first, months) >= 0 && compareReverse(first, days) <= 0) {
++                saveField(DateTimeFieldType.year(), iDefaultYear);
++                return computeMillis(resetFields, text);
++            }
++        }
+ 
+         long millis = iMillis;
+         try {
+@@ -451,18 +488,18 @@
+             return compareReverse
+                 (iField.getDurationField(), other.getDurationField());
+         }
+-        
+-        private int compareReverse(DurationField a, DurationField b) {
+-            if (a == null || !a.isSupported()) {
+-                if (b == null || !b.isSupported()) {
+-                    return 0;
+-                }
+-                return -1;
+-            }
++    }
++
++    static int compareReverse(DurationField a, DurationField b) {
++        if (a == null || !a.isSupported()) {
+             if (b == null || !b.isSupported()) {
+-                return 1;
++                return 0;
+             }
+-            return -a.compareTo(b);
++            return -1;
+         }
++        if (b == null || !b.isSupported()) {
++            return 1;
++        }
++        return -a.compareTo(b);
+     }
+ }
+diff --git a/JodaTime/src/test/java/org/joda/time/format/TestDateTimeFormat.java b/JodaTime/src/test/java/org/joda/time/format/TestDateTimeFormat.java
+index 2526e83..a55cd39 100644
+--- a/JodaTime/src/test/java/org/joda/time/format/TestDateTimeFormat.java
++++ b/JodaTime/src/test/java/org/joda/time/format/TestDateTimeFormat.java
+@@ -971,7 +971,17 @@
+         String str = new DateTime(2007, 6, 23, 0, 0, 0, 0, UTC).toString(dateFormatter);
+         assertEquals("23 juin", str);
+         DateTime date = dateFormatter.parseDateTime(str);
+-        check(date, 1970, 6, 23);
++        check(date, 2000, 6, 23);
++    }
++
++    public void testFormatParse_textMonthAtEnd_France_withSpecifiedDefault() {
++        DateTimeFormatter dateFormatter = DateTimeFormat.forPattern("dd MMM")
++            .withLocale(Locale.FRANCE).withZoneUTC().withDefaultYear(1980);
++        
++        String str = new DateTime(2007, 6, 23, 0, 0, 0, 0, UTC).toString(dateFormatter);
++        assertEquals("23 juin", str);
++        DateTime date = dateFormatter.parseDateTime(str);
++        check(date, 1980, 6, 23);
+     }
+ 
+     public void testFormatParse_textMonthApr_Korean() {
+diff --git a/JodaTime/src/test/java/org/joda/time/format/TestDateTimeFormatter.java b/JodaTime/src/test/java/org/joda/time/format/TestDateTimeFormatter.java
+index 501a50e..ca3c866 100644
+--- a/JodaTime/src/test/java/org/joda/time/format/TestDateTimeFormatter.java
++++ b/JodaTime/src/test/java/org/joda/time/format/TestDateTimeFormatter.java
+@@ -33,6 +33,7 @@
+ import org.joda.time.MutableDateTime;
+ import org.joda.time.ReadablePartial;
+ import org.joda.time.chrono.BuddhistChronology;
++import org.joda.time.chrono.GJChronology;
+ import org.joda.time.chrono.ISOChronology;
+ 
+ /**
+@@ -372,6 +373,55 @@
+         } catch (IllegalArgumentException ex) {}
+     }
+ 
++    public void testParseLocalDate_yearOfEra() {
++        Chronology chrono = GJChronology.getInstanceUTC();
++        DateTimeFormatter f = DateTimeFormat
++            .forPattern("YYYY-MM GG")
++            .withChronology(chrono)
++            .withLocale(Locale.UK);
++        
++        LocalDate date = new LocalDate(2005, 10, 1, chrono);
++        assertEquals(date, f.parseLocalDate("2005-10 AD"));
++        assertEquals(date, f.parseLocalDate("2005-10 CE"));
++        
++        date = new LocalDate(-2005, 10, 1, chrono);
++        assertEquals(date, f.parseLocalDate("2005-10 BC"));
++        assertEquals(date, f.parseLocalDate("2005-10 BCE"));
++    }
++
++    public void testParseLocalDate_yearOfCentury() {
++        Chronology chrono = GJChronology.getInstanceUTC();
++        DateTimeFormatter f = DateTimeFormat
++            .forPattern("yy M d")
++            .withChronology(chrono)
++            .withLocale(Locale.UK)
++            .withPivotYear(2050);
++        
++        LocalDate date = new LocalDate(2050, 8, 4, chrono);
++        assertEquals(date, f.parseLocalDate("50 8 4"));
++    }
++
++    public void testParseLocalDate_monthDay_feb29() {
++        Chronology chrono = GJChronology.getInstanceUTC();
++        DateTimeFormatter f = DateTimeFormat
++            .forPattern("M d")
++            .withChronology(chrono)
++            .withLocale(Locale.UK);
++        
++        assertEquals(new LocalDate(2000, 2, 29, chrono), f.parseLocalDate("2 29"));
++    }
++
++    public void testParseLocalDate_monthDay_withDefaultYear_feb29() {
++        Chronology chrono = GJChronology.getInstanceUTC();
++        DateTimeFormatter f = DateTimeFormat
++            .forPattern("M d")
++            .withChronology(chrono)
++            .withLocale(Locale.UK)
++            .withDefaultYear(2012);
++        
++        assertEquals(new LocalDate(2012, 2, 29, chrono), f.parseLocalDate("2 29"));
++    }
++
+     //-----------------------------------------------------------------------
+     public void testParseLocalTime_simple() {
+         assertEquals(new LocalTime(10, 20, 30), g.parseLocalTime("2004-06-09T10:20:30Z"));
+@@ -398,6 +448,27 @@
+         } catch (IllegalArgumentException ex) {}
+     }
+ 
++    public void testParseLocalDateTime_monthDay_feb29() {
++        Chronology chrono = GJChronology.getInstanceUTC();
++        DateTimeFormatter f = DateTimeFormat
++            .forPattern("M d H m")
++            .withChronology(chrono)
++            .withLocale(Locale.UK);
++        
++        assertEquals(new LocalDateTime(2000, 2, 29, 13, 40, 0, 0, chrono), f.parseLocalDateTime("2 29 13 40"));
++    }
++
++    public void testParseLocalDateTime_monthDay_withDefaultYear_feb29() {
++        Chronology chrono = GJChronology.getInstanceUTC();
++        DateTimeFormatter f = DateTimeFormat
++            .forPattern("M d H m")
++            .withChronology(chrono)
++            .withLocale(Locale.UK)
++            .withDefaultYear(2012);
++        
++        assertEquals(new LocalDateTime(2012, 2, 29, 13, 40, 0, 0, chrono), f.parseLocalDateTime("2 29 13 40"));
++    }
++
+     //-----------------------------------------------------------------------
+     public void testParseDateTime_simple() {
+         DateTime expect = null;

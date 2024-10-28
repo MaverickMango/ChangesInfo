@@ -1,0 +1,125 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.jsoup.select.SelectorTest::testByAttributeRegexCombined",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.jsoup.select.Selector",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Jsoup",
+  "id": "12",
+  "workingDir": "../bugs/Jsoup_12_tmp",
+  "bug_name": "Jsoup_12",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.jsoup.select.SelectorTest",
+      "test_function": "testByAttributeRegexCombined",
+      "assertion_line": "129",
+      "exception": "org.jsoup.select.Selector$SelectorParseException",
+      "message": "Could not parse query \u0027\u003dx|y]\u0027: unexpected token at \u0027\u003dx|y]\u0027"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/select/Selector.java",
+        "src/main/java/org/jsoup/select/Selector.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.select.Selector:combinator:[char combinator]:void",
+            "org.jsoup.select.Selector:consumeSubQuery:[]:String"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.jsoup.select.Selector:combinator:[char combinator]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "139",
+            "156",
+            "157",
+            "158",
+            "159",
+            "160",
+            "161",
+            "162",
+            "163",
+            "164",
+            "165",
+            "166",
+            "167",
+            "168",
+            "169"
+          ],
+          "num": 15
+        },
+        {
+          "qualified_names": [
+            "139",
+            "155"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/select/Selector.java b/src/main/java/org/jsoup/select/Selector.java\nindex 691b1cf..0e52007 100644\n--- a/src/main/java/org/jsoup/select/Selector.java\n+++ b/src/main/java/org/jsoup/select/Selector.java\n@@ -136,7 +136,7 @@\n     \n     private void combinator(char combinator) {\n         tq.consumeWhitespace();\n-        String subQuery \u003d consumeSubQuery(); // support multi \u003e childs\n+        String subQuery \u003d tq.consumeToAny(combinators);\n         \n         Elements output;\n         if (combinator \u003d\u003d \u0027\u003e\u0027)\n@@ -153,20 +153,6 @@\n         elements.clear(); elements.addAll(output);\n     }\n \n-    private String consumeSubQuery() {\n-        StringBuilder sq \u003d new StringBuilder();\n-        while (!tq.isEmpty()) {\n-            if (tq.matches(\"(\"))\n-                sq.append(\"(\").append(tq.chompBalanced(\u0027(\u0027, \u0027)\u0027)).append(\")\");\n-            else if (tq.matches(\"[\"))\n-                sq.append(\"[\").append(tq.chompBalanced(\u0027[\u0027, \u0027]\u0027)).append(\"]\");\n-            else if (tq.matchesAny(combinators))\n-                break;\n-            else\n-                sq.append(tq.consume());\n-        }\n-        return sq.toString();\n-    }\n     \n     private Elements findElements() {\n         if (tq.matchChomp(\"#\")) {\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [8836,8838]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [8852,8863]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [9542,10061]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.jsoup.select.Selector:consumeSubQuery:[]:String"
+      ],
+      "num": 1
+    }
+  }
+}

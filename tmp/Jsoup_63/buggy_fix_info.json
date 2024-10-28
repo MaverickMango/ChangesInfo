@@ -1,0 +1,206 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.jsoup.parser.HtmlParserTest::selfClosingOnNonvoidIsError,org.jsoup.parser.HtmlParserTest::selfClosingVoidIsNotAnError,org.jsoup.parser.HtmlParserTest::tracksErrorsWhenRequested",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.jsoup.parser.HtmlTreeBuilder,org.jsoup.parser.Tokeniser",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Jsoup",
+  "id": "63",
+  "workingDir": "../bugs/Jsoup_63_tmp",
+  "bug_name": "Jsoup_63",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.jsoup.parser.HtmlParserTest",
+      "test_function": "selfClosingOnNonvoidIsError",
+      "assertion_line": "983",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c18: [Tag cannot be self closing; not a void tag]\u003e but was:\u003c18: [Self closing flag not acknowledged]\u003e"
+    },
+    {
+      "test_class": "org.jsoup.parser.HtmlParserTest",
+      "test_function": "selfClosingVoidIsNotAnError",
+      "assertion_line": "971",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c0\u003e but was:\u003c2\u003e"
+    },
+    {
+      "test_class": "org.jsoup.parser.HtmlParserTest",
+      "test_function": "tracksErrorsWhenRequested",
+      "assertion_line": "699",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c50: [Tag cannot be self closing; not a void tag]\u003e but was:\u003c50: [Self closing flag not acknowledged]\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/parser/HtmlTreeBuilder.java",
+        "src/main/java/org/jsoup/parser/HtmlTreeBuilder.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.parser.HtmlTreeBuilder:insertEmpty:[Token.StartTag startTag]:Element"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.jsoup.parser.HtmlTreeBuilder:insertEmpty:[Token.StartTag startTag]:Element"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "227",
+            "228",
+            "230"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "227",
+            "229",
+            "231",
+            "232"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/parser/HtmlTreeBuilder.java b/src/main/java/org/jsoup/parser/HtmlTreeBuilder.java\nindex 3fe076a..16f81db 100644\n--- a/src/main/java/org/jsoup/parser/HtmlTreeBuilder.java\n+++ b/src/main/java/org/jsoup/parser/HtmlTreeBuilder.java\n@@ -224,11 +224,12 @@\n         insertNode(el);\n         if (startTag.isSelfClosing()) {\n             if (tag.isKnownTag()) {\n-                if (!tag.isEmpty())\n-                    tokeniser.error(\"Tag cannot be self closing; not a void tag\");\n+                if (tag.isSelfClosing()) tokeniser.acknowledgeSelfClosingFlag();\n             }\n-            else // unknown tag, remember this is self closing for output\n+            else {\n                 tag.setSelfClosing();\n+                tokeniser.acknowledgeSelfClosingFlag();\n+            }\n         }\n         return el;\n     }\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [8978,9087]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [8882,8946]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [9034,9073]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [8882,8984]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/parser/Tokeniser.java",
+        "src/main/java/org/jsoup/parser/Tokeniser.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.parser.Tokeniser:emit:[Token token]:void",
+            "org.jsoup.parser.Tokeniser:read:[]:Token"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.jsoup.parser.Tokeniser:emit:[Token token]:void",
+            "org.jsoup.parser.Tokeniser:read:[]:Token",
+            "org.jsoup.parser.Tokeniser:acknowledgeSelfClosingFlag:[]:void"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "35",
+            "42",
+            "70",
+            "116"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "36",
+            "44",
+            "45",
+            "46",
+            "47",
+            "76",
+            "77",
+            "124",
+            "125",
+            "126"
+          ],
+          "num": 10
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/parser/Tokeniser.java b/src/main/java/org/jsoup/parser/Tokeniser.java\nindex b047940..29fe4cc 100644\n--- a/src/main/java/org/jsoup/parser/Tokeniser.java\n+++ b/src/main/java/org/jsoup/parser/Tokeniser.java\n@@ -33,6 +33,7 @@\n     Token.Doctype doctypePending \u003d new Token.Doctype(); // doctype building up\n     Token.Comment commentPending \u003d new Token.Comment(); // comment building up\n     private String lastStartTag; // the last start tag emitted, to test appropriate end tag\n+    private boolean selfClosingFlagAcknowledged \u003d true;\n \n     Tokeniser(CharacterReader reader, ParseErrorList errors) {\n         this.reader \u003d reader;\n@@ -40,6 +41,10 @@\n     }\n \n     Token read() {\n+        if (!selfClosingFlagAcknowledged) {\n+            error(\"Self closing flag not acknowledged\");\n+            selfClosingFlagAcknowledged \u003d true;\n+        }\n         while (!isEmitPending)\n             state.read(this, reader);\n \n@@ -68,6 +73,8 @@\n         if (token.type \u003d\u003d Token.TokenType.StartTag) {\n             Token.StartTag startTag \u003d (Token.StartTag) token;\n             lastStartTag \u003d startTag.tagName;\n+            if (startTag.selfClosing)\n+                selfClosingFlagAcknowledged \u003d false;\n         } else if (token.type \u003d\u003d Token.TokenType.EndTag) {\n             Token.EndTag endTag \u003d (Token.EndTag) token;\n             if (endTag.attributes !\u003d null)\n@@ -114,6 +121,9 @@\n         this.state \u003d state;\n     }\n \n+    void acknowledgeSelfClosingFlag() {\n+        selfClosingFlagAcknowledged \u003d true;\n+    }\n     final private int[] codepointHolder \u003d new int[1]; // holder to not have to keep creating arrays\n     final private int[] multipointHolder \u003d new int[2];\n     int[] consumeCharacterReference(Character additionalAllowedCharacter, boolean inAttribute) {\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [1601,1652]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [4322,4407]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [1811,1961]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [2978,3056]"
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.jsoup.parser.Tokeniser:acknowledgeSelfClosingFlag:[]:void"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

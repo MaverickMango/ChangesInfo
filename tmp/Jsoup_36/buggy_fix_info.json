@@ -1,0 +1,205 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.jsoup.helper.DataUtilTest::shouldCorrectCharsetForDuplicateCharsetString,org.jsoup.helper.DataUtilTest::shouldNotThrowExceptionOnEmptyCharset,org.jsoup.helper.DataUtilTest::testQuotedCharset,org.jsoup.helper.DataUtilTest::shouldSelectFirstCharsetOnWeirdMultileCharsetsInMetaTags,org.jsoup.helper.DataUtilTest::shouldReturnNullForIllegalCharsetNames,org.jsoup.integration.ParseTest::testBrokenHtml5CharsetWithASingleDoubleQuote",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.jsoup.helper.DataUtil",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Jsoup",
+  "id": "36",
+  "workingDir": "../bugs/Jsoup_36_tmp",
+  "bug_name": "Jsoup_36",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.jsoup.helper.DataUtilTest",
+      "test_function": "shouldCorrectCharsetForDuplicateCharsetString",
+      "assertion_line": "51",
+      "exception": "java.nio.charset.IllegalCharsetNameException",
+      "message": "charset\u003diso-8859-1"
+    },
+    {
+      "test_class": "org.jsoup.helper.DataUtilTest",
+      "test_function": "shouldNotThrowExceptionOnEmptyCharset",
+      "assertion_line": "40",
+      "exception": "java.nio.charset.IllegalCharsetNameException",
+      "message": ""
+    },
+    {
+      "test_class": "org.jsoup.helper.DataUtilTest",
+      "test_function": "testQuotedCharset",
+      "assertion_line": "28",
+      "exception": "java.nio.charset.IllegalCharsetNameException",
+      "message": "\u0027UTF-8\u0027"
+    },
+    {
+      "test_class": "org.jsoup.helper.DataUtilTest",
+      "test_function": "shouldSelectFirstCharsetOnWeirdMultileCharsetsInMetaTags",
+      "assertion_line": "46",
+      "exception": "java.nio.charset.IllegalCharsetNameException",
+      "message": "ISO-8859-1,"
+    },
+    {
+      "test_class": "org.jsoup.helper.DataUtilTest",
+      "test_function": "shouldReturnNullForIllegalCharsetNames",
+      "assertion_line": "56",
+      "exception": "java.nio.charset.IllegalCharsetNameException",
+      "message": "$HJKDF§$/("
+    },
+    {
+      "test_class": "org.jsoup.integration.ParseTest",
+      "test_function": "testBrokenHtml5CharsetWithASingleDoubleQuote",
+      "assertion_line": "149",
+      "exception": "java.nio.charset.IllegalCharsetNameException",
+      "message": "UTF-8\""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/helper/DataUtil.java",
+        "src/main/java/org/jsoup/helper/DataUtil.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.helper.DataUtil:getCharsetFromContentType:[String contentType]:String",
+            "org.jsoup.helper.DataUtil:parseByteData:[ByteBuffer byteData, String charsetName, String baseUri, Parser parser]:Document"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.jsoup.helper.DataUtil:parseByteData:[ByteBuffer byteData, String charsetName, String baseUri, Parser parser]:Document"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "10",
+            "20",
+            "88",
+            "89",
+            "90",
+            "91",
+            "92",
+            "93",
+            "94",
+            "95",
+            "96",
+            "102",
+            "172",
+            "173",
+            "174",
+            "178",
+            "180",
+            "181"
+          ],
+          "num": 18
+        },
+        {
+          "qualified_names": [
+            "9",
+            "19",
+            "88",
+            "182"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/helper/DataUtil.java b/src/main/java/org/jsoup/helper/DataUtil.java\nindex 33457c3..f07173c 100644\n--- a/src/main/java/org/jsoup/helper/DataUtil.java\n+++ b/src/main/java/org/jsoup/helper/DataUtil.java\n@@ -7,7 +7,6 @@\n import java.io.*;\n import java.nio.ByteBuffer;\n import java.nio.charset.Charset;\n-import java.nio.charset.IllegalCharsetNameException;\n import java.util.regex.Matcher;\n import java.util.regex.Pattern;\n import java.util.Locale;\n@@ -17,7 +16,7 @@\n  *\n  */\n public class DataUtil {\n-    private static final Pattern charsetPattern \u003d Pattern.compile(\"(?i)\\\\bcharset\u003d\\\\s*(?:\\\"|\u0027)?([^\\\\s,;\\\"\u0027]*)\");\n+    private static final Pattern charsetPattern \u003d Pattern.compile(\"(?i)\\\\bcharset\u003d\\\\s*\\\"?([^\\\\s;\\\"]*)\");\n     static final String defaultCharset \u003d \"UTF-8\"; // used if not found in header or meta charset\n     private static final int bufferSize \u003d 0x20000; // ~130K.\n \n@@ -85,21 +84,11 @@\n                 String foundCharset;\n                 if (meta.hasAttr(\"http-equiv\")) {\n                     foundCharset \u003d getCharsetFromContentType(meta.attr(\"content\"));\n-                    if (foundCharset \u003d\u003d null \u0026\u0026 meta.hasAttr(\"charset\")) {\n-                        try {\n-                            if (Charset.isSupported(meta.attr(\"charset\"))) {\n-                                foundCharset \u003d meta.attr(\"charset\");\n-                            }\n-                        } catch (IllegalCharsetNameException e) {\n-                            foundCharset \u003d null;\n-                        }\n-                    }\n                 } else {\n                     foundCharset \u003d meta.attr(\"charset\");\n                 }\n \n                 if (foundCharset !\u003d null \u0026\u0026 foundCharset.length() !\u003d 0 \u0026\u0026 !foundCharset.equals(defaultCharset)) { // need to re-decode\n-                    foundCharset \u003d foundCharset.trim().replaceAll(\"[\\\"\u0027]\", \"\");\n                     charsetName \u003d foundCharset;\n                     byteData.rewind();\n                     docData \u003d Charset.forName(foundCharset).decode(byteData).toString();\n@@ -169,16 +158,10 @@\n         Matcher m \u003d charsetPattern.matcher(contentType);\n         if (m.find()) {\n             String charset \u003d m.group(1).trim();\n-            charset \u003d charset.replace(\"charset\u003d\", \"\");\n-            if (charset.isEmpty()) return null;\n-            try {\n                 if (Charset.isSupported(charset)) return charset;\n                 charset \u003d charset.toUpperCase(Locale.ENGLISH);\n                 if (Charset.isSupported(charset)) return charset;\n-            } catch (IllegalCharsetNameException e) {\n                 // if our advanced charset matching fails.... we just take the default\n-                return null;\n-            }\n         }\n         return null;\n     }\n",
+      "operations": [
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [204,256]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [3756,4179]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [4436,4495]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [7515,7557]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [7570,7605]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [7622,7832]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "CatchClause [7833,8002]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TryStatement [7618,8002]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.jsoup.helper.DataUtil:getCharsetFromContentType:[String contentType]:String"
+      ],
+      "num": 1
+    }
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.jsoup.nodes.ElementTest::testNormalizesInvisiblesInText",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.jsoup.helper.StringUtil",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Jsoup",
+  "id": "74",
+  "workingDir": "../bugs/Jsoup_74_tmp",
+  "bug_name": "Jsoup_74",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.jsoup.nodes.ElementTest",
+      "test_function": "testNormalizesInvisiblesInText",
+      "assertion_line": "1212",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003cThis[isonelong]word\u003e but was:\u003cThis[­is​one‌long‍]word\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/helper/StringUtil.java",
+        "src/main/java/org/jsoup/helper/StringUtil.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.helper.StringUtil:appendNormalisedWhitespace:[StringBuilder accum, String string, boolean stripLeading]:void",
+            "org.jsoup.helper.StringUtil:isInvisibleChar:[int c]:boolean"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.jsoup.helper.StringUtil:appendNormalisedWhitespace:[StringBuilder accum, String string, boolean stripLeading]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "131",
+            "132",
+            "134",
+            "168"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "130",
+            "165"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/helper/StringUtil.java b/src/main/java/org/jsoup/helper/StringUtil.java\nindex 9d2e744..439a7d6 100644\n--- a/src/main/java/org/jsoup/helper/StringUtil.java\n+++ b/src/main/java/org/jsoup/helper/StringUtil.java\n@@ -128,10 +128,7 @@\n         // 160 is \u0026nbsp; (non-breaking space). Not in the spec but expected.\n     }\n \n-    public static boolean isInvisibleChar(int c) {\n-        return Character.getType(c) \u003d\u003d 16 \u0026\u0026 (c \u003d\u003d 8203 || c \u003d\u003d 8204 || c \u003d\u003d 8205 || c \u003d\u003d 173);\n         // zero width sp, zw non join, zw join, soft hyphen\n-    }\n \n     /**\n      * Normalise the whitespace within this string; multiple spaces collapse to a single, and all whitespace characters\n@@ -165,7 +162,7 @@\n                 accum.append(\u0027 \u0027);\n                 lastWasWhite \u003d true;\n             }\n-            else if (!isInvisibleChar(c)) {\n+            else {\n                 accum.appendCodePoint(c);\n                 lastWasWhite \u003d false;\n                 reachedNonWhite \u003d true;\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [4331,4539]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "PrefixExpression [5897,5916]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [5893,6053]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.jsoup.helper.StringUtil:isInvisibleChar:[int c]:boolean"
+      ],
+      "num": 1
+    }
+  }
+}

@@ -1,0 +1,55 @@
+diff -r -u buggy/src/main/java/org/joda/time/tz/ZoneInfoCompiler.java inducing/src/main/java/org/joda/time/tz/ZoneInfoCompiler.java
+--- buggy/src/main/java/org/joda/time/tz/ZoneInfoCompiler.java	2023-06-12 11:34:54.998741708 +0800
++++ inducing/src/main/java/org/joda/time/tz/ZoneInfoCompiler.java	2023-06-12 11:34:55.194745282 +0800
+@@ -1,5 +1,5 @@
+ /*
+- *  Copyright 2001-2013 Stephen Colebourne
++ *  Copyright 2001-2010 Stephen Colebourne
+  *
+  *  Licensed under the Apache License, Version 2.0 (the "License");
+  *  you may not use this file except in compliance with the License.
+@@ -374,9 +374,7 @@
+ 
+         if (outputDir != null) {
+             if (!outputDir.exists()) {
+-                if (!outputDir.mkdirs()) {
+-                    throw new IOException("Destination directory doesn't exist and cannot be created: " + outputDir);
+-                }
++                throw new IOException("Destination directory doesn't exist: " + outputDir);
+             }
+             if (!outputDir.isDirectory()) {
+                 throw new IOException("Destination is not a directory: " + outputDir);
+@@ -403,11 +401,8 @@
+                         file.getParentFile().mkdirs();
+                     }
+                     OutputStream out = new FileOutputStream(file);
+-                    try {
+-                        builder.writeTo(zone.iName, out);
+-                    } finally {
+-                        out.close();
+-                    }
++                    builder.writeTo(zone.iName, out);
++                    out.close();
+ 
+                     // Test if it can be read back.
+                     InputStream in = new FileInputStream(file);
+@@ -447,14 +442,11 @@
+ 
+             OutputStream out = new FileOutputStream(file);
+             DataOutputStream dout = new DataOutputStream(out);
+-            try {
+-                // Sort and filter out any duplicates that match case.
+-                Map<String, DateTimeZone> zimap = new TreeMap<String, DateTimeZone>(String.CASE_INSENSITIVE_ORDER);
+-                zimap.putAll(map);
+-                writeZoneInfoMap(dout, zimap);
+-            } finally {
+-                dout.close();
+-            }
++            // Sort and filter out any duplicates that match case.
++            Map<String, DateTimeZone> zimap = new TreeMap<String, DateTimeZone>(String.CASE_INSENSITIVE_ORDER);
++            zimap.putAll(map);
++            writeZoneInfoMap(dout, zimap);
++            dout.close();
+         }
+ 
+         return map;

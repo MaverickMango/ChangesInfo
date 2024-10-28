@@ -1,0 +1,104 @@
+diff -u -r data/changesInfo//Codec_8/properties/modified_classes/inducing/src/java/org/apache/commons/codec/binary/Base64InputStream.java data/changesInfo//Codec_8/cleaned/fixing/src/java/org/apache/commons/codec/binary/Base64InputStream.java
+--- data/changesInfo//Codec_8/properties/modified_classes/inducing/src/java/org/apache/commons/codec/binary/Base64InputStream.java	2023-07-26 05:06:54.400141069 -0700
++++ data/changesInfo//Codec_8/cleaned/fixing/src/java/org/apache/commons/codec/binary/Base64InputStream.java	2023-07-26 05:07:30.500682143 -0700
+@@ -128,12 +128,6 @@
+                 byte[] buf = new byte[doEncode ? 4096 : 8192];
+                 int c = in.read(buf);
+ 
+-                // A little optimization to avoid System.arraycopy()
+-                // when possible.
+-                if (c > 0 && b.length == len) {
+-                    base64.setInitialBuffer(b, offset, len);
+-                }
+-
+                 if (doEncode) {
+                     base64.encode(buf, 0, c);
+                 } else {
+diff -u -r data/changesInfo//Codec_8/properties/modified_classes/inducing/src/java/org/apache/commons/codec/binary/Base64.java data/changesInfo//Codec_8/cleaned/fixing/src/java/org/apache/commons/codec/binary/Base64.java
+--- data/changesInfo//Codec_8/properties/modified_classes/inducing/src/java/org/apache/commons/codec/binary/Base64.java	2023-12-27 22:51:13.677110278 -0800
++++ data/changesInfo//Codec_8/cleaned/fixing/src/java/org/apache/commons/codec/binary/Base64.java	2023-07-26 05:31:16.391326544 -0700
+@@ -273,15 +273,9 @@
+     int readResults(byte[] b, int bPos, int bAvail) {
+         if (buf != null) {
+             int len = Math.min(avail(), bAvail);
+-            if (buf != b) {
+-                System.arraycopy(buf, readPos, b, bPos, len);
+-                readPos += len;
+-                if (readPos >= pos) {
+-                    buf = null;
+-                }
+-            } else {
+-                // Re-using the original consumer's output array is only
+-                // allowed for one round.
++            System.arraycopy(buf, readPos, b, bPos, len);
++            readPos += len;
++            if (readPos >= pos) {
+                 buf = null;
+             }
+             return len;
+@@ -352,7 +346,8 @@
+                     buf[pos++] = PAD;
+                     break;
+             }
+-            if (lineLength > 0) {
++            byte b = lineSeparator[lineSeparator.length - 1];
++            if (lineLength > 0 && pos > 0 && buf[pos-1] != b) {
+                 System.arraycopy(lineSeparator, 0, buf, pos, lineSeparator.length);
+                 pos += lineSeparator.length;
+             }
+@@ -550,6 +545,7 @@
+             return binaryData;
+         }
+         Base64 b64 = isChunked ? new Base64() : new Base64(0);
++        b64.reset();
+ 
+         long len = (binaryData.length * 4) / 3;
+         long mod = len % 4;
+@@ -564,15 +560,11 @@
+             throw new IllegalArgumentException(
+                     "Input array too big, output array would be bigger than Integer.MAX_VALUE=" + Integer.MAX_VALUE);
+         }
+-        byte[] buf = new byte[(int) len];
+-        b64.setInitialBuffer(buf, 0, buf.length);
+         b64.encode(binaryData, 0, binaryData.length);
+         b64.encode(binaryData, 0, -1); // Notify encoder of EOF.
+ 
+-        // Encoder might have resized, even though it was unnecessary.
+-        if (b64.buf != buf) {
+-            b64.readResults(buf, 0, buf.length);
+-        }
++        byte[] buf = new byte[b64.pos - b64.readPos];
++        b64.readResults(buf, 0, buf.length);
+         return buf;
+     }
+ 
+@@ -587,10 +579,8 @@
+             return base64Data;
+         }
+         Base64 b64 = new Base64();
++        b64.reset();
+ 
+-        long len = (base64Data.length * 3) / 4;
+-        byte[] buf = new byte[(int) len];
+-        b64.setInitialBuffer(buf, 0, buf.length);
+         b64.decode(base64Data, 0, base64Data.length);
+         b64.decode(base64Data, 0, -1); // Notify decoder of EOF.
+ 
+@@ -749,4 +739,16 @@
+ 
+         return resizedBytes;
+     }
++
++    /**
++     * Resets this Base64 object to its initial newly constructed state.
++     */
++    private void reset() {
++        buf = null;
++        pos = 0;
++        readPos = 0;
++        currentLinePos = 0;
++        modulus = 0;
++        eof = false;
++    }
+ }
+Only in data/changesInfo//Codec_8/properties/modified_classes/inducing/src: test

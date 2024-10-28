@@ -1,0 +1,169 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.deser.TestJdkTypes::testStringBuilder",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.deser.impl.CreatorCollector",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "8",
+  "workingDir": "../bugs/JacksonDatabind_8_tmp",
+  "bug_name": "JacksonDatabind_8",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.deser.TestJdkTypes",
+      "test_function": "testStringBuilder",
+      "assertion_line": "425",
+      "exception": "com.fasterxml.jackson.databind.JsonMappingException",
+      "message": "Conflicting String creators: already had explicitly marked [constructor for java.lang.StringBuilder, annotations: [null]], encountered [constructor for java.lang.StringBuilder, annotations: [null]]"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/deser/impl/CreatorCollector.java",
+        "src/main/java/com/fasterxml/jackson/databind/deser/impl/CreatorCollector.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.impl.CreatorCollector:verifyNonDup:[AnnotatedWithParams newOne, int typeIndex, boolean explicit]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.impl.CreatorCollector:verifyNonDup:[AnnotatedWithParams newOne, int typeIndex, boolean explicit]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "283",
+            "291",
+            "292",
+            "294",
+            "298",
+            "300",
+            "301",
+            "303",
+            "306",
+            "308",
+            "310",
+            "311"
+          ],
+          "num": 12
+        },
+        {
+          "qualified_names": [
+            "282",
+            "294"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/impl/CreatorCollector.java b/src/main/java/com/fasterxml/jackson/databind/deser/impl/CreatorCollector.java\nindex 1a99abc..39514f6 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/deser/impl/CreatorCollector.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/deser/impl/CreatorCollector.java\n@@ -280,7 +280,6 @@\n         AnnotatedWithParams oldOne \u003d _creators[typeIndex];\n         // already had an explicitly marked one?\n         if (oldOne !\u003d null) {\n-            boolean verify;\n \n             if ((_explicitCreators \u0026 mask) !\u003d 0) { // already had explicitly annotated, leave as-is\n                 // but skip, if new one not annotated\n@@ -288,27 +287,17 @@\n                     return;\n                 }\n                 // both explicit: verify\n-                verify \u003d true;\n-            } else {\n                 // otherwise only verify if neither explicitly annotated.\n-                verify \u003d !explicit;\n             }\n \n             // one more thing: ok to override in sub-class\n-            if (verify \u0026\u0026 (oldOne.getClass() \u003d\u003d newOne.getClass())) {\n+            if (oldOne.getClass() \u003d\u003d newOne.getClass()) {\n                 // [databind#667]: avoid one particular class of bogus problems\n-                Class\u003c?\u003e oldType \u003d oldOne.getRawParameterType(0);\n-                Class\u003c?\u003e newType \u003d newOne.getRawParameterType(0);\n \n-                if (oldType \u003d\u003d newType) {\n                     throw new IllegalArgumentException(\"Conflicting \"+TYPE_DESCS[typeIndex]\n                             +\" creators: already had explicitly marked \"+oldOne+\", encountered \"+newOne);\n-                }\n                 // otherwise, which one to choose?\n-                if (newType.isAssignableFrom(oldType)) {\n                     // new type more generic, use old\n-                    return;\n-                }\n                 // new type more specific, use it\n             }\n         }\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [10822,10839]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [10843,10860]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [10395,10410]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [10702,10716]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [10736,10861]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: oldType [11225,11232]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: newType [11236,11243]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [10938,10988]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [11088,11137]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [11154,11203]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [11530,11670]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [10990,11734]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [10934,11734]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

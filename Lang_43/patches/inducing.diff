@@ -1,0 +1,1915 @@
+diff --git a/src/java/org/apache/commons/lang/text/ChoiceMetaFormat.java b/src/java/org/apache/commons/lang/text/ChoiceMetaFormat.java
+deleted file mode 100644
+index ed8cf30..0000000
+--- a/src/java/org/apache/commons/lang/text/ChoiceMetaFormat.java
++++ /dev/null
+@@ -1,66 +0,0 @@
+-/*
+- * Licensed to the Apache Software Foundation (ASF) under one or more
+- * contributor license agreements.  See the NOTICE file distributed with
+- * this work for additional information regarding copyright ownership.
+- * The ASF licenses this file to You under the Apache License, Version 2.0
+- * (the "License"); you may not use this file except in compliance with
+- * the License.  You may obtain a copy of the License at
+- * 
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- * 
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-package org.apache.commons.lang.text;
+-
+-import java.text.ChoiceFormat;
+-import java.text.FieldPosition;
+-import java.text.ParsePosition;
+-
+-/**
+- * Stock "choice" MetaFormat.
+- * 
+- * @see ExtendedMessageFormat
+- * @author Matt Benson
+- * @since 2.4
+- * @version $Id$
+- */
+-public class ChoiceMetaFormat extends MetaFormatSupport {
+-    private static final long serialVersionUID = 3802197832963795129L;
+-
+-    /**
+-     * Singleton-usable instance.
+-     */
+-    public static final ChoiceMetaFormat INSTANCE = new ChoiceMetaFormat();
+-
+-    /**
+-     * Create a new ChoiceMetaFormat.
+-     */
+-    public ChoiceMetaFormat() {
+-        super();
+-    }
+-
+-    /**
+-     * {@inheritDoc}
+-     */
+-    public StringBuffer format(Object obj, StringBuffer toAppendTo,
+-            FieldPosition pos) {
+-        if (obj instanceof ChoiceFormat) {
+-            return toAppendTo.append(((ChoiceFormat) obj).toPattern());
+-        }
+-        throw new IllegalArgumentException(String.valueOf(obj));
+-    }
+-
+-    /**
+-     * {@inheritDoc}
+-     */
+-    public Object parseObject(String source, ParsePosition pos) {
+-        int start = pos.getIndex();
+-        seekFormatElementEnd(source, pos);
+-        return new ChoiceFormat(source.substring(start, pos.getIndex()));
+-    }
+-
+-}
+diff --git a/src/java/org/apache/commons/lang/text/DateMetaFormat.java b/src/java/org/apache/commons/lang/text/DateMetaFormat.java
+deleted file mode 100644
+index c7dcdfc..0000000
+--- a/src/java/org/apache/commons/lang/text/DateMetaFormat.java
++++ /dev/null
+@@ -1,53 +0,0 @@
+-/*
+- * Licensed to the Apache Software Foundation (ASF) under one or more
+- * contributor license agreements.  See the NOTICE file distributed with
+- * this work for additional information regarding copyright ownership.
+- * The ASF licenses this file to You under the Apache License, Version 2.0
+- * (the "License"); you may not use this file except in compliance with
+- * the License.  You may obtain a copy of the License at
+- * 
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- * 
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-package org.apache.commons.lang.text;
+-
+-import java.text.DateFormat;
+-import java.util.Locale;
+-
+-/**
+- * Stock "date" MetaFormat.
+- * 
+- * @see ExtendedMessageFormat
+- * @author Matt Benson
+- * @since 2.4
+- * @version $Id$
+- */
+-public class DateMetaFormat extends DateMetaFormatSupport {
+-    private static final long serialVersionUID = -4732179430347600208L;
+-
+-    /**
+-     * Create a new DateMetaFormat.
+-     */
+-    public DateMetaFormat() {
+-        super();
+-    }
+-
+-    /**
+-     * Create a new DateMetaFormat.
+-     * 
+-     * @param locale the Locale to use
+-     */
+-    public DateMetaFormat(Locale locale) {
+-        super(locale);
+-    }
+-
+-    /** {@inheritDoc} */
+-    protected DateFormat createSubformatInstance(int style) {
+-        return DateFormat.getDateInstance(style, getLocale());
+-    }
+-}
+diff --git a/src/java/org/apache/commons/lang/text/DateMetaFormatSupport.java b/src/java/org/apache/commons/lang/text/DateMetaFormatSupport.java
+deleted file mode 100644
+index d7de526..0000000
+--- a/src/java/org/apache/commons/lang/text/DateMetaFormatSupport.java
++++ /dev/null
+@@ -1,240 +0,0 @@
+-/*
+- * Licensed to the Apache Software Foundation (ASF) under one or more
+- * contributor license agreements.  See the NOTICE file distributed with
+- * this work for additional information regarding copyright ownership.
+- * The ASF licenses this file to You under the Apache License, Version 2.0
+- * (the "License"); you may not use this file except in compliance with
+- * the License.  You may obtain a copy of the License at
+- * 
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- * 
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-package org.apache.commons.lang.text;
+-
+-import java.text.DateFormat;
+-import java.text.DateFormatSymbols;
+-import java.text.FieldPosition;
+-import java.text.Format;
+-import java.text.ParsePosition;
+-import java.text.SimpleDateFormat;
+-import java.util.HashMap;
+-import java.util.Iterator;
+-import java.util.Locale;
+-import java.util.Map;
+-
+-/**
+- * date/time metaFormat support.
+- * 
+- * @see ExtendedMessageFormat
+- * @author Matt Benson
+- * @since 2.4
+- * @version $Id$
+- */
+-public abstract class DateMetaFormatSupport extends MetaFormatSupport {
+-    /** "Default" subformat name */
+-    protected static final String DEFAULT = "";
+-
+-    /** "Short" subformat name */
+-    protected static final String SHORT = "short";
+-
+-    /** "Medium" subformat name */
+-    protected static final String MEDIUM = "medium";
+-
+-    /** "Long" subformat name */
+-    protected static final String LONG = "long";
+-
+-    /** "Full" subformat name */
+-    protected static final String FULL = "full";
+-
+-    private Locale locale;
+-    private boolean handlePatterns = true;
+-
+-    private transient boolean initialized;
+-    private transient Map styleMap;
+-    private transient Map inverseStyleMap;
+-    private transient Map subformats;
+-    private transient Map reverseSubformats;
+-    private transient DateFormatSymbols dateFormatSymbols;
+-
+-    /**
+-     * Create a new AbstractDateMetaFormat.
+-     */
+-    public DateMetaFormatSupport() {
+-        this(Locale.getDefault());
+-    }
+-
+-    /**
+-     * Create a new AbstractDateMetaFormat.
+-     * 
+-     * @param locale Locale
+-     */
+-    public DateMetaFormatSupport(Locale locale) {
+-        super();
+-        this.locale = locale;
+-    }
+-
+-    /**
+-     * {@inheritDoc}
+-     */
+-    public StringBuffer format(Object obj, StringBuffer toAppendTo,
+-            FieldPosition pos) {
+-        String subformat = getSubformatName(obj);
+-        if (subformat != null) {
+-            return toAppendTo.append(subformat);
+-        }
+-        if (isHandlePatterns() && obj instanceof SimpleDateFormat) {
+-            SimpleDateFormat sdf = (SimpleDateFormat) obj;
+-            if (sdf.getDateFormatSymbols().equals(dateFormatSymbols)) {
+-                return toAppendTo.append(sdf.toPattern());
+-            }
+-        }
+-        throw new IllegalArgumentException(String.valueOf(obj));
+-    }
+-
+-    /**
+-     * Get the subformat name for the given object.
+-     * 
+-     * @param subformat Object
+-     * @return subformat name.
+-     */
+-    private String getSubformatName(Object subformat) {
+-        initialize();
+-        if (reverseSubformats.containsKey(subformat)) {
+-            return (String) inverseStyleMap.get(reverseSubformats
+-                    .get(subformat));
+-        }
+-        return null;
+-    }
+-
+-    /**
+-     * {@inheritDoc}
+-     */
+-    public Object parseObject(String source, ParsePosition pos) {
+-        int start = pos.getIndex();
+-        seekFormatElementEnd(source, pos);
+-        if (pos.getErrorIndex() >= 0) {
+-            return null;
+-        }
+-        String subformat = source.substring(start, pos.getIndex()).trim();
+-        Object result = getSubformat(subformat);
+-        if (result != null) {
+-            return result;
+-        }
+-        if (isHandlePatterns()) {
+-            return new SimpleDateFormat(subformat, getLocale());
+-        }
+-        pos.setErrorIndex(start);
+-        return null;
+-    }
+-
+-    /**
+-     * Get the named subformat.
+-     * 
+-     * @param subformat name
+-     * @return Format designated by <code>name</code>, if any
+-     */
+-    private Format getSubformat(String subformat) {
+-        initialize();
+-        if (!styleMap.containsKey(subformat)) {
+-            return null;
+-        }
+-        initialize();
+-        return (Format) subformats.get(styleMap.get(subformat));
+-    }
+-
+-    /**
+-     * Get the locale in use by this DateMetaFormatSupport.
+-     * 
+-     * @return Locale
+-     */
+-    public Locale getLocale() {
+-        return locale;
+-    }
+-
+-    /**
+-     * Initialize this DateMetaFormatSupport.
+-     */
+-    private synchronized void initialize() {
+-        if (!initialized) {
+-            styleMap = createStyleMap();
+-            inverseStyleMap = createInverseStyleMap();
+-            subformats = new HashMap();
+-            reverseSubformats = new HashMap();
+-            for (Iterator iter = styleMap.values().iterator(); iter.hasNext();) {
+-                Integer style = (Integer) iter.next();
+-                if (subformats.containsKey(style)) {
+-                    continue;
+-                }
+-                Format sf = createSubformatInstance(style.intValue());
+-                subformats.put(style, sf);
+-                if (inverseStyleMap.containsKey(style)) {
+-                    reverseSubformats.put(sf, style);
+-                }
+-            }
+-            dateFormatSymbols = new DateFormatSymbols(getLocale());
+-        }
+-        initialized = true;
+-    }
+-
+-    /**
+-     * Create a subformat for the given <code>DateFormat</code> style
+-     * constant.
+-     * 
+-     * @param style DateFormat style constant
+-     * @return a DateFormat instance.
+-     */
+-    protected abstract DateFormat createSubformatInstance(int style);
+-
+-    /**
+-     * Get whether this metaformat can parse date/time pattern formats in
+-     * addition to named formats.
+-     * 
+-     * @return boolean.
+-     */
+-    public boolean isHandlePatterns() {
+-        return handlePatterns;
+-    }
+-
+-    /**
+-     * Set whether this metaformat can parse date/time pattern formats in
+-     * addition to named formats.
+-     * 
+-     * @param handlePatterns the boolean handlePatterns to set.
+-     * @return <code>this</code> for fluent usage.
+-     */
+-    public DateMetaFormatSupport setHandlePatterns(boolean handlePatterns) {
+-        this.handlePatterns = handlePatterns;
+-        return this;
+-    }
+-
+-    /**
+-     * Create the style map.
+-     * 
+-     * @return Map
+-     */
+-    protected Map createStyleMap() {
+-        HashMap result = new HashMap();
+-        result.put(SHORT, new Integer(DateFormat.SHORT));
+-        result.put(MEDIUM, new Integer(DateFormat.MEDIUM));
+-        result.put(LONG, new Integer(DateFormat.LONG));
+-        result.put(FULL, new Integer(DateFormat.FULL));
+-        result.put(DEFAULT, new Integer(DateFormat.DEFAULT));
+-        return result;
+-    }
+-
+-    /**
+-     * Create the inverse style map.
+-     * 
+-     * @return Map
+-     */
+-    protected Map createInverseStyleMap() {
+-        Map invertMe = createStyleMap();
+-        invertMe.remove(DEFAULT);
+-        return invert(invertMe);
+-    }
+-}
+diff --git a/src/java/org/apache/commons/lang/text/DefaultMetaFormatFactory.java b/src/java/org/apache/commons/lang/text/DefaultMetaFormatFactory.java
+deleted file mode 100644
+index c834bf1..0000000
+--- a/src/java/org/apache/commons/lang/text/DefaultMetaFormatFactory.java
++++ /dev/null
+@@ -1,139 +0,0 @@
+-/*
+- * Licensed to the Apache Software Foundation (ASF) under one or more
+- * contributor license agreements.  See the NOTICE file distributed with
+- * this work for additional information regarding copyright ownership.
+- * The ASF licenses this file to You under the Apache License, Version 2.0
+- * (the "License"); you may not use this file except in compliance with
+- * the License.  You may obtain a copy of the License at
+- * 
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- * 
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-package org.apache.commons.lang.text;
+-
+-import java.text.Format;
+-import java.text.ParsePosition;
+-import java.util.Arrays;
+-import java.util.HashMap;
+-import java.util.Iterator;
+-import java.util.List;
+-import java.util.Locale;
+-import java.util.Map;
+-
+-import org.apache.commons.lang.ArrayUtils;
+-import org.apache.commons.lang.Validate;
+-
+-/**
+- * Factory methods to produce metaformat instances that behave like
+- * java.text.MessageFormat.
+- * 
+- * @author Matt Benson
+- * @since 2.4
+- * @version $Id: DefaultMetaFormatFactory.java 592077 2007-11-05 16:47:10Z
+- *          mbenson $
+- */
+-class DefaultMetaFormatFactory {
+-
+-    /** Number key */
+-    public static final String NUMBER_KEY = "number";
+-
+-    /** Date key */
+-    public static final String DATE_KEY = "date";
+-
+-    /** Time key */
+-    public static final String TIME_KEY = "time";
+-
+-    /** Choice key */
+-    public static final String CHOICE_KEY = "choice";
+-
+-    private static final String[] NO_SUBFORMAT_KEYS = new String[] {
+-            NUMBER_KEY, DATE_KEY, TIME_KEY };
+-
+-    private static final String[] NO_PATTERN_KEYS = new String[] { NUMBER_KEY,
+-            DATE_KEY, TIME_KEY, CHOICE_KEY };
+-
+-    private static final String[] PATTERN_KEYS = new String[] { DATE_KEY,
+-            TIME_KEY };
+-
+-    /**
+-     * Ordered NameKeyedMetaFormat
+-     */
+-    private static class OrderedNameKeyedMetaFormat extends NameKeyedMetaFormat {
+-        private static final long serialVersionUID = -7688772075239431055L;
+-
+-        private List keys;
+-
+-        /**
+-         * Construct a new OrderedNameKeyedMetaFormat.
+-         * 
+-         * @param names String[]
+-         * @param formats Format[]
+-         */
+-        private OrderedNameKeyedMetaFormat(String[] names, Format[] formats) {
+-            super(createMap(names, formats));
+-            this.keys = Arrays.asList(names);
+-        }
+-
+-        /**
+-         * Create a map from the specified key/value parameters.
+-         * 
+-         * @param names keys
+-         * @param formats values
+-         * @return Map
+-         */
+-        private static Map createMap(String[] names, Format[] formats) {
+-            Validate.isTrue(ArrayUtils.isSameLength(names, formats));
+-            HashMap result = new HashMap(names.length);
+-            for (int i = 0; i < names.length; i++) {
+-                result.put(names[i], formats[i]);
+-            }
+-            return result;
+-        }
+-
+-        /**
+-         * {@inheritDoc}
+-         */
+-        protected Iterator iterateKeys() {
+-            return keys.iterator();
+-        }
+-    }
+-
+-    /**
+-     * Get a default metaformat for the specified Locale.
+-     * 
+-     * @param locale the Locale for the resulting Format instance.
+-     * @return Format
+-     */
+-    public static Format getFormat(final Locale locale) {
+-        Format nmf = new NumberMetaFormat(locale);
+-        Format dmf = new DateMetaFormat(locale).setHandlePatterns(false);
+-        Format tmf = new TimeMetaFormat(locale).setHandlePatterns(false);
+-
+-        return new MultiFormat(new Format[] {
+-                new OrderedNameKeyedMetaFormat(NO_SUBFORMAT_KEYS, new Format[] {
+-                        getDefaultFormat(nmf), getDefaultFormat(dmf),
+-                        getDefaultFormat(tmf) }),
+-                new OrderedNameKeyedMetaFormat(NO_PATTERN_KEYS, new Format[] {
+-                        nmf, dmf, tmf, ChoiceMetaFormat.INSTANCE }),
+-                new OrderedNameKeyedMetaFormat(PATTERN_KEYS,
+-                        new Format[] { new DateMetaFormat(locale),
+-                                new TimeMetaFormat(locale) }) });
+-    }
+-
+-    /**
+-     * Get the default format supported by a given metaformat.
+-     * 
+-     * @param metaformat Format to handle parsing.
+-     * @return the default format, if any.
+-     */
+-    private static Format getDefaultFormat(Format metaformat) {
+-        ParsePosition pos = new ParsePosition(0);
+-        Object o = metaformat.parseObject("", pos);
+-        return pos.getErrorIndex() < 0 ? (Format) o : null;
+-    }
+-}
+diff --git a/src/java/org/apache/commons/lang/text/ExtendedMessageFormat.java b/src/java/org/apache/commons/lang/text/ExtendedMessageFormat.java
+index 4c75c75..d0cf6ed 100644
+--- a/src/java/org/apache/commons/lang/text/ExtendedMessageFormat.java
++++ b/src/java/org/apache/commons/lang/text/ExtendedMessageFormat.java
+@@ -20,25 +20,19 @@
+ import java.text.MessageFormat;
+ import java.text.ParsePosition;
+ import java.util.ArrayList;
++import java.util.Collection;
++import java.util.Iterator;
+ import java.util.Locale;
++import java.util.Map;
+ 
+-import org.apache.commons.lang.StringUtils;
+ import org.apache.commons.lang.Validate;
+ 
+ /**
+  * Extends <code>MessageFormat</code> to allow pluggable/additional formatting
+- * options for embedded format elements; requires a "meta-format", that is a
+- * <code>Format</code> capable of parsing and formatting other
+- * <code>Format</code>s.
+- * 
+- * Limitations:
+- * <ul>
+- * <li><code>toPattern()</code> results are tailored to JDK 1.4+ output and
+- * will produce fairly drastically different results on earlier JDKs.</li>
+- * <li>Recursive choice formats do not inherit knowledge of the extended
+- * formatters and are limited to those available with
+- * <code>java.text.MessageFormat</code>.</li>
+- * </ul>
++ * options for embedded format elements; requires elaboration.
++ *
++ * Note that the mutator methods for the replacement Formats are to be considered
++ * unnecessary and thus have been disabled (UnsupportedOperationException).
+  * 
+  * @author Matt Benson
+  * @since 2.4
+@@ -47,299 +41,24 @@
+ public class ExtendedMessageFormat extends MessageFormat {
+     private static final long serialVersionUID = -2362048321261811743L;
+ 
+-    /**
+-     * Get a default meta-format for the default Locale. This will produce
+-     * behavior identical to a <code>java.lang.MessageFormat</code> using the
+-     * default locale.
+-     * 
+-     * @return Format
+-     */
+-    public static Format createDefaultMetaFormat() {
+-        return createDefaultMetaFormat(Locale.getDefault());
+-    }
++    private static final String DUMMY_PATTERN = "";
++    private static final String ESCAPED_QUOTE = "''";
++    private static final char START_FMT = ',';
++    private static final char END_FE = '}';
++    private static final char START_FE = '{';
++    private static final char QUOTE = '\'';
+ 
+-    /**
+-     * Get a default meta-format for the specified Locale. This will produce
+-     * behavior identical to a <code>java.lang.MessageFormat</code> using
+-     * <code>locale</code>.
+-     * 
+-     * @param locale the Locale for the resulting Format instance.
+-     * @return Format
+-     */
+-    public static Format createDefaultMetaFormat(Locale locale) {
+-        return DefaultMetaFormatFactory.getFormat(locale);
+-    }
+-
+-    /**
+-     * Conceptual demarcation of methods to parse the pattern.
+-     */
+-    private static class Parser {
+-        private static final String ESCAPED_QUOTE = "''";
+-        private static final char START_FMT = ',';
+-        private static final char END_FE = '}';
+-        private static final char START_FE = '{';
+-        private static final char QUOTE = '\'';
+-
+-        /**
+-         * Strip all formats from the pattern.
+-         * 
+-         * @param pattern String to strip
+-         * @return stripped pattern
+-         */
+-        private String stripFormats(String pattern) {
+-            StringBuffer sb = new StringBuffer(pattern.length());
+-            ParsePosition pos = new ParsePosition(0);
+-            char[] c = pattern.toCharArray();
+-            while (pos.getIndex() < pattern.length()) {
+-                switch (c[pos.getIndex()]) {
+-                case QUOTE:
+-                    appendQuotedString(pattern, pos, sb, true);
+-                    break;
+-                case START_FE:
+-                    int start = pos.getIndex();
+-                    readArgumentIndex(pattern, next(pos));
+-                    sb.append(c, start, pos.getIndex() - start);
+-                    if (c[pos.getIndex()] == START_FMT) {
+-                        eatFormat(pattern, next(pos));
+-                    }
+-                    if (c[pos.getIndex()] != END_FE) {
+-                        throw new IllegalArgumentException(
+-                                "Unreadable format element at position "
+-                                        + start);
+-                    }
+-                    // fall through
+-                default:
+-                    sb.append(c[pos.getIndex()]);
+-                    next(pos);
+-                }
+-            }
+-            return sb.toString();
+-        }
+-
+-        /**
+-         * Insert formats back into the pattern for toPattern() support.
+-         * 
+-         * @param pattern source
+-         * @param formats the Formats to insert
+-         * @param metaFormat Format to format the Formats
+-         * @return full pattern
+-         */
+-        private String insertFormats(String pattern, Format[] formats,
+-                Format metaFormat) {
+-            if (formats == null || formats.length == 0) {
+-                return pattern;
+-            }
+-            StringBuffer sb = new StringBuffer(pattern.length() * 2);
+-            ParsePosition pos = new ParsePosition(0);
+-            int fe = -1;
+-            while (pos.getIndex() < pattern.length()) {
+-                char c = pattern.charAt(pos.getIndex());
+-                switch (c) {
+-                case QUOTE:
+-                    appendQuotedString(pattern, pos, sb, false);
+-                    break;
+-                case START_FE:
+-                    fe++;
+-                    sb.append(START_FE).append(
+-                            readArgumentIndex(pattern, next(pos)));
+-                    if (formats[fe] != null) {
+-                        String formatName = metaFormat.format(formats[fe]);
+-                        if (StringUtils.isNotEmpty(formatName)) {
+-                            sb.append(START_FMT).append(formatName);
+-                        }
+-                    }
+-                    break;
+-                default:
+-                    sb.append(pattern.charAt(pos.getIndex()));
+-                    next(pos);
+-                }
+-            }
+-            return sb.toString();
+-        }
+-
+-        /**
+-         * Parse the formats from the given pattern.
+-         * 
+-         * @param pattern String to parse
+-         * @param metaFormat Format to parse the Formats
+-         * @return array of parsed Formats
+-         */
+-        private Format[] parseFormats(String pattern, Format metaFormat) {
+-            ArrayList result = new ArrayList();
+-            ParsePosition pos = new ParsePosition(0);
+-            while (pos.getIndex() < pattern.length()) {
+-                switch (pattern.charAt(pos.getIndex())) {
+-                case QUOTE:
+-                    getQuotedString(pattern, next(pos), true);
+-                    break;
+-                case START_FE:
+-                    int start = pos.getIndex();
+-                    readArgumentIndex(pattern, next(pos));
+-                    if (pattern.charAt(pos.getIndex()) == START_FMT) {
+-                        seekNonWs(pattern, next(pos));
+-                    }
+-                    result.add(metaFormat.parseObject(pattern, pos));
+-                    seekNonWs(pattern, pos);
+-                    if (pattern.charAt(pos.getIndex()) != END_FE) {
+-                        throw new IllegalArgumentException(
+-                                "Unreadable format element at position "
+-                                        + start);
+-                    }
+-                    // fall through
+-                default:
+-                    next(pos);
+-                }
+-            }
+-            return (Format[]) result.toArray(new Format[result.size()]);
+-        }
+-
+-        /**
+-         * Consume whitespace from the current parse position.
+-         * 
+-         * @param pattern String to read
+-         * @param pos current position
+-         */
+-        private void seekNonWs(String pattern, ParsePosition pos) {
+-            int len = 0;
+-            char[] buffer = pattern.toCharArray();
+-            do {
+-                len = StrMatcher.splitMatcher().isMatch(buffer, pos.getIndex());
+-                pos.setIndex(pos.getIndex() + len);
+-            } while (len > 0 && pos.getIndex() < pattern.length());
+-        }
+-
+-        /**
+-         * Convenience method to advance parse position by 1
+-         * 
+-         * @param pos ParsePosition
+-         * @return <code>pos</code>
+-         */
+-        private ParsePosition next(ParsePosition pos) {
+-            pos.setIndex(pos.getIndex() + 1);
+-            return pos;
+-        }
+-
+-        /**
+-         * Read the argument index from the current format element
+-         * 
+-         * @param pattern pattern to parse
+-         * @param pos current parse position
+-         * @return argument index as string
+-         */
+-        private String readArgumentIndex(String pattern, ParsePosition pos) {
+-            int start = pos.getIndex();
+-            for (; pos.getIndex() < pattern.length(); next(pos)) {
+-                char c = pattern.charAt(pos.getIndex());
+-                if (c == START_FMT || c == END_FE) {
+-                    return pattern.substring(start, pos.getIndex());
+-                }
+-                if (!Character.isDigit(c)) {
+-                    throw new IllegalArgumentException(
+-                            "Invalid format argument index at position "
+-                                    + start);
+-                }
+-            }
+-            throw new IllegalArgumentException(
+-                    "Unterminated format element at position " + start);
+-        }
+-
+-        /**
+-         * Consume a quoted string, adding it to <code>appendTo</code> if
+-         * specified.
+-         * 
+-         * @param pattern pattern to parse
+-         * @param pos current parse position
+-         * @param appendTo optional StringBuffer to append
+-         * @param escapingOn whether to process escaped quotes
+-         * @return <code>appendTo</code>
+-         */
+-        private StringBuffer appendQuotedString(String pattern,
+-                ParsePosition pos, StringBuffer appendTo, boolean escapingOn) {
+-            int start = pos.getIndex();
+-            char[] c = pattern.toCharArray();
+-            if (escapingOn && c[start] == QUOTE) {
+-                return appendTo == null ? null : appendTo.append(QUOTE);
+-            }
+-            int lastHold = start;
+-            for (int i = pos.getIndex(); i < pattern.length(); i++) {
+-                if (escapingOn
+-                        && pattern.substring(i).startsWith(ESCAPED_QUOTE)) {
+-                    appendTo.append(c, lastHold, pos.getIndex() - lastHold)
+-                            .append(QUOTE);
+-                    pos.setIndex(i + ESCAPED_QUOTE.length());
+-                    lastHold = pos.getIndex();
+-                    continue;
+-                }
+-                switch (c[pos.getIndex()]) {
+-                case QUOTE:
+-                    next(pos);
+-                    return appendTo == null ? null : appendTo.append(c,
+-                            lastHold, pos.getIndex() - lastHold);
+-                default:
+-                    next(pos);
+-                }
+-            }
+-            throw new IllegalArgumentException(
+-                    "Unterminated quoted string at position " + start);
+-        }
+-
+-        /**
+-         * Consume quoted string only
+-         * 
+-         * @param pattern pattern to parse
+-         * @param pos current parse position
+-         * @param escapingOn whether to process escaped quotes
+-         */
+-        private void getQuotedString(String pattern, ParsePosition pos,
+-                boolean escapingOn) {
+-            appendQuotedString(pattern, pos, null, escapingOn);
+-        }
+-
+-        /**
+-         * Consume the entire format found at the current position.
+-         * 
+-         * @param pattern string to parse
+-         * @param pos current parse position
+-         */
+-        private void eatFormat(String pattern, ParsePosition pos) {
+-            int start = pos.getIndex();
+-            int depth = 1;
+-            for (; pos.getIndex() < pattern.length(); next(pos)) {
+-                switch (pattern.charAt(pos.getIndex())) {
+-                case START_FE:
+-                    depth++;
+-                    break;
+-                case END_FE:
+-                    depth--;
+-                    if (depth == 0) {
+-                        return;
+-                    }
+-                    break;
+-                case QUOTE:
+-                    getQuotedString(pattern, pos, false);
+-                    break;
+-                }
+-            }
+-            throw new IllegalArgumentException(
+-                    "Unterminated format element at position " + start);
+-        }
+-    }
+-
+-    private static final Parser PARSER = new Parser();
+-
+-    private Format metaFormat;
+-    private String strippedPattern;
++    private String toPattern;
++    private Map registry;
+ 
+     /**
+      * Create a new ExtendedMessageFormat for the default locale.
+      * 
+      * @param pattern String
+-     * @param metaFormat Format
+-     * @throws IllegalArgumentException if <code>metaFormat</code> is
+-     *             <code>null</code> or in case of a bad pattern.
++     * @throws IllegalArgumentException in case of a bad pattern.
+      */
+-    public ExtendedMessageFormat(String pattern, Format metaFormat) {
+-        this(pattern, Locale.getDefault(), metaFormat);
++    public ExtendedMessageFormat(String pattern) {
++        this(pattern, Locale.getDefault());
+     }
+ 
+     /**
+@@ -347,89 +66,376 @@
+      * 
+      * @param pattern String
+      * @param locale Locale
+-     * @param metaFormat Format
+-     * @throws IllegalArgumentException if <code>metaFormat</code> is
+-     *             <code>null</code> or in case of a bad pattern.
++     * @throws IllegalArgumentException in case of a bad pattern.
+      */
+-    public ExtendedMessageFormat(String pattern, Locale locale,
+-            Format metaFormat) {
+-        /*
+-         * We have to do some acrobatics here: the call to the super constructor
+-         * will invoke applyPattern(), but we don't want to apply the pattern
+-         * until we've installed our custom metaformat. So we check for that in
+-         * our (final) applyPattern implementation, and re-call at the end of
+-         * this constructor.
+-         */
+-        super(pattern);
+-        setLocale(locale);
+-        setMetaFormat(metaFormat);
++    public ExtendedMessageFormat(String pattern, Locale locale) {
++        this(pattern, locale, null);
++    }
++
++    /**
++     * Create a new ExtendedMessageFormat for the default locale.
++     * 
++     * @param pattern String
++     * @param registry Registry of format factories:  Map<String, FormatFactory>
++     * @throws IllegalArgumentException in case of a bad pattern.
++     */
++    public ExtendedMessageFormat(String pattern, Map registry) {
++        this(pattern, Locale.getDefault(), registry);
++    }
++
++    /**
++     * Create a new ExtendedMessageFormat.
++     * 
++     * @param pattern String
++     * @param locale Locale
++     * @param registry Registry of format factories:  Map<String, FormatFactory>
++     * @throws IllegalArgumentException in case of a bad pattern.
++     */
++    public ExtendedMessageFormat(String pattern, Locale locale, Map registry) {
++        super(DUMMY_PATTERN, locale);
++        this.registry = registry;
+         applyPattern(pattern);
+     }
+ 
+     /**
++     * {@inheritDoc}
++     */
++    public String toPattern() {
++        return toPattern;
++    }
++
++    /**
+      * Apply the specified pattern.
+      * 
+      * @param pattern String
+      */
+     public final void applyPattern(String pattern) {
+-        if (metaFormat == null) {
++        if (registry == null) {
++            super.applyPattern(pattern);
++            toPattern = super.toPattern();
+             return;
+         }
+-        applyPatternPre(pattern);
+-        strippedPattern = PARSER.stripFormats(pattern);
+-        super.applyPattern(strippedPattern);
+-        setFormats(PARSER.parseFormats(pattern, metaFormat));
+-        applyPatternPost(pattern);
++        ArrayList foundFormats = new ArrayList();
++        ArrayList foundDescriptions = new ArrayList();
++        StringBuffer stripCustom = new StringBuffer(pattern.length());
++
++        ParsePosition pos = new ParsePosition(0);
++        char[] c = pattern.toCharArray();
++        int fmtCount = 0;
++        while (pos.getIndex() < pattern.length()) {
++            switch (c[pos.getIndex()]) {
++            case QUOTE:
++                appendQuotedString(pattern, pos, stripCustom, true);
++                break;
++            case START_FE:
++                fmtCount++;
++                seekNonWs(pattern, pos);
++                int start = pos.getIndex();
++                int index = readArgumentIndex(pattern, next(pos));
++                stripCustom.append(START_FE).append(index);
++                seekNonWs(pattern, pos);
++                Format format = null;
++                String formatDescription = null;
++                if (c[pos.getIndex()] == START_FMT) {
++                    formatDescription = parseFormatDescription(pattern,
++                            next(pos));
++                    format = getFormat(formatDescription);
++                    if (format == null) {
++                        stripCustom.append(START_FMT).append(formatDescription);
++                    }
++                }
++                foundFormats.add(format);
++                foundDescriptions.add(format == null ? null : formatDescription);
++                Validate.isTrue(foundFormats.size() == fmtCount);
++                Validate.isTrue(foundDescriptions.size() == fmtCount);
++                if (c[pos.getIndex()] != END_FE) {
++                    throw new IllegalArgumentException(
++                            "Unreadable format element at position " + start);
++                }
++                // fall through
++            default:
++                stripCustom.append(c[pos.getIndex()]);
++                next(pos);
++            }
++        }
++        super.applyPattern(stripCustom.toString());
++        toPattern = insertFormats(super.toPattern(), foundDescriptions);
++        if (containsElements(foundFormats)) {
++            Format[] origFormats = getFormats();
++            for (int i = 0; i < origFormats.length; i++) {
++                Format f = (Format) foundFormats.get(i);
++                if (f != null) {
++                    origFormats[i] = f;
++                }
++            }
++            super.setFormats(origFormats);
++        }
+     }
+ 
+     /**
+-     * Pre-execution hook by means of which a subclass can customize the
+-     * behavior of the final applyPattern implementation.
+-     * 
+-     * @param pattern String
++     * {@inheritDoc}
++     * UNSUPPORTED
+      */
+-    protected void applyPatternPre(String pattern) {
+-        // noop
++    public void setFormat(int formatElementIndex, Format newFormat) {
++        throw new UnsupportedOperationException();
+     }
+ 
+     /**
+-     * Post-execution hook by means of which a subclass can customize the
+-     * behavior of the final applyPattern implementation.
+-     * 
+-     * @param pattern String
++     * {@inheritDoc}
++     * UNSUPPORTED
+      */
+-    protected void applyPatternPost(String pattern) {
+-        // noop
++    public void setFormatByArgumentIndex(int argumentIndex, Format newFormat) {
++        throw new UnsupportedOperationException();
+     }
+ 
+     /**
+-     * Render the pattern from the current state of the
+-     * <code>ExtendedMessageFormat</code>.
+-     * 
+-     * @return pattern String
++     * {@inheritDoc}
++     * UNSUPPORTED
+      */
+-    public String toPattern() {
+-        return PARSER.insertFormats(strippedPattern, getFormats(), metaFormat);
++    public void setFormats(Format[] newFormats) {
++        throw new UnsupportedOperationException();
+     }
+ 
+     /**
+-     * Get the meta-format currently configured.
+-     * 
+-     * @return Format.
++     * {@inheritDoc}
++     * UNSUPPORTED
+      */
+-    public synchronized Format getMetaFormat() {
+-        return metaFormat;
++    public void setFormatsByArgumentIndex(Format[] newFormats) {
++        throw new UnsupportedOperationException();
+     }
+ 
+     /**
+-     * Set the meta-format. Has no effect until a subsequent call to
+-     * {@link #applyPattern(String)}.
++     * Get a custom format from a format description.
+      * 
+-     * @param metaFormat the Format metaFormat to set.
++     * @param desc String
++     * @return Format
+      */
+-    public synchronized void setMetaFormat(Format metaFormat) {
+-        Validate.notNull(metaFormat, "metaFormat is null");
+-        this.metaFormat = metaFormat;
++    private Format getFormat(String desc) {
++        if (registry != null) {
++            String name = desc;
++            String args = null;
++            int i = desc.indexOf(START_FMT);
++            if (i > 0) {
++                name = desc.substring(0, i).trim();
++                args = desc.substring(i + 1).trim();
++            }
++            FormatFactory factory = (FormatFactory) registry.get(name);
++            if (factory != null) {
++                return factory.getFormat(name, args, getLocale());
++            }
++        }
++        return null;
+     }
+ 
++    /**
++     * Read the argument index from the current format element
++     * 
++     * @param pattern pattern to parse
++     * @param pos current parse position
++     * @return argument index
++     */
++    private int readArgumentIndex(String pattern, ParsePosition pos) {
++        int start = pos.getIndex();
++        seekNonWs(pattern, pos);
++        StringBuffer result = new StringBuffer();
++        boolean error = false;
++        for (; !error && pos.getIndex() < pattern.length(); next(pos)) {
++            char c = pattern.charAt(pos.getIndex());
++            if (Character.isWhitespace(c)) {
++                seekNonWs(pattern, pos);
++                c = pattern.charAt(pos.getIndex());
++                if (c != START_FMT && c != END_FE) {
++                    error = true;
++                    continue;
++                }
++            }
++            if ((c == START_FMT || c == END_FE) && result.length() > 0) {
++                try {
++                    return Integer.parseInt(result.toString());
++                } catch (NumberFormatException e) {
++                    //we've already ensured only digits, so unless something outlandishly large was specified we should be okay.
++                }
++            }
++            error = !Character.isDigit(c);
++            result.append(c);
++        }
++        if (error) {
++            throw new IllegalArgumentException(
++                    "Invalid format argument index at position " + start + ": "
++                            + pattern.substring(start, pos.getIndex()));
++        }
++        throw new IllegalArgumentException(
++                "Unterminated format element at position " + start);
++    }
++
++    /**
++     * Parse the format component of a format element.
++     * 
++     * @param pattern string to parse
++     * @param pos current parse position
++     * @return Format description String
++     */
++    private String parseFormatDescription(String pattern, ParsePosition pos) {
++        int start = pos.getIndex();
++        seekNonWs(pattern, pos);
++        int text = pos.getIndex();
++        int depth = 1;
++        for (; pos.getIndex() < pattern.length(); next(pos)) {
++            switch (pattern.charAt(pos.getIndex())) {
++            case START_FE:
++                depth++;
++                break;
++            case END_FE:
++                depth--;
++                if (depth == 0) {
++                    return pattern.substring(text, pos.getIndex());
++                }
++                break;
++            case QUOTE:
++                getQuotedString(pattern, pos, false);
++                break;
++            }
++        }
++        throw new IllegalArgumentException(
++                "Unterminated format element at position " + start);
++    }
++
++    /**
++     * Insert formats back into the pattern for toPattern() support.
++     *
++     * @param pattern source
++     * @param formats the Formats to insert
++     * @param metaFormat Format to format the Formats
++     * @return full pattern
++     */
++    private String insertFormats(String pattern, ArrayList customPatterns) {
++        if (!containsElements(customPatterns)) {
++            return pattern;
++        }
++        StringBuffer sb = new StringBuffer(pattern.length() * 2);
++        ParsePosition pos = new ParsePosition(0);
++        int fe = -1;
++        int depth = 0;
++        while (pos.getIndex() < pattern.length()) {
++            char c = pattern.charAt(pos.getIndex());
++            switch (c) {
++            case QUOTE:
++                appendQuotedString(pattern, pos, sb, false);
++                break;
++            case START_FE:
++                depth++;
++                if (depth == 1) {
++                    fe++;
++                    sb.append(START_FE).append(
++                            readArgumentIndex(pattern, next(pos)));
++                    String customPattern = (String) customPatterns.get(fe);
++                    if (customPattern != null) {
++                        sb.append(START_FMT).append(customPattern);
++                    }
++                }
++                break;
++            case END_FE:
++                depth--;
++                //fall through:
++            default:
++                sb.append(c);
++                next(pos);
++            }
++        }
++        return sb.toString();
++    }
++
++    /**
++     * Consume whitespace from the current parse position.
++     * 
++     * @param pattern String to read
++     * @param pos current position
++     */
++    private void seekNonWs(String pattern, ParsePosition pos) {
++        int len = 0;
++        char[] buffer = pattern.toCharArray();
++        do {
++            len = StrMatcher.splitMatcher().isMatch(buffer, pos.getIndex());
++            pos.setIndex(pos.getIndex() + len);
++        } while (len > 0 && pos.getIndex() < pattern.length());
++    }
++
++    /**
++     * Convenience method to advance parse position by 1
++     * 
++     * @param pos ParsePosition
++     * @return <code>pos</code>
++     */
++    private ParsePosition next(ParsePosition pos) {
++        pos.setIndex(pos.getIndex() + 1);
++        return pos;
++    }
++
++    /**
++     * Consume a quoted string, adding it to <code>appendTo</code> if
++     * specified.
++     * 
++     * @param pattern pattern to parse
++     * @param pos current parse position
++     * @param appendTo optional StringBuffer to append
++     * @param escapingOn whether to process escaped quotes
++     * @return <code>appendTo</code>
++     */
++    private StringBuffer appendQuotedString(String pattern, ParsePosition pos,
++            StringBuffer appendTo, boolean escapingOn) {
++        int start = pos.getIndex();
++        char[] c = pattern.toCharArray();
++        if (escapingOn && c[start] == QUOTE) {
++            return appendTo == null ? null : appendTo.append(QUOTE);
++        }
++        int lastHold = start;
++        for (int i = pos.getIndex(); i < pattern.length(); i++) {
++            if (escapingOn && pattern.substring(i).startsWith(ESCAPED_QUOTE)) {
++                appendTo.append(c, lastHold, pos.getIndex() - lastHold).append(
++                        QUOTE);
++                pos.setIndex(i + ESCAPED_QUOTE.length());
++                lastHold = pos.getIndex();
++                continue;
++            }
++            switch (c[pos.getIndex()]) {
++            case QUOTE:
++                next(pos);
++                return appendTo == null ? null : appendTo.append(c, lastHold,
++                        pos.getIndex() - lastHold);
++            default:
++                next(pos);
++            }
++        }
++        throw new IllegalArgumentException(
++                "Unterminated quoted string at position " + start);
++    }
++
++    /**
++     * Consume quoted string only
++     * 
++     * @param pattern pattern to parse
++     * @param pos current parse position
++     * @param escapingOn whether to process escaped quotes
++     */
++    private void getQuotedString(String pattern, ParsePosition pos,
++            boolean escapingOn) {
++        appendQuotedString(pattern, pos, null, escapingOn);
++    }
++
++    /**
++     * Learn whether the specified Collection contains non-null elements.
++     * @param coll to check
++     * @return <code>true</code> if some Object was found, <code>false</code> otherwise.
++     */
++    private boolean containsElements(Collection coll) {
++        if (coll == null || coll.size() == 0) {
++            return false;
++        }
++        for (Iterator iter = coll.iterator(); iter.hasNext();) {
++            if (iter.next() != null) {
++                return true;
++            }
++        }
++        return false;
++    }
+ }
+diff --git a/src/java/org/apache/commons/lang/text/FormatFactory.java b/src/java/org/apache/commons/lang/text/FormatFactory.java
+new file mode 100644
+index 0000000..b0ae744
+--- /dev/null
++++ b/src/java/org/apache/commons/lang/text/FormatFactory.java
+@@ -0,0 +1,24 @@
++package org.apache.commons.lang.text;
++
++import java.text.Format;
++import java.util.Locale;
++
++/**
++ * Format factory.
++ * @since 2.4
++ * @author Niall Pemberton
++ * @version $Id$
++ */
++public interface FormatFactory {
++
++    /**
++     * Create or retrieve a format instance.
++     *
++     * @param name The format type name
++     * @param arguments Arguments used to create the format instance
++     * @param locale The locale, may be null
++     * @return The format instance
++     */
++    Format getFormat(String name, String arguments, Locale locale);
++
++}
+diff --git a/src/java/org/apache/commons/lang/text/MetaFormatSupport.java b/src/java/org/apache/commons/lang/text/MetaFormatSupport.java
+deleted file mode 100644
+index a757457..0000000
+--- a/src/java/org/apache/commons/lang/text/MetaFormatSupport.java
++++ /dev/null
+@@ -1,122 +0,0 @@
+-/*
+- * Licensed to the Apache Software Foundation (ASF) under one or more
+- * contributor license agreements.  See the NOTICE file distributed with
+- * this work for additional information regarding copyright ownership.
+- * The ASF licenses this file to You under the Apache License, Version 2.0
+- * (the "License"); you may not use this file except in compliance with
+- * the License.  You may obtain a copy of the License at
+- * 
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- * 
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-package org.apache.commons.lang.text;
+-
+-import java.text.FieldPosition;
+-import java.text.Format;
+-import java.text.ParsePosition;
+-import java.util.HashMap;
+-import java.util.Iterator;
+-import java.util.Map;
+-
+-/**
+- * Support class for implementing Formats that parse/format other Formats, with
+- * specific support for interoperability with ExtendedMessageFormat.
+- * 
+- * @see ExtendedMessageFormat
+- * @author Matt Benson
+- * @since 2.4
+- * @version $Id$
+- */
+-public abstract class MetaFormatSupport extends Format {
+-
+-    private static final char END_FE = '}';
+-    private static final char START_FE = '{';
+-    private static final char QUOTE = '\'';
+-
+-    /**
+-     * Invert the specified Map.
+-     * 
+-     * @param map the Map to invert.
+-     * @return a new Map instance.
+-     * @throws NullPointerException if <code>map</code> is <code>null</code>.
+-     */
+-    protected Map invert(Map map) {
+-        Map result = new HashMap(map.size());
+-        for (Iterator iter = map.entrySet().iterator(); iter.hasNext();) {
+-            Map.Entry entry = (Map.Entry) iter.next();
+-            result.put(entry.getValue(), entry.getKey());
+-        }
+-        return result;
+-    }
+-
+-    /**
+-     * Find the end of the subformat.
+-     * 
+-     * @param source String
+-     * @param pos current parse position
+-     */
+-    protected void seekFormatElementEnd(String source, ParsePosition pos) {
+-        int depth = 1;
+-        boolean quote = false;
+-        for (; pos.getIndex() < source.length(); next(pos)) {
+-            switch (source.charAt(pos.getIndex())) {
+-            case QUOTE:
+-                quote ^= true;
+-                break;
+-            case START_FE:
+-                depth += quote ? 0 : 1;
+-                break;
+-            case END_FE:
+-                depth -= quote ? 0 : 1;
+-                if (depth == 0) {
+-                    return;
+-                }
+-                break;
+-            }
+-        }
+-    }
+-
+-    /**
+-     * Advance the parse index by 1.
+-     * 
+-     * @param pos the ParsePosition to advance.
+-     * @return <code>pos</code>
+-     */
+-    protected ParsePosition next(ParsePosition pos) {
+-        pos.setIndex(pos.getIndex() + 1);
+-        return pos;
+-    }
+-
+-    // provide default javadoc >;)
+-    /**
+-     * Parse an object from the specified String and ParsePosition. If an error
+-     * occurs <code>pos.getErrorIndex()</code> will contain a value >= zero,
+-     * indicating the index at which the parse error occurred.
+-     * 
+-     * @param source String to parse
+-     * @param pos ParsePosition marking index into <code>source</code>
+-     * @return Object parsed
+-     */
+-    public abstract Object parseObject(String source, ParsePosition pos);
+-
+-    /**
+-     * Format the specified object, appending to the given StringBuffer, and
+-     * optionally respecting the specified FieldPosition.
+-     * 
+-     * @param obj the object to format
+-     * @param toAppendTo the StringBuffer to which the formatted object should
+-     *            be appended
+-     * @param pos FieldPosition associated with <code>obj</code>
+-     * @return <code>toAppendTo</code>
+-     * @throws NullPointerException if <code>toAppendTo</code> or
+-     *             <code>pos</code> is <code>null</code>
+-     * @throws IllegalArgumentException if unable to format <code>obj</code>
+-     */
+-    public abstract StringBuffer format(Object obj, StringBuffer toAppendTo,
+-            FieldPosition pos);
+-}
+diff --git a/src/java/org/apache/commons/lang/text/NameKeyedMetaFormat.java b/src/java/org/apache/commons/lang/text/NameKeyedMetaFormat.java
+deleted file mode 100644
+index b22401c..0000000
+--- a/src/java/org/apache/commons/lang/text/NameKeyedMetaFormat.java
++++ /dev/null
+@@ -1,159 +0,0 @@
+-/*
+- * Licensed to the Apache Software Foundation (ASF) under one or more
+- * contributor license agreements.  See the NOTICE file distributed with
+- * this work for additional information regarding copyright ownership.
+- * The ASF licenses this file to You under the Apache License, Version 2.0
+- * (the "License"); you may not use this file except in compliance with
+- * the License.  You may obtain a copy of the License at
+- * 
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- * 
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-package org.apache.commons.lang.text;
+-
+-import java.text.FieldPosition;
+-import java.text.Format;
+-import java.text.ParsePosition;
+-import java.util.HashMap;
+-import java.util.Iterator;
+-import java.util.Map;
+-
+-import org.apache.commons.lang.ObjectUtils;
+-
+-/**
+- * Basic metaFormat that requires enough configuration information to
+- * parse/format other Formats for use by ExtendedMessageFormat.
+- * 
+- * @see ExtendedMessageFormat
+- * @author Matt Benson
+- * @since 2.4
+- * @version $Id$
+- */
+-public class NameKeyedMetaFormat extends MetaFormatSupport {
+-    private static final long serialVersionUID = 5963121202601122213L;
+-
+-    private static final char TRIGGER_END = '}';
+-    private static final char TRIGGER_SUBFORMAT = ',';
+-
+-    /**
+-     * Provides a builder with a fluent interface. Example:
+-     * <p>
+-     * <code>
+-     * <pre>
+-     * NameKeyedMetaFormat nkmf = new NameKeyedMetaFormat.Builder().put(&quot;foo&quot;,
+-     *         new FooFormat()).put(&quot;bar&quot;, new BarFormat())
+-     *         .put(&quot;baz&quot;, new BazFormat()).toNameKeyedMetaFormat();
+-     * </pre></code>
+-     * </p>
+-     */
+-    public static class Builder {
+-        private HashMap keyedFormats = new HashMap();
+-
+-        /**
+-         * Add the specified format with the specified string key.
+-         * 
+-         * @param key String
+-         * @param format Format
+-         * @return Builder reference to this object
+-         */
+-        public Builder put(String key, Format format) {
+-            keyedFormats.put(key, format);
+-            return this;
+-        }
+-
+-        /**
+-         * Render the {@link NameKeyedMetaFormat} instance from this Builder.
+-         * 
+-         * @return NameKeyedMetaFormat
+-         */
+-        public NameKeyedMetaFormat toNameKeyedMetaFormat() {
+-            return new NameKeyedMetaFormat(keyedFormats);
+-        }
+-    }
+-
+-    private Map/* <String, Format> */keyedFormats = new HashMap();
+-
+-    /**
+-     * Create a new NameKeyedMetaFormat.
+-     * 
+-     * @param keyedFormats String->Format map.
+-     */
+-    public NameKeyedMetaFormat(Map keyedFormats) {
+-        this.keyedFormats = keyedFormats;
+-    }
+-
+-    /**
+-     * {@inheritDoc}
+-     */
+-    public StringBuffer format(Object obj, StringBuffer toAppendTo,
+-            FieldPosition pos) {
+-        int start = toAppendTo.length();
+-        // first try to match a sans-subformat format:
+-        for (Iterator iter = iterateKeys(); iter.hasNext();) {
+-            Object key = iter.next();
+-            if (ObjectUtils.equals(keyedFormats.get(key), obj)) {
+-                return toAppendTo.append(key);
+-            }
+-        }
+-        // now try again with subformats:
+-        for (Iterator iter = iterateKeys(); iter.hasNext();) {
+-            Object key = iter.next();
+-            try {
+-                ((Format) keyedFormats.get(key)).format(obj, toAppendTo, pos);
+-                if (toAppendTo.length() > start) {
+-                    toAppendTo.insert(start, ',');
+-                }
+-                return toAppendTo.insert(start, key);
+-            } catch (Exception e) {
+-                continue;
+-            }
+-        }
+-        throw new IllegalArgumentException("Cannot format " + obj);
+-    }
+-
+-    /**
+-     * {@inheritDoc}
+-     */
+-    public Object parseObject(String source, ParsePosition pos) {
+-        int start = pos.getIndex();
+-        boolean subformat = false;
+-        for (; pos.getIndex() < source.length(); next(pos)) {
+-            char c = source.charAt(pos.getIndex());
+-            if (c == TRIGGER_SUBFORMAT) {
+-                subformat = true;
+-                break;
+-            }
+-            if (c == TRIGGER_END) {
+-                break;
+-            }
+-        }
+-        String key = source.substring(start, pos.getIndex());
+-        Format format = (Format) keyedFormats.get(key);
+-        if (format == null) {
+-            format = (Format) keyedFormats.get(key.trim());
+-            if (format == null) {
+-                pos.setErrorIndex(start);
+-                return null;
+-            }
+-        }
+-        if (subformat) {
+-            return format.parseObject(source, next(pos));
+-        }
+-        return format;
+-    }
+-
+-    /**
+-     * Extension point to alter the iteration order of the delegate format keys.
+-     * 
+-     * @return Iterator.
+-     */
+-    protected Iterator iterateKeys() {
+-        return keyedFormats.keySet().iterator();
+-    }
+-
+-}
+diff --git a/src/java/org/apache/commons/lang/text/NumberMetaFormat.java b/src/java/org/apache/commons/lang/text/NumberMetaFormat.java
+deleted file mode 100644
+index f32dd06..0000000
+--- a/src/java/org/apache/commons/lang/text/NumberMetaFormat.java
++++ /dev/null
+@@ -1,168 +0,0 @@
+-/*
+- * Licensed to the Apache Software Foundation (ASF) under one or more
+- * contributor license agreements.  See the NOTICE file distributed with
+- * this work for additional information regarding copyright ownership.
+- * The ASF licenses this file to You under the Apache License, Version 2.0
+- * (the "License"); you may not use this file except in compliance with
+- * the License.  You may obtain a copy of the License at
+- * 
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- * 
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-package org.apache.commons.lang.text;
+-
+-import java.lang.reflect.InvocationTargetException;
+-import java.lang.reflect.Method;
+-import java.lang.reflect.Modifier;
+-import java.text.DecimalFormat;
+-import java.text.DecimalFormatSymbols;
+-import java.text.FieldPosition;
+-import java.text.NumberFormat;
+-import java.text.ParsePosition;
+-import java.util.HashMap;
+-import java.util.Locale;
+-import java.util.Map;
+-
+-/**
+- * Stock "number" MetaFormat.
+- * 
+- * @see ExtendedMessageFormat
+- * @author Matt Benson
+- * @since 2.4
+- * @version $Id$
+- */
+-public class NumberMetaFormat extends MetaFormatSupport {
+-    private static final long serialVersionUID = -5876397363537288952L;
+-    private static final String DEFAULT = "";
+-    private static final String INTEGER = "integer";
+-    private static final String CURRENCY = "currency";
+-    private static final String PERCENT = "percent";
+-    private static final Method GET_INTEGER_INSTANCE;
+-
+-    static {
+-        Method m = null;
+-        try {
+-            Method mm = NumberFormat.class.getDeclaredMethod("getIntegerInstance", new Class[] { Locale.class });
+-            if (Modifier.isStatic(mm.getModifiers())) {
+-                m = mm;
+-            }
+-        } catch (Exception e) {
+-            // leave null
+-        }
+-        GET_INTEGER_INSTANCE = m;
+-    }
+-
+-    private Locale locale;
+-
+-    private transient Map subformats;
+-    private transient Map reverseSubformats;
+-    private transient DecimalFormatSymbols decimalFormatSymbols;
+-
+-    /**
+-     * Create a new NumberMetaFormat.
+-     */
+-    public NumberMetaFormat() {
+-        this(Locale.getDefault());
+-    }
+-
+-    /**
+-     * Create a new NumberMetaFormat.
+-     * 
+-     * @param locale Locale
+-     */
+-    public NumberMetaFormat(Locale locale) {
+-        super();
+-        this.locale = locale;
+-    }
+-
+-    /**
+-     * {@inheritDoc}
+-     */
+-    public StringBuffer format(Object obj, StringBuffer toAppendTo,
+-            FieldPosition pos) {
+-        initialize();
+-        String subformat = (String) reverseSubformats.get(obj);
+-        if (subformat != null) {
+-            return toAppendTo.append(subformat);
+-        }
+-        if (obj instanceof DecimalFormat) {
+-            DecimalFormat df = (DecimalFormat) obj;
+-            if (df.getDecimalFormatSymbols().equals(decimalFormatSymbols)) {
+-                return toAppendTo.append(df.toPattern());
+-            }
+-        }
+-        throw new IllegalArgumentException();
+-    }
+-
+-    /**
+-     * {@inheritDoc}
+-     */
+-    public Object parseObject(String source, ParsePosition pos) {
+-        int start = pos.getIndex();
+-        seekFormatElementEnd(source, pos);
+-        if (pos.getErrorIndex() >= 0) {
+-            return null;
+-        }
+-        String subformat = source.substring(start, pos.getIndex()).trim();
+-        initialize();
+-        Object result = subformats.get(subformat);
+-        if (result != null) {
+-            return result;
+-        }
+-        return new DecimalFormat(subformat, decimalFormatSymbols);
+-    }
+-
+-    /**
+-     * Get the locale in use by this <code>NumberMetaFormat</code>.
+-     * 
+-     * @return Locale
+-     */
+-    public Locale getLocale() {
+-        return locale;
+-    }
+-
+-    /**
+-     * Initialize this NumberMetaFormat.
+-     */
+-    private synchronized void initialize() {
+-        if (subformats == null) {
+-            subformats = new HashMap();
+-            subformats.put(DEFAULT, NumberFormat.getInstance(getLocale()));
+-            subformats.put(INTEGER, createIntegerInstance(getLocale()));
+-            subformats.put(CURRENCY, NumberFormat
+-                    .getCurrencyInstance(getLocale()));
+-            subformats.put(PERCENT, NumberFormat
+-                    .getPercentInstance(getLocale()));
+-
+-            reverseSubformats = invert(subformats);
+-            decimalFormatSymbols = new DecimalFormatSymbols(getLocale());
+-        }
+-    }
+-
+-    /**
+-     * Create the "integer" NumberFormat instance for the specified Locale.
+-     * 
+-     * @param locale the Locale to use
+-     * @return integer NumberFormat
+-     */
+-    private static NumberFormat createIntegerInstance(Locale locale) {
+-        if (GET_INTEGER_INSTANCE != null) {
+-            try {
+-                 return (NumberFormat) GET_INTEGER_INSTANCE.invoke(null, new Object[] { locale });
+-            } catch (IllegalAccessException e) {
+-                //fall through
+-            } catch (InvocationTargetException e) {
+-                //fall through
+-            }
+-        }
+-        NumberFormat result = NumberFormat.getInstance(locale);
+-        result.setMaximumFractionDigits(0);
+-        result.setParseIntegerOnly(true);
+-        return result;
+-    }
+-}
+diff --git a/src/java/org/apache/commons/lang/text/TimeMetaFormat.java b/src/java/org/apache/commons/lang/text/TimeMetaFormat.java
+deleted file mode 100644
+index a0091dd..0000000
+--- a/src/java/org/apache/commons/lang/text/TimeMetaFormat.java
++++ /dev/null
+@@ -1,68 +0,0 @@
+-/*
+- * Licensed to the Apache Software Foundation (ASF) under one or more
+- * contributor license agreements.  See the NOTICE file distributed with
+- * this work for additional information regarding copyright ownership.
+- * The ASF licenses this file to You under the Apache License, Version 2.0
+- * (the "License"); you may not use this file except in compliance with
+- * the License.  You may obtain a copy of the License at
+- * 
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- * 
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-package org.apache.commons.lang.text;
+-
+-import java.text.DateFormat;
+-import java.util.Locale;
+-import java.util.Map;
+-
+-/**
+- * Stock "time" MetaFormat.
+- * 
+- * @see ExtendedMessageFormat
+- * @author Matt Benson
+- * @since 2.4
+- * @version $Id$
+- */
+-public class TimeMetaFormat extends DateMetaFormatSupport {
+-    private static final long serialVersionUID = -4959095416302142342L;
+-
+-    /**
+-     * Create a new TimeMetaFormat.
+-     */
+-    public TimeMetaFormat() {
+-        super();
+-    }
+-
+-    /**
+-     * Create a new NumberMetaFormat.
+-     * 
+-     * @param locale Locale
+-     */
+-    public TimeMetaFormat(Locale locale) {
+-        super(locale);
+-    }
+-
+-    /** {@inheritDoc} */
+-    protected DateFormat createSubformatInstance(int style) {
+-        return DateFormat.getTimeInstance(style, getLocale());
+-    }
+-
+-    /** {@inheritDoc} */
+-    protected Map createInverseStyleMap() {
+-        Map invertMe = createStyleMap();
+-        invertMe.remove(DEFAULT);
+-        DateFormat longDf = DateFormat.getTimeInstance(DateFormat.LONG,
+-                getLocale());
+-        DateFormat fullDf = DateFormat.getTimeInstance(DateFormat.FULL,
+-                getLocale());
+-        if (fullDf.equals(longDf)) {
+-            invertMe.remove(FULL);
+-        }
+-        return invert(invertMe);
+-    }
+-}
+diff --git a/src/test/org/apache/commons/lang/text/ExtendedMessageFormatBaselineTest.java b/src/test/org/apache/commons/lang/text/ExtendedMessageFormatBaselineTest.java
+index d52c595..d252b29 100644
+--- a/src/test/org/apache/commons/lang/text/ExtendedMessageFormatBaselineTest.java
++++ b/src/test/org/apache/commons/lang/text/ExtendedMessageFormatBaselineTest.java
+@@ -173,8 +173,7 @@
+      * {@inheritDoc}
+      */
+     protected MessageFormat createMessageFormat(String pattern, Locale locale) {
+-        return new ExtendedMessageFormat(pattern, locale, ExtendedMessageFormat
+-                .createDefaultMetaFormat(locale));
++        return new ExtendedMessageFormat(pattern, locale);
+     }
+ 
+ }
+diff --git a/src/test/org/apache/commons/lang/text/MessageFormatExtensionTest.java b/src/test/org/apache/commons/lang/text/MessageFormatExtensionTest.java
+index 6512ba3..b1b0121 100644
+--- a/src/test/org/apache/commons/lang/text/MessageFormatExtensionTest.java
++++ b/src/test/org/apache/commons/lang/text/MessageFormatExtensionTest.java
+@@ -24,6 +24,7 @@
+ import java.util.Calendar;
+ import java.util.Date;
+ import java.util.GregorianCalendar;
++import java.util.HashMap;
+ import java.util.Locale;
+ 
+ /**
+@@ -237,13 +238,13 @@
+      * {@inheritDoc}
+      */
+     protected MessageFormat createMessageFormat(String pattern, Locale locale) {
+-        return new ExtendedMessageFormat(pattern, locale,
+-                new MultiFormat.Builder().add(
+-                        new NameKeyedMetaFormat.Builder().put("properName",
+-                                new ProperNameCapitalizationFormat())
+-                                .toNameKeyedMetaFormat()).add(
+-                        ExtendedMessageFormat.createDefaultMetaFormat(locale))
+-                        .toMultiFormat());
++        final ProperNameCapitalizationFormat properNameCapitalizationFormat = new ProperNameCapitalizationFormat();
++        final FormatFactory ff = new FormatFactory() {
++            public Format getFormat(String name, String arguments, Locale locale) {
++                return "properName".equals(name) ? properNameCapitalizationFormat : null;
++            }
++        };
++        return new ExtendedMessageFormat(pattern, locale, new HashMap() { { put("properName", ff); }});
+     }
+ 
+     public void testProperName() {

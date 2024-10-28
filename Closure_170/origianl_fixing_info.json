@@ -1,0 +1,404 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "/home/liumengjiao/Desktop/CI/Benchmark/data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.FlowSensitiveInlineVariablesTest::testVarAssinInsideHookIssue965",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.FlowSensitiveInlineVariables",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "170",
+  "workingDir": "../bugs/Closure_170_buggy",
+  "buggyCommit": "d5b7f2d9a109eefee69a6554eb4a899e60139101",
+  "inducingCommit": "209cd96451c4c5bf1f4c5fee6453c481946aa596",
+  "originalCommit": "a486b8345202c35efe3a2b63f16259e1933c359c",
+  "bug_name": "Closure_170",
+  "derive": "defects4j",
+  "original_fixing_commit": "49f54b28376a4ed5f72ec52d314020bd1f6cf3c6",
+  "buildFiles_changed": false,
+  "regression": true,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java",
+        "src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.FlowSensitiveInlineVariables\\$Candidate:getNumUseInUseCfgNode:[Node n, Node parant]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.FlowSensitiveInlineVariables\\$Candidate:getNumUseInUseCfgNode:[Node n, Node parant]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "425"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "425",
+            "426",
+            "427",
+            "428"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java b/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java\nindex 69d78e2..ecc1509 100644\n--- a/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java\n+++ b/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java\n@@ -422,7 +422,10 @@\n \n         @Override\n         public void visit(NodeTraversal t, Node n, Node parent) {\n-          if (NodeUtil.isName(n) \u0026\u0026 n.getString().equals(varName)) {\n+          if (NodeUtil.isName(n) \u0026\u0026 n.getString().equals(varName) \u0026\u0026\n+              // do not count in if it is left child of an assignment operator\n+              !(NodeUtil.isAssign(parent) \u0026\u0026\n+               (parent.getFirstChild() \u003d\u003d n))) {\n             numUseWithinUseCfgNode++;\n           }\n         }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PrefixExpression [14702,14778]"
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.FlowSensitiveInlineVariablesTest",
+      "test_function": "testVarAssinInsideHookIssue965",
+      "assertion_line": "578",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function _func(){var i\u003d0;return 1?i\u003d5:0,i}\nResult: function _func(){var i;return 1?i\u003d5:0,0}"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/ControlFlowGraph.java",
+        "src/com/google/javascript/jscomp/ControlFlowGraph.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.AbstractCfgNodeTraversalCallback:isEnteringNewCfgNode:[Node n]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.AbstractCfgNodeTraversalCallback:toString:[]:String"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "205"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "206",
+            "207",
+            "208",
+            "209",
+            "210",
+            "211",
+            "212",
+            "213",
+            "214"
+          ],
+          "num": 9
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/ControlFlowGraph.java b/src/com/google/javascript/jscomp/ControlFlowGraph.java\nindex c0764c0..a9f5ef5 100644\n--- a/src/com/google/javascript/jscomp/ControlFlowGraph.java\n+++ b/src/com/google/javascript/jscomp/ControlFlowGraph.java\n@@ -203,4 +203,13 @@\n         return false;\n     }\n   }\n+\n+  @Override\n+  public String toString() {\n+    String s \u003d \"CFG:\\n\";\n+    for (GraphvizEdge e : getGraphvizEdges()) {\n+      s +\u003d e.toString() + \u0027\\n\u0027;\n+    }\n+    return s;\n+  }\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [6765,6932]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java",
+        "src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.FlowSensitiveInlineVariables:checkLeftOf:[Node n, Node expressionRoot, Predicate\u003cNode\u003e predicate]:boolean",
+            "com.google.javascript.jscomp.FlowSensitiveInlineVariables\\$Candidate:getNumUseInUseCfgNode:[Node n]:void",
+            "com.google.javascript.jscomp.FlowSensitiveInlineVariables\\$Candidate:canInline:[final Scope scope]:boolean"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.FlowSensitiveInlineVariables:checkLeftOf:[Node n, Node expressionRoot, Predicate\u003cNode\u003e predicate]:boolean",
+            "com.google.javascript.jscomp.FlowSensitiveInlineVariables\\$Candidate:getNumUseInUseCfgNode:[final Node cfgNode]:void",
+            "com.google.javascript.jscomp.FlowSensitiveInlineVariables\\$Candidate:canInline:[final Scope scope]:boolean"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "259",
+            "260",
+            "261",
+            "331",
+            "475",
+            "482",
+            "483",
+            "484",
+            "485",
+            "486",
+            "491",
+            "525"
+          ],
+          "num": 12
+        },
+        {
+          "qualified_names": [
+            "259",
+            "260",
+            "330",
+            "474",
+            "476",
+            "482",
+            "483",
+            "484",
+            "485",
+            "486",
+            "487",
+            "488",
+            "489",
+            "490",
+            "491",
+            "492",
+            "493",
+            "494",
+            "497",
+            "498",
+            "499",
+            "500",
+            "501",
+            "502",
+            "503",
+            "504",
+            "505",
+            "508",
+            "542"
+          ],
+          "num": 29
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java b/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java\nindex fcc78da..d58f80c 100644\n--- a/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java\n+++ b/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java\n@@ -256,9 +256,8 @@\n     private final Node use;\n     private final Node useCfgNode;\n \n-    // Number of uses of the variable within the CFG node that represented the\n-    // use in the CFG.\n-    private int numUseWithinUseCfgNode;\n+    // Number of uses of the variable within the current CFG node.\n+    private int numUsesWithinCfgNode;\n \n     Candidate(String varName, Definition defMetadata,\n         Node use, Node useCfgNode) {\n@@ -328,7 +327,7 @@\n       // Finally we have to make sure that there are no more than one use\n       // in the program and in the CFG node. Even when it is semantically\n       // correctly inlining twice increases code size.\n-      if (numUseWithinUseCfgNode !\u003d 1) {\n+      if (numUsesWithinCfgNode !\u003d 1) {\n         return false;\n       }\n \n@@ -472,23 +471,41 @@\n      * Computes the number of uses of the variable varName and store it in\n      * numUseWithinUseCfgNode.\n      */\n-    private void getNumUseInUseCfgNode(Node n) {\n+    private void getNumUseInUseCfgNode(final Node cfgNode) {\n \n+      numUsesWithinCfgNode \u003d 0;\n       AbstractCfgNodeTraversalCallback gatherCb \u003d\n           new AbstractCfgNodeTraversalCallback() {\n \n         @Override\n         public void visit(NodeTraversal t, Node n, Node parent) {\n-          if (n.isName() \u0026\u0026 n.getString().equals(varName) \u0026\u0026\n-              // do not count in if it is left child of an assignment operator\n-              !(parent.isAssign() \u0026\u0026\n-               (parent.getFirstChild() \u003d\u003d n))) {\n-            numUseWithinUseCfgNode++;\n+          if (n.isName() \u0026\u0026 n.getString().equals(varName)) {\n+            // We make a special exception when the entire cfgNode is a chain\n+            // of assignments, since in that case the assignment statements\n+            // will happen after the inlining of the right hand side.\n+            // TODO(blickly): Make the SIDE_EFFECT_PREDICATE check more exact\n+            //   and remove this special case.\n+            if (parent.isAssign() \u0026\u0026 (parent.getFirstChild() \u003d\u003d n)\n+                \u0026\u0026 isAssignChain(parent, cfgNode)) {\n+              // Don\u0027t count lhs of top-level assignment chain\n+              return;\n+            } else {\n+              numUsesWithinCfgNode++;\n+            }\n           }\n         }\n+\n+        private boolean isAssignChain(Node child, Node ancestor) {\n+          for (Node n \u003d child; n !\u003d ancestor; n \u003d n.getParent()) {\n+            if (!n.isAssign()) {\n+              return false;\n+            }\n+          }\n+          return true;\n+        }\n       };\n \n-      NodeTraversal.traverse(compiler, n, gatherCb);\n+      NodeTraversal.traverse(compiler, cfgNode, gatherCb);\n     }\n   }\n \n@@ -522,7 +539,7 @@\n    */\n   private static boolean checkLeftOf(\n       Node n, Node expressionRoot, Predicate\u003cNode\u003e predicate) {\n-    for (Node p \u003d n.getParent(); p !\u003d expressionRoot; p \u003d p.getParent()) {\n+    for (Node p \u003d n; p !\u003d expressionRoot; p \u003d p.getParent()) {\n       for (Node cur \u003d p.getParent().getFirstChild(); cur !\u003d p;\n           cur \u003d cur.getNext()) {\n         if (predicate.apply(cur)) {\n",
+      "operations": [
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: final [16448,16453]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [16477,16502]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [17408,17653]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [17111,17376]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [17115,17215]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Block [17217,17317]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [17323,17376]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "PrefixExpression [16838,16906]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_RECEIVER [17986,17987]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: getParent [17988,17997]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [17986,17999]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/MustBeReachingVariableDef.java",
+        "src/com/google/javascript/jscomp/MustBeReachingVariableDef.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.MustBeReachingVariableDef\\$Definition:equals:[Object other]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.MustBeReachingVariableDef\\$Definition:toString:[]:String"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "86"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "87",
+            "88",
+            "89",
+            "90",
+            "91"
+          ],
+          "num": 5
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/MustBeReachingVariableDef.java b/src/com/google/javascript/jscomp/MustBeReachingVariableDef.java\nindex bba1ec4..b81f9cb 100644\n--- a/src/com/google/javascript/jscomp/MustBeReachingVariableDef.java\n+++ b/src/com/google/javascript/jscomp/MustBeReachingVariableDef.java\n@@ -84,6 +84,11 @@\n       // same depends set.\n       return otherDef.node \u003d\u003d node;\n     }\n+\n+    @Override\n+    public String toString() {\n+      return \"Definition@\" + node.toString();\n+    }\n   }\n \n   /**\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [3015,3107]"
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.FlowSensitiveInlineVariables\\$Candidate:getNumUseInUseCfgNode:[final Node cfgNode]:void",
+        "com.google.javascript.jscomp.MustBeReachingVariableDef\\$Definition:toString:[]:String",
+        "com.google.javascript.jscomp.AbstractCfgNodeTraversalCallback:toString:[]:String"
+      ],
+      "num": 3
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.MustBeReachingVariableDef\\$Definition:equals:[Object other]:boolean",
+        "com.google.javascript.jscomp.AbstractCfgNodeTraversalCallback:isEnteringNewCfgNode:[Node n]:boolean",
+        "com.google.javascript.jscomp.FlowSensitiveInlineVariables\\$Candidate:getNumUseInUseCfgNode:[Node n]:void"
+      ],
+      "num": 3
+    }
+  },
+  "patch_changed_mths": {
+    "qualified_names": [
+      "com.google.javascript.jscomp.FlowSensitiveInlineVariables:checkLeftOf(Lcom/google/javascript/rhino/Node;Lcom/google/javascript/rhino/Node;Lcom/google/common/base/Predicate;)Z:regression"
+    ],
+    "num": 1
+  }
+}

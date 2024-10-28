@@ -1,0 +1,141 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.FlowSensitiveInlineVariablesTest::testDoNotInlineCatchExpression1a,com.google.javascript.jscomp.FlowSensitiveInlineVariablesTest::testDoNotInlineCatchExpression1,com.google.javascript.jscomp.FlowSensitiveInlineVariablesTest::testDoNotInlineCatchExpression3",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.FlowSensitiveInlineVariables",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "3",
+  "workingDir": "../bugs/Closure_3_tmp",
+  "bug_name": "Closure_3",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.FlowSensitiveInlineVariablesTest",
+      "test_function": "testDoNotInlineCatchExpression1a",
+      "assertion_line": "157",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function _func(){var a;try{throw Error(\"\");}catch(err){a\u003derr+1}return a.stack}\nResult: function _func(){var a;try{throw Error(\"\");}catch(err){}return(err+1).stack}"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.FlowSensitiveInlineVariablesTest",
+      "test_function": "testDoNotInlineCatchExpression1",
+      "assertion_line": "571",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function _func(){var a;try{throw Error(\"\");}catch(err){a\u003derr}return a.stack}\nResult: function _func(){var a;try{throw Error(\"\");}catch(err){}return err.stack}"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.FlowSensitiveInlineVariablesTest",
+      "test_function": "testDoNotInlineCatchExpression3",
+      "assertion_line": "571",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function _func(){var a;try{throw Error(\"\");}catch(err){err\u003dx;a\u003derr}return a.stack}\nResult: function _func(){var a;try{throw Error(\"\");}catch(err){err\u003dx}return err.stack}"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java",
+        "src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.FlowSensitiveInlineVariables:enterScope:[NodeTraversal t]:void",
+            "com.google.javascript.jscomp.FlowSensitiveInlineVariables\\$Candidate:canInline:[final Scope scope]:boolean"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.FlowSensitiveInlineVariables:enterScope:[NodeTraversal t]:void",
+            "com.google.javascript.jscomp.FlowSensitiveInlineVariables\\$Candidate:canInline:[]:boolean"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "155",
+            "280",
+            "375",
+            "376",
+            "377",
+            "378",
+            "379",
+            "380"
+          ],
+          "num": 8
+        },
+        {
+          "qualified_names": [
+            "155",
+            "280",
+            "374"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java b/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java\nindex c46ee7d..a77221a 100644\n--- a/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java\n+++ b/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java\n@@ -152,7 +152,7 @@\n     reachingUses \u003d new MaybeReachingVariableUse(cfg, t.getScope(), compiler);\n     reachingUses.analyze();\n     for (Candidate c : candidates) {\n-      if (c.canInline(t.getScope())) {\n+      if (c.canInline()) {\n         c.inlineVariable();\n \n         // If definition c has dependencies, then inlining it may have\n@@ -277,7 +277,7 @@\n       return defMetadata.node;\n     }\n \n-    private boolean canInline(final Scope scope) {\n+    private boolean canInline() {\n       // Cannot inline a parameter.\n       if (getDefCfgNode().isFunction()) {\n         return false;\n@@ -372,12 +372,6 @@\n                   case Token.REGEXP:\n                   case Token.NEW:\n                     return true;\n-                  case Token.NAME:\n-                    Var var \u003d scope.getOwnSlot(input.getString());\n-                    if (var !\u003d null\n-                        \u0026\u0026 var.getParentNode().isCatch()) {\n-                      return true;\n-                    }\n                 }\n                 return false;\n               }\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_ARGUMENTS [5700,5712]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [9930,9947]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [13295,13311]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [13332,13378]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [13399,13531]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.FlowSensitiveInlineVariables\\$Candidate:canInline:[]:boolean"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.FlowSensitiveInlineVariables\\$Candidate:canInline:[final Scope scope]:boolean"
+      ],
+      "num": 1
+    }
+  }
+}

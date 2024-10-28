@@ -1,0 +1,180 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.CheckSideEffectsTest::testJSDocComments,com.google.javascript.jscomp.CollapsePropertiesTest::testTwinReferenceCancelsChildCollapsing,com.google.javascript.jscomp.CollapsePropertiesTest::testCrashInNestedAssign,com.google.javascript.jscomp.CollapsePropertiesTest::testCrashInCommaOperator",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.GlobalNamespace,com.google.javascript.rhino.JSDocInfoBuilder",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "106",
+  "workingDir": "../bugs/Closure_106_tmp",
+  "bug_name": "Closure_106",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.CheckSideEffectsTest",
+      "test_function": "testJSDocComments",
+      "assertion_line": "86",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Unexpected error(s): JSC_USELESS_CODE. Suspicious code. This code lacks side-effects. Is there a bug? at testcode line 1 expected:\u003c0\u003e but was:\u003c1\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.CollapsePropertiesTest",
+      "test_function": "testTwinReferenceCancelsChildCollapsing",
+      "assertion_line": "1111",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: var a$b;if(a$b\u003dfunction(){}){a$b.c\u003d3;a$b(a$b.c)}\nResult: var a$b\u003dfunction(){}"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.CollapsePropertiesTest",
+      "test_function": "testCrashInNestedAssign",
+      "assertion_line": "1106",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: var a$b;if(a$b\u003dfunction(){})a$b()\nResult: var a$b\u003dfunction(){}"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.CollapsePropertiesTest",
+      "test_function": "testCrashInCommaOperator",
+      "assertion_line": "1101",
+      "exception": "java.lang.IllegalArgumentException",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/GlobalNamespace.java",
+        "src/com/google/javascript/jscomp/GlobalNamespace.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.GlobalNamespace\\$Name:canCollapseUnannotatedChildNames:[]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.GlobalNamespace\\$Name:canCollapseUnannotatedChildNames:[]:boolean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "907",
+            "908",
+            "909",
+            "910"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "906"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/GlobalNamespace.java b/src/com/google/javascript/jscomp/GlobalNamespace.java\nindex 47ea27a..d7e85df 100644\n--- a/src/com/google/javascript/jscomp/GlobalNamespace.java\n+++ b/src/com/google/javascript/jscomp/GlobalNamespace.java\n@@ -904,10 +904,6 @@\n       // Don\u0027t try to collapse if the one global set is a twin reference.\n       // We could theoretically handle this case in CollapseProperties, but\n       // it\u0027s probably not worth the effort.\n-      Preconditions.checkNotNull(declaration);\n-      if (declaration.getTwin() !\u003d null) {\n-        return false;\n-      }\n \n       if (isClassOrEnum) {\n         return true;\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [28609,28649]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [28656,28722]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/JSDocInfoBuilder.java",
+        "src/com/google/javascript/rhino/JSDocInfoBuilder.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.JSDocInfoBuilder:recordBlockDescription:[String description]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.JSDocInfoBuilder:recordBlockDescription:[String description]:boolean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "188"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "189",
+            "191"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/JSDocInfoBuilder.java b/src/com/google/javascript/rhino/JSDocInfoBuilder.java\nindex bdfc2e8..1311638 100644\n--- a/src/com/google/javascript/rhino/JSDocInfoBuilder.java\n+++ b/src/com/google/javascript/rhino/JSDocInfoBuilder.java\n@@ -186,7 +186,9 @@\n    * @return {@code true} if the description was recorded.\n    */\n   public boolean recordBlockDescription(String description) {\n+    if (parseDocumentation) {\n     populated \u003d true;\n+    }\n     return currentInfo.documentBlock(description);\n   }\n \n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [6455,6508]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: parseDocumentation [6459,6477]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [6479,6508]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

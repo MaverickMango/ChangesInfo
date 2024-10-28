@@ -1,0 +1,123 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.compress.archivers.ArchiveOutputStreamTest::testFinish",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.compress.archivers.tar.TarArchiveOutputStream",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Compress",
+  "id": "3",
+  "workingDir": "../bugs/Compress_3_tmp",
+  "bug_name": "Compress_3",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.compress.archivers.ArchiveOutputStreamTest",
+      "test_function": "testFinish",
+      "assertion_line": "67",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "After putArchive should follow closeArchive"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/compress/archivers/tar/TarArchiveOutputStream.java",
+        "src/main/java/org/apache/commons/compress/archivers/tar/TarArchiveOutputStream.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.tar.TarArchiveOutputStream:putArchiveEntry:[ArchiveEntry archiveEntry]:void",
+            "org.apache.commons.compress.archivers.tar.TarArchiveOutputStream:closeArchiveEntry:[]:void",
+            "org.apache.commons.compress.archivers.tar.TarArchiveOutputStream:finish:[]:void"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.tar.TarArchiveOutputStream:closeArchiveEntry:[]:void",
+            "org.apache.commons.compress.archivers.tar.TarArchiveOutputStream:finish:[]:void",
+            "org.apache.commons.compress.archivers.tar.TarArchiveOutputStream:write:[byte[] wBuf, int wOffset, int numToWrite]:void"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "55",
+            "113",
+            "114",
+            "115",
+            "191",
+            "222"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "54",
+            "113",
+            "194",
+            "226"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/compress/archivers/tar/TarArchiveOutputStream.java b/src/main/java/org/apache/commons/compress/archivers/tar/TarArchiveOutputStream.java\nindex 2dc3b26..005e3e7 100644\n--- a/src/main/java/org/apache/commons/compress/archivers/tar/TarArchiveOutputStream.java\n+++ b/src/main/java/org/apache/commons/compress/archivers/tar/TarArchiveOutputStream.java\n@@ -52,7 +52,6 @@\n     private boolean closed \u003d false;\n \n     /* Indicates if putArchiveEntry has been called without closeArchiveEntry */\n-    private boolean haveUnclosedEntry \u003d false;\n     \n     private final OutputStream out;\n \n@@ -110,9 +109,6 @@\n      * @throws IOException on error\n      */\n     public void finish() throws IOException {\n-        if(haveUnclosedEntry) {\n-            throw new IOException(\"This archives contains unclosed entries.\");\n-        }\n         writeEOFRecord();\n         writeEOFRecord();\n     }\n@@ -188,7 +184,6 @@\n             currSize \u003d entry.getSize();\n         }\n         currName \u003d entry.getName();\n-        haveUnclosedEntry \u003d true;\n     }\n \n     /**\n@@ -219,7 +214,6 @@\n                                   + \"\u0027 before the \u0027\" + currSize\n                                   + \"\u0027 bytes specified in the header were written\");\n         }\n-        haveUnclosedEntry \u003d false;\n     }\n \n     /**\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [2105,2147]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [3990,4102]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [6953,6978]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [8072,8098]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.apache.commons.compress.archivers.tar.TarArchiveOutputStream:write:[byte[] wBuf, int wOffset, int numToWrite]:void"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.apache.commons.compress.archivers.tar.TarArchiveOutputStream:putArchiveEntry:[ArchiveEntry archiveEntry]:void"
+      ],
+      "num": 1
+    }
+  }
+}

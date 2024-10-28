@@ -1,0 +1,103 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math.ode.events.EventStateTest::closeEvents",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math.ode.events.EventState",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "78",
+  "workingDir": "../bugs/Math_78_tmp",
+  "bug_name": "Math_78",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math.ode.events.EventStateTest",
+      "test_function": "closeEvents",
+      "assertion_line": "66",
+      "exception": "org.apache.commons.math.MathRuntimeException$4",
+      "message": "function values at endpoints do not have different signs.  Endpoints: [89.999, 153.1], Values: [-0.066, -1,142.11]"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/ode/events/EventState.java",
+        "src/main/java/org/apache/commons/math/ode/events/EventState.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.ode.events.EventState:evaluateStep:[final StepInterpolator interpolator]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.ode.events.EventState:evaluateStep:[final StepInterpolator interpolator]:boolean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "191",
+            "199",
+            "200",
+            "201",
+            "202",
+            "203",
+            "204",
+            "205",
+            "207",
+            "208",
+            "209"
+          ],
+          "num": 11
+        },
+        {
+          "qualified_names": [
+            "190",
+            "199"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/ode/events/EventState.java b/src/main/java/org/apache/commons/math/ode/events/EventState.java\nindex ff09646..5006065 100644\n--- a/src/main/java/org/apache/commons/math/ode/events/EventState.java\n+++ b/src/main/java/org/apache/commons/math/ode/events/EventState.java\n@@ -188,7 +188,6 @@\n                 if (g0Positive ^ (gb \u003e\u003d 0)) {\n                     // there is a sign change: an event is expected during this step\n \n-                    if (ga * gb \u003e 0) {\n                         // this is a corner case:\n                         // - there was an event near ta,\n                         // - there is another event between ta and tb\n@@ -196,17 +195,7 @@\n                         // this implies that the real sign of ga is the same as gb, so we need to slightly\n                         // shift ta to make sure ga and gb get opposite signs and the solver won\u0027t complain\n                         // about bracketing\n-                        final double epsilon \u003d (forward ? 0.25 : -0.25) * convergence;\n-                        for (int k \u003d 0; (k \u003c 4) \u0026\u0026 (ga * gb \u003e 0); ++k) {\n-                            ta +\u003d epsilon;\n-                            interpolator.setInterpolatedTime(ta);\n-                            ga \u003d handler.g(ta, interpolator.getInterpolatedState());\n-                        }\n-                        if (ga * gb \u003e 0) {\n                             // this should never happen\n-                            throw MathRuntimeException.createInternalError(null);\n-                        }\n-                    }\n                          \n                     // variation direction, with respect to the integration direction\n                     increasing \u003d gb \u003e\u003d ga;\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [7312,8486]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

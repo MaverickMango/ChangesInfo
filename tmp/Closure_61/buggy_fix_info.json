@@ -1,0 +1,111 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.PeepholeRemoveDeadCodeTest::testCall1,com.google.javascript.jscomp.PeepholeRemoveDeadCodeTest::testCall2,com.google.javascript.jscomp.PeepholeRemoveDeadCodeTest::testRemoveUselessOps",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.NodeUtil",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "61",
+  "workingDir": "../bugs/Closure_61_tmp",
+  "bug_name": "Closure_61",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.PeepholeRemoveDeadCodeTest",
+      "test_function": "testCall1",
+      "assertion_line": "544",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: \nResult: Math.sin(0)"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.PeepholeRemoveDeadCodeTest",
+      "test_function": "testCall2",
+      "assertion_line": "548",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: \nResult: Math.sin(0)"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.PeepholeRemoveDeadCodeTest",
+      "test_function": "testRemoveUselessOps",
+      "assertion_line": "54",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: \nResult: Math.random()"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/NodeUtil.java",
+        "src/com/google/javascript/jscomp/NodeUtil.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.NodeUtil:functionCallHasSideEffects:[Node callNode, @Nullable AbstractCompiler compiler]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.NodeUtil:functionCallHasSideEffects:[Node callNode, @Nullable AbstractCompiler compiler]:boolean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "958",
+            "959",
+            "960",
+            "961",
+            "962",
+            "963"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "957"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/NodeUtil.java b/src/com/google/javascript/jscomp/NodeUtil.java\nindex f9ce42e..1844b18 100644\n--- a/src/com/google/javascript/jscomp/NodeUtil.java\n+++ b/src/com/google/javascript/jscomp/NodeUtil.java\n@@ -955,12 +955,6 @@\n       }\n \n       // Functions in the \"Math\" namespace have no side effects.\n-      if (nameNode.getFirstChild().getType() \u003d\u003d Token.NAME) {\n-        String namespaceName \u003d nameNode.getFirstChild().getString();\n-        if (namespaceName.equals(\"Math\")) {\n-          return false;\n-        }\n-      }\n \n       if (compiler !\u003d null \u0026\u0026 !compiler.hasRegExpGlobalReferences()) {\n         if (nameNode.getFirstChild().getType() \u003d\u003d Token.REGEXP\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [28822,29032]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

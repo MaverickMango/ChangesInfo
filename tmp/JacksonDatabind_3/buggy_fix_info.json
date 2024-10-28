@@ -1,0 +1,111 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.deser.TestArrayDeserialization::testStringArray",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.deser.std.StringArrayDeserializer",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "3",
+  "workingDir": "../bugs/JacksonDatabind_3_tmp",
+  "bug_name": "JacksonDatabind_3",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.deser.TestArrayDeserialization",
+      "test_function": "testStringArray",
+      "assertion_line": "266",
+      "exception": "java.lang.NullPointerException",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/deser/std/StringArrayDeserializer.java",
+        "src/main/java/com/fasterxml/jackson/databind/deser/std/StringArrayDeserializer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.std.StringArrayDeserializer:deserialize:[JsonParser jp, DeserializationContext ctxt]:String[]",
+            "com.fasterxml.jackson.databind.deser.std.StringArrayDeserializer:_deserializeCustom:[JsonParser jp, DeserializationContext ctxt]:String[]"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.std.StringArrayDeserializer:deserialize:[JsonParser jp, DeserializationContext ctxt]:String[]",
+            "com.fasterxml.jackson.databind.deser.std.StringArrayDeserializer:_deserializeCustom:[JsonParser jp, DeserializationContext ctxt]:String[]"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "66",
+            "95"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "66",
+            "95"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/std/StringArrayDeserializer.java b/src/main/java/com/fasterxml/jackson/databind/deser/std/StringArrayDeserializer.java\nindex 5475ba5..fdfeecb 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/deser/std/StringArrayDeserializer.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/deser/std/StringArrayDeserializer.java\n@@ -63,7 +63,7 @@\n             if (t \u003d\u003d JsonToken.VALUE_STRING) {\n                 value \u003d jp.getText();\n             } else if (t \u003d\u003d JsonToken.VALUE_NULL) {\n-                value \u003d null; // since we have established that \u0027_elementDeserializer \u003d\u003d null\u0027 earlier\n+                value \u003d _elementDeserializer.getNullValue();\n             } else {\n                 value \u003d _parseString(jp, ctxt);\n             }\n@@ -92,7 +92,7 @@\n         \n         while ((t \u003d jp.nextToken()) !\u003d JsonToken.END_ARRAY) {\n             // Ok: no need to convert Strings, but must recognize nulls\n-            String value \u003d (t \u003d\u003d JsonToken.VALUE_NULL) ? deser.getNullValue() : deser.deserialize(jp, ctxt);\n+            String value \u003d (t \u003d\u003d JsonToken.VALUE_NULL) ? null : deser.deserialize(jp, ctxt);\n             if (ix \u003e\u003d chunk.length) {\n                 chunk \u003d buffer.appendCompletedChunk(chunk);\n                 ix \u003d 0;\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [3302,3382]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [2240,2284]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [2240,2253]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [3344,3440]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

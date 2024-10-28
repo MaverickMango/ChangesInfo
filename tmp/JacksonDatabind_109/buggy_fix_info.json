@@ -1,0 +1,225 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.ser.jdk.BigDecimalPlain2230Test::testBigIntegerAsPlainTest",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.ser.std.NumberSerializer,com.fasterxml.jackson.databind.ser.std.NumberSerializers",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "109",
+  "workingDir": "../bugs/JacksonDatabind_109_tmp",
+  "bug_name": "JacksonDatabind_109",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.ser.jdk.BigDecimalPlain2230Test",
+      "test_function": "testBigIntegerAsPlainTest",
+      "assertion_line": "35",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c{\"value\":\"[0.0000000005]\"}\u003e but was:\u003c{\"value\":\"[5E-10]\"}\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/ser/std/NumberSerializer.java",
+        "src/main/java/com/fasterxml/jackson/databind/ser/std/NumberSerializer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.std.NumberSerializer\\$BigDecimalAsStringSerializer:_verifyBigDecimalRange:[JsonGenerator gen, BigDecimal value]:boolean",
+            "com.fasterxml.jackson.databind.ser.std.NumberSerializer\\$BigDecimalAsStringSerializer:serialize:[Object value, JsonGenerator gen, SerializerProvider provider]:void",
+            "com.fasterxml.jackson.databind.ser.std.NumberSerializer\\$BigDecimalAsStringSerializer:BigDecimalAsStringSerializer:[]:null",
+            "com.fasterxml.jackson.databind.ser.std.NumberSerializer:createContextual:[SerializerProvider prov, BeanProperty property]:JsonSerializer\u003c?\u003e",
+            "com.fasterxml.jackson.databind.ser.std.NumberSerializer:bigDecimalAsStringSerializer:[]:JsonSerializer\u003c?\u003e",
+            "com.fasterxml.jackson.databind.ser.std.NumberSerializer\\$BigDecimalAsStringSerializer:isEmpty:[SerializerProvider prov, Object value]:boolean",
+            "com.fasterxml.jackson.databind.ser.std.NumberSerializer\\$BigDecimalAsStringSerializer:valueToString:[Object value]:String"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.std.NumberSerializer:createContextual:[SerializerProvider prov, BeanProperty property]:JsonSerializer\u003c?\u003e"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "37",
+            "59",
+            "60",
+            "61",
+            "117",
+            "118",
+            "119",
+            "121",
+            "122",
+            "123",
+            "124",
+            "125",
+            "126",
+            "127",
+            "128",
+            "130",
+            "131",
+            "132",
+            "133",
+            "135",
+            "136",
+            "137",
+            "138",
+            "139",
+            "140",
+            "141",
+            "143",
+            "146",
+            "147",
+            "148",
+            "149",
+            "150",
+            "151",
+            "152",
+            "153",
+            "154",
+            "155",
+            "156",
+            "158",
+            "159",
+            "161",
+            "162",
+            "165",
+            "166",
+            "167",
+            "168",
+            "169"
+          ],
+          "num": 47
+        },
+        {
+          "qualified_names": [
+            "36",
+            "59",
+            "120"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/ser/std/NumberSerializer.java b/src/main/java/com/fasterxml/jackson/databind/ser/std/NumberSerializer.java\nindex 56b3073..dc4906e 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/ser/std/NumberSerializer.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/ser/std/NumberSerializer.java\n@@ -34,7 +34,6 @@\n     /**\n      * Copied from `jackson-core` class `GeneratorBase`\n      */\n-    protected final static int MAX_BIG_DECIMAL_SCALE \u003d 9999;\n     \n     protected final boolean _isInt;\n \n@@ -56,9 +55,6 @@\n             switch (format.getShape()) {\n             case STRING:\n                 // [databind#2264]: Need special handling for `BigDecimal`\n-                if (((Class\u003c?\u003e) handledType()) \u003d\u003d BigDecimal.class) {\n-                    return bigDecimalAsStringSerializer();\n-                }\n                 return ToStringSerializer.instance;\n             default:\n             }\n@@ -114,57 +110,14 @@\n     /**\n      * @since 2.10\n      */\n-    public static JsonSerializer\u003c?\u003e bigDecimalAsStringSerializer() {\n-        return BigDecimalAsStringSerializer.BD_INSTANCE;\n-    }\n     \n-    final static class BigDecimalAsStringSerializer\n-        extends ToStringSerializerBase\n-    {\n-        final static BigDecimalAsStringSerializer BD_INSTANCE \u003d new BigDecimalAsStringSerializer();\n-        \n-        public BigDecimalAsStringSerializer() {\n-            super(BigDecimal.class);\n-        }\n \n-        @Override\n-        public boolean isEmpty(SerializerProvider prov, Object value) {\n-            return valueToString(value).isEmpty();\n-        }\n \n-        @Override\n-        public void serialize(Object value, JsonGenerator gen, SerializerProvider provider)\n-            throws IOException\n-        {\n-            final String text;\n-            if (gen.isEnabled(JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN)) {\n-                final BigDecimal bd \u003d (BigDecimal) value;\n                 // 24-Aug-2016, tatu: [core#315] prevent possible DoS vector, so we need this\n-                if (!_verifyBigDecimalRange(gen, bd)) {\n                     // ... but wouldn\u0027t it be nice to trigger error via generator? Alas,\n                     // no method to do that. So we\u0027ll do...\n-                    final String errorMsg \u003d String.format(\n-                            \"Attempt to write plain `java.math.BigDecimal` (see JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN) with illegal scale (%d): needs to be between [-%d, %d]\",\n-                            bd.scale(), MAX_BIG_DECIMAL_SCALE, MAX_BIG_DECIMAL_SCALE);\n-                    provider.reportMappingProblem(errorMsg);\n-                }\n-                text \u003d bd.toPlainString();\n-            } else {\n-                text \u003d value.toString();\n-            }\n-            gen.writeString(text);\n-        }\n \n-        @Override\n-        public String valueToString(Object value) {\n             // should never be called\n-            throw new IllegalStateException();\n-        }\n \n         // 24-Aug-2016, tatu: [core#315] prevent possible DoS vector, so we need this\n-        protected boolean _verifyBigDecimalRange(JsonGenerator gen, BigDecimal value) throws IOException {\n-            int scale \u003d value.scale();\n-            return ((scale \u003e\u003d -MAX_BIG_DECIMAL_SCALE) \u0026\u0026 (scale \u003c\u003d MAX_BIG_DECIMAL_SCALE));\n-        }\n-    }\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [1095,1162]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [1095,1223]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [1957,2087]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [4142,4304]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TypeDeclaration [4314,6466]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/ser/std/NumberSerializers.java",
+        "src/main/java/com/fasterxml/jackson/databind/ser/std/NumberSerializers.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.std.NumberSerializers\\$Base:createContextual:[SerializerProvider prov, BeanProperty property]:JsonSerializer\u003c?\u003e"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.std.NumberSerializers\\$Base:createContextual:[SerializerProvider prov, BeanProperty property]:JsonSerializer\u003c?\u003e"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "5",
+            "101",
+            "102",
+            "103"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "4",
+            "101"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/ser/std/NumberSerializers.java b/src/main/java/com/fasterxml/jackson/databind/ser/std/NumberSerializers.java\nindex 8fd2b87..8af633d 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/ser/std/NumberSerializers.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/ser/std/NumberSerializers.java\n@@ -2,7 +2,6 @@\n \n import java.io.IOException;\n import java.lang.reflect.Type;\n-import java.math.BigDecimal;\n import java.util.Map;\n \n import com.fasterxml.jackson.annotation.JsonFormat;\n@@ -98,9 +97,6 @@\n             if (format !\u003d null) {\n                 switch (format.getShape()) {\n                 case STRING:\n-                    if (((Class\u003c?\u003e) handledType()) \u003d\u003d BigDecimal.class) {\n-                        return NumberSerializer.bigDecimalAsStringSerializer();\n-                    }\n                     return ToStringSerializer.instance;\n                 default:\n                 }\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [108,136]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [4278,4433]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.ser.std.NumberSerializer\\$BigDecimalAsStringSerializer:serialize:[Object value, JsonGenerator gen, SerializerProvider provider]:void",
+        "com.fasterxml.jackson.databind.ser.std.NumberSerializer\\$BigDecimalAsStringSerializer:isEmpty:[SerializerProvider prov, Object value]:boolean",
+        "com.fasterxml.jackson.databind.ser.std.NumberSerializer\\$BigDecimalAsStringSerializer:_verifyBigDecimalRange:[JsonGenerator gen, BigDecimal value]:boolean",
+        "com.fasterxml.jackson.databind.ser.std.NumberSerializer:bigDecimalAsStringSerializer:[]:JsonSerializer\u003c?\u003e",
+        "com.fasterxml.jackson.databind.ser.std.NumberSerializer\\$BigDecimalAsStringSerializer:BigDecimalAsStringSerializer:[]:null",
+        "com.fasterxml.jackson.databind.ser.std.NumberSerializer\\$BigDecimalAsStringSerializer:valueToString:[Object value]:String"
+      ],
+      "num": 6
+    }
+  }
+}

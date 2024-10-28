@@ -1,0 +1,192 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.deser.TestDateDeserialization::testDateUtilISO8601NoTimezoneNonDefault",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.util.StdDateFormat",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "87",
+  "workingDir": "../bugs/JacksonDatabind_87_tmp",
+  "bug_name": "JacksonDatabind_87",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.deser.TestDateDeserialization",
+      "test_function": "testDateUtilISO8601NoTimezoneNonDefault",
+      "assertion_line": "277",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003cWed Dec 31 16:00:00 PST 1969\u003e but was:\u003cWed Dec 31 18:00:00 PST 1969\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/util/StdDateFormat.java",
+        "src/main/java/com/fasterxml/jackson/databind/util/StdDateFormat.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.util.StdDateFormat:parseAsISO8601:[String dateStr, ParsePosition pos, boolean throwErrors]:Date",
+            "com.fasterxml.jackson.databind.util.StdDateFormat:_clearFormats:[]:void"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.util.StdDateFormat:StdDateFormat:[]:null",
+            "com.fasterxml.jackson.databind.util.StdDateFormat:parseAsISO8601:[String dateStr, ParsePosition pos, boolean throwErrors]:Date"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "47",
+            "66",
+            "86",
+            "105",
+            "106",
+            "137",
+            "523",
+            "532",
+            "534",
+            "535",
+            "540",
+            "541",
+            "602"
+          ],
+          "num": 13
+        },
+        {
+          "qualified_names": [
+            "46",
+            "66",
+            "87",
+            "107",
+            "141",
+            "514",
+            "527",
+            "528",
+            "529",
+            "530",
+            "535",
+            "536",
+            "606"
+          ],
+          "num": 13
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/util/StdDateFormat.java b/src/main/java/com/fasterxml/jackson/databind/util/StdDateFormat.java\nindex 46346de..b108604 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/util/StdDateFormat.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/util/StdDateFormat.java\n@@ -44,7 +44,6 @@\n      *\n      * @since 2.8.10\n      */\n-    protected final static String DATE_FORMAT_STR_ISO8601_NO_TZ \u003d \"yyyy-MM-dd\u0027T\u0027HH:mm:ss.SSS\";\n \n     /**\n      * ISO-8601 with just the Date part, no time\n@@ -63,7 +62,6 @@\n     protected final static String[] ALL_FORMATS \u003d new String[] {\n         DATE_FORMAT_STR_ISO8601,\n         DATE_FORMAT_STR_ISO8601_Z,\n-        DATE_FORMAT_STR_ISO8601_NO_TZ,\n         DATE_FORMAT_STR_RFC1123,\n         DATE_FORMAT_STR_PLAIN\n     };\n@@ -83,7 +81,6 @@\n \n     protected final static DateFormat DATE_FORMAT_ISO8601;\n     protected final static DateFormat DATE_FORMAT_ISO8601_Z;\n-    protected final static DateFormat DATE_FORMAT_ISO8601_NO_TZ; // since 2.8.10\n \n     protected final static DateFormat DATE_FORMAT_PLAIN;\n \n@@ -102,8 +99,6 @@\n         DATE_FORMAT_ISO8601.setTimeZone(DEFAULT_TIMEZONE);\n         DATE_FORMAT_ISO8601_Z \u003d new SimpleDateFormat(DATE_FORMAT_STR_ISO8601_Z, DEFAULT_LOCALE);\n         DATE_FORMAT_ISO8601_Z.setTimeZone(DEFAULT_TIMEZONE);\n-        DATE_FORMAT_ISO8601_NO_TZ \u003d new SimpleDateFormat(DATE_FORMAT_STR_ISO8601_NO_TZ, DEFAULT_LOCALE);\n-        DATE_FORMAT_ISO8601_NO_TZ.setTimeZone(DEFAULT_TIMEZONE);\n         DATE_FORMAT_PLAIN \u003d new SimpleDateFormat(DATE_FORMAT_STR_PLAIN, DEFAULT_LOCALE);\n         DATE_FORMAT_PLAIN.setTimeZone(DEFAULT_TIMEZONE);\n     }\n@@ -134,7 +129,6 @@\n     protected transient DateFormat _formatRFC1123;\n     protected transient DateFormat _formatISO8601;\n     protected transient DateFormat _formatISO8601_z;\n-    protected transient DateFormat _formatISO8601_noTz; // 2.8.10\n     protected transient DateFormat _formatPlain;\n \n     /*\n@@ -517,10 +511,10 @@\n                 }\n             } else {\n                 // If not, plain date, no timezone\n+                StringBuilder sb \u003d new StringBuilder(dateStr);\n                 int timeLen \u003d len - dateStr.lastIndexOf(\u0027T\u0027) - 1;\n                 // And possible also millisecond part if missing\n                 if (timeLen \u003c 12) { // missing, or partial\n-                    StringBuilder sb \u003d new StringBuilder(dateStr);\n                     switch (timeLen) {\n                     case 11: sb.append(\u00270\u0027);\n                     case 10: sb.append(\u00270\u0027);\n@@ -529,16 +523,17 @@\n                     default:\n                         sb.append(\".000\");\n                     }\n-                    dateStr \u003d sb.toString();\n                 }\n-                df \u003d _formatISO8601_noTz;\n-                formatStr \u003d DATE_FORMAT_STR_ISO8601_NO_TZ;\n+                sb.append(\u0027Z\u0027);\n+                dateStr \u003d sb.toString();\n+                df \u003d _formatISO8601_z;\n+                formatStr \u003d DATE_FORMAT_STR_ISO8601_Z;\n                 if (df \u003d\u003d null) {\n                     // 10-Jun-2017, tatu: As per [databind#1651], when using this format,\n                     //    must use UTC, not whatever is configured as default timezone\n                     //    (because we know `Z` identifier is used)\n-                    df \u003d _formatISO8601_noTz \u003d _cloneFormat(DATE_FORMAT_ISO8601_NO_TZ, formatStr,\n-                            _timezone, _locale, _lenient);\n+                    df \u003d _formatISO8601_z \u003d _cloneFormat(DATE_FORMAT_ISO8601_Z, formatStr,\n+                            DEFAULT_TIMEZONE, _locale, _lenient);\n                 }\n             }\n         }\n@@ -599,7 +594,6 @@\n         _formatRFC1123 \u003d null;\n         _formatISO8601 \u003d null;\n         _formatISO8601_z \u003d null;\n-        _formatISO8601_noTz \u003d null;\n \n         _formatPlain \u003d null;\n     }\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [18215,18230]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [1431,1629]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: DATE_FORMAT_STR_ISO8601_NO_TZ [2186,2215]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [2801,2861]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [3764,3860]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [3869,3925]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [4856,4907]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [21215,21242]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.util.StdDateFormat:StdDateFormat:[]:null"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.util.StdDateFormat:_clearFormats:[]:void"
+      ],
+      "num": 1
+    }
+  }
+}

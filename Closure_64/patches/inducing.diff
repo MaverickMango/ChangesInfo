@@ -1,0 +1,331 @@
+diff --git a/src/com/google/javascript/jscomp/AbstractCommandLineRunner.java b/src/com/google/javascript/jscomp/AbstractCommandLineRunner.java
+index e5a3025..1e90b46 100644
+--- a/src/com/google/javascript/jscomp/AbstractCommandLineRunner.java
++++ b/src/com/google/javascript/jscomp/AbstractCommandLineRunner.java
+@@ -240,13 +240,13 @@
+     if (config.languageIn.length() > 0) {
+       if (config.languageIn.equals("ECMASCRIPT5_STRICT") ||
+           config.languageIn.equals("ES5_STRICT")) {
+-        options.languageIn = CompilerOptions.LanguageMode.ECMASCRIPT5;
++        options.setLanguageIn(CompilerOptions.LanguageMode.ECMASCRIPT5);
+       } else if (config.languageIn.equals("ECMASCRIPT5") ||
+           config.languageIn.equals("ES5")) {
+-        options.languageIn = CompilerOptions.LanguageMode.ECMASCRIPT5;
++        options.setLanguageIn(CompilerOptions.LanguageMode.ECMASCRIPT5);
+       } else if (config.languageIn.equals("ECMASCRIPT3") ||
+                  config.languageIn.equals("ES3")) {
+-        options.languageIn = CompilerOptions.LanguageMode.ECMASCRIPT3;
++        options.setLanguageIn(CompilerOptions.LanguageMode.ECMASCRIPT3);
+       } else {
+         throw new FlagUsageException("Unknown language `" + config.languageIn +
+                                      "' specified.");
+diff --git a/src/com/google/javascript/jscomp/CodeGenerator.java b/src/com/google/javascript/jscomp/CodeGenerator.java
+index 668fe51..7fa0bf6 100644
+--- a/src/com/google/javascript/jscomp/CodeGenerator.java
++++ b/src/com/google/javascript/jscomp/CodeGenerator.java
+@@ -60,6 +60,13 @@
+     this(consumer, null);
+   }
+ 
++  /**
++   * Insert a ECMASCRIPT 5 strict annotation.
++   */
++  public void tagAsStrict() {
++    add("'use strict';");
++  }
++
+   void add(String str) {
+     cc.add(str);
+   }
+diff --git a/src/com/google/javascript/jscomp/CodePrinter.java b/src/com/google/javascript/jscomp/CodePrinter.java
+index 06b710f..e5ce384 100644
+--- a/src/com/google/javascript/jscomp/CodePrinter.java
++++ b/src/com/google/javascript/jscomp/CodePrinter.java
+@@ -491,6 +491,7 @@
+     // Specify a charset to use when outputting source code.  If null,
+     // then just output ASCII.
+     private Charset outputCharset = null;
++    private boolean tagAsStrict;
+ 
+     /**
+      * Sets the root node from which to generate the source code.
+@@ -568,6 +569,14 @@
+     }
+ 
+     /**
++     * Set whether the output should be tags as ECMASCRIPT 5 Strict.
++     */
++    Builder setTagAsStrict(boolean tagAsStrict) {
++      this.tagAsStrict = tagAsStrict;
++      return this;
++    }
++
++    /**
+      * Generates the source code and returns it.
+      */
+     String build() {
+@@ -583,7 +592,7 @@
+               : Format.COMPACT;
+ 
+       return toSource(root, outputFormat, lineBreak, lineLengthThreshold,
+-          sourceMap, sourceMapDetailLevel, outputCharset);
++          sourceMap, sourceMapDetailLevel, outputCharset, tagAsStrict);
+     }
+   }
+ 
+@@ -600,7 +609,8 @@
+                                  boolean lineBreak,  int lineLengthThreshold,
+                                  SourceMap sourceMap,
+                                  SourceMap.DetailLevel sourceMapDetailLevel,
+-                                 Charset outputCharset) {
++                                 Charset outputCharset,
++                                 boolean tagAsStrict) {
+     Preconditions.checkState(sourceMapDetailLevel != null);
+ 
+     boolean createSourceMap = (sourceMap != null);
+@@ -615,6 +625,11 @@
+         outputFormat == Format.TYPED
+         ? new TypedCodeGenerator(mcp, outputCharset)
+         : new CodeGenerator(mcp, outputCharset);
++
++    if (tagAsStrict) {
++      cg.tagAsStrict();
++    }
++
+     cg.add(root);
+     mcp.endFile();
+ 
+diff --git a/src/com/google/javascript/jscomp/Compiler.java b/src/com/google/javascript/jscomp/Compiler.java
+index 21adb25..c8e1da8 100644
+--- a/src/com/google/javascript/jscomp/Compiler.java
++++ b/src/com/google/javascript/jscomp/Compiler.java
+@@ -1443,6 +1443,8 @@
+     builder.setLineBreak(options.lineBreak);
+     builder.setSourceMap(sourceMap);
+     builder.setSourceMapDetailLevel(options.sourceMapDetailLevel);
++    builder.setTagAsStrict(
++        options.getLanguageOut() == LanguageMode.ECMASCRIPT5_STRICT);
+ 
+     Charset charset = options.outputCharset != null ?
+         Charset.forName(options.outputCharset) : null;
+@@ -1643,11 +1645,11 @@
+ 
+   @Override
+   public boolean acceptEcmaScript5() {
+-    return options.languageIn == LanguageMode.ECMASCRIPT5;
++    return options.getLanguageIn() == LanguageMode.ECMASCRIPT5;
+   }
+ 
+-  public LanguageMode LanguageMode() {
+-    return options.languageIn;
++  public LanguageMode languageMode() {
++    return options.getLanguageIn();
+   }
+ 
+   @Override
+@@ -1659,7 +1661,7 @@
+   Config getParserConfig() {
+     if (parserConfig == null) {
+       Config.LanguageMode mode;
+-      switch (options.languageIn) {
++      switch (options.getLanguageIn()) {
+         case ECMASCRIPT3:
+           mode = Config.LanguageMode.ECMASCRIPT3;
+           break;
+diff --git a/src/com/google/javascript/jscomp/CompilerOptions.java b/src/com/google/javascript/jscomp/CompilerOptions.java
+index f3ae0a8..5b66d52 100644
+--- a/src/com/google/javascript/jscomp/CompilerOptions.java
++++ b/src/com/google/javascript/jscomp/CompilerOptions.java
+@@ -41,8 +41,12 @@
+   /**
+    * The JavaScript language version accepted.
+    */
+-  LanguageMode languageIn;
++  private LanguageMode languageIn;
+ 
++  /**
++   * The JavaScript language version accepted.
++   */
++  private LanguageMode languageOut;
+ 
+   /**
+    * Whether the compiler handles `const' keyword or not.
+@@ -1110,6 +1114,22 @@
+   }
+ 
+   /**
++   * Sets how goog.tweak calls are processed.
++   */
++  public void setLanguageIn(LanguageMode languageIn) {
++    this.languageIn = languageIn;
++    this.languageOut = languageIn;
++  }
++
++  public LanguageMode getLanguageIn() {
++    return languageIn;
++  }
++
++  public LanguageMode getLanguageOut() {
++    return languageOut;
++  }
++
++  /**
+    * Whether to include "undefined" in the default types.
+    *   For example:
+    *     "{Object}" is normally "Object|null" becomes "Object|null|undefined"
+diff --git a/src/com/google/javascript/jscomp/DefaultPassConfig.java b/src/com/google/javascript/jscomp/DefaultPassConfig.java
+index 7e890be..2a48673 100644
+--- a/src/com/google/javascript/jscomp/DefaultPassConfig.java
++++ b/src/com/google/javascript/jscomp/DefaultPassConfig.java
+@@ -266,7 +266,7 @@
+       checks.add(checkSuspiciousProperties);
+     }
+ 
+-    if (options.languageIn == LanguageMode.ECMASCRIPT5_STRICT
++    if (options.getLanguageIn() == LanguageMode.ECMASCRIPT5_STRICT
+         || options.checkCaja
+         || options.checkEs5Strict) {
+       checks.add(checkStrictMode);
+diff --git a/test/com/google/javascript/jscomp/AmbiguatePropertiesTest.java b/test/com/google/javascript/jscomp/AmbiguatePropertiesTest.java
+index dee0c7e..6323180 100644
+--- a/test/com/google/javascript/jscomp/AmbiguatePropertiesTest.java
++++ b/test/com/google/javascript/jscomp/AmbiguatePropertiesTest.java
+@@ -60,7 +60,7 @@
+   protected CompilerOptions getOptions() {
+     // no missing properties check
+     CompilerOptions options = new CompilerOptions();
+-    options.languageIn = LanguageMode.ECMASCRIPT5;
++    options.setLanguageIn(LanguageMode.ECMASCRIPT5);
+     return options;
+   }
+ 
+diff --git a/test/com/google/javascript/jscomp/CodePrinterTest.java b/test/com/google/javascript/jscomp/CodePrinterTest.java
+index c4a0164..3257aba 100644
+--- a/test/com/google/javascript/jscomp/CodePrinterTest.java
++++ b/test/com/google/javascript/jscomp/CodePrinterTest.java
+@@ -30,7 +30,8 @@
+   static Node parse(String js, boolean checkTypes) {
+     Compiler compiler = new Compiler();
+     CompilerOptions options = new CompilerOptions();
+-    options.languageIn = LanguageMode.ECMASCRIPT5; // Allow getters and setters.
++    // Allow getters and setters.
++    options.setLanguageIn(LanguageMode.ECMASCRIPT5);
+     compiler.initOptions(options);
+     Node n = compiler.parseTestCode(js);
+ 
+@@ -79,9 +80,21 @@
+       int lineThreshold, boolean outputTypes) {
+     return new CodePrinter.Builder(parse(js, true)).setPrettyPrint(prettyprint)
+         .setOutputTypes(outputTypes)
+-        .setLineLengthThreshold(lineThreshold).setLineBreak(lineBreak).build();
++        .setLineLengthThreshold(lineThreshold).setLineBreak(lineBreak)
++        .build();
+   }
+ 
++  String parsePrint(String js, boolean prettyprint, boolean lineBreak,
++                    int lineThreshold, boolean outputTypes,
++                    boolean tagAsStrict) {
++    return new CodePrinter.Builder(parse(js, true)).setPrettyPrint(prettyprint)
++        .setOutputTypes(outputTypes)
++        .setLineLengthThreshold(lineThreshold).setLineBreak(lineBreak)
++        .setTagAsStrict(tagAsStrict)
++        .build();
++  }
++
++
+   String printNode(Node n) {
+     return new CodePrinter.Builder(n).setLineLengthThreshold(
+         CodePrinter.DEFAULT_LINE_LENGTH_THRESHOLD).build();
+@@ -1149,5 +1162,8 @@
+     assertPrint("var x = - (2);", "var x=-2");
+   }
+ 
+-
++  public void testStrict() {
++    String result = parsePrint("var x", false, false, 0, false, true);
++    assertEquals("'use strict';var x", result);
++  }
+ }
+diff --git a/test/com/google/javascript/jscomp/CompilerTestCase.java b/test/com/google/javascript/jscomp/CompilerTestCase.java
+index 6d765cc..89deb5d 100644
+--- a/test/com/google/javascript/jscomp/CompilerTestCase.java
++++ b/test/com/google/javascript/jscomp/CompilerTestCase.java
+@@ -151,7 +151,7 @@
+     CompilerOptions options = new CompilerOptions();
+ 
+     if (this.acceptES5) {
+-      options.languageIn = LanguageMode.ECMASCRIPT5;
++      options.setLanguageIn(LanguageMode.ECMASCRIPT5);
+     }
+ 
+     // This doesn't affect whether checkSymbols is run--it just affects
+@@ -397,7 +397,7 @@
+     CompilerOptions options = getOptions();
+ 
+     if (this.acceptES5) {
+-      options.languageIn = LanguageMode.ECMASCRIPT5;
++      options.setLanguageIn(LanguageMode.ECMASCRIPT5);
+     }
+     // Note that in this context, turning on the checkTypes option won't
+     // actually cause the type check to run.
+diff --git a/test/com/google/javascript/jscomp/CompilerTypeTestCase.java b/test/com/google/javascript/jscomp/CompilerTypeTestCase.java
+index 22577c5..b0c2bec 100644
+--- a/test/com/google/javascript/jscomp/CompilerTypeTestCase.java
++++ b/test/com/google/javascript/jscomp/CompilerTypeTestCase.java
+@@ -60,7 +60,7 @@
+ 
+   protected CompilerOptions getOptions() {
+     CompilerOptions options = new CompilerOptions();
+-    options.languageIn = LanguageMode.ECMASCRIPT5;
++    options.setLanguageIn(LanguageMode.ECMASCRIPT5);
+     options.setWarningLevel(
+         DiagnosticGroups.MISSING_PROPERTIES, CheckLevel.WARNING);
+     options.setCodingConvention(getCodingConvention());
+diff --git a/test/com/google/javascript/jscomp/ExpressionDecomposerTest.java b/test/com/google/javascript/jscomp/ExpressionDecomposerTest.java
+index 7c76ccb..b92638f 100644
+--- a/test/com/google/javascript/jscomp/ExpressionDecomposerTest.java
++++ b/test/com/google/javascript/jscomp/ExpressionDecomposerTest.java
+@@ -578,7 +578,7 @@
+   private static Compiler getCompiler() {
+     Compiler compiler = new Compiler();
+     CompilerOptions options = new CompilerOptions();
+-    options.languageIn = LanguageMode.ECMASCRIPT5;
++    options.setLanguageIn(LanguageMode.ECMASCRIPT5);
+     options.setCodingConvention(new GoogleCodingConvention());
+     compiler.initOptions(options);
+     return compiler;
+diff --git a/test/com/google/javascript/jscomp/NodeUtilTest.java b/test/com/google/javascript/jscomp/NodeUtilTest.java
+index 13e495f..75a2aa8 100644
+--- a/test/com/google/javascript/jscomp/NodeUtilTest.java
++++ b/test/com/google/javascript/jscomp/NodeUtilTest.java
+@@ -37,7 +37,7 @@
+   private static Node parse(String js) {
+     Compiler compiler = new Compiler();
+     compiler.initCompilerOptionsIfTesting();
+-    compiler.getOptions().languageIn = LanguageMode.ECMASCRIPT5;
++    compiler.getOptions().setLanguageIn(LanguageMode.ECMASCRIPT5);
+     Node n = compiler.parseTestCode(js);
+     assertEquals(0, compiler.getErrorCount());
+     return n;
+@@ -249,7 +249,7 @@
+   private Node parseExpr(String js) {
+     Compiler compiler = new Compiler();
+     CompilerOptions options = new CompilerOptions();
+-    options.languageIn = LanguageMode.ECMASCRIPT5;
++    options.setLanguageIn(LanguageMode.ECMASCRIPT5);
+     compiler.initOptions(options);
+     Node root = compiler.parseTestCode(js);
+     return root.getFirstChild().getFirstChild();
+diff --git a/test/com/google/javascript/jscomp/TypeInferenceTest.java b/test/com/google/javascript/jscomp/TypeInferenceTest.java
+index ff95c8e..6e218d5 100644
+--- a/test/com/google/javascript/jscomp/TypeInferenceTest.java
++++ b/test/com/google/javascript/jscomp/TypeInferenceTest.java
+@@ -68,7 +68,7 @@
+   public void setUp() {
+     compiler = new Compiler();
+     CompilerOptions options = new CompilerOptions();
+-    options.languageIn = LanguageMode.ECMASCRIPT5;
++    options.setLanguageIn(LanguageMode.ECMASCRIPT5);
+     compiler.initOptions(options);
+     registry = compiler.getTypeRegistry();
+     assumptions = Maps.newHashMap();

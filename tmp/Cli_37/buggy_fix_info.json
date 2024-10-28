@@ -1,0 +1,138 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.cli.bug.BugCLI265Test::shouldParseShortOptionWithoutValue",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.cli.DefaultParser",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Cli",
+  "id": "37",
+  "workingDir": "../bugs/Cli_37_tmp",
+  "bug_name": "Cli_37",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.cli.bug.BugCLI265Test",
+      "test_function": "shouldParseShortOptionWithoutValue",
+      "assertion_line": "52",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Second option has been used as value for first option. Actual: -last"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/cli/DefaultParser.java",
+        "src/main/java/org/apache/commons/cli/DefaultParser.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.cli.DefaultParser:isShortOption:[String token]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.cli.DefaultParser:isShortOption:[String token]:boolean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "302",
+            "303",
+            "304",
+            "305",
+            "308",
+            "309",
+            "310"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "302"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/cli/DefaultParser.java b/src/main/java/org/apache/commons/cli/DefaultParser.java\nindex f34173e..6aeaebe 100644\n--- a/src/main/java/org/apache/commons/cli/DefaultParser.java\n+++ b/src/main/java/org/apache/commons/cli/DefaultParser.java\n@@ -299,15 +299,9 @@\n     private boolean isShortOption(String token)\n     {\n         // short options (-S, -SV, -S\u003dV, -SV1\u003dV2, -S1S2)\n-        if (!token.startsWith(\"-\") || token.length() \u003d\u003d 1)\n-        {\n-            return false;\n-        }\n+        return token.startsWith(\"-\") \u0026\u0026 token.length() \u003e\u003d 2 \u0026\u0026 options.hasShortOption(token.substring(1, 2));\n \n         // remove leading \"-\" and \"\u003dvalue\"\n-        int pos \u003d token.indexOf(\"\u003d\");\n-        String optName \u003d pos \u003d\u003d -1 ? token.substring(1) : token.substring(1, pos);\n-        return options.hasShortOption(optName);\n     }\n \n     /**\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [9195,9288]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [9195,9239]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [9240,9242]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [9266,9287]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [9188,9284]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [9337,9366]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [9375,9449]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: optName [9488,9495]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

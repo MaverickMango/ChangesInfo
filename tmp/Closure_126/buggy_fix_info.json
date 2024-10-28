@@ -1,0 +1,102 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.MinimizeExitPointsTest::testDontRemoveBreakInTryFinally,com.google.javascript.jscomp.MinimizeExitPointsTest::testFunctionReturnOptimization",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.MinimizeExitPoints",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "126",
+  "workingDir": "../bugs/Closure_126_tmp",
+  "bug_name": "Closure_126",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.MinimizeExitPointsTest",
+      "test_function": "testDontRemoveBreakInTryFinally",
+      "assertion_line": "276",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function f(){b:try{throw 9;}finally{break b}return 1}\nResult: function f(){b:try{throw 9;}finally{}return 1}"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.MinimizeExitPointsTest",
+      "test_function": "testFunctionReturnOptimization",
+      "assertion_line": "51",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function f(){try{}catch(e){throw 9;}finally{return}}\nResult: function f(){try{}catch(e){throw 9;}finally{}}"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/MinimizeExitPoints.java",
+        "src/com/google/javascript/jscomp/MinimizeExitPoints.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.MinimizeExitPoints:tryMinimizeExits:[Node n, int exitType, String labelName]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.MinimizeExitPoints:tryMinimizeExits:[Node n, int exitType, String labelName]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "140"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "141",
+            "142",
+            "143",
+            "144"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/MinimizeExitPoints.java b/src/com/google/javascript/jscomp/MinimizeExitPoints.java\nindex bc9befe..4146f17 100644\n--- a/src/com/google/javascript/jscomp/MinimizeExitPoints.java\n+++ b/src/com/google/javascript/jscomp/MinimizeExitPoints.java\n@@ -138,6 +138,10 @@\n        * can cause problems if it changes the completion type of the finally\n        * block. See ECMA 262 Sections 8.9 \u0026 12.14\n        */\n+      if (NodeUtil.hasFinally(n)) {\n+        Node finallyBlock \u003d n.getLastChild();\n+        tryMinimizeExits(finallyBlock, exitType, labelName);\n+      }\n     }\n \n     // Just a \u0027label\u0027.\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [4499,4643]"
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

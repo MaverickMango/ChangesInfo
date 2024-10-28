@@ -1,0 +1,94 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.ser.jdk.SqlDateSerializationTest::testSqlDateConfigOverride",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.ser.std.DateTimeSerializerBase",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "102",
+  "workingDir": "../bugs/JacksonDatabind_102_tmp",
+  "bug_name": "JacksonDatabind_102",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.ser.jdk.SqlDateSerializationTest",
+      "test_function": "testSqlDateConfigOverride",
+      "assertion_line": "104",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c[\"1980+04+14\"]\u003e but was:\u003c[324547200000]\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/ser/std/DateTimeSerializerBase.java",
+        "src/main/java/com/fasterxml/jackson/databind/ser/std/DateTimeSerializerBase.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.std.DateTimeSerializerBase:createContextual:[SerializerProvider serializers, BeanProperty property]:JsonSerializer\u003c?\u003e"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.std.DateTimeSerializerBase:createContextual:[SerializerProvider serializers, BeanProperty property]:JsonSerializer\u003c?\u003e"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "66"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "67",
+            "68",
+            "69"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/ser/std/DateTimeSerializerBase.java b/src/main/java/com/fasterxml/jackson/databind/ser/std/DateTimeSerializerBase.java\nindex 572d23e..492cd98 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/ser/std/DateTimeSerializerBase.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/ser/std/DateTimeSerializerBase.java\n@@ -64,6 +64,9 @@\n     {\n         // Note! Should not skip if `property` null since that\u0027d skip check\n         // for config overrides, in case of root value\n+        if (property \u003d\u003d null) {\n+            return this;\n+        }\n         JsonFormat.Value format \u003d findFormatOverrides(serializers, property, handledType());\n         if (format \u003d\u003d null) {\n             return this;\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [2418,2476]"
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.core.json.GeneratorFailTest::testFailOnWritingStringNotFieldNameBytes,com.fasterxml.jackson.core.json.GeneratorFailTest::testFailOnWritingStringNotFieldNameChars",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.core.json.JsonWriteContext",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonCore",
+  "id": "7",
+  "workingDir": "../bugs/JacksonCore_7_tmp",
+  "bug_name": "JacksonCore_7",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.core.json.GeneratorFailTest",
+      "test_function": "testFailOnWritingStringNotFieldNameBytes",
+      "assertion_line": "27",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Should not have let com.fasterxml.jackson.core.json.UTF8JsonGenerator.writeString() be used in place of \u0027writeFieldName()\u0027: output \u003d {:\"a\""
+    },
+    {
+      "test_class": "com.fasterxml.jackson.core.json.GeneratorFailTest",
+      "test_function": "testFailOnWritingStringNotFieldNameChars",
+      "assertion_line": "32",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Should not have let com.fasterxml.jackson.core.json.WriterBasedJsonGenerator.writeString() be used in place of \u0027writeFieldName()\u0027: output \u003d {:\"a\""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/core/json/JsonWriteContext.java",
+        "src/main/java/com/fasterxml/jackson/core/json/JsonWriteContext.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.json.JsonWriteContext:writeValue:[]:int"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.json.JsonWriteContext:writeValue:[]:int"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "169",
+            "170",
+            "171"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "168"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/core/json/JsonWriteContext.java b/src/main/java/com/fasterxml/jackson/core/json/JsonWriteContext.java\nindex a5706c8..4ff12d7 100644\n--- a/src/main/java/com/fasterxml/jackson/core/json/JsonWriteContext.java\n+++ b/src/main/java/com/fasterxml/jackson/core/json/JsonWriteContext.java\n@@ -166,9 +166,6 @@\n     public int writeValue() {\n         // Most likely, object:\n         if (_type \u003d\u003d TYPE_OBJECT) {\n-            if (!_gotName) {\n-                return STATUS_EXPECT_NAME;\n-            }\n             _gotName \u003d false;\n             ++_index;\n             return STATUS_OK_AFTER_COLON;\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [4913,4986]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

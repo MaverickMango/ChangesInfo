@@ -1,0 +1,771 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Closure",
+  "id": "125",
+  "workingDir": "../bugs/Closure_125_buggy",
+  "inducingCommit": "83026babd3b768f508780b0c38c3cef2bb9242a5",
+  "originalCommit": "dfcdb31eb6afcdb590b23a3c93a35b5591a43afa",
+  "bug_name": "Closure_125",
+  "derive": "defects4j",
+  "original_fixing_commit": "8cef00180a5cf67d047919c89668a6405030dbab",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/ArrowType.java",
+        "src/com/google/javascript/rhino/jstype/ArrowType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "resolveInternal"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "hasUnknownParamsOrReturn"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "242"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "243",
+            "244",
+            "245",
+            "246",
+            "247",
+            "248",
+            "249",
+            "250",
+            "251",
+            "252",
+            "253",
+            "254",
+            "255"
+          ],
+          "num": 13
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/ArrowType.java b/src/com/google/javascript/rhino/jstype/ArrowType.java\nindex 66893b6..7fc1537 100644\n--- a/src/com/google/javascript/rhino/jstype/ArrowType.java\n+++ b/src/com/google/javascript/rhino/jstype/ArrowType.java\n@@ -240,4 +240,17 @@\n     }\n     return this;\n   }\n+\n+  boolean hasUnknownParamsOrReturn() {\n+    if (parameters !\u003d null) {\n+      for (Node paramNode \u003d parameters.getFirstChild();\n+           paramNode !\u003d null; paramNode \u003d paramNode.getNext()) {\n+        JSType type \u003d paramNode.getJSType();\n+        if (type \u003d\u003d null || type.isUnknownType()) {\n+          return true;\n+        }\n+      }\n+    }\n+    return returnType \u003d\u003d null || returnType.isUnknownType();\n+  }\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [7962,8358]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/FunctionType.java",
+        "src/com/google/javascript/rhino/jstype/FunctionType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "cloneWithNewReturnType",
+            "supAndInfHelper"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "supAndInfHelper",
+            "tryMergeFunctionPiecewise"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "464",
+            "473",
+            "474",
+            "480",
+            "481",
+            "482",
+            "483",
+            "484",
+            "485",
+            "486",
+            "487",
+            "488",
+            "489",
+            "490",
+            "491",
+            "492",
+            "493",
+            "505",
+            "506",
+            "507",
+            "515",
+            "517",
+            "519",
+            "520"
+          ],
+          "num": 24
+        },
+        {
+          "qualified_names": [
+            "464",
+            "473",
+            "474",
+            "480",
+            "481",
+            "482",
+            "483",
+            "484",
+            "485",
+            "486",
+            "487",
+            "488",
+            "489",
+            "490",
+            "491",
+            "492",
+            "493",
+            "494",
+            "495",
+            "496",
+            "497",
+            "498",
+            "499",
+            "500",
+            "501",
+            "502",
+            "503",
+            "504",
+            "508",
+            "509",
+            "518",
+            "519",
+            "520",
+            "521",
+            "522",
+            "523",
+            "524",
+            "525",
+            "526",
+            "527",
+            "528",
+            "536",
+            "537",
+            "538",
+            "539",
+            "540",
+            "541",
+            "542",
+            "543",
+            "544",
+            "545",
+            "546",
+            "547",
+            "548",
+            "549",
+            "550",
+            "551",
+            "552",
+            "553",
+            "554",
+            "555",
+            "556",
+            "557",
+            "558",
+            "559",
+            "560",
+            "561",
+            "562",
+            "563",
+            "564",
+            "565",
+            "566",
+            "567",
+            "568",
+            "569",
+            "570",
+            "571",
+            "572",
+            "573",
+            "575",
+            "577",
+            "578"
+          ],
+          "num": 82
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/FunctionType.java b/src/com/google/javascript/rhino/jstype/FunctionType.java\nindex 7e5ed80..f37e6fb 100644\n--- a/src/com/google/javascript/rhino/jstype/FunctionType.java\n+++ b/src/com/google/javascript/rhino/jstype/FunctionType.java\n@@ -461,7 +461,7 @@\n   private JSType supAndInfHelper(JSType that, boolean leastSuper) {\n     // NOTE(nicksantos): When we remove the unknown type, the function types\n     // form a lattice with the universal constructor at the top of the lattice,\n-    // and the NoObject type at the bottom of the lattice.\n+    // and the LEAST_FUNCTION_TYPE type at the bottom of the lattice.\n     //\n     // When we introduce the unknown type, it\u0027s much more difficult to make\n     // heads or tails of the partial ordering of types, because there\u0027s no\n@@ -470,30 +470,43 @@\n     //\n     // Rather than make the situation more complicated by introducing new\n     // types (like unions of functions), we just fallback on the simpler\n-    // approach of using the universal constructor and the AnyObject as\n-    // the supremum and infinum of all function types.\n+    // approach of getting things right at the top and the bottom of the\n+    // lattice.\n     if (isFunctionType() \u0026\u0026 that.isFunctionType()) {\n       if (isEquivalentTo(that)) {\n         return this;\n       }\n \n-      // If this is a normal function, look to see if the arguments are equal.\n-      // If they are, we can just take the least supertype (or greatest\n-      // subtype) of the return types.\n-      if (isOrdinaryFunction() \u0026\u0026 that.isOrdinaryFunction() \u0026\u0026\n-          that instanceof FunctionType) {\n-        FunctionType other \u003d (FunctionType) that;\n-        if (call.hasEqualParameters(other.call) \u0026\u0026\n-            isEquivalent(typeOfThis, other.typeOfThis)) {\n-          JSType newReturnType \u003d leastSuper ?\n-              call.returnType.getLeastSupertype(other.call.returnType) :\n-              call.returnType.getGreatestSubtype(other.call.returnType);\n-          return cloneWithNewReturnType(\n-              newReturnType,\n-              call.returnTypeInferred || other.call.returnTypeInferred);\n+      FunctionType other \u003d null;\n+      if (that instanceof FunctionType) {\n+        other \u003d (FunctionType) that;\n+      }\n+\n+      // If these are ordinary functions, then merge them.\n+      // Don\u0027t do this if any of the params/return\n+      // values are unknown, because then there will be cycles in\n+      // their local lattice and they will merge in weird ways.\n+      if (other !\u003d null \u0026\u0026\n+          isOrdinaryFunction() \u0026\u0026 that.isOrdinaryFunction() \u0026\u0026\n+          !this.call.hasUnknownParamsOrReturn() \u0026\u0026\n+          !other.call.hasUnknownParamsOrReturn()) {\n+\n+        // Check for the degenerate case.\n+        if (this.isSubtype(that)) {\n+          return leastSuper ? that : this;\n+        } else if (that.isSubtype(this)) {\n+          return leastSuper ? this : that;\n+        }\n+\n+        // Merge the two functions component-wise.\n+        FunctionType merged \u003d tryMergeFunctionPiecewise(other, leastSuper);\n+        if (merged !\u003d null) {\n+          return merged;\n         }\n       }\n \n+      // The function instance type is a special case\n+      // that lives above the rest of the lattice.\n       JSType functionInstance \u003d registry.getNativeType(\n           JSTypeNative.FUNCTION_INSTANCE_TYPE);\n       if (functionInstance.isEquivalentTo(that)) {\n@@ -502,9 +515,17 @@\n         return leastSuper ? this : that;\n       }\n \n-      return leastSuper ?\n-          registry.getNativeType(JSTypeNative.U2U_CONSTRUCTOR_TYPE) :\n-          registry.getNativeType(JSTypeNative.NO_OBJECT_TYPE);\n+      // In theory, we should be using the GREATEST_FUNCTION_TYPE as the\n+      // greatest function. In practice, we don\u0027t because it\u0027s way too\n+      // broad. The greatest function takes var_args None parameters, which\n+      // means that all parameters register a type warning.\n+      //\n+      // Instead, we use the U2U ctor type, which has unknown type args.\n+      FunctionType greatestFn \u003d\n+          registry.getNativeFunctionType(JSTypeNative.U2U_CONSTRUCTOR_TYPE);\n+      FunctionType leastFn \u003d\n+          registry.getNativeFunctionType(JSTypeNative.LEAST_FUNCTION_TYPE);\n+      return leastSuper ? greatestFn : leastFn;\n     }\n \n     return leastSuper ?\n@@ -512,12 +533,49 @@\n         super.getGreatestSubtype(that);\n   }\n \n-  FunctionType cloneWithNewReturnType(JSType newReturnType, boolean inferred) {\n+  /**\n+   * Try to get the sup/inf of two functions by looking at the\n+   * piecewise components.\n+   */\n+  private FunctionType tryMergeFunctionPiecewise(\n+      FunctionType other, boolean leastSuper) {\n+    Node newParamsNode \u003d null;\n+    if (call.hasEqualParameters(other.call)) {\n+      newParamsNode \u003d call.parameters;\n+    } else {\n+      // If the parameters are not equal, don\u0027t try to merge them.\n+      // Someday, we should try to merge the individual params.\n+      return null;\n+    }\n+\n+    JSType newReturnType \u003d leastSuper ?\n+        call.returnType.getLeastSupertype(other.call.returnType) :\n+        call.returnType.getGreatestSubtype(other.call.returnType);\n+\n+    ObjectType newTypeOfThis \u003d null;\n+    if (isEquivalent(typeOfThis, other.typeOfThis)) {\n+      newTypeOfThis \u003d typeOfThis;\n+    } else {\n+      JSType maybeNewTypeOfThis \u003d leastSuper ?\n+          typeOfThis.getLeastSupertype(other.typeOfThis) :\n+          typeOfThis.getGreatestSubtype(other.typeOfThis);\n+      if (maybeNewTypeOfThis instanceof ObjectType) {\n+        newTypeOfThis \u003d (ObjectType) maybeNewTypeOfThis;\n+      } else {\n+        newTypeOfThis \u003d leastSuper ?\n+            registry.getNativeObjectType(JSTypeNative.OBJECT_TYPE) :\n+            registry.getNativeObjectType(JSTypeNative.NO_OBJECT_TYPE);\n+      }\n+    }\n+\n+    boolean newReturnTypeInferred \u003d\n+        call.returnTypeInferred || other.call.returnTypeInferred;\n+\n     return new FunctionType(\n-        registry, null, source,\n+        registry, null, null,\n         new ArrowType(\n-            registry, call.parameters, newReturnType, inferred),\n-        typeOfThis, null, false, false);\n+            registry, newParamsNode, newReturnType, newReturnTypeInferred),\n+        newTypeOfThis, null, false, false);\n   }\n \n   /**\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodDeclaration [17506,19095]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [17506,17605]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: private [17608,17615]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [17616,17628]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: tryMergeFunctionPiecewise [17629,17654]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [17662,17680]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [17682,17700]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [17702,19095]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [17708,17734]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [17739,17989]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [18170,18202]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [18791,18888]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [18894,19091]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Block [18255,18296]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrimitiveType: boolean [18791,18798]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [18799,18887]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [15387,15413]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [15420,15500]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [17132,17234]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [17241,17339]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [17346,17387]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [18310,18468]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [18475,18779]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: newReturnTypeInferred [18799,18820]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InstanceofExpression [15424,15452]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [15454,15500]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [15752,15931]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [17241,17253]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [17254,17338]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ExpressionStatement [15464,15492]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [15752,15879]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [15880,15882]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PrefixExpression [15893,15931]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [15986,16152]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [16213,16280]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [16289,16345]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: leastFn [17254,17261]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Assignment [15464,15491]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [15829,15831]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PrefixExpression [15842,15879]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ASSIGNMENT_OPERATOR: \u003d [15470,15471]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [15752,15799]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [15752,15765]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [15766,15768]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InstanceofExpression [15671,15699]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [15711,15723]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [15724,15751]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [15711,15752]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: leastSuper [16533,16543]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [16556,16613]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ConditionalExpression [16533,16677]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ReturnStatement [16526,16678]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [15765,15800]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [15801,15803]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [15765,15858]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: cloneWithNewReturnType [16071,16093]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: newReturnType [16109,16122]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [16109,16194]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [16071,16195]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ReturnStatement [16064,16196]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [16797,17068]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/JSTypeNative.java",
+        "src/com/google/javascript/rhino/jstype/JSTypeNative.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "142",
+            "143"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "141"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/JSTypeNative.java b/src/com/google/javascript/rhino/jstype/JSTypeNative.java\nindex 3ce06d7..eec52d2 100644\n--- a/src/com/google/javascript/rhino/jstype/JSTypeNative.java\n+++ b/src/com/google/javascript/rhino/jstype/JSTypeNative.java\n@@ -139,8 +139,6 @@\n   U2U_CONSTRUCTOR_TYPE,\n   U2U_FUNCTION_TYPE,\n \n-  // TODO(nicksantos): Fix up these types so that they fit into the\n-  // type lattice properly. Right now, they\u0027re broken.\n   LEAST_FUNCTION_TYPE,\n   GREATEST_FUNCTION_TYPE,\n \n",
+      "operations": []
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "tryMergeFunctionPiecewise",
+        "hasUnknownParamsOrReturn"
+      ],
+      "num": 2
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "resolveInternal",
+        "cloneWithNewReturnType"
+      ],
+      "num": 2
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testIssue1002",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "unexpected warnings(s):"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/TypeCheck.java",
+        "src/com/google/javascript/jscomp/TypeCheck.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "visitNew"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "visitNew"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1287",
+            "1288",
+            "1289",
+            "1304"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "1287",
+            "1288",
+            "1289",
+            "1290",
+            "1291",
+            "1307"
+          ],
+          "num": 6
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Closure_125/properties/modified_classes/inducing/src/com/google/javascript/jscomp/TypeCheck.java data/changesInfo//Closure_125/cleaned/fixing/src/com/google/javascript/jscomp/TypeCheck.java\n--- data/changesInfo//Closure_125/properties/modified_classes/inducing/src/com/google/javascript/jscomp/TypeCheck.java\t2023-07-25 19:05:36.599519943 +0800\n+++ data/changesInfo//Closure_125/cleaned/fixing/src/com/google/javascript/jscomp/TypeCheck.java\t2023-07-27 20:34:52.297021578 +0800\n@@ -1284,9 +1284,11 @@\n   private void visitNew(NodeTraversal t, Node n) {\n     Node constructor \u003d n.getFirstChild();\n     FunctionType type \u003d getFunctionType(constructor);\n-    if (type !\u003d null \u0026\u0026 type.isConstructor()) {\n-      visitParameterList(t, n, type);\n-      ensureTyped(t, n, type.getInstanceType());\n+    if (type !\u003d null \u0026\u0026 (type.isConstructor() || type.isEmptyType() || type.isUnknownType())) {\n+      if (type.hasInstanceType()) {\n+        visitParameterList(t, n, type);\n+        ensureTyped(t, n, type.getInstanceType());\n+      }\n     } else {\n       // TODO(user): add support for namespaced objects.\n       if (constructor.getType() !\u003d Token.GETPROP) {\n@@ -1301,8 +1303,8 @@\n         }\n         report(t, line, NOT_A_CONSTRUCTOR);\n       }\n-      ensureTyped(t, n);\n     }\n+    ensureTyped(t, n);\n   }\n \n   /**\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ParenthesizedExpression [43970,44038]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [44048,44176]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [43971,44037]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [44052,44074]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [44076,44176]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: || [43992,43994]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [43995,44013]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [44017,44037]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

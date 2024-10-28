@@ -1,0 +1,217 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.joda.time.TestPeriod_Basics::testNormalizedStandard_periodType_months1,org.joda.time.TestPeriod_Basics::testNormalizedStandard_periodType_months2,org.joda.time.TestPeriod_Basics::testNormalizedStandard_periodType_monthsWeeks",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.joda.time.Period",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Time",
+  "id": "5",
+  "workingDir": "../bugs/Time_5_tmp",
+  "bug_name": "Time_5",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.joda.time.TestPeriod_Basics",
+      "test_function": "testNormalizedStandard_periodType_months1",
+      "assertion_line": "1522",
+      "exception": "java.lang.UnsupportedOperationException",
+      "message": "Field is not supported"
+    },
+    {
+      "test_class": "org.joda.time.TestPeriod_Basics",
+      "test_function": "testNormalizedStandard_periodType_months2",
+      "assertion_line": "1529",
+      "exception": "java.lang.UnsupportedOperationException",
+      "message": "Field is not supported"
+    },
+    {
+      "test_class": "org.joda.time.TestPeriod_Basics",
+      "test_function": "testNormalizedStandard_periodType_monthsWeeks",
+      "assertion_line": "1557",
+      "exception": "java.lang.UnsupportedOperationException",
+      "message": "Field is not supported"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/joda/time/Period.java",
+        "src/main/java/org/joda/time/Period.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.joda.time.Period:normalizedStandard:[PeriodType type]:Period"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.joda.time.Period:normalizedStandard:[PeriodType type]:Period"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1628",
+            "1629",
+            "1630",
+            "1631",
+            "1632",
+            "1634",
+            "1635",
+            "1636",
+            "1637",
+            "1638",
+            "1639",
+            "1640"
+          ],
+          "num": 12
+        },
+        {
+          "qualified_names": [
+            "1628",
+            "1629",
+            "1630",
+            "1631",
+            "1633",
+            "1634"
+          ],
+          "num": 6
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/joda/time/Period.java b/src/main/java/org/joda/time/Period.java\nindex 5ea67a7..f404793 100644\n--- a/src/main/java/org/joda/time/Period.java\n+++ b/src/main/java/org/joda/time/Period.java\n@@ -1625,19 +1625,13 @@\n         int years \u003d getYears();\n         int months \u003d getMonths();\n         if (years !\u003d 0 || months !\u003d 0) {\n-            long totalMonths \u003d years * 12L + months;\n-            if (type.isSupported(DurationFieldType.YEARS_TYPE)) {\n-                int normalizedYears \u003d FieldUtils.safeToInt(totalMonths / 12);\n-                result \u003d result.withYears(normalizedYears);\n-                totalMonths \u003d totalMonths - (normalizedYears * 12);\n+            years \u003d FieldUtils.safeAdd(years, months / 12);\n+            months \u003d months % 12;\n+            if (years !\u003d 0) {\n+                result \u003d result.withYears(years);\n             }\n-            if (type.isSupported(DurationFieldType.MONTHS_TYPE)) {\n-                int normalizedMonths \u003d FieldUtils.safeToInt(totalMonths);\n-                result \u003d result.withMonths(normalizedMonths);\n-                totalMonths \u003d totalMonths - normalizedMonths;\n-            }\n-            if (totalMonths !\u003d 0) {\n-                throw new UnsupportedOperationException(\"Unable to normalize as PeriodType is missing either years or months but period has a month/year amount: \" + toString());\n+            if (months !\u003d 0) {\n+                result \u003d result.withMonths(months);\n             }\n         }\n         return result;\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [70804,70851]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [70864,70885]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [70898,70979]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [70992,71076]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [70902,70912]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [70996,71007]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [70927,70988]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [71065,71116]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [71214,71271]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [71350,71395]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [70804,70844]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [70861,70907]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [70857,71130]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [71147,71194]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [71143,71409]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [71422,71637]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

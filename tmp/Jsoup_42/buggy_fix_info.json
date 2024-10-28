@@ -1,0 +1,121 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.jsoup.nodes.FormElementTest::createsFormData,org.jsoup.nodes.FormElementTest::usesOnForCheckboxValueIfNoValueSet",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.jsoup.nodes.FormElement",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Jsoup",
+  "id": "42",
+  "workingDir": "../bugs/Jsoup_42_tmp",
+  "bug_name": "Jsoup_42",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.jsoup.nodes.FormElementTest",
+      "test_function": "createsFormData",
+      "assertion_line": "38",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c6\u003e but was:\u003c7\u003e"
+    },
+    {
+      "test_class": "org.jsoup.nodes.FormElementTest",
+      "test_function": "usesOnForCheckboxValueIfNoValueSet",
+      "assertion_line": "122",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c[on]\u003e but was:\u003c[]\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/nodes/FormElement.java",
+        "src/main/java/org/jsoup/nodes/FormElement.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.nodes.FormElement:formData:[]:List\u003cConnection.KeyVal\u003e"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.jsoup.nodes.FormElement:formData:[]:List\u003cConnection.KeyVal\u003e"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "80",
+            "100"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "79",
+            "99"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/nodes/FormElement.java b/src/main/java/org/jsoup/nodes/FormElement.java\nindex a12e353..4ce1190 100644\n--- a/src/main/java/org/jsoup/nodes/FormElement.java\n+++ b/src/main/java/org/jsoup/nodes/FormElement.java\n@@ -77,7 +77,6 @@\n         // iterate the form control elements and accumulate their values\n         for (Element el: elements) {\n             if (!el.tag().isFormSubmittable()) continue; // contents are form listable, superset of submitable\n-            if (el.hasAttr(\"disabled\")) continue; // skip disabled form inputs\n             String name \u003d el.attr(\"name\");\n             if (name.length() \u003d\u003d 0) continue;\n             String type \u003d el.attr(\"type\");\n@@ -97,7 +96,7 @@\n             } else if (\"checkbox\".equalsIgnoreCase(type) || \"radio\".equalsIgnoreCase(type)) {\n                 // only add checkbox or radio if they have the checked attribute\n                 if (el.hasAttr(\"checked\")) {\n-                    final String val \u003d el.val().length() \u003e  0 ? el.val() : \"on\";\n+                    final String val \u003d el.val();\n                     data.add(HttpConnection.KeyVal.create(name, val));\n                 }\n             } else {\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [2872,2909]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [3897,3919]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "StringLiteral: \"on\" [3933,3937]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ConditionalExpression [3897,3937]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

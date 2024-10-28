@@ -1,0 +1,147 @@
+diff --git a/JodaTime/RELEASE-NOTES.txt b/JodaTime/RELEASE-NOTES.txt
+index 695d810..83f549c 100644
+--- a/JodaTime/RELEASE-NOTES.txt
++++ b/JodaTime/RELEASE-NOTES.txt
+@@ -166,6 +166,15 @@
+ Previously, some parses of mixed weekyear and month formats would yield a result about a year out
+ Now, most (but not all) of these give a more appropriate result
+ 
++Previously, java.util.TimeZone "MET" was incorrectly mapped to "Asia/Tehran".
++It is now mapped to "CET" (Central European Time).
++
++Previously, java.util.TimeZone "EET", "WET", "ECT" were mapped to European cities.
++They are now mapped to "EET", "WET" and "CET" respectively.
++
++Previously, java.util.TimeZone "IET", "AGT", "IST" and "VST" were mapped to old time-zone IDs.
++They are now mapped to the newer IDs "America/Indiana/Indianapolis", "America/Argentina/Buenos_Aires", "Asia/Kolkata" and "Asia/Ho_Chi_Minh".
++
+ 
+ Deprecations since 1.6
+ ----------------------
+@@ -201,6 +210,10 @@
+ - DateTimeZone.getDefault [3048468,3056104]
+   Handle missing user.timezone system property on Android that resulted in stack overflow
+ 
++- DateTimeZone.forTimeZone [3216471]
++  Time-zone ID "MET" from java.util.TimeZone is now mapped correctly.
++  See compatibility notes above.
++
+ - Duration.toString
+   Fixed to work correctly for negative values
+ 
+diff --git a/JodaTime/src/main/java/org/joda/time/DateTimeZone.java b/JodaTime/src/main/java/org/joda/time/DateTimeZone.java
+index 004821a..855cad0 100644
+--- a/JodaTime/src/main/java/org/joda/time/DateTimeZone.java
++++ b/JodaTime/src/main/java/org/joda/time/DateTimeZone.java
+@@ -561,31 +561,32 @@
+             // Backwards compatibility with TimeZone.
+             map = new HashMap<String, String>();
+             map.put("GMT", "UTC");
++            map.put("WET", "WET");
++            map.put("CET", "CET");
++            map.put("MET", "CET");
++            map.put("ECT", "CET");
++            map.put("EET", "EET");
+             map.put("MIT", "Pacific/Apia");
+-            map.put("HST", "Pacific/Honolulu");
++            map.put("HST", "Pacific/Honolulu");  // JDK 1.1 compatible
+             map.put("AST", "America/Anchorage");
+             map.put("PST", "America/Los_Angeles");
+-            map.put("MST", "America/Denver");
++            map.put("MST", "America/Denver");  // JDK 1.1 compatible
+             map.put("PNT", "America/Phoenix");
+             map.put("CST", "America/Chicago");
+-            map.put("EST", "America/New_York");
+-            map.put("IET", "America/Indianapolis");
++            map.put("EST", "America/New_York");  // JDK 1.1 compatible
++            map.put("IET", "America/Indiana/Indianapolis");
+             map.put("PRT", "America/Puerto_Rico");
+             map.put("CNT", "America/St_Johns");
+-            map.put("AGT", "America/Buenos_Aires");
++            map.put("AGT", "America/Argentina/Buenos_Aires");
+             map.put("BET", "America/Sao_Paulo");
+-            map.put("WET", "Europe/London");
+-            map.put("ECT", "Europe/Paris");
+             map.put("ART", "Africa/Cairo");
+             map.put("CAT", "Africa/Harare");
+-            map.put("EET", "Europe/Bucharest");
+             map.put("EAT", "Africa/Addis_Ababa");
+-            map.put("MET", "Asia/Tehran");
+             map.put("NET", "Asia/Yerevan");
+             map.put("PLT", "Asia/Karachi");
+-            map.put("IST", "Asia/Calcutta");
++            map.put("IST", "Asia/Kolkata");
+             map.put("BST", "Asia/Dhaka");
+-            map.put("VST", "Asia/Saigon");
++            map.put("VST", "Asia/Ho_Chi_Minh");
+             map.put("CTT", "Asia/Shanghai");
+             map.put("JST", "Asia/Tokyo");
+             map.put("ACT", "Australia/Darwin");
+diff --git a/JodaTime/src/test/java/org/joda/time/TestDateTimeZone.java b/JodaTime/src/test/java/org/joda/time/TestDateTimeZone.java
+index bc98acf..a6eaac3 100644
+--- a/JodaTime/src/test/java/org/joda/time/TestDateTimeZone.java
++++ b/JodaTime/src/test/java/org/joda/time/TestDateTimeZone.java
+@@ -29,7 +29,9 @@
+ import java.security.Policy;
+ import java.security.ProtectionDomain;
+ import java.util.HashSet;
++import java.util.LinkedHashMap;
+ import java.util.Locale;
++import java.util.Map;
+ import java.util.Set;
+ import java.util.TimeZone;
+ 
+@@ -238,6 +240,53 @@
+         } catch (IllegalArgumentException ex) {}
+     }
+ 
++    public void testForID_String_old() {
++        Map<String, String> map = new LinkedHashMap<String, String>();
++        map.put("GMT", "UTC");
++        map.put("WET", "WET");
++        map.put("CET", "CET");
++        map.put("MET", "CET");
++        map.put("ECT", "CET");
++        map.put("EET", "EET");
++        map.put("MIT", "Pacific/Apia");
++        map.put("HST", "Pacific/Honolulu");
++        map.put("AST", "America/Anchorage");
++        map.put("PST", "America/Los_Angeles");
++        map.put("MST", "America/Denver");
++        map.put("PNT", "America/Phoenix");
++        map.put("CST", "America/Chicago");
++        map.put("EST", "America/New_York");
++        map.put("IET", "America/Indiana/Indianapolis");
++        map.put("PRT", "America/Puerto_Rico");
++        map.put("CNT", "America/St_Johns");
++        map.put("AGT", "America/Argentina/Buenos_Aires");
++        map.put("BET", "America/Sao_Paulo");
++        map.put("ART", "Africa/Cairo");
++        map.put("CAT", "Africa/Harare");
++        map.put("EAT", "Africa/Addis_Ababa");
++        map.put("NET", "Asia/Yerevan");
++        map.put("PLT", "Asia/Karachi");
++        map.put("IST", "Asia/Kolkata");
++        map.put("BST", "Asia/Dhaka");
++        map.put("VST", "Asia/Ho_Chi_Minh");
++        map.put("CTT", "Asia/Shanghai");
++        map.put("JST", "Asia/Tokyo");
++        map.put("ACT", "Australia/Darwin");
++        map.put("AET", "Australia/Sydney");
++        map.put("SST", "Pacific/Guadalcanal");
++        map.put("NST", "Pacific/Auckland");
++        for (String key : map.keySet()) {
++            String value = map.get(key);
++            TimeZone juZone = TimeZone.getTimeZone(key);
++            DateTimeZone zone = DateTimeZone.forTimeZone(juZone);
++            assertEquals(value, zone.getID());
++//            System.out.println(juZone);
++//            System.out.println(juZone.getDisplayName());
++//            System.out.println(zone);
++//            System.out.println("------");
++        }
++    }
++
+     //-----------------------------------------------------------------------
+     public void testForOffsetHours_int() {
+         assertEquals(DateTimeZone.UTC, DateTimeZone.forOffsetHours(0));

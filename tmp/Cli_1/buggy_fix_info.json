@@ -1,0 +1,390 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.cli.bug.BugCLI13Test::testCLI13",
+    "test.dir": "src/test",
+    "clz.modified": "org.apache.commons.cli.CommandLine",
+    "src.dir": "src/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Cli",
+  "id": "1",
+  "workingDir": "../bugs/Cli_1_tmp",
+  "bug_name": "Cli_1",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.cli.bug.BugCLI13Test",
+      "test_function": "testCLI13",
+      "assertion_line": "50",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/cli/CommandLine.java",
+        "src/java/org/apache/commons/cli/CommandLine.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.cli.CommandLine:getOptions:[]:Option[]",
+            "org.apache.commons.cli.CommandLine:hasOption:[String opt]:boolean",
+            "org.apache.commons.cli.CommandLine:resolveOption:[String opt]:Option",
+            "org.apache.commons.cli.CommandLine:getOptionValues:[String opt]:String[]",
+            "org.apache.commons.cli.CommandLine:getOptionObject:[String opt]:Object",
+            "org.apache.commons.cli.CommandLine:addOption:[Option opt]:void",
+            "org.apache.commons.cli.CommandLine:iterator:[]:Iterator"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.cli.CommandLine:getOptionObject:[String opt]:Object",
+            "org.apache.commons.cli.CommandLine:iterator:[]:Iterator",
+            "org.apache.commons.cli.CommandLine:getOptions:[]:Option[]",
+            "org.apache.commons.cli.CommandLine:getOptionValues:[String opt]:String[]",
+            "org.apache.commons.cli.CommandLine:hasOption:[String opt]:boolean",
+            "org.apache.commons.cli.CommandLine:addOption:[Option opt]:void"
+          ],
+          "num": 6
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "22",
+            "23",
+            "46",
+            "67",
+            "91",
+            "92",
+            "97",
+            "148",
+            "150",
+            "152",
+            "163",
+            "164",
+            "165",
+            "166",
+            "167",
+            "168",
+            "169",
+            "170",
+            "171",
+            "172",
+            "173",
+            "174",
+            "175",
+            "176",
+            "178",
+            "179",
+            "180",
+            "288",
+            "299",
+            "309",
+            "317"
+          ],
+          "num": 31
+        },
+        {
+          "qualified_names": [
+            "19",
+            "23",
+            "46",
+            "47",
+            "51",
+            "69",
+            "93",
+            "98",
+            "149",
+            "151",
+            "152",
+            "153",
+            "155",
+            "158",
+            "159",
+            "160",
+            "161",
+            "278",
+            "279",
+            "280",
+            "281",
+            "282",
+            "283",
+            "284",
+            "285",
+            "286",
+            "287",
+            "288",
+            "299",
+            "309",
+            "316"
+          ],
+          "num": 31
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/cli/CommandLine.java b/src/java/org/apache/commons/cli/CommandLine.java\nindex 3c82942..f658a02 100644\n--- a/src/java/org/apache/commons/cli/CommandLine.java\n+++ b/src/java/org/apache/commons/cli/CommandLine.java\n@@ -16,11 +16,11 @@\n package org.apache.commons.cli;\n \n import java.util.Collection;\n+import java.util.HashMap;\n import java.util.Iterator;\n import java.util.LinkedList;\n import java.util.List;\n-import java.util.Set;\n-import java.util.HashSet;\n+import java.util.Map;\n \n /** \n  * \u003cp\u003eRepresents list of arguments parsed against\n@@ -43,10 +43,12 @@\n     private List args \u003d new LinkedList();\n \n     /** the processed options */\n-    private Set options \u003d new HashSet();\n+    private Map options \u003d new HashMap();\n+    private Map names \u003d new HashMap();\n \n     /** Map of unique options for ease to get complete list of options */\n //    private Set allOptions \u003d new HashSet();\n+    private Map hashcodeMap \u003d new HashMap();\n \n     /**\n      * Creates a command line.\n@@ -64,7 +66,7 @@\n      */\n     public boolean hasOption(String opt)\n     {\n-        return options.contains( resolveOption(opt));\n+        return options.containsKey(opt);\n     }\n \n     /** \n@@ -88,13 +90,12 @@\n     {\n         String res \u003d getOptionValue(opt);\n \n-        Option option \u003d resolveOption(opt);\n-        if (option \u003d\u003d null)\n+        if (!options.containsKey(opt))\n         {\n             return null;\n         }\n \n-        Object type \u003d option.getType();\n+        Object type \u003d ((Option) options.get(opt)).getType();\n \n         return (res \u003d\u003d null)        ? null : TypeHandler.createValue(res, type);\n     }\n@@ -145,13 +146,19 @@\n      */\n     public String[] getOptionValues(String opt)\n     {\n-        Option key \u003d resolveOption( opt );\n+        opt \u003d Util.stripLeadingHyphens(opt);\n \n-        if (options.contains(key))\n+        String key \u003d opt;\n+        if (names.containsKey(opt))\n+\n         {\n-            return key.getValues();\n+            key \u003d (String) names.get(opt);\n         }\n \n+        if (options.containsKey(key))\n+        {\n+            return ((Option) options.get(key)).getValues();\n+        }\n         return null;\n         }\n \n@@ -160,24 +167,7 @@\n      * @param opt short or long name of the option\n      * @return Canonicalized option\n      */\n-    private Option resolveOption( String opt )\n-    {\n-        opt \u003d Util.stripLeadingHyphens(opt);\n-        for ( Iterator it \u003d options.iterator(); it.hasNext(); )\n-        {\n-            Option option \u003d (Option) it.next();\n-            if (opt.equals(option.getOpt()))\n-            {\n-                return option;\n-            }\n-            if (opt.equals( option.getLongOpt()))\n-            {\n-                return option;\n-        }\n \n-        }\n-        return null;\n-    }\n \n     /** \n      * Retrieves the array of values, if any, of an option.\n@@ -285,7 +275,17 @@\n      */\n     void addOption(Option opt)\n     {\n-        options.add(opt);\n+        hashcodeMap.put(new Integer(opt.hashCode()), opt);\n+        String key \u003d opt.getKey();\n+        if (key \u003d\u003d null)\n+        {\n+            key \u003d opt.getLongOpt();\n+        }\n+        else\n+        {\n+            names.put(opt.getLongOpt(), key);\n+        }\n+        options.put(key, opt);\n     }\n \n     /**\n@@ -296,7 +296,7 @@\n      */\n     public Iterator iterator()\n     {\n-        return options.iterator();\n+        return hashcodeMap.values().iterator();\n     }\n \n     /**\n@@ -306,7 +306,7 @@\n      */\n     public Option[] getOptions()\n     {\n-        Collection processed \u003d options;\n+        Collection processed \u003d options.values();\n \n         // reinitialise array\n         Option[] optionsArray \u003d new Option[processed.size()];\n@@ -314,4 +314,4 @@\n         // return the array\n         return (Option[]) processed.toArray(optionsArray);\n     }\n-}\n\\ No newline at end of file\n+}\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [688,713]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [793,814]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [1563,1597]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [1603,1763]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [2752,2804]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [4246,4337]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [4347,4456]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [7492,7542]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [7551,7577]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [7586,7737]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [7746,7768]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [8262,8302]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PrefixExpression [2671,2696]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [8036,8056]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [767,788]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [789,814]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: contains [2009,2017]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [2019,2037]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [2001,2038]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [2596,2631]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [2644,2658]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [2714,2745]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: resolveOption [4128,4141]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [4143,4146]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [4128,4148]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [4159,4241]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Javadoc [4279,4462]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: private [4467,4474]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [4475,4481]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: resolveOption [4482,4495]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [4497,4507]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ForStatement [4569,4902]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [4911,4923]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [4514,4929]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodDeclaration [4279,4929]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [7744,7761]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: options [8029,8036]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [8242,8273]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.apache.commons.cli.CommandLine:resolveOption:[String opt]:Option"
+      ],
+      "num": 1
+    }
+  }
+}

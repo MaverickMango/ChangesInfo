@@ -1,0 +1,194 @@
+diff --git a/RELEASE-NOTES.txt b/RELEASE-NOTES.txt
+index 90b4957..c1ce71d 100644
+--- a/RELEASE-NOTES.txt
++++ b/RELEASE-NOTES.txt
+@@ -1,10 +1,10 @@
+-Joda-Time version 2.1
++Joda-Time version 2.2
+ ---------------------
+ 
+ Joda-Time is a date and time handling library that seeks to replace the JDK
+ Date and Calendar classes.
+ 
+-This is the ninth release of Joda-Time.
++This is the tenth release of Joda-Time.
+ This release contains enhancements, bug fixes and a time zone update.
+ 
+ We require JDK 1.5 or later as features such as generics are used.
+@@ -19,14 +19,11 @@
+ ** http://joda-time.sourceforge.net/related.html **
+ 
+ 
+-Enhancements since 2.0
++Enhancements since 2.1
+ ----------------------
+-- Make DurationFieldType hash code deterministic
+-
+-- Add Period.multipliedBy(int) and Period.negated()
+ 
+ 
+-Compatibility with 2.0
++Compatibility with 2.1
+ ----------------------
+ Binary compatible - Yes
+ 
+@@ -38,60 +35,22 @@
+  - DateTimeZone data updated to version 2011n
+ 
+ Semantic compatible - Yes, except
+- -  Date-time for time-zones with DST based on an offset of 00:00 now pick summer time when ambiguous
+-
+- -  Time-zone names now return correct results on JDK1.6 for non-English locales
+-
+- - Interval/MutableInterval toString() now contains the time-zone offset
++ - DateTimeFormatter.parseInto() retains the year if only month parsed (as it did in v1.x)
+ 
+ 
+-Deprecations since 2.0
++Deprecations since 2.1
+ ----------------------
+ None
+ 
+ 
+-Bug fixes since 2.0
++Bug fixes since 2.1
+ -------------------
+-- Ambiguous date-time when in zone with offset of 00:00 [3424669]
+-  A date-time constructor with an ambiguous time due to DST should choose summer time
+-  but for a zone with an offset of 00:00 it chose winter time
++- DateTimeFormatter.parseInto() [3522138]
++  The v2.0 changes to handle parsing of month/day on their own (for Feb 29th) cause
++  parseInto() to lose the year. This fix reverts behaviour to v1.x so that parseInto()
++  will use the supplied year, not the default year of the formatter.
+ 
+-- Fix GJChronology to allow some leap year dates in JulianChronology to be created [3446915]
+-  Creating February 29th in Julian leap years was not always possible
+-
+-- Fix PeriodType caching
+-  The caching could go wrong if the DurationFieldType instances were in the wrong order
+-
+-- Time-zone names [3412910]
+-  Names now returned in locales other than English
+-  The names may differ between JDK1.5 and 1.6 due to the underlying JDK data
+-
+-- Time zone id parsing fixed for some longer time zones [3427389]
+-  Time zones like "America/Dawson_Creek" were not parsed as "America/Dawson" was matched first
+-
+-- Time zone later/earlier offset methods failed in Western hemisphere [3476684]
+-  Previously, withLaterOffset() failed in the Americas, Now rewritten
+-
+- - Time zone id parsing of GMT offsets failed on Dalvik
+-  This may be related to a JDK specification change between Java 1.6 and 1.7
+-
+-- Enhance readResolve() from LocalDate/LocalTime/LocalDateTime [3461008]
+-  Handle even more weird deserialization problems with other tools
+-
+-- Tweaks to cached time-zone to try and avoid a NPE [3470276]
+-
+-- Fix multi-lingual period format for using English from another language default [3471414]
+-  Previously, the word-based methods on PeriodFormat ignored the argument of English if the default
+-  locale was non-English, now fixed
+-
+-- Interval/MutableInterval toString() now contains the time-zone offset [https://github.com/JodaOrg/joda-time/pull/2]
+-
+-- Fix multiplication of Long.MIN_VALUE by -1 in safeMultiply()
+-
+-- Fix validation in BasicChronology.getDateTimeMillis
+- Previously this allowed a millisOfDay value one too large
+-
+-- Javadoc fix to MutablePeriod [3413869]
++- Javadoc fix to BaseChronology [3513326]
+ 
+ 
+ Scala
+diff --git a/src/main/java/org/joda/time/format/DateTimeFormatter.java b/src/main/java/org/joda/time/format/DateTimeFormatter.java
+index f92771a..baa276a 100644
+--- a/src/main/java/org/joda/time/format/DateTimeFormatter.java
++++ b/src/main/java/org/joda/time/format/DateTimeFormatter.java
+@@ -21,6 +21,7 @@
+ 
+ import org.joda.time.Chronology;
+ import org.joda.time.DateTime;
++import org.joda.time.DateTimeFieldType;
+ import org.joda.time.DateTimeUtils;
+ import org.joda.time.DateTimeZone;
+ import org.joda.time.LocalDate;
+@@ -679,6 +680,9 @@
+      * modified. To determine the position where the parse failed, apply the
+      * one's complement operator (~) on the return value.
+      * <p>
++     * This parse method ignores the {@link #getDefaultYear() default year} and
++     * parses using the year from the supplied instant as the default.
++     * <p>
+      * The parse will use the chronology of the instant.
+      *
+      * @param instant  an instant that will be modified, not null
+@@ -702,7 +706,7 @@
+         chrono = selectChronology(chrono);
+         
+         DateTimeParserBucket bucket = new DateTimeParserBucket(
+-            instantLocal, chrono, iLocale, iPivotYear, iDefaultYear);
++            instantLocal, chrono, iLocale, iPivotYear, chrono.year().get(instantLocal));
+         int newPos = parser.parseInto(bucket, text, position);
+         instant.setMillis(bucket.computeMillis(false, text));
+         if (iOffsetParsed && bucket.getOffsetInteger() != null) {
+diff --git a/src/test/java/org/joda/time/format/TestDateTimeFormatter.java b/src/test/java/org/joda/time/format/TestDateTimeFormatter.java
+index 5326370..0152ce7 100644
+--- a/src/test/java/org/joda/time/format/TestDateTimeFormatter.java
++++ b/src/test/java/org/joda/time/format/TestDateTimeFormatter.java
+@@ -863,6 +863,55 @@
+         assertEquals(expect, result);
+     }
+ 
++    public void testParseInto_monthOnly() {
++        DateTimeFormatter f = DateTimeFormat.forPattern("M").withLocale(Locale.UK);
++        MutableDateTime result = new MutableDateTime(2004, 1, 9, 12, 20, 30, 0, LONDON);
++        assertEquals(1, f.parseInto(result, "5", 0));
++        assertEquals(new MutableDateTime(2004, 5, 9, 12, 20, 30, 0, LONDON), result);
++    }
++
++    public void testParseInto_monthOnly_baseStartYear() {
++        DateTimeFormatter f = DateTimeFormat.forPattern("M").withLocale(Locale.UK);
++        MutableDateTime result = new MutableDateTime(2004, 1, 1, 12, 20, 30, 0, TOKYO);
++        assertEquals(1, f.parseInto(result, "5", 0));
++        assertEquals(new MutableDateTime(2004, 5, 1, 12, 20, 30, 0, TOKYO), result);
++    }
++
++    public void testParseInto_monthOnly_parseStartYear() {
++        DateTimeFormatter f = DateTimeFormat.forPattern("M").withLocale(Locale.UK);
++        MutableDateTime result = new MutableDateTime(2004, 2, 1, 12, 20, 30, 0, TOKYO);
++        assertEquals(1, f.parseInto(result, "1", 0));
++        assertEquals(new MutableDateTime(2004, 1, 1, 12, 20, 30, 0, TOKYO), result);
++    }
++
++    public void testParseInto_monthOnly_baseEndYear() {
++        DateTimeFormatter f = DateTimeFormat.forPattern("M").withLocale(Locale.UK);
++        MutableDateTime result = new MutableDateTime(2004, 12, 31, 12, 20, 30, 0, TOKYO);
++        assertEquals(1, f.parseInto(result, "5", 0));
++        assertEquals(new MutableDateTime(2004, 5, 31, 12, 20, 30, 0, TOKYO), result);
++   }
++
++    public void testParseInto_monthOnly_parseEndYear() {
++        DateTimeFormatter f = DateTimeFormat.forPattern("M").withLocale(Locale.UK);
++        MutableDateTime result = new MutableDateTime(2004, 1, 31, 12, 20, 30, 0,TOKYO);
++        assertEquals(2, f.parseInto(result, "12", 0));
++        assertEquals(new MutableDateTime(2004, 12, 31, 12, 20, 30, 0, TOKYO), result);
++    }
++
++    public void testParseInto_monthDay_feb29() {
++        DateTimeFormatter f = DateTimeFormat.forPattern("M d").withLocale(Locale.UK);
++        MutableDateTime result = new MutableDateTime(2004, 1, 9, 12, 20, 30, 0, LONDON);
++        assertEquals(4, f.parseInto(result, "2 29", 0));
++        assertEquals(new MutableDateTime(2004, 2, 29, 12, 20, 30, 0, LONDON), result);
++    }
++
++    public void testParseInto_monthDay_withDefaultYear_feb29() {
++        DateTimeFormatter f = DateTimeFormat.forPattern("M d").withDefaultYear(2012);
++        MutableDateTime result = new MutableDateTime(2004, 1, 9, 12, 20, 30, 0, LONDON);
++        assertEquals(4, f.parseInto(result, "2 29", 0));
++        assertEquals(new MutableDateTime(2004, 2, 29, 12, 20, 30, 0, LONDON), result);
++    }
++
+     public void testParseMillis_fractionOfSecondLong() {
+         DateTimeFormatter f = new DateTimeFormatterBuilder()
+             .appendSecondOfDay(2).appendLiteral('.').appendFractionOfSecond(1, 9)

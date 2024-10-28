@@ -1,0 +1,121 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.rhino.jstype.JSTypeTest::testRecordTypeLeastSuperType2,com.google.javascript.rhino.jstype.JSTypeTest::testRecordTypeLeastSuperType3,com.google.javascript.rhino.jstype.RecordTypeTest::testSupAndInf",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.rhino.jstype.RecordType",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "46",
+  "workingDir": "../bugs/Closure_46_tmp",
+  "bug_name": "Closure_46",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.rhino.jstype.JSTypeTest",
+      "test_function": "testRecordTypeLeastSuperType2",
+      "assertion_line": "2721",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: ({a: number, b: string}|{b: string, c: string, e: number})"
+    },
+    {
+      "test_class": "com.google.javascript.rhino.jstype.JSTypeTest",
+      "test_function": "testRecordTypeLeastSuperType3",
+      "assertion_line": "2733",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: ({a: number, b: string}|{d: number, e: string, f: string})"
+    },
+    {
+      "test_class": "com.google.javascript.rhino.jstype.RecordTypeTest",
+      "test_function": "testSupAndInf",
+      "assertion_line": "98",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: ({a: number, b: number}|{b: number, c: number})"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/RecordType.java",
+        "src/com/google/javascript/rhino/jstype/RecordType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.jstype.RecordType:getLeastSupertype:[JSType that]:JSType"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "139"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "140",
+            "141",
+            "142",
+            "143",
+            "144",
+            "145",
+            "146",
+            "147",
+            "148",
+            "149",
+            "150",
+            "151",
+            "152",
+            "153",
+            "154",
+            "155"
+          ],
+          "num": 16
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/RecordType.java b/src/com/google/javascript/rhino/jstype/RecordType.java\nindex b418dbd..7289803 100755\n--- a/src/com/google/javascript/rhino/jstype/RecordType.java\n+++ b/src/com/google/javascript/rhino/jstype/RecordType.java\n@@ -137,6 +137,22 @@\n         propertyNode);\n   }\n \n+  @Override\n+  public JSType getLeastSupertype(JSType that) {\n+    if (!that.isRecordType()) {\n+      return super.getLeastSupertype(that);\n+    }\n+    RecordTypeBuilder builder \u003d new RecordTypeBuilder(registry);\n+    for (String property : properties.keySet()) {\n+      if (that.toMaybeRecordType().hasProperty(property) \u0026\u0026\n+          that.toMaybeRecordType().getPropertyType(property).isEquivalentTo(\n+              getPropertyType(property))) {\n+        builder.addProperty(property, getPropertyType(property),\n+            getPropertyNode(property));\n+      }\n+    }\n+    return builder.build();\n+  }\n   JSType getGreatestSubtypeHelper(JSType that) {\n     if (that.isRecordType()) {\n       RecordType thatRecord \u003d that.toMaybeRecordType();\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [4607,5194]"
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.google.javascript.rhino.jstype.RecordType:getLeastSupertype:[JSType that]:JSType"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,277 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.cli2.bug.BugCLI123Test::testMultipleChildOptions,org.apache.commons.cli2.bug.BugCLI123Test::testParentOptionAndChildOption,org.apache.commons.cli2.bug.BugCLI123Test::testSingleChildOption,org.apache.commons.cli2.commandline.DefaultingCommandLineTest::testGetOptions_Order,org.apache.commons.cli2.commandline.PreferencesCommandLineTest::testGetOptions_Order,org.apache.commons.cli2.commandline.PropertiesCommandLineTest::testGetOptions_Order,org.apache.commons.cli2.commandline.WriteableCommandLineImplTest::testGetOptions_Order",
+    "test.dir": "src/test",
+    "clz.modified": "org.apache.commons.cli2.Option,org.apache.commons.cli2.commandline.WriteableCommandLineImpl,org.apache.commons.cli2.option.GroupImpl,org.apache.commons.cli2.option.OptionImpl",
+    "src.dir": "src/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Cli",
+  "id": "16",
+  "workingDir": "../bugs/Cli_16_tmp",
+  "bug_name": "Cli_16",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.cli2.bug.BugCLI123Test",
+      "test_function": "testMultipleChildOptions",
+      "assertion_line": "92",
+      "exception": "org.apache.commons.cli2.OptionException",
+      "message": "Missing option parentOptions"
+    },
+    {
+      "test_class": "org.apache.commons.cli2.bug.BugCLI123Test",
+      "test_function": "testParentOptionAndChildOption",
+      "assertion_line": "121",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Maximum restriction for parent not verified!"
+    },
+    {
+      "test_class": "org.apache.commons.cli2.bug.BugCLI123Test",
+      "test_function": "testSingleChildOption",
+      "assertion_line": "81",
+      "exception": "org.apache.commons.cli2.OptionException",
+      "message": "Missing option parentOptions"
+    },
+    {
+      "test_class": "org.apache.commons.cli2.commandline.DefaultingCommandLineTest",
+      "test_function": "testGetOptions_Order",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected same:\u003c[--help (-?,-h)|login \u003cusername\u003e] [\u003ctarget1\u003e [\u003ctarget2\u003e ...]]\u003e was not:\u003c[--help (-?,-h)]\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/cli2/Option.java",
+        "src/java/org/apache/commons/cli2/Option.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.cli2.Option:setParent:[Option parent]:void",
+            "org.apache.commons.cli2.Option:getParent:[]:Option"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "206",
+            "217"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "205",
+            "217"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/cli2/Option.java b/src/java/org/apache/commons/cli2/Option.java\nindex 0102573..2b53098 100644\n--- a/src/java/org/apache/commons/cli2/Option.java\n+++ b/src/java/org/apache/commons/cli2/Option.java\n@@ -203,7 +203,6 @@\n      *\n      * @return the parent of this option\n      */\n-    Option getParent();\n \n     /**\n      * Sets the parent of this option. This method is called when the option is\n@@ -214,5 +213,4 @@\n      *\n      * @param parent the parent option\n      */\n-    void setParent(Option parent);\n }\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [6312,6678]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [6684,7152]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/cli2/commandline/WriteableCommandLineImpl.java",
+        "src/java/org/apache/commons/cli2/commandline/WriteableCommandLineImpl.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.cli2.commandline.WriteableCommandLineImpl:addOption:[Option option]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.cli2.commandline.WriteableCommandLineImpl:addOption:[Option option]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "74",
+            "75",
+            "76",
+            "77",
+            "78"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "73"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/cli2/commandline/WriteableCommandLineImpl.java b/src/java/org/apache/commons/cli2/commandline/WriteableCommandLineImpl.java\nindex ec97eab..337eeb6 100644\n--- a/src/java/org/apache/commons/cli2/commandline/WriteableCommandLineImpl.java\n+++ b/src/java/org/apache/commons/cli2/commandline/WriteableCommandLineImpl.java\n@@ -71,11 +71,6 @@\n         }\n \n         // ensure that all parent options are also added\n-        Option parent \u003d option.getParent();\n-        while (parent !\u003d null \u0026\u0026 !options.contains(parent)) {\n-            options.add(parent);\n-            parent \u003d parent.getParent();\n-        }\n     }\n \n     public void addValue(final Option option,\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [2882,2917]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "WhileStatement [2926,3063]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/cli2/option/GroupImpl.java",
+        "src/java/org/apache/commons/cli2/option/GroupImpl.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.cli2.option.GroupImpl:GroupImpl:[final List options, final String name, final String description, final int minimum, final int maximum]:null"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.cli2.option.GroupImpl:GroupImpl:[final List options, final String name, final String description, final int minimum, final int maximum]:null"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "92"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "91"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/cli2/option/GroupImpl.java b/src/java/org/apache/commons/cli2/option/GroupImpl.java\nindex 38fc6c2..e3b69f8 100644\n--- a/src/java/org/apache/commons/cli2/option/GroupImpl.java\n+++ b/src/java/org/apache/commons/cli2/option/GroupImpl.java\n@@ -89,7 +89,6 @@\n         // process the options\n         for (final Iterator i \u003d options.iterator(); i.hasNext();) {\n             final Option option \u003d (Option) i.next();\n-            option.setParent(this);\n \n             if (option instanceof Argument) {\n                 i.remove();\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [3333,3356]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/cli2/option/OptionImpl.java",
+        "src/java/org/apache/commons/cli2/option/OptionImpl.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.cli2.option.OptionImpl:getParent:[]:Option",
+            "org.apache.commons.cli2.option.OptionImpl:setParent:[Option parent]:void"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "36",
+            "129",
+            "130",
+            "131",
+            "133",
+            "134",
+            "135"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "35",
+            "129"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/cli2/option/OptionImpl.java b/src/java/org/apache/commons/cli2/option/OptionImpl.java\nindex f74313d..f75d470 100644\n--- a/src/java/org/apache/commons/cli2/option/OptionImpl.java\n+++ b/src/java/org/apache/commons/cli2/option/OptionImpl.java\n@@ -33,7 +33,6 @@\n public abstract class OptionImpl implements Option {\n     private final int id;\n     private final boolean required;\n-    private Option parent;\n \n     /**\n      * Creates an OptionImpl with the specified id\n@@ -126,13 +125,7 @@\n         // nothing to do normally\n     }\n \n-    public Option getParent() {\n-        return parent;\n-    }\n \n-    public void setParent(Option parent) {\n-        this.parent \u003d parent;\n-    }\n \n     protected void checkPrefixes(final Set prefixes) {\n         // nothing to do if empty prefix list\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [1410,1432]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [4033,4089]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [4095,4169]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.apache.commons.cli2.option.OptionImpl:getParent:[]:Option",
+        "org.apache.commons.cli2.Option:getParent:[]:Option",
+        "org.apache.commons.cli2.Option:setParent:[Option parent]:void",
+        "org.apache.commons.cli2.option.OptionImpl:setParent:[Option parent]:void"
+      ],
+      "num": 4
+    }
+  }
+}

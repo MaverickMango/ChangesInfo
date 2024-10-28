@@ -1,0 +1,616 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.jsoup.nodes.ElementTest::testAppendRowToTable,org.jsoup.nodes.ElementTest::testPrependRowToTable,org.jsoup.parser.ParserTest::handlesNestedImplicitTable",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.jsoup.nodes.Element,org.jsoup.parser.Parser,org.jsoup.parser.Tag",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Jsoup",
+  "id": "3",
+  "workingDir": "../bugs/Jsoup_3_tmp",
+  "bug_name": "Jsoup_3",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.jsoup.nodes.ElementTest",
+      "test_function": "testAppendRowToTable",
+      "assertion_line": "219",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c...tr\u003e\u003ctd\u003e1\u003c/td\u003e\u003c/tr\u003e\u003ct[r\u003e\u003ctd\u003e2\u003c/td\u003e\u003c/tr]\u003e\u003c/table\u003e\u003e but was:\u003c...tr\u003e\u003ctd\u003e1\u003c/td\u003e\u003c/tr\u003e\u003ct[able\u003e\u003ctr\u003e\u003ctd\u003e2\u003c/td\u003e\u003c/tr\u003e\u003c/table]\u003e\u003c/table\u003e\u003e"
+    },
+    {
+      "test_class": "org.jsoup.nodes.ElementTest",
+      "test_function": "testPrependRowToTable",
+      "assertion_line": "227",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c\u003ctable\u003e\u003ct[r\u003e\u003ctd\u003e2\u003c/td\u003e\u003c/tr]\u003e\u003ctr\u003e\u003ctd\u003e1\u003c/td\u003e\u003c/tr\u003e...\u003e but was:\u003c\u003ctable\u003e\u003ct[able\u003e\u003ctr\u003e\u003ctd\u003e2\u003c/td\u003e\u003c/tr\u003e\u003c/table]\u003e\u003ctr\u003e\u003ctd\u003e1\u003c/td\u003e\u003c/tr\u003e...\u003e"
+    },
+    {
+      "test_class": "org.jsoup.parser.ParserTest",
+      "test_function": "handlesNestedImplicitTable",
+      "assertion_line": "174",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c...\u003e \u003ctr\u003e\u003ctd\u003e \u003ctable\u003e\u003ct[r\u003e\u003ctd\u003e3\u003c/td\u003e \u003ctd\u003e4\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e \u003c/td\u003e\u003c/tr\u003e\u003ctr\u003e\u003ctd\u003e5]\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003e but was:\u003c...\u003e \u003ctr\u003e\u003ctd\u003e \u003ctable\u003e\u003ct[d\u003e3\u003c/td\u003e \u003ctd\u003e4\u003c/td\u003e\u003c/table\u003e \u003ctr\u003e\u003ctd\u003e5\u003c/td\u003e\u003c/tr\u003e]\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/nodes/Element.java",
+        "src/main/java/org/jsoup/nodes/Element.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.nodes.Element:prepend:[String html]:Element",
+            "org.jsoup.nodes.Element:wrap:[String html]:Element",
+            "org.jsoup.nodes.Element:append:[String html]:Element"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "org.jsoup.nodes.Element:append:[String html]:Element",
+            "org.jsoup.nodes.Element:prepend:[String html]:Element",
+            "org.jsoup.nodes.Element:wrap:[String html]:Element"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "270",
+            "287",
+            "314"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "270",
+            "287",
+            "314"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/nodes/Element.java b/src/main/java/org/jsoup/nodes/Element.java\nindex fef6f1c..12c68ca 100644\n--- a/src/main/java/org/jsoup/nodes/Element.java\n+++ b/src/main/java/org/jsoup/nodes/Element.java\n@@ -267,7 +267,7 @@\n     public Element append(String html) {\n         Validate.notNull(html);\n         \n-        Element fragment \u003d Parser.parseBodyFragmentRelaxed(html, baseUri()).body();\n+        Element fragment \u003d Parser.parseBodyFragment(html, baseUri).body();\n         for (Node node : fragment.childNodes()) {\n             node.parentNode \u003d null;\n             appendChild(node);\n@@ -284,7 +284,7 @@\n     public Element prepend(String html) {\n         Validate.notNull(html);\n         \n-        Element fragment \u003d Parser.parseBodyFragmentRelaxed(html, baseUri()).body();\n+        Element fragment \u003d Parser.parseBodyFragment(html, baseUri).body();\n         List\u003cNode\u003e nodes \u003d fragment.childNodes();\n         for (int i \u003d nodes.size() - 1; i \u003e\u003d 0; i--) {\n             Node node \u003d nodes.get(i);\n@@ -311,7 +311,7 @@\n     public Element wrap(String html) {\n         Validate.notEmpty(html);\n \n-        Element wrapBody \u003d Parser.parseBodyFragmentRelaxed(html, baseUri).body();\n+        Element wrapBody \u003d Parser.parseBodyFragment(html, baseUri).body();\n         Elements wrapChildren \u003d wrapBody.children();\n         Element wrap \u003d wrapChildren.first();\n         if (wrap \u003d\u003d null) // nothing to wrap with; noop\n",
+      "operations": [
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [8515,8524]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [9115,9124]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/parser/Parser.java",
+        "src/main/java/org/jsoup/parser/Parser.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.parser.Parser:stackHasValidParent:[Tag childTag]:boolean",
+            "org.jsoup.parser.Parser:parseBodyFragmentRelaxed:[String bodyHtml, String baseUri]:Document",
+            "org.jsoup.parser.Parser:addChildToParent:[Element child, boolean isEmptyElement]:Element"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "org.jsoup.parser.Parser:addChildToParent:[Element child, boolean isEmptyElement]:Element",
+            "org.jsoup.parser.Parser:parse:[]:Document",
+            "org.jsoup.parser.Parser:stackHasValidParent:[Tag childTag]:boolean"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "26",
+            "74",
+            "75",
+            "76",
+            "77",
+            "78",
+            "230",
+            "259",
+            "260",
+            "266"
+          ],
+          "num": 10
+        },
+        {
+          "qualified_names": [
+            "25",
+            "74",
+            "224",
+            "258"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/parser/Parser.java b/src/main/java/org/jsoup/parser/Parser.java\nindex 62b0fd3..0cedf8a 100644\n--- a/src/main/java/org/jsoup/parser/Parser.java\n+++ b/src/main/java/org/jsoup/parser/Parser.java\n@@ -23,7 +23,6 @@\n     private final TokenQueue tq;\n     private final Document doc;\n     private String baseUri;\n-    private boolean relaxed \u003d false;\n \n     private Parser(String html, String baseUri, boolean isBodyFragment) {\n         Validate.notNull(html);\n@@ -71,11 +70,6 @@\n      @param baseUri base URI of document (i.e. original fetch location), for resolving relative URLs.\n      @return Document, with empty head, and HTML parsed into body\n      */\n-    public static Document parseBodyFragmentRelaxed(String bodyHtml, String baseUri) {\n-        Parser parser \u003d new Parser(bodyHtml, baseUri, true);\n-        parser.relaxed \u003d true;\n-        return parser.parse();\n-    }\n \n     private Document parse() {\n         while (!tq.isEmpty()) {\n@@ -227,7 +221,7 @@\n         Tag childTag \u003d child.tag();\n         boolean validAncestor \u003d stackHasValidParent(childTag);\n \n-        if (!validAncestor \u0026\u0026 !relaxed) {\n+        if (!validAncestor) {\n             // create implicit parent around this child\n             Tag parentTag \u003d childTag.getImplicitParent();\n             Element implicit \u003d new Element(parentTag, baseUri);\n@@ -256,14 +250,12 @@\n         if (stack.size() \u003d\u003d 1 \u0026\u0026 childTag.equals(htmlTag))\n             return true; // root is valid for html node\n \n-        if (childTag.requiresSpecificParent())\n-            return stack.getLast().tag().isValidParent(childTag);\n \n         // otherwise, look up the stack for valid ancestors\n         for (int i \u003d stack.size() -1; i \u003e\u003d 0; i--) {\n             Element el \u003d stack.get(i);\n             Tag parent2 \u003d el.tag();\n-            if (parent2.isValidAncestor(childTag)) {\n+            if (parent2.isValidParent(childTag)) {\n                 return true;\n             }\n         }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [2171,2585]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [861,893]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [2208,2838]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [8160,8162]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "PrefixExpression [8163,8171]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [8145,8171]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [9174,9278]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/parser/Tag.java",
+        "src/main/java/org/jsoup/parser/Tag.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.parser.Tag:setParent:[String tagName]:Tag",
+            "org.jsoup.parser.Tag:canContain:[Tag child]:boolean",
+            "org.jsoup.parser.Tag:requiresSpecificParent:[]:boolean",
+            "org.jsoup.parser.Tag:isValidAncestor:[Tag child]:boolean",
+            "org.jsoup.parser.Tag:isValidParent:[Tag child]:boolean"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "org.jsoup.parser.Tag:isValidParent:[Tag child]:boolean",
+            "org.jsoup.parser.Tag:canContain:[Tag child]:boolean"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "28",
+            "100",
+            "101",
+            "158",
+            "159",
+            "160",
+            "163",
+            "164",
+            "166",
+            "233",
+            "234",
+            "297",
+            "298",
+            "304",
+            "309",
+            "310",
+            "316",
+            "317",
+            "318",
+            "319",
+            "320",
+            "321",
+            "322",
+            "323",
+            "324",
+            "388",
+            "389",
+            "390",
+            "391",
+            "392"
+          ],
+          "num": 30
+        },
+        {
+          "qualified_names": [
+            "27",
+            "100",
+            "160",
+            "224",
+            "225",
+            "288",
+            "289",
+            "295",
+            "300",
+            "301",
+            "307",
+            "308",
+            "309",
+            "310",
+            "311",
+            "312",
+            "313",
+            "314",
+            "315",
+            "396"
+          ],
+          "num": 20
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/parser/Tag.java b/src/main/java/org/jsoup/parser/Tag.java\nindex 24333e7..6dff9e7 100644\n--- a/src/main/java/org/jsoup/parser/Tag.java\n+++ b/src/main/java/org/jsoup/parser/Tag.java\n@@ -25,7 +25,6 @@\n     private boolean empty \u003d false; // can hold nothing; e.g. img\n     private boolean preserveWhitespace \u003d false; // for pre, textarea, script etc\n     private List\u003cTag\u003e ancestors; // elements must be a descendant of one of these ancestors\n-    private Tag parent; // if not null, elements must be a direct child of parent\n \n     private Tag(String tagName) {\n         this.tagName \u003d tagName.toLowerCase();\n@@ -97,8 +96,6 @@\n             return false;\n \n         // don\u0027t allow children to contain their parent (directly)\n-        if (this.requiresSpecificParent() \u0026\u0026 this.getImplicitParent().equals(child))\n-            return false;\n         \n         return true;\n     }\n@@ -155,15 +152,9 @@\n         return (!ancestors.isEmpty()) ? ancestors.get(0) : null;\n     }\n \n-    boolean requiresSpecificParent() {\n-        return this.parent !\u003d null;\n-    }\n \n     boolean isValidParent(Tag child) {\n-        return this.equals(child.parent);\n-    }\n \n-    boolean isValidAncestor(Tag child) {\n         if (child.ancestors.isEmpty())\n             return true; // HTML tag\n \n@@ -230,8 +221,8 @@\n         createBlock(\"TITLE\").setAncestor(\"HEAD\", \"BODY\").setContainDataOnly();\n         createInline(\"BASE\").setAncestor(\"HEAD\", \"BODY\").setEmpty();\n \n-        createBlock(\"FRAME\").setParent(\"FRAMESET\").setEmpty();\n-        createBlock(\"NOFRAMES\").setParent(\"FRAMESET\").setContainDataOnly();\n+        createBlock(\"FRAME\").setAncestor(\"FRAMESET\").setEmpty();\n+        createBlock(\"NOFRAMES\").setAncestor(\"FRAMESET\").setContainDataOnly();\n \n \n \n@@ -294,34 +285,34 @@\n         createInline(\"TEXTAREA\").setAncestor(\"FORM\").setContainDataOnly();\n         createInline(\"LABEL\").setAncestor(\"FORM\").setOptionalClosing(); // not self\n         createInline(\"BUTTON\").setAncestor(\"FORM\"); // bunch of excludes not defined\n-        createInline(\"OPTGROUP\").setParent(\"SELECT\"); //  only contain option\n-        createInline(\"OPTION\").setParent(\"SELECT\").setContainDataOnly();\n+        createInline(\"OPTGROUP\").setAncestor(\"SELECT\");\n+        createInline(\"OPTION\").setAncestor(\"SELECT\").setContainDataOnly();\n         createBlock(\"FIELDSET\").setAncestor(\"FORM\");\n         createInline(\"LEGEND\").setAncestor(\"FIELDSET\");\n \n         // other\n         createInline(\"AREA\").setEmpty(); // not an inline per-se\n-        createInline(\"PARAM\").setParent(\"OBJECT\").setEmpty();\n+        createInline(\"PARAM\").setAncestor(\"OBJECT\").setEmpty();\n         createBlock(\"INS\"); // only within body\n         createBlock(\"DEL\"); // only within body\n \n         createBlock(\"DL\");\n-        createInline(\"DT\").setParent(\"DL\").setOptionalClosing(); // only within DL.\n-        createInline(\"DD\").setParent(\"DL\").setOptionalClosing(); // only within DL.\n+        createInline(\"DT\").setAncestor(\"DL\").setOptionalClosing();\n+        createInline(\"DD\").setAncestor(\"DL\").setOptionalClosing();\n \n         createBlock(\"LI\").setAncestor(\"UL\", \"OL\").setOptionalClosing(); // only within OL or UL.\n \n         // tables\n         createBlock(\"TABLE\"); // specific list of only includes (tr, td, thead etc) not implemented\n-        createBlock(\"CAPTION\").setParent(\"TABLE\");\n-        createBlock(\"THEAD\").setParent(\"TABLE\").setOptionalClosing(); // just TR\n-        createBlock(\"TFOOT\").setParent(\"TABLE\").setOptionalClosing(); // just TR\n-        createBlock(\"TBODY\").setParent(\"TABLE\").setOptionalClosing(); // optional / implicit open too. just TR\n-        createBlock(\"COLGROUP\").setParent(\"TABLE\").setOptionalClosing(); // just COL\n-        createBlock(\"COL\").setParent(\"COLGROUP\").setEmpty();\n-        createBlock(\"TR\").setParent(\"TABLE\").setOptionalClosing(); // just TH, TD\n-        createBlock(\"TH\").setParent(\"TR\").setOptionalClosing();\n-        createBlock(\"TD\").setParent(\"TR\").setOptionalClosing();\n+        createBlock(\"CAPTION\").setAncestor(\"TABLE\");\n+        createBlock(\"THEAD\").setAncestor(\"TABLE\").setOptionalClosing();\n+        createBlock(\"TFOOT\").setAncestor(\"TABLE\").setOptionalClosing();\n+        createBlock(\"TBODY\").setAncestor(\"TABLE\").setOptionalClosing();\n+        createBlock(\"COLGROUP\").setAncestor(\"TABLE\").setOptionalClosing();\n+        createBlock(\"COL\").setAncestor(\"COLGROUP\").setEmpty();\n+        createBlock(\"TR\").setAncestor(\"TABLE\").setOptionalClosing();\n+        createBlock(\"TH\").setAncestor(\"TR\").setOptionalClosing();\n+        createBlock(\"TD\").setAncestor(\"TR\").setOptionalClosing();\n     }\n \n     private static Tag createBlock(String tagName) {\n@@ -385,9 +376,4 @@\n         return this;\n     }\n \n-    private Tag setParent(String tagName) {\n-        parent \u003d Tag.valueOf(tagName);\n-        setAncestor(tagName);\n-        return this;\n-    }\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [4945,5000]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "EnhancedForStatement [5022,5128]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [5137,5150]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [1169,1188]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [3822,3924]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [5093,5169]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [5218,5251]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [5263,5519]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: private [13670,13677]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [13678,13681]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: setParent [13682,13691]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [13692,13706]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [13718,13748]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: tagName [13769,13776]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [13787,13799]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [13708,13805]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodDeclaration [13670,13805]",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.jsoup.parser.Parser:parse:[]:Document"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.jsoup.parser.Tag:requiresSpecificParent:[]:boolean",
+        "org.jsoup.parser.Tag:setParent:[String tagName]:Tag",
+        "org.jsoup.parser.Parser:parseBodyFragmentRelaxed:[String bodyHtml, String baseUri]:Document",
+        "org.jsoup.parser.Tag:isValidAncestor:[Tag child]:boolean"
+      ],
+      "num": 4
+    }
+  }
+}

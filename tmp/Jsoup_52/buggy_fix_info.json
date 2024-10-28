@@ -1,0 +1,428 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.jsoup.nodes.DocumentTest::testMetaCharsetUpdateXmlNoCharset,org.jsoup.nodes.DocumentTest::testMetaCharsetUpdateXmlIso8859,org.jsoup.nodes.DocumentTest::testMetaCharsetUpdateXmlUtf8,org.jsoup.nodes.DocumentTest::testMetaCharsetUpdateXmlDisabledNoChanges,org.jsoup.parser.XmlTreeBuilderTest::handlesXmlDeclarationAsDeclaration,org.jsoup.parser.XmlTreeBuilderTest::testDetectCharsetEncodingDeclaration,org.jsoup.parser.XmlTreeBuilderTest::testParseDeclarationAttributes",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.jsoup.helper.DataUtil,org.jsoup.nodes.XmlDeclaration,org.jsoup.parser.XmlTreeBuilder",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Jsoup",
+  "id": "52",
+  "workingDir": "../bugs/Jsoup_52_tmp",
+  "bug_name": "Jsoup_52",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.jsoup.nodes.DocumentTest",
+      "test_function": "testMetaCharsetUpdateXmlNoCharset",
+      "assertion_line": "355",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c....0\" encoding\u003d\"UTF-8\"[?]\u003e"
+    },
+    {
+      "test_class": "org.jsoup.nodes.DocumentTest",
+      "test_function": "testMetaCharsetUpdateXmlIso8859",
+      "assertion_line": "337",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c...ncoding\u003d\"ISO-8859-1\"[?]\u003e"
+    },
+    {
+      "test_class": "org.jsoup.nodes.DocumentTest",
+      "test_function": "testMetaCharsetUpdateXmlUtf8",
+      "assertion_line": "319",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c....0\" encoding\u003d\"UTF-8\"[?]\u003e"
+    },
+    {
+      "test_class": "org.jsoup.nodes.DocumentTest",
+      "test_function": "testMetaCharsetUpdateXmlDisabledNoChanges",
+      "assertion_line": "379",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c...encoding\u003d\"dontTouch\"[?]\u003e"
+    },
+    {
+      "test_class": "org.jsoup.parser.XmlTreeBuilderTest",
+      "test_function": "handlesXmlDeclarationAsDeclaration",
+      "assertion_line": "108",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c\u003c?xml encoding\u003d[\"UTF-8\"]?\u003e \u003cbody\u003e One \u003c/body...\u003e but was:\u003c\u003c?xml encoding\u003d[\u0027UTF-8\u0027 ]?\u003e \u003cbody\u003e One \u003c/body...\u003e"
+    },
+    {
+      "test_class": "org.jsoup.parser.XmlTreeBuilderTest",
+      "test_function": "testDetectCharsetEncodingDeclaration",
+      "assertion_line": "141",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c[ISO-8859-1]\u003e but was:\u003c[UTF-8]\u003e"
+    },
+    {
+      "test_class": "org.jsoup.parser.XmlTreeBuilderTest",
+      "test_function": "testParseDeclarationAttributes",
+      "assertion_line": "151",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c[1]\u003e but was:\u003c[]\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/helper/DataUtil.java",
+        "src/main/java/org/jsoup/helper/DataUtil.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.helper.DataUtil:parseByteData:[ByteBuffer byteData, String charsetName, String baseUri, Parser parser]:Document"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.jsoup.helper.DataUtil:parseByteData:[ByteBuffer byteData, String charsetName, String baseUri, Parser parser]:Document"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "111"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "112",
+            "113",
+            "115",
+            "116",
+            "117",
+            "118"
+          ],
+          "num": 6
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/helper/DataUtil.java b/src/main/java/org/jsoup/helper/DataUtil.java\nindex 6567e36..99c7976 100644\n--- a/src/main/java/org/jsoup/helper/DataUtil.java\n+++ b/src/main/java/org/jsoup/helper/DataUtil.java\n@@ -109,7 +109,13 @@\n                     foundCharset \u003d getCharsetFromContentType(meta.attr(\"content\"));\n                 }\n                 if (foundCharset \u003d\u003d null \u0026\u0026 meta.hasAttr(\"charset\")) {\n+                    try {\n+                        if (Charset.isSupported(meta.attr(\"charset\"))) {\n                     foundCharset \u003d meta.attr(\"charset\");\n+                        }\n+                    } catch (IllegalCharsetNameException e) {\n+                        foundCharset \u003d null;\n+                    }\n                 }\n             }\n             // look for \u003c?xml encoding\u003d\u0027ISO-8859-1\u0027?\u003e\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TryStatement [4780,5070]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [4784,4963]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "CatchClause [4964,5070]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [4810,4941]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [4814,4855]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [4857,4941]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/nodes/XmlDeclaration.java",
+        "src/main/java/org/jsoup/nodes/XmlDeclaration.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.nodes.XmlDeclaration:getWholeDeclaration:[]:String",
+            "org.jsoup.nodes.XmlDeclaration:outerHtmlHead:[Appendable accum, int depth, Document.OutputSettings out]:void"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.jsoup.nodes.XmlDeclaration:getWholeDeclaration:[]:String",
+            "org.jsoup.nodes.XmlDeclaration:outerHtmlHead:[Appendable accum, int depth, Document.OutputSettings out]:void"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "46",
+            "53",
+            "54",
+            "55",
+            "56"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "46",
+            "47",
+            "48",
+            "49",
+            "50",
+            "51",
+            "52",
+            "53",
+            "54",
+            "55",
+            "56",
+            "57",
+            "58",
+            "59",
+            "60",
+            "61",
+            "68"
+          ],
+          "num": 17
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/nodes/XmlDeclaration.java b/src/main/java/org/jsoup/nodes/XmlDeclaration.java\nindex 619cd14..24a9f16 100644\n--- a/src/main/java/org/jsoup/nodes/XmlDeclaration.java\n+++ b/src/main/java/org/jsoup/nodes/XmlDeclaration.java\n@@ -43,17 +43,29 @@\n      @return XML declaration\n      */\n     public String getWholeDeclaration() {\n-        return attributes.html().trim(); // attr html starts with a \" \"\n+        final String decl \u003d this.name;\n+        if(decl.equals(\"xml\") \u0026\u0026 attributes.size() \u003e 1 ) {\n+            StringBuilder sb \u003d new StringBuilder(decl);\n+            final String version \u003d attributes.get(\"version\");\n+            if( version !\u003d null ) {\n+                sb.append(\" version\u003d\\\"\").append(version).append(\"\\\"\");\n+            }\n+            final String encoding \u003d attributes.get(\"encoding\");\n+            if( encoding !\u003d null ) {\n+                sb.append(\" encoding\u003d\\\"\").append(encoding).append(\"\\\"\");\n+            }\n+            return sb.toString();\n+        }\n+        else {\n+            return this.name;\n+        }\n     }\n \n \tvoid outerHtmlHead(Appendable accum, int depth, Document.OutputSettings out) throws IOException {\n         accum\n             .append(\"\u003c\")\n             .append(isProcessingInstruction ? \"!\" : \"?\")\n-            .append(name);\n-        attributes.html(accum, out);\n-        accum\n-            .append(isProcessingInstruction ? \"!\" : \"?\")\n+                .append(getWholeDeclaration())\n             .append(\"\u003e\");\n     }\n \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [1138,1168]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [1177,1753]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [1868,2027]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [1868,2002]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: append [2016,2022]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [2023,2026]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [1980,2001]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [1138,1170]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: name [1424,1428]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [1439,1467]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [1476,1564]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/parser/XmlTreeBuilder.java",
+        "src/main/java/org/jsoup/parser/XmlTreeBuilder.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.parser.XmlTreeBuilder:insert:[Token.Comment commentToken]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.jsoup.parser.XmlTreeBuilder:insert:[Token.Comment commentToken]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "3",
+            "77",
+            "78",
+            "79",
+            "80"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "2",
+            "76",
+            "77"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/parser/XmlTreeBuilder.java b/src/main/java/org/jsoup/parser/XmlTreeBuilder.java\nindex 3ccd7df..99807fc 100644\n--- a/src/main/java/org/jsoup/parser/XmlTreeBuilder.java\n+++ b/src/main/java/org/jsoup/parser/XmlTreeBuilder.java\n@@ -1,6 +1,5 @@\n package org.jsoup.parser;\n \n-import org.jsoup.Jsoup;\n import org.jsoup.helper.Validate;\n import org.jsoup.nodes.*;\n \n@@ -74,10 +73,8 @@\n             // so we do a bit of a hack and parse the data as an element to pull the attributes out\n             String data \u003d comment.getData();\n             if (data.length() \u003e 1 \u0026\u0026 (data.startsWith(\"!\") || data.startsWith(\"?\"))) {\n-                Document doc \u003d Jsoup.parse(\"\u003c\" + data.substring(1, data.length() -1) + \"\u003e\", baseUri, Parser.xmlParser());\n-                Element el \u003d doc.child(0);\n-                insert \u003d new XmlDeclaration(el.tagName(), comment.baseUri(), data.startsWith(\"!\"));\n-                insert.attributes().addAll(el.attributes());\n+                String declaration \u003d data.substring(1);\n+                insert \u003d new XmlDeclaration(declaration, comment.baseUri(), data.startsWith(\"!\"));\n             }\n         }\n         insertNode(insert);\n",
+      "operations": [
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: declaration [2920,2931]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [27,50]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [2911,2927]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_RECEIVER [2875,2880]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: parse [2881,2886]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "StringLiteral: \"\u003c\" [2887,2890]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: + [2891,2892]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "StringLiteral: \"\u003e\" [2931,2934]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [2887,2934]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: baseUri [2936,2943]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [2945,2963]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [2887,2963]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [2875,2964]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [2982,3008]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [3053,3065]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [3125,3169]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

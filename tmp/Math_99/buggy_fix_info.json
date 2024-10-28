@@ -1,0 +1,118 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math.util.MathUtilsTest::testGcd,org.apache.commons.math.util.MathUtilsTest::testLcm",
+    "test.dir": "src/test",
+    "clz.modified": "org.apache.commons.math.util.MathUtils",
+    "src.dir": "src/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "99",
+  "workingDir": "../bugs/Math_99_tmp",
+  "bug_name": "Math_99",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math.util.MathUtilsTest",
+      "test_function": "testGcd",
+      "assertion_line": "437",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expecting ArithmeticException"
+    },
+    {
+      "test_class": "org.apache.commons.math.util.MathUtilsTest",
+      "test_function": "testLcm",
+      "assertion_line": "590",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expecting ArithmeticException"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/math/util/MathUtils.java",
+        "src/java/org/apache/commons/math/util/MathUtils.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.util.MathUtils:gcd:[final int p, final int q]:int",
+            "org.apache.commons.math.util.MathUtils:lcm:[int a, int b]:int"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.util.MathUtils:log:[double base, double x]:double",
+            "org.apache.commons.math.util.MathUtils:gcd:[final int p, final int q]:int"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "543",
+            "544",
+            "545",
+            "546",
+            "547",
+            "719",
+            "720",
+            "721"
+          ],
+          "num": 8
+        },
+        {
+          "qualified_names": [
+            "542",
+            "723"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/math/util/MathUtils.java b/src/java/org/apache/commons/math/util/MathUtils.java\nindex 806c888..d51ec7a 100644\n--- a/src/java/org/apache/commons/math/util/MathUtils.java\n+++ b/src/java/org/apache/commons/math/util/MathUtils.java\n@@ -540,11 +540,6 @@\n         int u \u003d p;\n         int v \u003d q;\n         if ((u \u003d\u003d 0) || (v \u003d\u003d 0)) {\n-            if ((u \u003d\u003d Integer.MIN_VALUE) || (v \u003d\u003d Integer.MIN_VALUE)) {\n-                throw MathRuntimeException.createArithmeticException(\n-                        \"overflow: gcd({0}, {1}) is 2^31\",\n-                        new Object[] { p, q });\n-            }\n             return (Math.abs(u) + Math.abs(v));\n         }\n         // keep u and v negative, as negative integers range down to\n@@ -716,9 +711,6 @@\n             return 0;\n         }\n         int lcm \u003d Math.abs(mulAndCheck(a / gcd(a, b), b));\n-        if (lcm \u003d\u003d Integer.MIN_VALUE){\n-            throw new ArithmeticException(\"overflow: lcm is 2^31\");\n-        }\n         return lcm;\n     }\n \n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [18636,18886]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [24487,24595]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.apache.commons.math.util.MathUtils:log:[double base, double x]:double"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.apache.commons.math.util.MathUtils:lcm:[int a, int b]:int"
+      ],
+      "num": 1
+    }
+  }
+}

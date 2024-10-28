@@ -1,0 +1,107 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.gson.DefaultDateTypeAdapterTest::testUnexpectedToken,com.google.gson.DefaultDateTypeAdapterTest::testNullValue",
+    "test.dir": "gson/src/test/java",
+    "clz.modified": "com.google.gson.DefaultDateTypeAdapter",
+    "src.dir": "gson/src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Gson",
+  "id": "17",
+  "workingDir": "../bugs/Gson_17_tmp",
+  "bug_name": "Gson_17",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.gson.DefaultDateTypeAdapterTest",
+      "test_function": "testUnexpectedToken",
+      "assertion_line": "173",
+      "exception": "com.google.gson.JsonParseException",
+      "message": "The date should be a string value"
+    },
+    {
+      "test_class": "com.google.gson.DefaultDateTypeAdapterTest",
+      "test_function": "testNullValue",
+      "assertion_line": "166",
+      "exception": "com.google.gson.JsonParseException",
+      "message": "The date should be a string value"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "gson/src/main/java/com/google/gson/DefaultDateTypeAdapter.java",
+        "gson/src/main/java/com/google/gson/DefaultDateTypeAdapter.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.gson.DefaultDateTypeAdapter:read:[JsonReader in]:Date"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.gson.DefaultDateTypeAdapter:read:[JsonReader in]:Date"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "99",
+            "100",
+            "101"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "99",
+            "100"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/gson/src/main/java/com/google/gson/DefaultDateTypeAdapter.java b/gson/src/main/java/com/google/gson/DefaultDateTypeAdapter.java\nindex 3ce97fe..1ab606c 100644\n--- a/gson/src/main/java/com/google/gson/DefaultDateTypeAdapter.java\n+++ b/gson/src/main/java/com/google/gson/DefaultDateTypeAdapter.java\n@@ -96,9 +96,8 @@\n \n   @Override\n   public Date read(JsonReader in) throws IOException {\n-    if (in.peek() \u003d\u003d JsonToken.NULL) {\n-      in.nextNull();\n-      return null;\n+    if (in.peek() !\u003d JsonToken.STRING) {\n+      throw new JsonParseException(\"The date should be a string value\");\n     }\n     Date date \u003d deserializeToDate(in.nextString());\n     if (dateType \u003d\u003d Date.class) {\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [3519,3634]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [3519,3599]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

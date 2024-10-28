@@ -1,0 +1,182 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.csv.CSVPrinterTest::testEscapeNull1,org.apache.commons.csv.CSVPrinterTest::testEscapeNull4,org.apache.commons.csv.CSVPrinterTest::testEscapeNull5,org.apache.commons.csv.CSVPrinterTest::testEscapeBackslash1,org.apache.commons.csv.CSVPrinterTest::testEscapeBackslash4,org.apache.commons.csv.CSVPrinterTest::testEscapeBackslash5",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.csv.CSVFormat",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Csv",
+  "id": "14",
+  "workingDir": "../bugs/Csv_14_tmp",
+  "bug_name": "Csv_14",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.csv.CSVPrinterTest",
+      "test_function": "testEscapeNull1",
+      "assertion_line": "346",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c[\\]\u003e but was:\u003c[\"\\\"]\u003e"
+    },
+    {
+      "test_class": "org.apache.commons.csv.CSVPrinterTest",
+      "test_function": "testEscapeNull4",
+      "assertion_line": "373",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c[\\\\]\u003e but was:\u003c[\"\\\\\"]\u003e"
+    },
+    {
+      "test_class": "org.apache.commons.csv.CSVPrinterTest",
+      "test_function": "testEscapeNull5",
+      "assertion_line": "382",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c[\\\\]\u003e but was:\u003c[\"\\\\\"]\u003e"
+    },
+    {
+      "test_class": "org.apache.commons.csv.CSVPrinterTest",
+      "test_function": "testEscapeBackslash1",
+      "assertion_line": "301",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c[\\]\u003e but was:\u003c[\u0027\\\u0027]\u003e"
+    },
+    {
+      "test_class": "org.apache.commons.csv.CSVPrinterTest",
+      "test_function": "testEscapeBackslash4",
+      "assertion_line": "328",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c[\\\\]\u003e but was:\u003c[\u0027\\\\\u0027]\u003e"
+    },
+    {
+      "test_class": "org.apache.commons.csv.CSVPrinterTest",
+      "test_function": "testEscapeBackslash5",
+      "assertion_line": "337",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c[\\\\]\u003e but was:\u003c[\u0027\\\\\u0027]\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/csv/CSVFormat.java",
+        "src/main/java/org/apache/commons/csv/CSVFormat.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.csv.CSVFormat:printAndQuote:[final Object object, final CharSequence value, final int offset, final int len, final Appendable out, final boolean newRecord]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.csv.CSVFormat:printAndQuote:[final Object object, final CharSequence value, final int offset, final int len, final Appendable out, final boolean newRecord]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1039"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "1039"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/csv/CSVFormat.java b/src/main/java/org/apache/commons/csv/CSVFormat.java\nindex eee099d..35ee86a 100644\n--- a/src/main/java/org/apache/commons/csv/CSVFormat.java\n+++ b/src/main/java/org/apache/commons/csv/CSVFormat.java\n@@ -1036,7 +1036,7 @@\n                 char c \u003d value.charAt(pos);\n \n                 // RFC4180 (https://tools.ietf.org/html/rfc4180) TEXTDATA \u003d  %x20-21 / %x23-2B / %x2D-7E\n-                if (newRecord \u0026\u0026 (c \u003c 0x20 || c \u003e 0x21 \u0026\u0026 c \u003c 0x23 || c \u003e 0x2B \u0026\u0026 c \u003c 0x2D || c \u003e 0x7E)) {\n+                if (newRecord \u0026\u0026 (c \u003c \u00270\u0027 || c \u003e \u00279\u0027 \u0026\u0026 c \u003c \u0027A\u0027 || c \u003e \u0027Z\u0027 \u0026\u0026 c \u003c \u0027a\u0027 || c \u003e \u0027z\u0027)) {\n                     quote \u003d true;\n                 } else if (c \u003c\u003d COMMENT) {\n                     // Some other chars at the start of a value caused the parser to fail, so for now\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "CharacterLiteral: \u0027z\u0027 [33099,33102]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "CharacterLiteral: \u00270\u0027 [33044,33047]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "CharacterLiteral: \u0027Z\u0027 [33077,33080]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "CharacterLiteral: \u0027a\u0027 [33088,33091]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "CharacterLiteral: \u00279\u0027 [33055,33058]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "CharacterLiteral: \u0027A\u0027 [33066,33069]"
+        },
+        {
+          "type": "delete-node",
+          "from": "NumberLiteral: 0x20 [33044,33048]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NumberLiteral: 0x21 [33056,33060]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NumberLiteral: 0x23 [33068,33072]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NumberLiteral: 0x2B [33080,33084]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NumberLiteral: 0x2D [33092,33096]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NumberLiteral: 0x7E [33104,33108]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

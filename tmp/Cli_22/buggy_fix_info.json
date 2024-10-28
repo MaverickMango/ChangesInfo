@@ -1,0 +1,211 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.cli.ApplicationTest::testGroovy,org.apache.commons.cli.PosixParserTest::testStopAtExpectedArg",
+    "test.dir": "src/test",
+    "clz.modified": "org.apache.commons.cli.PosixParser",
+    "src.dir": "src/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Cli",
+  "id": "22",
+  "workingDir": "../bugs/Cli_22_tmp",
+  "bug_name": "Cli_22",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.cli.ApplicationTest",
+      "test_function": "testGroovy",
+      "assertion_line": "169",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c[println \u0027hello\u0027]\u003e but was:\u003c[--]\u003e"
+    },
+    {
+      "test_class": "org.apache.commons.cli.PosixParserTest",
+      "test_function": "testStopAtExpectedArg",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "Confirm -b is set expected:\u003c[foo]\u003e but was:\u003c[--]\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/cli/PosixParser.java",
+        "src/java/org/apache/commons/cli/PosixParser.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.cli.PosixParser:flatten:[Options options, String[] arguments, boolean stopAtNonOption]:String[]",
+            "org.apache.commons.cli.PosixParser:processNonOptionToken:[String value, boolean stopAtNonOption]:void",
+            "org.apache.commons.cli.PosixParser:processOptionToken:[String token, boolean stopAtNonOption]:void",
+            "org.apache.commons.cli.PosixParser:burstToken:[String token, boolean stopAtNonOption]:void"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.cli.PosixParser:flatten:[Options options, String[] arguments, boolean stopAtNonOption]:String[]",
+            "org.apache.commons.cli.PosixParser:processOptionToken:[String token, boolean stopAtNonOption]:void",
+            "org.apache.commons.cli.PosixParser:burstToken:[String token, boolean stopAtNonOption]:void",
+            "org.apache.commons.cli.PosixParser:processNonOptionToken:[String value]:void"
+          ],
+          "num": 4
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "41",
+            "117",
+            "121",
+            "150",
+            "182",
+            "184",
+            "185",
+            "188",
+            "212",
+            "213",
+            "214",
+            "215",
+            "247",
+            "266"
+          ],
+          "num": 14
+        },
+        {
+          "qualified_names": [
+            "40",
+            "116",
+            "146",
+            "147",
+            "148",
+            "149",
+            "152",
+            "184",
+            "212",
+            "243",
+            "262"
+          ],
+          "num": 11
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/cli/PosixParser.java b/src/java/org/apache/commons/cli/PosixParser.java\nindex ca8b6c6..47ad0f7 100644\n--- a/src/java/org/apache/commons/cli/PosixParser.java\n+++ b/src/java/org/apache/commons/cli/PosixParser.java\n@@ -38,7 +38,6 @@\n     private boolean eatTheRest;\n \n     /** holder for the current option */\n-    private Option currentOption;\n \n     /** the command line Options */\n     private Options options;\n@@ -114,11 +113,10 @@\n \n                 if (!options.hasOption(opt))\n                 {\n-                    processNonOptionToken(token, stopAtNonOption);\n+                    processNonOptionToken(token);\n                 }\n                 else\n                 {\n-                    currentOption \u003d options.getOption(opt);\n                     \n                     tokens.add(opt);\n                     if (pos !\u003d -1)\n@@ -145,9 +143,13 @@\n                     burstToken(token, stopAtNonOption);\n                 }\n             }\n+            else if (stopAtNonOption)\n+            {\n+                processNonOptionToken(token);\n+            }\n             else\n             {\n-                processNonOptionToken(token, stopAtNonOption);\n+                tokens.add(token);\n             }\n \n             gobble(iter);\n@@ -179,13 +181,10 @@\n      *\n      * @param value The current token\n      */\n-    private void processNonOptionToken(String value, boolean stopAtNonOption)\n+    private void processNonOptionToken(String value)\n     {\n-        if (stopAtNonOption \u0026\u0026 (currentOption \u003d\u003d null || !currentOption.hasArg()))\n-        {\n             eatTheRest \u003d true;\n             tokens.add(\"--\");\n-        }\n \n         tokens.add(value);\n     }\n@@ -209,10 +208,6 @@\n             eatTheRest \u003d true;\n         }\n \n-        if (options.hasOption(token))\n-        {\n-            currentOption \u003d options.getOption(token);\n-        }\n \n         tokens.add(token);\n     }\n@@ -245,6 +240,7 @@\n      */\n     protected void burstToken(String token, boolean stopAtNonOption)\n     {\n+        Option currentOption;\n         for (int i \u003d 1; i \u003c token.length(); i++)\n         {\n             String ch \u003d String.valueOf(token.charAt(i));\n@@ -263,7 +259,7 @@\n             }\n             else if (stopAtNonOption)\n             {\n-                processNonOptionToken(token.substring(i), true);\n+                processNonOptionToken(token.substring(i));\n                 break;\n             }\n             else\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [8602,8623]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [5479,5653]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: stopAtNonOption [5483,5498]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Block [5603,5653]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [1372,1442]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: stopAtNonOption [4683,4698]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [4778,4817]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: stopAtNonOption [5649,5664]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [6458,6481]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [6501,6570]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [6580,6652]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [6497,6652]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [7352,7455]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "BooleanLiteral: true [9444,9448]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.apache.commons.cli.PosixParser:processNonOptionToken:[String value]:void"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.apache.commons.cli.PosixParser:processNonOptionToken:[String value, boolean stopAtNonOption]:void"
+      ],
+      "num": 1
+    }
+  }
+}

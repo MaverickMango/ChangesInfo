@@ -1,0 +1,1394 @@
+diff -r -u inducing/src/com/google/javascript/jscomp/CodeGenerator.java buggy/src/com/google/javascript/jscomp/CodeGenerator.java
+--- inducing/src/com/google/javascript/jscomp/CodeGenerator.java	2023-06-12 11:40:33.114410774 +0800
++++ buggy/src/com/google/javascript/jscomp/CodeGenerator.java	2023-06-12 11:40:32.826423856 +0800
+@@ -19,7 +19,6 @@
+ import com.google.common.base.Charsets;
+ import com.google.common.base.Preconditions;
+ import com.google.common.collect.Maps;
+-import com.google.javascript.jscomp.NodeUtil.MatchNotFunction;
+ import com.google.javascript.rhino.Node;
+ import com.google.javascript.rhino.Token;
+ import com.google.javascript.rhino.TokenStream;
+@@ -35,6 +34,9 @@
+  *
+  */
+ class CodeGenerator {
++  private static final String LT_ESCAPED = "\\x3c";
++  private static final String GT_ESCAPED = "\\x3e";
++
+   // A memoizer for formatting strings as JS strings.
+   private final Map<String, String> ESCAPED_JS_STRINGS = Maps.newHashMap();
+ 
+@@ -46,9 +48,26 @@
+ 
+   private final CharsetEncoder outputCharsetEncoder;
+ 
++  private final boolean preferSingleQuotes;
++  private final boolean trustedStrings;
++
++  private CodeGenerator(CodeConsumer consumer) {
++    cc = consumer;
++    outputCharsetEncoder = null;
++    preferSingleQuotes = false;
++    trustedStrings = true;
++  }
++
++  static CodeGenerator forCostEstimation(CodeConsumer consumer) {
++    return new CodeGenerator(consumer);
++  }
++
+   CodeGenerator(
+-      CodeConsumer consumer, Charset outputCharset) {
++      CodeConsumer consumer,
++      CompilerOptions options) {
+     cc = consumer;
++
++    Charset outputCharset = options.getOutputCharset();
+     if (outputCharset == null || outputCharset == Charsets.US_ASCII) {
+       // If we want our default (pretending to be UTF-8, but escaping anything
+       // outside of straight ASCII), then don't use the encoder, but
+@@ -58,10 +77,8 @@
+     } else {
+       this.outputCharsetEncoder = outputCharset.newEncoder();
+     }
+-  }
+-
+-  CodeGenerator(CodeConsumer consumer) {
+-    this(consumer, null);
++    this.preferSingleQuotes = options.preferSingleQuotes;
++    this.trustedStrings = options.trustedStrings;
+   }
+ 
+   /**
+@@ -101,8 +118,6 @@
+           "Bad binary operator \"%s\": expected 2 arguments but got %s",
+           opstr, childCount);
+       int p = NodeUtil.precedence(type);
+-      addLeftExpr(first, p, context);
+-      cc.addOp(opstr, true);
+ 
+       // For right-hand-side of operations, only pass context if it's
+       // the IN_FOR_INIT_CLAUSE one.
+@@ -113,12 +128,16 @@
+       // we can simply generate a * b * c.
+       if (last.getType() == type &&
+           NodeUtil.isAssociative(type)) {
++        addExpr(first, p, context);
++        cc.addOp(opstr, true);
+         addExpr(last, p, rhsContext);
+       } else if (NodeUtil.isAssignmentOp(n) && NodeUtil.isAssignmentOp(last)) {
+         // Assignments are the only right-associative binary operators
++        addExpr(first, p, context);
++        cc.addOp(opstr, true);
+         addExpr(last, p, rhsContext);
+       } else {
+-        addExpr(last, p + 1, rhsContext);
++        unrollBinaryOperator(n, type, opstr, context, rhsContext, p, p + 1);
+       }
+       return;
+     }
+@@ -127,7 +146,7 @@
+ 
+     switch (type) {
+       case Token.TRY: {
+-        Preconditions.checkState(first.getNext().getType() == Token.BLOCK &&
++        Preconditions.checkState(first.getNext().isBlock() &&
+                 !first.getNext().hasMoreThanOneChild());
+         Preconditions.checkState(childCount >= 2 && childCount <= 3);
+ 
+@@ -189,14 +208,14 @@
+         break;
+ 
+       case Token.NAME:
+-        if (first == null || first.getType() == Token.EMPTY) {
++        if (first == null || first.isEmpty()) {
+           addIdentifier(n.getString());
+         } else {
+           Preconditions.checkState(childCount == 1);
+           addIdentifier(n.getString());
+           cc.addOp("=", true);
+-          if (first.getType() == Token.COMMA) {
+-            addExpr(first, NodeUtil.precedence(Token.ASSIGN));
++          if (first.isComma()) {
++            addExpr(first, NodeUtil.precedence(Token.ASSIGN), Context.OTHER);
+           } else {
+             // Add expression, consider nearby code at lowest level of
+             // precedence.
+@@ -211,7 +230,7 @@
+         add("]");
+         break;
+ 
+-      case Token.LP:
++      case Token.PARAM_LIST:
+         add("(");
+         addList(first);
+         add(")");
+@@ -219,7 +238,7 @@
+ 
+       case Token.COMMA:
+         Preconditions.checkState(childCount == 2);
+-        addList(first, false, context);
++        unrollBinaryOperator(n, Token.COMMA, ",", context, Context.OTHER, 0, 0);
+         break;
+ 
+       case Token.NUMBER:
+@@ -235,7 +254,7 @@
+         // All of these unary operators are right-associative
+         Preconditions.checkState(childCount == 1);
+         cc.addOp(NodeUtil.opToStrNoFail(type), false);
+-        addExpr(first, NodeUtil.precedence(type));
++        addExpr(first, NodeUtil.precedence(type), Context.OTHER);
+         break;
+       }
+ 
+@@ -245,11 +264,11 @@
+         // It's important to our sanity checker that the code
+         // we print produces the same AST as the code we parse back.
+         // NEG is a weird case because Rhino parses "- -2" as "2".
+-        if (n.getFirstChild().getType() == Token.NUMBER) {
++        if (n.getFirstChild().isNumber()) {
+           cc.addNumber(-n.getFirstChild().getDouble());
+         } else {
+           cc.addOp(NodeUtil.opToStrNoFail(type), false);
+-          addExpr(first, NodeUtil.precedence(type));
++          addExpr(first, NodeUtil.precedence(type), Context.OTHER);
+         }
+ 
+         break;
+@@ -258,17 +277,17 @@
+       case Token.HOOK: {
+         Preconditions.checkState(childCount == 3);
+         int p = NodeUtil.precedence(type);
+-        addLeftExpr(first, p + 1, context);
++        addExpr(first, p + 1, context);
+         cc.addOp("?", true);
+-        addExpr(first.getNext(), 1);
++        addExpr(first.getNext(), 1, Context.OTHER);
+         cc.addOp(":", true);
+-        addExpr(last, 1);
++        addExpr(last, 1, Context.OTHER);
+         break;
+       }
+ 
+       case Token.REGEXP:
+-        if (first.getType() != Token.STRING ||
+-            last.getType() != Token.STRING) {
++        if (!first.isString() ||
++            !last.isString()) {
+           throw new Error("Expected children to be strings");
+         }
+ 
+@@ -283,17 +302,6 @@
+         }
+         break;
+ 
+-      case Token.GET_REF:
+-        add(first);
+-        break;
+-
+-      case Token.REF_SPECIAL:
+-        Preconditions.checkState(childCount == 1);
+-        add(first);
+-        add(".");
+-        add((String) n.getProp(Node.NAME_PROP));
+-        break;
+-
+       case Token.FUNCTION:
+         if (n.getClass() != Node.class) {
+           throw new Error("Unexpected Node subclass.");
+@@ -316,15 +324,15 @@
+         }
+         break;
+ 
+-      case Token.GET:
+-      case Token.SET:
+-        Preconditions.checkState(n.getParent().getType() == Token.OBJECTLIT);
++      case Token.GETTER_DEF:
++      case Token.SETTER_DEF:
++        Preconditions.checkState(n.getParent().isObjectLit());
+         Preconditions.checkState(childCount == 1);
+-        Preconditions.checkState(first.getType() == Token.FUNCTION);
++        Preconditions.checkState(first.isFunction());
+ 
+         // Get methods are unnamed
+         Preconditions.checkState(first.getFirstChild().getString().isEmpty());
+-        if (type == Token.GET) {
++        if (type == Token.GETTER_DEF) {
+           // Get methods have no parameters.
+           Preconditions.checkState(!first.getChildAtIndex(1).hasChildren());
+           add("get ");
+@@ -344,7 +352,7 @@
+         if (!n.isQuotedString() &&
+             TokenStream.isJSIdentifier(name) &&
+             // do not encode literally any non-literal characters that were
+-            // unicode escaped.
++            // Unicode escaped.
+             NodeUtil.isLatin(name)) {
+           add(name);
+         } else {
+@@ -353,7 +361,7 @@
+           if (!Double.isNaN(d)) {
+             cc.addNumber(d);
+           } else {
+-            addJsString(n.getString());
++            addJsString(n);
+           }
+         }
+ 
+@@ -376,21 +384,21 @@
+             (type == Token.BLOCK &&
+                 !preserveBlock &&
+                 n.getParent() != null &&
+-                n.getParent().getType() == Token.SCRIPT);
++                n.getParent().isScript());
+         for (Node c = first; c != null; c = c.getNext()) {
+           add(c, Context.STATEMENT);
+ 
+           // VAR doesn't include ';' since it gets used in expressions
+-          if (c.getType() == Token.VAR) {
++          if (c.isVar()) {
+             cc.endStatement();
+           }
+ 
+-          if (c.getType() == Token.FUNCTION) {
++          if (c.isFunction()) {
+             cc.maybeLineBreak();
+           }
+ 
+           // Prefer to break lines in between top-level statements
+-          // because top level statements are more homogeneous.
++          // because top-level statements are more homogeneous.
+           if (preferLineBreaks) {
+             cc.notePreferredLineBreak();
+           }
+@@ -404,7 +412,7 @@
+       case Token.FOR:
+         if (childCount == 4) {
+           add("for(");
+-          if (first.getType() == Token.VAR) {
++          if (first.isVar()) {
+             add(first, Context.IN_FOR_INIT_CLAUSE);
+           } else {
+             addExpr(first, 0, Context.IN_FOR_INIT_CLAUSE);
+@@ -456,13 +464,13 @@
+             childCount == 2,
+             "Bad GETPROP: expected 2 children, but got %s", childCount);
+         Preconditions.checkState(
+-            last.getType() == Token.STRING,
++            last.isString(),
+             "Bad GETPROP: RHS should be STRING");
+-        boolean needsParens = (first.getType() == Token.NUMBER);
++        boolean needsParens = (first.isNumber());
+         if (needsParens) {
+           add("(");
+         }
+-        addLeftExpr(first, NodeUtil.precedence(type), context);
++        addExpr(first, NodeUtil.precedence(type), context);
+         if (needsParens) {
+           add(")");
+         }
+@@ -475,7 +483,7 @@
+         Preconditions.checkState(
+             childCount == 2,
+             "Bad GETELEM: expected 2 children but got %s", childCount);
+-        addLeftExpr(first, NodeUtil.precedence(type), context);
++        addExpr(first, NodeUtil.precedence(type), context);
+         add("[");
+         add(first.getNext());
+         add("]");
+@@ -498,7 +506,7 @@
+         // A non-zero post-prop value indicates a post inc/dec, default of zero
+         // is a pre-inc/dec.
+         if (postProp != 0) {
+-          addLeftExpr(first, NodeUtil.precedence(type), context);
++          addExpr(first, NodeUtil.precedence(type), context);
+           cc.addOp(o, false);
+         } else {
+           cc.addOp(o, false);
+@@ -520,10 +528,10 @@
+         if (isIndirectEval(first)
+             || n.getBooleanProp(Node.FREE_CALL) && NodeUtil.isGet(first)) {
+           add("(0,");
+-          addExpr(first, NodeUtil.precedence(Token.COMMA));
++          addExpr(first, NodeUtil.precedence(Token.COMMA), Context.OTHER);
+           add(")");
+         } else {
+-          addLeftExpr(first, NodeUtil.precedence(type), context);
++          addExpr(first, NodeUtil.precedence(type), context);
+         }
+         add("(");
+         addList(first.getNext());
+@@ -559,18 +567,30 @@
+         break;
+ 
+       case Token.NULL:
++        Preconditions.checkState(childCount == 0);
++        cc.addConstant("null");
++        break;
++
+       case Token.THIS:
++        Preconditions.checkState(childCount == 0);
++        add("this");
++        break;
++
+       case Token.FALSE:
++        Preconditions.checkState(childCount == 0);
++        cc.addConstant("false");
++        break;
++
+       case Token.TRUE:
+         Preconditions.checkState(childCount == 0);
+-        add(Node.tokenToName(type));
++        cc.addConstant("true");
+         break;
+ 
+       case Token.CONTINUE:
+         Preconditions.checkState(childCount <= 1);
+         add("continue");
+         if (childCount == 1) {
+-          if (first.getType() != Token.LABEL_NAME) {
++          if (!first.isLabelName()) {
+             throw new Error("Unexpected token type. Should be LABEL_NAME.");
+           }
+           add(" ");
+@@ -589,7 +609,7 @@
+         Preconditions.checkState(childCount <= 1);
+         add("break");
+         if (childCount == 1) {
+-          if (first.getType() != Token.LABEL_NAME) {
++          if (!first.isLabelName()) {
+             throw new Error("Unexpected token type. Should be LABEL_NAME.");
+           }
+           add(" ");
+@@ -598,9 +618,6 @@
+         cc.endStatement();
+         break;
+ 
+-      case Token.EXPR_VOID:
+-        throw new Error("Unexpected EXPR_VOID. Should be EXPR_RESULT.");
+-
+       case Token.EXPR_RESULT:
+         Preconditions.checkState(childCount == 1);
+         add(first, Context.START_OF_EXPR);
+@@ -614,10 +631,11 @@
+         // If the first child contains a CALL, then claim higher precedence
+         // to force parentheses. Otherwise, when parsed, NEW will bind to the
+         // first viable parentheses (don't traverse into functions).
+-        if (NodeUtil.containsType(first, Token.CALL, new MatchNotFunction())) {
++        if (NodeUtil.containsType(
++            first, Token.CALL, NodeUtil.MATCH_NOT_FUNCTION)) {
+           precedence = NodeUtil.precedence(first.getType()) + 1;
+         }
+-        addExpr(first, precedence);
++        addExpr(first, precedence, Context.OTHER);
+ 
+         // '()' is optional when no arguments are present
+         Node next = first.getNext();
+@@ -628,14 +646,16 @@
+         }
+         break;
+ 
++      case Token.STRING_KEY:
++        Preconditions.checkState(
++            childCount == 1, "Object lit key must have 1 child");
++        addJsString(n);
++        break;
++
+       case Token.STRING:
+-        if (childCount !=
+-            ((n.getParent() != null &&
+-              n.getParent().getType() == Token.OBJECTLIT) ? 1 : 0)) {
+-          throw new IllegalStateException(
+-              "Unexpected String children: " + n.getParent().toStringTree());
+-        }
+-        addJsString(n.getString());
++        Preconditions.checkState(
++            childCount == 0, "A string may not have children");
++        addJsString(n);
+         break;
+ 
+       case Token.DELPROP:
+@@ -655,10 +675,10 @@
+             cc.listSeparator();
+           }
+ 
+-          if (c.getType() == Token.GET || c.getType() == Token.SET) {
++          if (c.isGetterDef() || c.isSetterDef()) {
+             add(c);
+           } else {
+-            Preconditions.checkState(c.getType() == Token.STRING);
++            Preconditions.checkState(c.isStringKey());
+             String key = c.getString();
+             // Object literal property names don't have to be quoted if they
+             // are not JavaScript keywords
+@@ -666,7 +686,7 @@
+                 !TokenStream.isKeyword(key) &&
+                 TokenStream.isJSIdentifier(key) &&
+                 // do not encode literally any non-literal characters that
+-                // were unicode escaped.
++                // were Unicode escaped.
+                 NodeUtil.isLatin(key)) {
+               add(key);
+             } else {
+@@ -675,11 +695,11 @@
+               if (!Double.isNaN(d)) {
+                 cc.addNumber(d);
+               } else {
+-                addExpr(c, 1);
++                addExpr(c, 1, Context.OTHER);
+               }
+             }
+             add(":");
+-            addExpr(c.getFirstChild(), 1);
++            addExpr(c.getFirstChild(), 1, Context.OTHER);
+           }
+         }
+         add("}");
+@@ -705,7 +725,7 @@
+         addCaseBody(last);
+         break;
+ 
+-      case Token.DEFAULT:
++      case Token.DEFAULT_CASE:
+         Preconditions.checkState(childCount == 1);
+         add("default");
+         addCaseBody(first);
+@@ -713,7 +733,7 @@
+ 
+       case Token.LABEL:
+         Preconditions.checkState(childCount == 2);
+-        if (first.getType() != Token.LABEL_NAME) {
++        if (!first.isLabelName()) {
+           throw new Error("Unexpected token type. Should be LABEL_NAME.");
+         }
+         add(first);
+@@ -722,9 +742,10 @@
+             last, getContextForNonEmptyExpression(context), true);
+         break;
+ 
+-      // This node is auto generated in anonymous functions and should just get
+-      // ignored for our purposes.
+-      case Token.SETNAME:
++      case Token.CAST:
++        add("(");
++        add(first);
++        add(")");
+         break;
+ 
+       default:
+@@ -734,6 +755,31 @@
+     cc.endSourceMapping(n);
+   }
+ 
++  /**
++   * We could use addList recursively here, but sometimes we produce
++   * very deeply nested operators and run out of stack space, so we
++   * just unroll the recursion when possible.
++   *
++   * We assume nodes are left-recursive.
++   */
++  private void unrollBinaryOperator(
++      Node n, int op, String opStr, Context context,
++      Context rhsContext, int leftPrecedence, int rightPrecedence) {
++    Node firstNonOperator = n.getFirstChild();
++    while (firstNonOperator.getType() == op) {
++      firstNonOperator = firstNonOperator.getFirstChild();
++    }
++
++    addExpr(firstNonOperator, leftPrecedence, context);
++
++    Node current = firstNonOperator;
++    do {
++      current = current.getParent();
++      cc.addOp(opStr, true);
++      addExpr(current.getFirstChild().getNext(), rightPrecedence, rhsContext);
++    } while (current != n);
++  }
++
+   static boolean isSimpleNumber(String s) {
+     int len = s.length();
+     for (int index = 0; index < len; index++) {
+@@ -763,7 +809,7 @@
+    * @return Whether the name is an indirect eval.
+    */
+   private boolean isIndirectEval(Node n) {
+-    return n.getType() == Token.NAME && "eval".equals(n.getString()) &&
++    return n.isName() && "eval".equals(n.getString()) &&
+         !n.getBooleanProp(Node.DIRECT_EVAL);
+   }
+ 
+@@ -778,13 +824,13 @@
+       Node n, Context context, boolean allowNonBlockChild) {
+     Node nodeToProcess = n;
+ 
+-    if (!allowNonBlockChild && n.getType() != Token.BLOCK) {
++    if (!allowNonBlockChild && !n.isBlock()) {
+       throw new Error("Missing BLOCK child.");
+     }
+ 
+     // Strip unneeded blocks, that is blocks with <2 children unless
+     // the CodePrinter specifically wants to keep them.
+-    if (n.getType() == Token.BLOCK) {
++    if (n.isBlock()) {
+       int count = getNonEmptyChildCount(n, 2);
+       if (count == 0) {
+         if (cc.shouldPreserveExtraBlocks()) {
+@@ -819,14 +865,14 @@
+       }
+     }
+ 
+-    if (nodeToProcess.getType() == Token.EMPTY) {
++    if (nodeToProcess.isEmpty()) {
+       cc.endStatement(true);
+     } else {
+       add(nodeToProcess, context);
+ 
+       // VAR doesn't include ';' since it gets used in expressions - so any
+       // VAR in a statement context needs a call to endStatement() here.
+-      if (nodeToProcess.getType() == Token.VAR) {
++      if (nodeToProcess.isVar()) {
+         cc.endStatement();
+       }
+     }
+@@ -837,9 +883,9 @@
+    * labels).
+    */
+   private boolean isOneExactlyFunctionOrDo(Node n) {
+-    if (n.getType() == Token.LABEL) {
++    if (n.isLabel()) {
+       Node labeledStatement = n.getLastChild();
+-      if (labeledStatement.getType() != Token.BLOCK) {
++      if (!labeledStatement.isBlock()) {
+         return isOneExactlyFunctionOrDo(labeledStatement);
+       } else {
+         // For labels with block children, we need to ensure that a
+@@ -854,33 +900,15 @@
+         }
+       }
+     } else {
+-      return (n.getType() == Token.FUNCTION || n.getType() == Token.DO);
++      return (n.isFunction() || n.isDo());
+     }
+   }
+ 
+-  /**
+-   * Adds a node at the left-hand side of an expression. Unlike
+-   * {@link #addExpr(Node,int)}, this preserves information about the context.
+-   *
+-   * The left side of an expression is special because in the JavaScript
+-   * grammar, certain tokens may be parsed differently when they are at
+-   * the beginning of a statement. For example, "{}" is parsed as a block,
+-   * but "{'x': 'y'}" is parsed as an object literal.
+-   */
+-  void addLeftExpr(Node n, int minPrecedence, Context context) {
+-    addExpr(n, minPrecedence, context);
+-  }
+-
+-  void addExpr(Node n, int minPrecedence) {
+-    addExpr(n, minPrecedence, Context.OTHER);
+-  }
+-
+   private void addExpr(Node n, int minPrecedence, Context context) {
+     if ((NodeUtil.precedence(n.getType()) < minPrecedence) ||
+-        ((context == Context.IN_FOR_INIT_CLAUSE) &&
+-        (n.getType() == Token.IN))){
++        ((context == Context.IN_FOR_INIT_CLAUSE) && n.isIn())){
+       add("(");
+-      add(n, clearContextForNoInOperator(context));
++      add(n, Context.OTHER);
+       add(")");
+     } else {
+       add(n, context);
+@@ -900,10 +928,10 @@
+     for (Node n = firstInList; n != null; n = n.getNext()) {
+       boolean isFirst = n == firstInList;
+       if (isFirst) {
+-        addLeftExpr(n, isArrayOrFunctionArgument ? 1 : 0, lhsContext);
++        addExpr(n, isArrayOrFunctionArgument ? 1 : 0, lhsContext);
+       } else {
+         cc.listSeparator();
+-        addExpr(n, isArrayOrFunctionArgument ? 1 : 0);
++        addExpr(n, isArrayOrFunctionArgument ? 1 : 0, Context.OTHER);
+       }
+     }
+   }
+@@ -922,8 +950,8 @@
+       if (n != firstInList) {
+         cc.listSeparator();
+       }
+-      addExpr(n, 1);
+-      lastWasEmpty = n.getType() == Token.EMPTY;
++      addExpr(n, 1, Context.OTHER);
++      lastWasEmpty = n.isEmpty();
+     }
+ 
+     if (lastWasEmpty) {
+@@ -943,17 +971,23 @@
+     }
+   }
+ 
+-  /** Outputs a js string, using the optimal (single/double) quote character */
+-  void addJsString(String s) {
+-    String cached = ESCAPED_JS_STRINGS.get(s);
+-    if (cached == null) {
+-      cached = jsString(s);
+-      ESCAPED_JS_STRINGS.put(s, cached);
++  /** Outputs a JS string, using the optimal (single/double) quote character */
++  private void addJsString(Node n) {
++    String s = n.getString();
++    boolean useSlashV = n.getBooleanProp(Node.SLASH_V);
++    if (useSlashV) {
++      add(jsString(n.getString(), useSlashV));
++    } else {
++      String cached = ESCAPED_JS_STRINGS.get(s);
++      if (cached == null) {
++        cached = jsString(n.getString(), useSlashV);
++        ESCAPED_JS_STRINGS.put(s, cached);
++      }
++      add(cached);
+     }
+-    add(cached);
+   }
+ 
+-  String jsString(String s) {
++  private String jsString(String s, boolean useSlashV) {
+     int singleq = 0, doubleq = 0;
+ 
+     // could count the quotes and pick the optimal quote character
+@@ -966,8 +1000,9 @@
+ 
+     String doublequote, singlequote;
+     char quote;
+-    if (singleq < doubleq) {
+-      // more double quotes so escape the single quotes
++    if (preferSingleQuotes ?
++        (singleq <= doubleq) : (singleq < doubleq)) {
++      // more double quotes so enclose in single quotes.
+       quote = '\'';
+       doublequote = "\"";
+       singlequote = "\\\'";
+@@ -979,57 +1014,110 @@
+     }
+ 
+     return strEscape(s, quote, doublequote, singlequote, "\\\\",
+-        outputCharsetEncoder);
++        outputCharsetEncoder, useSlashV, false);
+   }
+ 
+   /** Escapes regular expression */
+-  static String regexpEscape(String s, CharsetEncoder outputCharsetEncoder) {
+-    return strEscape(s, '/', "\"", "'", "\\", outputCharsetEncoder);
++  String regexpEscape(String s, CharsetEncoder outputCharsetEncoder) {
++    return strEscape(s, '/', "\"", "'", "\\", outputCharsetEncoder, false, true);
+   }
+ 
+   /**
+    * Escapes the given string to a double quoted (") JavaScript/JSON string
+    */
+-  static String escapeToDoubleQuotedJsString(String s) {
+-    return strEscape(s, '"',  "\\\"", "\'", "\\\\", null);
++  String escapeToDoubleQuotedJsString(String s) {
++    return strEscape(s, '"',  "\\\"", "\'", "\\\\", null, false, false);
+   }
+ 
+   /* If the user doesn't want to specify an output charset encoder, assume
+      they want Latin/ASCII characters only.
+    */
+-  static String regexpEscape(String s) {
++  String regexpEscape(String s) {
+     return regexpEscape(s, null);
+   }
+ 
+-  /** Helper to escape javascript string as well as regular expression */
+-  static String strEscape(String s, char quote,
+-                          String doublequoteEscape,
+-                          String singlequoteEscape,
+-                          String backslashEscape,
+-                          CharsetEncoder outputCharsetEncoder) {
++  /** Helper to escape JavaScript string as well as regular expression */
++  private String strEscape(
++      String s,
++      char quote,
++      String doublequoteEscape,
++      String singlequoteEscape,
++      String backslashEscape,
++      CharsetEncoder outputCharsetEncoder,
++      boolean useSlashV,
++      boolean isRegexp) {
+     StringBuilder sb = new StringBuilder(s.length() + 2);
+     sb.append(quote);
+     for (int i = 0; i < s.length(); i++) {
+       char c = s.charAt(i);
+       switch (c) {
+         case '\0': sb.append("\\x00"); break;
++        case '\u000B':
++          if (useSlashV) {
++            sb.append("\\v");
++          } else {
++            sb.append("\\x0B");
++          }
++          break;
++        // From the SingleEscapeCharacter grammar production.
++        case '\b': sb.append("\\b"); break;
++        case '\f': sb.append("\\f"); break;
+         case '\n': sb.append("\\n"); break;
+         case '\r': sb.append("\\r"); break;
+         case '\t': sb.append("\\t"); break;
+         case '\\': sb.append(backslashEscape); break;
+         case '\"': sb.append(doublequoteEscape); break;
+         case '\'': sb.append(singlequoteEscape); break;
+-        case '>':                       // Break --> into --\> or ]]> into ]]\>
++
++        // From LineTerminators (ES5 Section 7.3, Table 3)
++        case '\u2028': sb.append("\\u2028"); break;
++        case '\u2029': sb.append("\\u2029"); break;
++
++        case '=':
++          // '=' is a syntactically signficant regexp character.
++          if (trustedStrings || isRegexp) {
++            sb.append(c);
++          } else {
++            sb.append("\\x3d");
++          }
++          break;
++
++        case '&':
++          if (trustedStrings || isRegexp) {
++            sb.append(c);
++          } else {
++            sb.append("\\x26");
++          }
++          break;
++
++        case '>':
++          if (!trustedStrings && !isRegexp) {
++            sb.append(GT_ESCAPED);
++            break;
++          }
++
++          // Break --> into --\> or ]]> into ]]\>
++          //
++          // This is just to prevent developers from shooting themselves in the
++          // foot, and does not provide the level of security that you get
++          // with trustedString == false.
+           if (i >= 2 &&
+               ((s.charAt(i - 1) == '-' && s.charAt(i - 2) == '-') ||
+                (s.charAt(i - 1) == ']' && s.charAt(i - 2) == ']'))) {
+-            sb.append("\\>");
++            sb.append(GT_ESCAPED);
+           } else {
+             sb.append(c);
+           }
+           break;
+         case '<':
++          if (!trustedStrings && !isRegexp) {
++            sb.append(LT_ESCAPED);
++            break;
++          }
++
+           // Break </script into <\/script
++          // As above, this is just to prevent developers from doing this
++          // accidentally.
+           final String END_SCRIPT = "/script";
+ 
+           // Break <!-- into <\!--
+@@ -1037,10 +1125,10 @@
+ 
+           if (s.regionMatches(true, i + 1, END_SCRIPT, 0,
+                               END_SCRIPT.length())) {
+-            sb.append("<\\");
++            sb.append(LT_ESCAPED);
+           } else if (s.regionMatches(false, i + 1, START_COMMENT, 0,
+                                      START_COMMENT.length())) {
+-            sb.append("<\\");
++            sb.append(LT_ESCAPED);
+           } else {
+             sb.append(c);
+           }
+@@ -1056,15 +1144,15 @@
+               appendHexJavaScriptRepresentation(sb, c);
+             }
+           } else {
+-            // No charsetEncoder provided - pass straight latin characters
++            // No charsetEncoder provided - pass straight Latin characters
+             // through, and escape the rest.  Doing the explicit character
+             // check is measurably faster than using the CharsetEncoder.
+             if (c > 0x1f && c < 0x7f) {
+               sb.append(c);
+             } else {
+-              // Other characters can be misinterpreted by some js parsers,
++              // Other characters can be misinterpreted by some JS parsers,
+               // or perhaps mangled by proxies along the way,
+-              // so we play it safe and unicode escape them.
++              // so we play it safe and Unicode escape them.
+               appendHexJavaScriptRepresentation(sb, c);
+             }
+           }
+@@ -1080,7 +1168,7 @@
+       return s;
+     }
+ 
+-    // Now going through the string to escape non-latin characters if needed.
++    // Now going through the string to escape non-Latin characters if needed.
+     StringBuilder sb = new StringBuilder();
+     for (int i = 0; i < s.length(); i++) {
+       char c = s.charAt(i);
+@@ -1104,9 +1192,9 @@
+     int i = 0;
+     Node c = n.getFirstChild();
+     for (; c != null && i < maxCount; c = c.getNext()) {
+-      if (c.getType() == Token.BLOCK) {
++      if (c.isBlock()) {
+         i += getNonEmptyChildCount(c, maxCount-i);
+-      } else if (c.getType() != Token.EMPTY) {
++      } else if (!c.isEmpty()) {
+         i++;
+       }
+     }
+@@ -1116,12 +1204,12 @@
+   /** Gets the first non-empty child of the given node. */
+   private static Node getFirstNonEmptyChild(Node n) {
+     for (Node c = n.getFirstChild(); c != null; c = c.getNext()) {
+-      if (c.getType() == Token.BLOCK) {
++      if (c.isBlock()) {
+         Node result = getFirstNonEmptyChild(c);
+         if (result != null) {
+           return result;
+         }
+-      } else if (c.getType() != Token.EMPTY) {
++      } else if (!c.isEmpty()) {
+         return c;
+       }
+     }
+@@ -1158,17 +1246,6 @@
+   }
+ 
+   /**
+-   * If we're in a IN_FOR_INIT_CLAUSE, (and thus can't permit in operators
+-   * in the expression), but have added parentheses, the expressions within
+-   * the parens have no limits.  Clear the context flag  Be safe and don't
+-   * clear the flag if it held another value.
+-   */
+-  private  Context clearContextForNoInOperator(Context context) {
+-    return (context == Context.IN_FOR_INIT_CLAUSE
+-        ? Context.OTHER : context);
+-  }
+-
+-  /**
+    * @see #appendHexJavaScriptRepresentation(int, Appendable)
+    */
+   private static void appendHexJavaScriptRepresentation(
+@@ -1182,19 +1259,19 @@
+   }
+ 
+   /**
+-   * Returns a javascript representation of the character in a hex escaped
++   * Returns a JavaScript representation of the character in a hex escaped
+    * format.
+    *
+-   * @param codePoint The codepoint to append.
++   * @param codePoint The code point to append.
+    * @param out The buffer to which the hex representation should be appended.
+    */
+   private static void appendHexJavaScriptRepresentation(
+       int codePoint, Appendable out)
+       throws IOException {
+     if (Character.isSupplementaryCodePoint(codePoint)) {
+-      // Handle supplementary unicode values which are not representable in
+-      // javascript.  We deal with these by escaping them as two 4B sequences
+-      // so that they will round-trip properly when sent from java to javascript
++      // Handle supplementary Unicode values which are not representable in
++      // JavaScript.  We deal with these by escaping them as two 4B sequences
++      // so that they will round-trip properly when sent from Java to JavaScript
+       // and back.
+       char[] surrogates = Character.toChars(codePoint);
+       appendHexJavaScriptRepresentation(surrogates[0], out);
+diff -r -u inducing/test/com/google/javascript/jscomp/CodePrinterTest.java buggy/test/com/google/javascript/jscomp/CodePrinterTest.java
+--- inducing/test/com/google/javascript/jscomp/CodePrinterTest.java	2023-06-12 11:40:33.114410774 +0800
++++ buggy/test/com/google/javascript/jscomp/CodePrinterTest.java	2023-06-12 11:40:32.826423856 +0800
+@@ -16,6 +16,8 @@
+ 
+ package com.google.javascript.jscomp;
+ 
++import com.google.common.base.Joiner;
++import com.google.common.collect.Lists;
+ import com.google.javascript.jscomp.CompilerOptions.LanguageMode;
+ import com.google.javascript.rhino.InputId;
+ import com.google.javascript.rhino.Node;
+@@ -23,14 +25,27 @@
+ 
+ import junit.framework.TestCase;
+ 
++import java.util.List;
++
+ public class CodePrinterTest extends TestCase {
+-  static Node parse(String js) {
++  private boolean trustedStrings = true;
++  private Compiler lastCompiler = null;
++
++  @Override public void setUp() {
++    trustedStrings = true;
++    lastCompiler = null;
++  }
++
++  Node parse(String js) {
+     return parse(js, false);
+   }
+ 
+-  static Node parse(String js, boolean checkTypes) {
++  Node parse(String js, boolean checkTypes) {
+     Compiler compiler = new Compiler();
++    lastCompiler = compiler;
+     CompilerOptions options = new CompilerOptions();
++    options.setTrustedStrings(trustedStrings);
++
+     // Allow getters and setters.
+     options.setLanguageIn(LanguageMode.ECMASCRIPT5);
+     compiler.initOptions(options);
+@@ -41,7 +56,6 @@
+       CompilerPass typeResolver = passConfig.resolveTypes.create(compiler);
+       Node externs = new Node(Token.SCRIPT);
+       externs.setInputId(new InputId("externs"));
+-      externs.setIsSyntheticBlock(true);
+       Node externAndJsRoot = new Node(Token.BLOCK, externs, n);
+       externAndJsRoot.setIsSyntheticBlock(true);
+       typeResolver.process(externs, n);
+@@ -69,38 +83,72 @@
+   }
+ 
+   String parsePrint(String js, boolean prettyprint, int lineThreshold) {
+-    return new CodePrinter.Builder(parse(js)).setPrettyPrint(prettyprint)
+-        .setLineLengthThreshold(lineThreshold).build();
++    CompilerOptions options = new CompilerOptions();
++    options.setTrustedStrings(trustedStrings);
++    options.setPrettyPrint(prettyprint);
++    options.setLineLengthThreshold(lineThreshold);
++    return new CodePrinter.Builder(parse(js)).setCompilerOptions(options)
++        .build();
+   }
+ 
+   String parsePrint(String js, boolean prettyprint, boolean lineBreak,
+       int lineThreshold) {
+-    return new CodePrinter.Builder(parse(js)).setPrettyPrint(prettyprint)
+-        .setLineLengthThreshold(lineThreshold).setLineBreak(lineBreak).build();
++    CompilerOptions options = new CompilerOptions();
++    options.setTrustedStrings(trustedStrings);
++    options.setPrettyPrint(prettyprint);
++    options.setLineLengthThreshold(lineThreshold);
++    options.setLineBreak(lineBreak);
++    return new CodePrinter.Builder(parse(js)).setCompilerOptions(options)
++        .build();
++  }
++
++  String parsePrint(String js, boolean prettyprint, boolean lineBreak,
++      boolean preferLineBreakAtEof, int lineThreshold) {
++    CompilerOptions options = new CompilerOptions();
++    options.setTrustedStrings(trustedStrings);
++    options.setPrettyPrint(prettyprint);
++    options.setLineLengthThreshold(lineThreshold);
++    options.setPreferLineBreakAtEndOfFile(preferLineBreakAtEof);
++    options.setLineBreak(lineBreak);
++    return new CodePrinter.Builder(parse(js)).setCompilerOptions(options)
++        .build();
+   }
+ 
+   String parsePrint(String js, boolean prettyprint, boolean lineBreak,
+       int lineThreshold, boolean outputTypes) {
+-    return new CodePrinter.Builder(parse(js, true)).setPrettyPrint(prettyprint)
++    Node node = parse(js, true);
++    CompilerOptions options = new CompilerOptions();
++    options.setTrustedStrings(trustedStrings);
++    options.setPrettyPrint(prettyprint);
++    options.setLineLengthThreshold(lineThreshold);
++    options.setLineBreak(lineBreak);
++    return new CodePrinter.Builder(node).setCompilerOptions(options)
+         .setOutputTypes(outputTypes)
+-        .setLineLengthThreshold(lineThreshold).setLineBreak(lineBreak)
++        .setTypeRegistry(lastCompiler.getTypeRegistry())
+         .build();
+   }
+ 
+   String parsePrint(String js, boolean prettyprint, boolean lineBreak,
+                     int lineThreshold, boolean outputTypes,
+                     boolean tagAsStrict) {
+-    return new CodePrinter.Builder(parse(js, true)).setPrettyPrint(prettyprint)
++    Node node = parse(js, true);
++    CompilerOptions options = new CompilerOptions();
++    options.setTrustedStrings(trustedStrings);
++    options.setPrettyPrint(prettyprint);
++    options.setLineLengthThreshold(lineThreshold);
++    options.setLineBreak(lineBreak);
++    return new CodePrinter.Builder(node).setCompilerOptions(options)
+         .setOutputTypes(outputTypes)
+-        .setLineLengthThreshold(lineThreshold).setLineBreak(lineBreak)
++        .setTypeRegistry(lastCompiler.getTypeRegistry())
+         .setTagAsStrict(tagAsStrict)
+         .build();
+   }
+ 
+ 
+   String printNode(Node n) {
+-    return new CodePrinter.Builder(n).setLineLengthThreshold(
+-        CodePrinter.DEFAULT_LINE_LENGTH_THRESHOLD).build();
++    CompilerOptions options = new CompilerOptions();
++    options.setLineLengthThreshold(CodePrinter.DEFAULT_LINE_LENGTH_THRESHOLD);
++    return new CodePrinter.Builder(n).setCompilerOptions(options).build();
+   }
+ 
+   void assertPrintNode(String expectedJs, Node ast) {
+@@ -151,21 +199,6 @@
+     assertPrint("var a,b,c; a *= (b -= c);",
+         "var a,b,c;a*=b-=c");
+ 
+-    // Break scripts
+-    assertPrint("'<script>'", "\"<script>\"");
+-    assertPrint("'</script>'", "\"<\\/script>\"");
+-    assertPrint("\"</script> </SCRIPT>\"", "\"<\\/script> <\\/SCRIPT>\"");
+-
+-    assertPrint("'-->'", "\"--\\>\"");
+-    assertPrint("']]>'", "\"]]\\>\"");
+-    assertPrint("' --></script>'", "\" --\\><\\/script>\"");
+-
+-    assertPrint("/--> <\\/script>/g", "/--\\> <\\/script>/g");
+-
+-    // Break HTML start comments. Certain versions of Webkit
+-    // begin an HTML comment when they see this.
+-    assertPrint("'<!-- I am a string -->'", "\"<\\!-- I am a string --\\>\"");
+-
+     // Precedence
+     assertPrint("a ? delete b[0] : 3", "a?delete b[0]:3");
+     assertPrint("(delete a[0])/10", "delete a[0]/10");
+@@ -237,7 +270,7 @@
+     // Function declaration.
+     assertPrint("function f(){}", "function f(){}");
+ 
+-    // Make sure we don't treat non-latin character escapes as raw strings.
++    // Make sure we don't treat non-Latin character escapes as raw strings.
+     assertPrint("({ 'a': 4, '\\u0100': 4 })", "({\"a\":4,\"\\u0100\":4})");
+     assertPrint("({ a: 4, '\\u0100': 4 })", "({a:4,\"\\u0100\":4})");
+ 
+@@ -326,6 +359,49 @@
+     assertPrint("if(x){;;function y(){};;}", "if(x){function y(){}}");
+   }
+ 
++  public void testBreakTrustedStrings() {
++    // Break scripts
++    assertPrint("'<script>'", "\"<script>\"");
++    assertPrint("'</script>'", "\"\\x3c/script>\"");
++    assertPrint("\"</script> </SCRIPT>\"", "\"\\x3c/script> \\x3c/SCRIPT>\"");
++
++    assertPrint("'-->'", "\"--\\x3e\"");
++    assertPrint("']]>'", "\"]]\\x3e\"");
++    assertPrint("' --></script>'", "\" --\\x3e\\x3c/script>\"");
++
++    assertPrint("/--> <\\/script>/g", "/--\\x3e <\\/script>/g");
++
++    // Break HTML start comments. Certain versions of WebKit
++    // begin an HTML comment when they see this.
++    assertPrint("'<!-- I am a string -->'",
++        "\"\\x3c!-- I am a string --\\x3e\"");
++
++    assertPrint("'<=&>'", "\"<=&>\"");
++  }
++
++  public void testBreakUntrustedStrings() {
++    trustedStrings = false;
++
++    // Break scripts
++    assertPrint("'<script>'", "\"\\x3cscript\\x3e\"");
++    assertPrint("'</script>'", "\"\\x3c/script\\x3e\"");
++    assertPrint("\"</script> </SCRIPT>\"", "\"\\x3c/script\\x3e \\x3c/SCRIPT\\x3e\"");
++
++    assertPrint("'-->'", "\"--\\x3e\"");
++    assertPrint("']]>'", "\"]]\\x3e\"");
++    assertPrint("' --></script>'", "\" --\\x3e\\x3c/script\\x3e\"");
++
++    assertPrint("/--> <\\/script>/g", "/--\\x3e <\\/script>/g");
++
++    // Break HTML start comments. Certain versions of WebKit
++    // begin an HTML comment when they see this.
++    assertPrint("'<!-- I am a string -->'",
++        "\"\\x3c!-- I am a string --\\x3e\"");
++
++    assertPrint("'<=&>'", "\"\\x3c\\x3d\\x26\\x3e\"");
++    assertPrint("/(?=x)/", "/(?=x)/");
++  }
++
+   public void testPrintArray() {
+     assertPrint("[void 0, void 0]", "[void 0,void 0]");
+     assertPrint("[undefined, undefined]", "[undefined,undefined]");
+@@ -385,11 +461,15 @@
+   }
+ 
+   private void assertPrint(String js, String expected) {
+-    parse(expected); // validate the expected string is valid js
++    parse(expected); // validate the expected string is valid JS
+     assertEquals(expected,
+         parsePrint(js, false, CodePrinter.DEFAULT_LINE_LENGTH_THRESHOLD));
+   }
+ 
++  private void assertPrintSame(String js) {
++    assertPrint(js, js);
++  }
++
+   // Make sure that the code generator doesn't associate an
+   // else clause with the wrong if clause.
+   public void testAmbiguousElseClauses() {
+@@ -463,6 +543,44 @@
+             CodePrinter.DEFAULT_LINE_LENGTH_THRESHOLD));
+   }
+ 
++  public void testPreferLineBreakAtEndOfFile() {
++    // short final line, no previous break, do nothing
++    assertLineBreakAtEndOfFile(
++        "\"1234567890\";",
++        "\"1234567890\"",
++        "\"1234567890\"");
++
++    // short final line, shift previous break to end
++    assertLineBreakAtEndOfFile(
++        "\"123456789012345678901234567890\";\"1234567890\"",
++        "\"123456789012345678901234567890\";\n\"1234567890\"",
++        "\"123456789012345678901234567890\"; \"1234567890\";\n");
++    assertLineBreakAtEndOfFile(
++        "var12345678901234567890123456 instanceof Object;",
++        "var12345678901234567890123456 instanceof\nObject",
++        "var12345678901234567890123456 instanceof Object;\n");
++
++    // long final line, no previous break, add a break at end
++    assertLineBreakAtEndOfFile(
++        "\"1234567890\";\"12345678901234567890\";",
++        "\"1234567890\";\"12345678901234567890\"",
++        "\"1234567890\";\"12345678901234567890\";\n");
++
++    // long final line, previous break, add a break at end
++    assertLineBreakAtEndOfFile(
++        "\"123456789012345678901234567890\";\"12345678901234567890\";",
++        "\"123456789012345678901234567890\";\n\"12345678901234567890\"",
++        "\"123456789012345678901234567890\";\n\"12345678901234567890\";\n");
++  }
++
++  private void assertLineBreakAtEndOfFile(String js,
++      String expectedWithoutBreakAtEnd, String expectedWithBreakAtEnd) {
++    assertEquals(expectedWithoutBreakAtEnd,
++        parsePrint(js, false, false, false, 30));
++    assertEquals(expectedWithBreakAtEnd,
++        parsePrint(js, false, false, true, 30));
++  }
++
+   public void testPrettyPrinter() {
+     // Ensure that the pretty printer inserts line breaks at appropriate
+     // places.
+@@ -668,7 +786,7 @@
+         + "function f(a){};\n",
+         "goog.java.Long;\n"
+         + "/**\n"
+-        + " * @param {(Array|null)} a\n"
++        + " * @param {(Array.<number>|null)} a\n"
+         + " * @return {undefined}\n"
+         + " */\n"
+         + "function f(a) {\n}\n");
+@@ -815,17 +933,27 @@
+         "};\n");
+   }
+ 
+-  public void testU2UFunctionTypeAnnotation() {
++  public void testU2UFunctionTypeAnnotation1() {
+     assertTypeAnnotations(
+         "/** @type {!Function} */ var x = function() {}",
+-        "/**\n * @constructor\n */\nvar x = function() {\n};\n");
++        "/** @type {!Function} */\n" +
++        "var x = function() {\n};\n");
++  }
++
++  public void testU2UFunctionTypeAnnotation2() {
++    // TODO(johnlenz): we currently report the type of the RHS which is not
++    // correct, we should export the type of the LHS.
++    assertTypeAnnotations(
++        "/** @type {Function} */ var x = function() {}",
++        "/** @type {!Function} */\n" +
++        "var x = function() {\n};\n");
+   }
+ 
+   public void testEmitUnknownParamTypesAsAllType() {
+     assertTypeAnnotations(
+         "var a = function(x) {}",
+         "/**\n" +
+-        " * @param {*} x\n" +
++        " * @param {?} x\n" +
+         " * @return {undefined}\n" +
+         " */\n" +
+         "var a = function(x) {\n};\n");
+@@ -871,6 +999,22 @@
+     );
+   }
+ 
++  public void testEnumAnnotation1() {
++    assertTypeAnnotations(
++        "/** @enum {string} */ var Enum = {FOO: 'x', BAR: 'y'};",
++        "/** @enum {string} */\nvar Enum = {FOO:\"x\", BAR:\"y\"};\n");
++  }
++
++  public void testEnumAnnotation2() {
++    assertTypeAnnotations(
++        "var goog = goog || {};" +
++        "/** @enum {string} */ goog.Enum = {FOO: 'x', BAR: 'y'};" +
++        "/** @const */ goog.Enum2 = goog.x ? {} : goog.Enum;",
++        "var goog = goog || {};\n" +
++        "/** @enum {string} */\ngoog.Enum = {FOO:\"x\", BAR:\"y\"};\n" +
++        "/** @type {(Object|{})} */\ngoog.Enum2 = goog.x ? {} : goog.Enum;\n");
++  }
++
+   private void assertPrettyPrint(String js, String expected) {
+     assertEquals(expected,
+         parsePrint(js, true, false,
+@@ -890,8 +1034,7 @@
+ 
+     assertEquals(
+         "x- -4",
+-        new CodePrinter.Builder(n).setLineLengthThreshold(
+-            CodePrinter.DEFAULT_LINE_LENGTH_THRESHOLD).build());
++        printNode(n));
+   }
+ 
+   public void testFunctionWithCall() {
+@@ -1075,7 +1218,9 @@
+     assertPrintNumber("1E5", 100000.0);
+     assertPrintNumber("100000.1", 100000.1);
+ 
+-    assertPrintNumber("1.0E-6", 0.000001);
++    assertPrintNumber("1E-6", 0.000001);
++    assertPrintNumber("-0x38d7ea4c68001", -0x38d7ea4c68001L);
++    assertPrintNumber("0x38d7ea4c68001", 0x38d7ea4c68001L);
+   }
+ 
+   // Make sure to test as both a String and a Node, because
+@@ -1111,7 +1256,7 @@
+     Node n = parse("foo(a);");
+     assertPrintNode("foo(a)", n);
+     Node call =  n.getFirstChild().getFirstChild();
+-    assertTrue(call.getType() == Token.CALL);
++    assertTrue(call.isCall());
+     call.putBooleanProp(Node.FREE_CALL, true);
+     assertPrintNode("foo(a)", n);
+   }
+@@ -1120,7 +1265,7 @@
+     Node n = parse("x.foo(a);");
+     assertPrintNode("x.foo(a)", n);
+     Node call =  n.getFirstChild().getFirstChild();
+-    assertTrue(call.getType() == Token.CALL);
++    assertTrue(call.isCall());
+     call.putBooleanProp(Node.FREE_CALL, true);
+     assertPrintNode("(0,x.foo)(a)", n);
+   }
+@@ -1140,6 +1285,7 @@
+     assertPrint("var x=({x:1})", "var x={x:1}");
+     assertPrint("var x={'x':1}", "var x={\"x\":1}");
+     assertPrint("var x={1:1}", "var x={1:1}");
++    assertPrint("({},42)+0", "({},42)+0");
+   }
+ 
+   public void testObjectLit2() {
+@@ -1268,4 +1414,102 @@
+     assertPrint("var x = {0.2: 1};", "var x={\"0.2\":1}");
+     assertPrint("var x = {'0.2': 1};", "var x={\"0.2\":1}");
+   }
++
++  public void testIssue582() {
++    assertPrint("var x = -0.0;", "var x=-0");
++  }
++
++  public void testIssue601() {
++    assertPrint("'\\v' == 'v'", "\"\\v\"==\"v\"");
++    assertPrint("'\\u000B' == '\\v'", "\"\\x0B\"==\"\\v\"");
++    assertPrint("'\\x0B' == '\\v'", "\"\\x0B\"==\"\\v\"");
++  }
++
++  public void testIssue620() {
++    assertPrint("alert(/ / / / /);", "alert(/ // / /)");
++    assertPrint("alert(/ // / /);", "alert(/ // / /)");
++  }
++
++  public void testIssue5746867() {
++    assertPrint("var a = { '$\\\\' : 5 };", "var a={\"$\\\\\":5}");
++  }
++
++  public void testCommaSpacing() {
++    assertPrint("var a = (b = 5, c = 5);",
++        "var a=(b=5,c=5)");
++    assertPrettyPrint("var a = (b = 5, c = 5);",
++        "var a = (b = 5, c = 5);\n");
++  }
++
++  public void testManyCommas() {
++    int numCommas = 10000;
++    List<String> numbers = Lists.newArrayList("0", "1");
++    Node current = new Node(Token.COMMA, Node.newNumber(0), Node.newNumber(1));
++    for (int i = 2; i < numCommas; i++) {
++      current = new Node(Token.COMMA, current);
++
++      // 1000 is printed as 1E3, and screws up our test.
++      int num = i % 1000;
++      numbers.add(String.valueOf(num));
++      current.addChildToBack(Node.newNumber(num));
++    }
++
++    String expected = Joiner.on(",").join(numbers);
++    String actual = printNode(current).replace("\n", "");
++    assertEquals(expected, actual);
++  }
++
++  public void testManyAdds() {
++    int numAdds = 10000;
++    List<String> numbers = Lists.newArrayList("0", "1");
++    Node current = new Node(Token.ADD, Node.newNumber(0), Node.newNumber(1));
++    for (int i = 2; i < numAdds; i++) {
++      current = new Node(Token.ADD, current);
++
++      // 1000 is printed as 1E3, and screws up our test.
++      int num = i % 1000;
++      numbers.add(String.valueOf(num));
++      current.addChildToBack(Node.newNumber(num));
++    }
++
++    String expected = Joiner.on("+").join(numbers);
++    String actual = printNode(current).replace("\n", "");
++    assertEquals(expected, actual);
++  }
++
++  public void testMinusNegativeZero() {
++    // Negative zero is weird, because we have to be able to distinguish
++    // it from positive zero (there are some subtle differences in behavior).
++    assertPrint("x- -0", "x- -0");
++  }
++
++  public void testStringEscapeSequences() {
++    // From the SingleEscapeCharacter grammar production.
++    assertPrintSame("var x=\"\\b\"");
++    assertPrintSame("var x=\"\\f\"");
++    assertPrintSame("var x=\"\\n\"");
++    assertPrintSame("var x=\"\\r\"");
++    assertPrintSame("var x=\"\\t\"");
++    assertPrintSame("var x=\"\\v\"");
++    assertPrint("var x=\"\\\"\"", "var x='\"'");
++    assertPrint("var x=\"\\\'\"", "var x=\"'\"");
++
++    // From the LineTerminator grammar
++    assertPrint("var x=\"\\u000A\"", "var x=\"\\n\"");
++    assertPrint("var x=\"\\u000D\"", "var x=\"\\r\"");
++    assertPrintSame("var x=\"\\u2028\"");
++    assertPrintSame("var x=\"\\u2029\"");
++
++    // Now with regular expressions.
++    assertPrintSame("var x=/\\b/");
++    assertPrintSame("var x=/\\f/");
++    assertPrintSame("var x=/\\n/");
++    assertPrintSame("var x=/\\r/");
++    assertPrintSame("var x=/\\t/");
++    assertPrintSame("var x=/\\v/");
++    assertPrintSame("var x=/\\u000A/");
++    assertPrintSame("var x=/\\u000D/");
++    assertPrintSame("var x=/\\u2028/");
++    assertPrintSame("var x=/\\u2029/");
++  }
+ }

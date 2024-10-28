@@ -1,0 +1,138 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math.complex.ComplexTest::testAtanI,org.apache.commons.math.complex.ComplexTest::testDivideZero",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math.complex.Complex",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "46",
+  "workingDir": "../bugs/Math_46_tmp",
+  "bug_name": "Math_46",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math.complex.ComplexTest",
+      "test_function": "testAtanI",
+      "assertion_line": "577",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    },
+    {
+      "test_class": "org.apache.commons.math.complex.ComplexTest",
+      "test_function": "testDivideZero",
+      "assertion_line": "233",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c(Infinity, Infinity)\u003e but was:\u003c(NaN, NaN)\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/complex/Complex.java",
+        "src/main/java/org/apache/commons/math/complex/Complex.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.complex.Complex:divide:[double divisor]:Complex",
+            "org.apache.commons.math.complex.Complex:divide:[Complex divisor]:Complex"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.complex.Complex:divide:[Complex divisor]:Complex",
+            "org.apache.commons.math.complex.Complex:divide:[double divisor]:Complex"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "260",
+            "297"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "260",
+            "297"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/complex/Complex.java b/src/main/java/org/apache/commons/math/complex/Complex.java\nindex dd0b00a..d55c25a 100644\n--- a/src/main/java/org/apache/commons/math/complex/Complex.java\n+++ b/src/main/java/org/apache/commons/math/complex/Complex.java\n@@ -257,7 +257,7 @@\n \n         if (divisor.isZero) {\n             // return isZero ? NaN : INF; // See MATH-657\n-            return NaN;\n+            return isZero ? NaN : INF;\n         }\n \n         if (divisor.isInfinite() \u0026\u0026 !isInfinite()) {\n@@ -294,7 +294,7 @@\n         }\n         if (divisor \u003d\u003d 0d) {\n             // return isZero ? NaN : INF; // See MATH-657\n-            return NaN;\n+            return isZero ? NaN : INF;\n         }\n         if (Double.isInfinite(divisor)) {\n             return !isInfinite() ? ZERO : NaN;\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ConditionalExpression [9645,9663]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ConditionalExpression [10872,10890]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: isZero [9645,9651]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: INF [9660,9663]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: isZero [10872,10878]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: INF [10887,10890]"
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

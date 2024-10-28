@@ -1,0 +1,155 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.jsontype.WrapperObjectWithObjectIdTest::testSimple",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.jsontype.impl.AsWrapperTypeDeserializer",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "35",
+  "workingDir": "../bugs/JacksonDatabind_35_tmp",
+  "bug_name": "JacksonDatabind_35",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.jsontype.WrapperObjectWithObjectIdTest",
+      "test_function": "testSimple",
+      "assertion_line": "83",
+      "exception": "com.fasterxml.jackson.databind.JsonMappingException",
+      "message": "Unexpected token (FIELD_NAME), expected START_OBJECT: need JSON Object to contain As.WRAPPER_OBJECT type information for class com.fasterxml.jackson.databind.jsontype.WrapperObjectWithObjectIdTest$Computer"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/jsontype/impl/AsWrapperTypeDeserializer.java",
+        "src/main/java/com/fasterxml/jackson/databind/jsontype/impl/AsWrapperTypeDeserializer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.jsontype.impl.AsWrapperTypeDeserializer:_deserialize:[JsonParser p, DeserializationContext ctxt]:Object"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.jsontype.impl.AsWrapperTypeDeserializer:_deserialize:[JsonParser p, DeserializationContext ctxt]:Object"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "89",
+            "90",
+            "96",
+            "97",
+            "98",
+            "99"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "89",
+            "90",
+            "91",
+            "92"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/AsWrapperTypeDeserializer.java b/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/AsWrapperTypeDeserializer.java\nindex 659762b..0b954f6 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/AsWrapperTypeDeserializer.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/AsWrapperTypeDeserializer.java\n@@ -86,17 +86,15 @@\n             }\n         }\n         // first, sanity checks\n-        JsonToken t \u003d p.getCurrentToken();\n-        if (t \u003d\u003d JsonToken.START_OBJECT) {\n+        if (p.getCurrentToken() !\u003d JsonToken.START_OBJECT) {\n+            throw ctxt.wrongTokenException(p, JsonToken.START_OBJECT,\n+                    \"need JSON Object to contain As.WRAPPER_OBJECT type information for class \"+baseTypeName());\n+        }\n             // should always get field name, but just in case...\n             if (p.nextToken() !\u003d JsonToken.FIELD_NAME) {\n                 throw ctxt.wrongTokenException(p, JsonToken.FIELD_NAME,\n                         \"need JSON String that contains type id (for subtype of \"+baseTypeName()+\")\");\n             }\n-        } else if (t !\u003d JsonToken.FIELD_NAME) {\n-            throw ctxt.wrongTokenException(p, JsonToken.START_OBJECT,\n-                    \"need JSON Object to contain As.WRAPPER_OBJECT type information for class \"+baseTypeName());\n-        }\n         final String typeId \u003d p.getText();\n         JsonDeserializer\u003cObject\u003e deser \u003d _findDeserializer(ctxt, typeId);\n         p.nextToken();\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: t [3571,3572]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [3163,3172]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: t [3173,3174]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [3173,3196]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [3163,3197]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [3210,3237]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [3239,3561]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [3206,3792]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

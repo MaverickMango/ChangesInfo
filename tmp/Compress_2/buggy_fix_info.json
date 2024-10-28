@@ -1,0 +1,312 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.compress.archivers.ArTestCase::testArDelete",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.compress.archivers.ar.ArArchiveInputStream",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Compress",
+  "id": "2",
+  "workingDir": "../bugs/Compress_2_tmp",
+  "bug_name": "Compress_2",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.compress.archivers.ArTestCase",
+      "test_function": "testArDelete",
+      "assertion_line": "151",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c1\u003e but was:\u003c0\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/compress/archivers/ar/ArArchiveInputStream.java",
+        "src/main/java/org/apache/commons/compress/archivers/ar/ArArchiveInputStream.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.ar.ArArchiveInputStream:getNextArEntry:[]:ArArchiveEntry",
+            "org.apache.commons.compress.archivers.ar.ArArchiveInputStream:read:[]:int",
+            "org.apache.commons.compress.archivers.ar.ArArchiveInputStream:read:[byte[] b, final int off, final int len]:int",
+            "org.apache.commons.compress.archivers.ar.ArArchiveInputStream:close:[]:void"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.ar.ArArchiveInputStream:matches:[byte[] signature, int length]:boolean",
+            "org.apache.commons.compress.archivers.ar.ArArchiveInputStream:getNextArEntry:[]:ArArchiveEntry",
+            "org.apache.commons.compress.archivers.ar.ArArchiveInputStream:read:[]:int"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "42",
+            "47",
+            "62",
+            "63",
+            "64",
+            "65",
+            "66",
+            "69",
+            "70",
+            "71",
+            "72",
+            "73",
+            "89",
+            "90",
+            "92",
+            "93",
+            "94",
+            "128",
+            "129",
+            "132",
+            "145",
+            "149",
+            "150",
+            "151",
+            "160",
+            "161",
+            "162",
+            "163",
+            "164",
+            "165",
+            "166",
+            "167"
+          ],
+          "num": 32
+        },
+        {
+          "qualified_names": [
+            "41",
+            "63",
+            "83",
+            "84",
+            "85",
+            "114",
+            "132",
+            "133",
+            "134",
+            "176"
+          ],
+          "num": 10
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/compress/archivers/ar/ArArchiveInputStream.java b/src/main/java/org/apache/commons/compress/archivers/ar/ArArchiveInputStream.java\nindex 76e2866..acfe327 100644\n--- a/src/main/java/org/apache/commons/compress/archivers/ar/ArArchiveInputStream.java\n+++ b/src/main/java/org/apache/commons/compress/archivers/ar/ArArchiveInputStream.java\n@@ -39,12 +39,10 @@\n      * If getNextEnxtry has been called, the entry metadata is stored in\n      * currentEntry.\n      */\n-    private ArArchiveEntry currentEntry \u003d null;\n     /*\n      * The offset where the current entry started. -1 if no entry has been\n      * called\n      */\n-    private long entryOffset \u003d -1;\n \n     public ArArchiveInputStream( final InputStream pInput ) {\n         input \u003d pInput;\n@@ -59,18 +57,8 @@\n      *             if the entry could not be read\n      */\n     public ArArchiveEntry getNextArEntry() throws IOException {\n-        if (currentEntry !\u003d null) {\n-            final long entryEnd \u003d entryOffset + currentEntry.getLength();\n-            while (offset \u003c entryEnd) {\n-                int x \u003d read();\n-                if (x \u003d\u003d -1) {\n                     // hit EOF before previous entry was complete\n                     // TODO: throw an exception instead?\n-                    return null;\n-                }\n-            }\n-            currentEntry \u003d null;\n-        }\n \n         if (offset \u003d\u003d 0) {\n             final byte[] expected \u003d ArArchiveEntry.HEADER.getBytes();\n@@ -86,17 +74,15 @@\n             }\n         }\n \n-        if (offset % 2 !\u003d 0) {\n-            if (read() \u003c 0) {\n                 // hit eof\n-                return null;\n-            }\n-        }\n \n         if (input.available() \u003d\u003d 0) {\n             return null;\n         }\n \n+        if (offset % 2 !\u003d 0) {\n+            read();\n+        }\n         final byte[] name \u003d new byte[16];\n         final byte[] lastmodified \u003d new byte[12];\n         final byte[] userid \u003d new byte[6];\n@@ -125,11 +111,9 @@\n             }\n         }\n \n-        entryOffset \u003d offset;\n-        currentEntry \u003d new ArArchiveEntry(new String(name).trim(),\n+        return new ArArchiveEntry(new String(name).trim(),\n                                           Long.parseLong(new String(length)\n                                                          .trim()));\n-        return currentEntry;\n     }\n \n \n@@ -142,13 +126,12 @@\n             closed \u003d true;\n             input.close();\n         }\n-        currentEntry \u003d null;\n     }\n \n     public int read() throws IOException {\n-        byte[] single \u003d new byte[1];\n-        int num \u003d read(single, 0, 1);\n-        return num \u003d\u003d -1 ? -1 : single[0] \u0026 0xff;\n+        final int ret \u003d input.read();\n+        offset +\u003d (ret \u003e 0 ? 1 : 0);\n+        return ret;\n     }\n \n     public int read(byte[] b) throws IOException {\n@@ -157,14 +140,6 @@\n \n     public int read(byte[] b, final int off, final int len) throws IOException {\n         int toRead \u003d len;\n-        if (currentEntry !\u003d null) {\n-            final long entryEnd \u003d entryOffset + currentEntry.getLength();\n-            if (len \u003e 0 \u0026\u0026 entryEnd \u003e offset) {\n-                toRead \u003d (int) Math.min(len, entryEnd - offset);\n-            } else {\n-                return -1;\n-            }\n-        }\n         final int ret \u003d this.input.read(b, off, toRead);\n         offset +\u003d (ret \u003e 0 ? ret : 0);\n         return ret;\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ReturnStatement [3689,3883]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [4182,4211]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [4220,4248]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [4257,4268]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ExpressionStatement [2698,2705]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [1402,1445]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [1554,1584]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [1963,1983]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [1999,2060]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [2080,2097]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PrimitiveType: int [2117,2120]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: x [2121,2122]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [2121,2131]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [2117,2132]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [2149,2337]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [2099,2351]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "WhileStatement [2073,2351]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [2364,2384]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [1985,2394]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [1959,2394]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [3000,3087]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [4146,4167]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: currentEntry [4176,4188]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ASSIGNMENT_OPERATOR: \u003d [4189,4190]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Assignment [4176,4377]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ExpressionStatement [4176,4378]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [4387,4407]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [4656,4676]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [4735,4763]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [4772,4801]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [4810,4851]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [5069,5355]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.apache.commons.compress.archivers.ar.ArArchiveInputStream:matches:[byte[] signature, int length]:boolean"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.apache.commons.compress.archivers.ar.ArArchiveInputStream:read:[byte[] b, final int off, final int len]:int",
+        "org.apache.commons.compress.archivers.ar.ArArchiveInputStream:close:[]:void"
+      ],
+      "num": 2
+    }
+  }
+}

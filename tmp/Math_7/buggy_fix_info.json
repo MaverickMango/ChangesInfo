@@ -1,0 +1,142 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math3.ode.nonstiff.DormandPrince853IntegratorTest::testEventsScheduling",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math3.ode.AbstractIntegrator",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "7",
+  "workingDir": "../bugs/Math_7_tmp",
+  "bug_name": "Math_7",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math3.ode.nonstiff.DormandPrince853IntegratorTest",
+      "test_function": "testEventsScheduling",
+      "assertion_line": "389",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math3/ode/AbstractIntegrator.java",
+        "src/main/java/org/apache/commons/math3/ode/AbstractIntegrator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.ode.AbstractIntegrator:acceptStep:[final AbstractStepInterpolator interpolator, final double[] y, final double[] yDot, final double tEnd]:double"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.ode.AbstractIntegrator:acceptStep:[final AbstractStepInterpolator interpolator, final double[] y, final double[] yDot, final double tEnd]:double"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "346",
+            "347",
+            "348",
+            "349",
+            "362",
+            "363",
+            "364",
+            "365"
+          ],
+          "num": 8
+        },
+        {
+          "qualified_names": [
+            "346",
+            "347",
+            "357",
+            "358",
+            "359",
+            "363",
+            "370",
+            "371",
+            "372"
+          ],
+          "num": 9
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math3/ode/AbstractIntegrator.java b/src/main/java/org/apache/commons/math3/ode/AbstractIntegrator.java\nindex 6e0237f..f24f87c 100644\n--- a/src/main/java/org/apache/commons/math3/ode/AbstractIntegrator.java\n+++ b/src/main/java/org/apache/commons/math3/ode/AbstractIntegrator.java\n@@ -343,10 +343,8 @@\n                 final double[] eventY \u003d interpolator.getInterpolatedState().clone();\n \n                 // advance all event states to current time\n-                for (final EventState state : eventsStates) {\n-                    state.stepAccepted(eventT, eventY);\n-                    isLastStep \u003d isLastStep || state.stop();\n-                }\n+                currentEvent.stepAccepted(eventT, eventY);\n+                isLastStep \u003d currentEvent.stop();\n \n                 // handle the first part of the step, up to the event\n                 for (final StepHandler handler : stepHandlers) {\n@@ -356,19 +354,22 @@\n                 if (isLastStep) {\n                     // the event asked to stop integration\n                     System.arraycopy(eventY, 0, y, 0, y.length);\n+                    for (final EventState remaining : occuringEvents) {\n+                        remaining.stepAccepted(eventT, eventY);\n+                    }\n                     return eventT;\n                 }\n \n-                boolean needReset \u003d false;\n-                for (final EventState state : eventsStates) {\n-                    needReset \u003d  needReset || state.reset(eventT, eventY);\n-                }\n+                boolean needReset \u003d currentEvent.reset(eventT, eventY);\n                 if (needReset) {\n                     // some event handler has triggered changes that\n                     // invalidate the derivatives, we need to recompute them\n                     System.arraycopy(eventY, 0, y, 0, y.length);\n                     computeDerivatives(eventT, y, yDot);\n                     resetOccurred \u003d true;\n+                    for (final EventState remaining : occuringEvents) {\n+                        remaining.stepAccepted(eventT, eventY);\n+                    }\n                     return eventT;\n                 }\n \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [13658,13700]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [13717,13750]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [14358,14413]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "EnhancedForStatement [14150,14287]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "EnhancedForStatement [14777,14914]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "EnhancedForStatement [13658,13838]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [14288,14314]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "EnhancedForStatement [14331,14469]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,121 @@
+Only in data/changesInfo//Closure_99/properties/modified_classes/inducing/: src
+diff -u -r data/changesInfo//Closure_99/properties/modified_classes/inducing/test/com/google/javascript/jscomp/CheckGlobalThisTest.java data/changesInfo//Closure_99/cleaned/inducing/test/com/google/javascript/jscomp/CheckGlobalThisTest.java
+--- data/changesInfo//Closure_99/properties/modified_classes/inducing/test/com/google/javascript/jscomp/CheckGlobalThisTest.java	2023-12-27 22:42:44.716916864 -0800
++++ data/changesInfo//Closure_99/cleaned/inducing/test/com/google/javascript/jscomp/CheckGlobalThisTest.java	2023-06-14 23:38:30.668439495 -0700
+@@ -35,7 +35,7 @@
+   private void testFailure(String js) {
+     test(js, null, CheckGlobalThis.GLOBAL_THIS);
+   }
+-
++  
+   public void testGlobalThis1() throws Exception {
+     testSame("var a = this;");
+   }
+@@ -51,19 +51,15 @@
+   public void testGlobalThis4() {
+     testFailure("this['foo'] = 5;");
+   }
+-
++  
+   public void testGlobalThis5() {
+     testFailure("(a = this).foo = 4;");
+   }
+-
++  
+   public void testGlobalThis6() {
+     testSame("a = this;");
+   }
+ 
+-  public void testGlobalThis7() {
+-    testFailure("var a = this.foo;");
+-  }
+-
+   public void testStaticFunction1() {
+     testSame("function a() { return this; }");
+   }
+@@ -85,15 +81,11 @@
+   }
+ 
+   public void testStaticFunction6() {
+-    testSame("function a() { return function() { this = 8; } }");
++    testFailure("function a() { return function() { this = 8; } }");
+   }
+ 
+   public void testStaticFunction7() {
+-    testSame("var a = function() { return function() { this = 8; } }");
+-  }
+-
+-  public void testStaticFunction8() {
+-    testFailure("var a = function() { return this.foo; };");
++    testFailure("var a = function() { return function() { this = 8; } }");
+   }
+ 
+   public void testConstructor1() {
+@@ -108,6 +100,11 @@
+     testSame("/** @constructor */a.A = function() { this.m2 = 5; }");
+   }
+ 
++  public void testInterface1() {
++    testSame(
++            "/** @interface */function A() { /** @type {string} */ this.m2; }");
++  }
++
+   public void testThisJSDoc1() throws Exception {
+     testSame("/** @this whatever */function h() { this.foo = 56; }");
+   }
+@@ -140,16 +137,25 @@
+     testSame("a.b.c.D.prototype.m1 = function() { this.m2 = 5; }");
+   }
+ 
++  public void testMethod4() {
++    testSame("a.prototype['x' + 'y'] =  function() { this.foo = 3; };");
++  }
++
++  public void testPropertyOfMethod() {
++    testFailure("a.protoype.b = {}; " +
++            "a.prototype.b.c = function() { this.foo = 3; };");
++  }
++
+   public void testStaticMethod1() {
+     testFailure("a.b = function() { this.m2 = 5; }");
+   }
+ 
+   public void testStaticMethod2() {
+-    testSame("a.b = function() { return function() { this.m2 = 5; } }");
++    testFailure("a.b = function() { return function() { this.m2 = 5; } }");
+   }
+ 
+   public void testStaticMethod3() {
+-    testSame("a.b.c = function() { return function() { this.m2 = 5; } }");
++    testFailure("a.b.c = function() { return function() { this.m2 = 5; } }");
+   }
+ 
+   public void testMethodInStaticFunction() {
+@@ -166,22 +172,4 @@
+         "    function myself() {" +
+         "      function andI() { this.m2 = 5; } } } }");
+   }
+-
+-  public void testInnerFunction1() {
+-    testFailure("function f() { function g() { return this.x; } }");
+-  }
+-
+-  public void testInnerFunction2() {
+-    testFailure("function f() { var g = function() { return this.x; } }");
+-  }
+-
+-  public void testInnerFunction3() {
+-    testFailure(
+-        "function f() { var x = {}; x.y = function() { return this.x; } }");
+-  }
+-
+-  public void testInnerFunction4() {
+-    testSame(
+-        "function f() { var x = {}; x.y(function() { return this.x; }); }");
+-  }
+ }
+Only in data/changesInfo//Closure_99/properties/modified_classes/inducing/test/com/google/javascript/jscomp: CompilerTestCase.java
+Only in data/changesInfo//Closure_99/properties/modified_classes/inducing/test/com/google/javascript/jscomp: ConcreteTypeTest.java
+Only in data/changesInfo//Closure_99/properties/modified_classes/inducing/test/com/google/javascript/jscomp: DataFlowAnalysisTest.java
+Only in data/changesInfo//Closure_99/properties/modified_classes/inducing/test/com/google/javascript/jscomp: InferJSDocInfoTest.java
+Only in data/changesInfo//Closure_99/properties/modified_classes/inducing/test/com/google/javascript: rhino

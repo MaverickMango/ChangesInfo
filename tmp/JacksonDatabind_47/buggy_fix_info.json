@@ -1,0 +1,132 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.ser.TestJsonSerialize::testBrokenAnnotation,com.fasterxml.jackson.databind.ser.TestJsonSerializeAs::testSpecializedAsIntermediate",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.AnnotationIntrospector",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "47",
+  "workingDir": "../bugs/JacksonDatabind_47_tmp",
+  "bug_name": "JacksonDatabind_47",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.ser.TestJsonSerialize",
+      "test_function": "testBrokenAnnotation",
+      "assertion_line": "152",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected an exception with one of substrings ([types not related]): got one with message \"Failed to widen type [simple type, class java.lang.Long] with annotation (value java.lang.String), from \u0027getValue\u0027: Class java.lang.String not a super-type of [simple type, class java.lang.Long]\""
+    },
+    {
+      "test_class": "com.fasterxml.jackson.databind.ser.TestJsonSerializeAs",
+      "test_function": "testSpecializedAsIntermediate",
+      "assertion_line": "118",
+      "exception": "com.fasterxml.jackson.databind.JsonMappingException",
+      "message": "Failed to widen type [simple type, class com.fasterxml.jackson.databind.ser.TestJsonSerializeAs$Bean1178Base] with annotation (value com.fasterxml.jackson.databind.ser.TestJsonSerializeAs$Bean1178Abstract), from \u0027value\u0027: Class com.fasterxml.jackson.databind.ser.TestJsonSerializeAs$Bean1178Abstract not a super-type of [simple type, class com.fasterxml.jackson.databind.ser.TestJsonSerializeAs$Bean1178Base]"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/AnnotationIntrospector.java",
+        "src/main/java/com/fasterxml/jackson/databind/AnnotationIntrospector.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.AnnotationIntrospector:refineSerializationType:[final MapperConfig\u003c?\u003e config, final Annotated a, final JavaType baseType]:JavaType"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.AnnotationIntrospector:refineSerializationType:[final MapperConfig\u003c?\u003e config, final Annotated a, final JavaType baseType]:JavaType"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "816",
+            "820",
+            "822",
+            "823",
+            "824",
+            "825",
+            "826",
+            "827",
+            "828"
+          ],
+          "num": 9
+        },
+        {
+          "qualified_names": [
+            "815"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/AnnotationIntrospector.java b/src/main/java/com/fasterxml/jackson/databind/AnnotationIntrospector.java\nindex 3966997..dab3227 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/AnnotationIntrospector.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/AnnotationIntrospector.java\n@@ -813,19 +813,10 @@\n                 //    static typing this way\n                 type \u003d type.withStaticTyping();\n             } else {\n-                Class\u003c?\u003e currRaw \u003d type.getRawClass();\n                 try {\n                     // 11-Oct-2015, tatu: For deser, we call `TypeFactory.constructSpecializedType()`,\n                     //   may be needed here too in future?\n-                    if (serClass.isAssignableFrom(currRaw)) { // common case\n                         type \u003d tf.constructGeneralizedType(type, serClass);\n-                    } else if (currRaw.isAssignableFrom(serClass)) { // specialization, ok as well\n-                        type \u003d tf.constructSpecializedType(type, serClass);\n-                    } else {\n-                        throw new JsonMappingException(null,\n-                                String.format(\"Can not refine serialization type %s into %s; types not related\",\n-                                        type, serClass.getName()));\n-                    }\n                 } catch (IllegalArgumentException iae) {\n                     throw new JsonMappingException(null,\n                             String.format(\"Failed to widen type %s with annotation (value %s), from \u0027%s\u0027: %s\",\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [32630,32668]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [32877,32911]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [32913,33027]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [33033,33473]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [32873,33473]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,178 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.compress.archivers.sevenz.SevenZOutputFileTest::testSevenEmptyFiles,org.apache.commons.compress.archivers.sevenz.SevenZOutputFileTest::testEightFilesSomeNotEmpty,org.apache.commons.compress.archivers.sevenz.SevenZOutputFileTest::testSixEmptyFiles,org.apache.commons.compress.archivers.sevenz.SevenZOutputFileTest::testEightEmptyFiles,org.apache.commons.compress.archivers.sevenz.SevenZOutputFileTest::testNineEmptyFiles,org.apache.commons.compress.archivers.sevenz.SevenZOutputFileTest::testSixFilesSomeNotEmpty,org.apache.commons.compress.archivers.sevenz.SevenZOutputFileTest::testNineFilesSomeNotEmpty,org.apache.commons.compress.archivers.sevenz.SevenZOutputFileTest::testSevenFilesSomeNotEmpty",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.compress.archivers.sevenz.SevenZOutputFile",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Compress",
+  "id": "21",
+  "workingDir": "../bugs/Compress_21_tmp",
+  "bug_name": "Compress_21",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.compress.archivers.sevenz.SevenZOutputFileTest",
+      "test_function": "testSevenEmptyFiles",
+      "assertion_line": "183",
+      "exception": "java.io.IOException",
+      "message": "Unknown property 128"
+    },
+    {
+      "test_class": "org.apache.commons.compress.archivers.sevenz.SevenZOutputFileTest",
+      "test_function": "testEightFilesSomeNotEmpty",
+      "assertion_line": "191",
+      "exception": "java.io.IOException",
+      "message": "Badly terminated header"
+    },
+    {
+      "test_class": "org.apache.commons.compress.archivers.sevenz.SevenZOutputFileTest",
+      "test_function": "testNineEmptyFiles",
+      "assertion_line": "199",
+      "exception": "java.lang.ArrayIndexOutOfBoundsException",
+      "message": "0"
+    },
+    {
+      "test_class": "org.apache.commons.compress.archivers.sevenz.SevenZOutputFileTest",
+      "test_function": "testSixFilesSomeNotEmpty",
+      "assertion_line": "203",
+      "exception": "java.io.IOException",
+      "message": "Badly terminated header"
+    },
+    {
+      "test_class": "org.apache.commons.compress.archivers.sevenz.SevenZOutputFileTest",
+      "test_function": "testSevenFilesSomeNotEmpty",
+      "assertion_line": "187",
+      "exception": "java.io.IOException",
+      "message": "Unknown property 128"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/compress/archivers/sevenz/SevenZOutputFile.java",
+        "src/main/java/org/apache/commons/compress/archivers/sevenz/SevenZOutputFile.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.sevenz.SevenZOutputFile:writeBits:[final DataOutput header, final BitSet bits, final int length]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.sevenz.SevenZOutputFile:writeBits:[final DataOutput header, final BitSet bits, final int length]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "639",
+            "645"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "639",
+            "640",
+            "646"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/compress/archivers/sevenz/SevenZOutputFile.java b/src/main/java/org/apache/commons/compress/archivers/sevenz/SevenZOutputFile.java\nindex 317d778..05912b9 100644\n--- a/src/main/java/org/apache/commons/compress/archivers/sevenz/SevenZOutputFile.java\n+++ b/src/main/java/org/apache/commons/compress/archivers/sevenz/SevenZOutputFile.java\n@@ -636,13 +636,14 @@\n         int shift \u003d 7;\n         for (int i \u003d 0; i \u003c length; i++) {\n             cache |\u003d ((bits.get(i) ? 1 : 0) \u003c\u003c shift);\n-            if (--shift \u003c 0) {\n+            --shift;\n+            if (shift \u003d\u003d 0) {\n                 header.write(cache);\n                 shift \u003d 7;\n                 cache \u003d 0;\n             }\n         }\n-        if (shift !\u003d 7) {\n+        if (length \u003e 0 \u0026\u0026 shift \u003e 0) {\n             header.write(cache);\n         }\n     }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [22731,22739]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [22897,22907]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [22911,22920]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: \u003e [22917,22918]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NumberLiteral: 0 [22919,22920]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PREFIX_EXPRESSION_OPERATOR: -- [22735,22737]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PrefixExpression [22735,22742]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NumberLiteral: 7 [22886,22887]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

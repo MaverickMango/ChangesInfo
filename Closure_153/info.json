@@ -1,0 +1,797 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Closure",
+  "id": "153",
+  "workingDir": "../bugs/Closure_153_buggy",
+  "inducingCommit": "b9bc1534921f1e98da5a373e39ea2d71a4a39175",
+  "originalCommit": "28cb80c7b5768c6381a72c5f500ec85bc4d798d2",
+  "bug_name": "Closure_153",
+  "derive": "defects4j",
+  "original_fixing_commit": "86caf52b53f53d8b83e9c1092f4b15ddeb6ca5bb",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/Normalize.java",
+        "src/com/google/javascript/jscomp/Normalize.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "removeDuplicateDeclarations",
+            "process"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "removeDuplicateDeclarations",
+            "process"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "127",
+            "551",
+            "556"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "127",
+            "551",
+            "556"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/Normalize.java b/src/com/google/javascript/jscomp/Normalize.java\nindex ef59237..d93860d 100644\n--- a/src/com/google/javascript/jscomp/Normalize.java\n+++ b/src/com/google/javascript/jscomp/Normalize.java\n@@ -124,7 +124,7 @@\n     //   }\n     // otherwise \u0027var e \u003d 1\u0027 would be rewritten as \u0027e \u003d 1\u0027.\n     // TODO(johnlenz): Introduce a seperate scope for catch nodes.\n-    removeDuplicateDeclarations(root);\n+    removeDuplicateDeclarations(externs, root);\n     new PropogateConstantAnnotations(compiler, assertOnChange)\n         .process(externs, root);\n \n@@ -548,12 +548,12 @@\n   /**\n    * Remove duplicate VAR declarations.\n    */\n-  private void removeDuplicateDeclarations(Node root) {\n+  private void removeDuplicateDeclarations(Node externs, Node root) {\n     Callback tickler \u003d new ScopeTicklingCallback();\n     ScopeCreator scopeCreator \u003d  new SyntacticScopeCreator(\n         compiler, new DuplicateDeclarationHandler());\n     NodeTraversal t \u003d new NodeTraversal(compiler, tickler, scopeCreator);\n-    t.traverse(root);\n+    t.traverseRoots(externs, root);\n   }\n \n   /**\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [18878,18890]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: externs [4960,4967]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: externs [19165,19172]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/VarCheck.java",
+        "src/com/google/javascript/jscomp/VarCheck.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "process"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "process"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "100"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "100",
+            "101",
+            "102",
+            "103",
+            "104",
+            "105",
+            "106"
+          ],
+          "num": 7
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/VarCheck.java b/src/com/google/javascript/jscomp/VarCheck.java\nindex 1595e43..2c98ec7 100644\n--- a/src/com/google/javascript/jscomp/VarCheck.java\n+++ b/src/com/google/javascript/jscomp/VarCheck.java\n@@ -97,7 +97,13 @@\n \n   @Override\n   public void process(Node externs, Node root) {\n-    NodeTraversal.traverse(compiler, externs, new NameRefInExternsCheck());\n+    // Don\u0027t run externs-checking in sanity check mode. Normalization will\n+    // remove duplicate VAR declarations, which will make\n+    // externs look like they have assigns.\n+    if (!sanityCheck) {\n+      NodeTraversal.traverse(compiler, externs, new NameRefInExternsCheck());\n+    }\n+\n     NodeTraversal.traverseRoots(\n         compiler, Lists.newArrayList(externs, root), this);\n     for (String varName : varsToDeclareInExterns) {\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [3731,3834]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PrefixExpression [3735,3747]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [3749,3834]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.NormalizeTest",
+      "test_function": "testDuplicateVarInExterns",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.NormalizeTest",
+      "test_function": "testMakeLocalNamesUnique",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/Normalize.java",
+        "src/com/google/javascript/jscomp/Normalize.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "reportCodeChange",
+            "visit",
+            "onRedeclaration",
+            "PropogateConstantAnnotations",
+            "process",
+            "visit"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "visit",
+            "process",
+            "parseAndNormalizeSyntheticCode",
+            "reportCodeChange",
+            "onRedeclaration",
+            "visit"
+          ],
+          "num": 6
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "20",
+            "29",
+            "96",
+            "104",
+            "126",
+            "127",
+            "128",
+            "129",
+            "144",
+            "156",
+            "183",
+            "192",
+            "213",
+            "224",
+            "241",
+            "242",
+            "243",
+            "247",
+            "249",
+            "571",
+            "572",
+            "596",
+            "608"
+          ],
+          "num": 23
+        },
+        {
+          "qualified_names": [
+            "21",
+            "31",
+            "96",
+            "104",
+            "126",
+            "141",
+            "153",
+            "180",
+            "189",
+            "190",
+            "211",
+            "222",
+            "239",
+            "240",
+            "241",
+            "242",
+            "246",
+            "248",
+            "567",
+            "568",
+            "575",
+            "578",
+            "579",
+            "580",
+            "581",
+            "582",
+            "583",
+            "584",
+            "585",
+            "586",
+            "587",
+            "588",
+            "589",
+            "590",
+            "612",
+            "624"
+          ],
+          "num": 36
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Closure_153/properties/modified_classes/inducing/src/com/google/javascript/jscomp/Normalize.java data/changesInfo//Closure_153/cleaned/fixing/src/com/google/javascript/jscomp/Normalize.java\n--- data/changesInfo//Closure_153/properties/modified_classes/inducing/src/com/google/javascript/jscomp/Normalize.java\t2023-08-25 14:16:38.739602043 +0800\n+++ data/changesInfo//Closure_153/cleaned/fixing/src/com/google/javascript/jscomp/Normalize.java\t2023-07-27 20:55:37.193851299 +0800\n@@ -18,6 +18,7 @@\n import com.google.common.base.Preconditions;\n import com.google.common.collect.Lists;\n import com.google.common.collect.Maps;\n+import com.google.common.collect.Sets;\n import com.google.javascript.jscomp.MakeDeclaredNamesUnique.BoilerplateRenamer;\n import com.google.javascript.jscomp.NodeTraversal.AbstractPostOrderCallback;\n import com.google.javascript.jscomp.NodeTraversal.Callback;\n@@ -27,6 +28,7 @@\n import com.google.javascript.rhino.Token;\n \n import java.util.Map;\n+import java.util.Set;\n \n /**\n  * The goal with this pass is to simplify the other passes,\n@@ -562,16 +564,30 @@\n   private final class DuplicateDeclarationHandler implements\n       SyntacticScopeCreator.RedeclarationHandler {\n \n+    private Set\u003cVar\u003e hasOkDuplicateDeclaration \u003d Sets.newHashSet();\n+\n     /**\n      * Remove duplicate VAR declarations encountered discovered during\n      * scope creation.\n      */\n     @Override\n     public void onRedeclaration(\n-        Scope s, String name, Node n, Node parent, Node gramps,\n-        Node nodeWithLineNumber) {\n+        Scope s, String name, Node n, CompilerInput input) {\n       Preconditions.checkState(n.getType() \u003d\u003d Token.NAME);\n       Var v \u003d s.getVar(name);\n+      Node parent \u003d n.getParent();\n+\n+      if (v !\u003d null \u0026\u0026 s.isGlobal()) {\n+        // We allow variables to be duplicate declared if one\n+        // declaration appears in source and the other in externs.\n+        // This deals with issues where a browser built-in is declared\n+        // in one browser but not in another.\n+        if (v.isExtern() \u0026\u0026 !input.isExtern()) {\n+          if (hasOkDuplicateDeclaration.add(v)) {\n+            return;\n+          }\n+        }\n+      }\n       // If name is \"arguments\", Var maybe null.\n       if (v !\u003d null \u0026\u0026 v.getParentNode().getType() \u003d\u003d Token.CATCH) {\n         // Redeclaration of a catch expression variable is hard to model\n@@ -593,7 +609,7 @@\n             name);\n         compiler.report(\n             JSError.make(\n-                NodeUtil.getSourceName(nodeWithLineNumber), nodeWithLineNumber,\n+                input.getName(), n,\n                 CATCH_BLOCK_VAR_ERROR, name));\n       } else if (v !\u003d null \u0026\u0026 parent.getType() \u003d\u003d Token.FUNCTION) {\n         if (v.getParentNode().getType() \u003d\u003d Token.VAR) {\n@@ -605,7 +621,7 @@\n       } else if (parent.getType() \u003d\u003d Token.VAR) {\n         Preconditions.checkState(parent.hasOneChild());\n \n-        replaceVarWithAssignment(n, parent, gramps);\n+        replaceVarWithAssignment(n, parent, parent.getParent());\n       }\n     }\n \ndiff -u -r data/changesInfo//Closure_153/properties/modified_classes/inducing/src/com/google/javascript/jscomp/SyntacticScopeCreator.java data/changesInfo//Closure_153/cleaned/fixing/src/com/google/javascript/jscomp/SyntacticScopeCreator.java\n--- data/changesInfo//Closure_153/properties/modified_classes/inducing/src/com/google/javascript/jscomp/SyntacticScopeCreator.java\t2023-07-27 20:56:36.520019361 +0800\n+++ data/changesInfo//Closure_153/cleaned/fixing/src/com/google/javascript/jscomp/SyntacticScopeCreator.java\t2023-07-27 21:03:57.793069838 +0800\n@@ -93,7 +93,7 @@\n       // been declared in the outer scope.\n       String fnName \u003d fnNameNode.getString();\n       if (!fnName.isEmpty() \u0026\u0026 NodeUtil.isFunctionExpression(n)) {\n-        declareVar(fnName, fnNameNode, n, null, null, n);\n+        declareVar(fnNameNode);\n       }\n \n       // Args: Declare function variables\n@@ -101,7 +101,7 @@\n       for (Node a \u003d args.getFirstChild(); a !\u003d null;\n            a \u003d a.getNext()) {\n         Preconditions.checkState(a.getType() \u003d\u003d Token.NAME);\n-        declareVar(a.getString(), a, args, n, null, n);\n+        declareVar(a);\n       }\n \n       // Body\n@@ -123,10 +123,7 @@\n         for (Node child \u003d n.getFirstChild();\n              child !\u003d null;) {\n           Node next \u003d child.getNext();\n-          Preconditions.checkState(child.getType() \u003d\u003d Token.NAME);\n-\n-          String name \u003d child.getString();\n-          declareVar(name, child, n, parent, null, n);\n+          declareVar(child);\n           child \u003d next;\n         }\n         return;\n@@ -141,7 +138,7 @@\n           // This is invalid, but allow it so the checks can catch it.\n           return;\n         }\n-        declareVar(fnName, n.getFirstChild(), n, parent, null, n);\n+        declareVar(n.getFirstChild());\n         return;   // should not examine function\u0027s children\n \n       case Token.CATCH:\n@@ -153,7 +150,7 @@\n         final Node var \u003d n.getFirstChild();\n         final Node block \u003d var.getNext().getNext();\n \n-        declareVar(var.getString(), var, n, parent, null, n);\n+        declareVar(var);\n         scanVars(block, n);\n         return;  // only one child to scan\n \n@@ -180,7 +177,7 @@\n   interface RedeclarationHandler {\n     void onRedeclaration(\n         Scope s, String name,\n-        Node n, Node parent, Node gramps, Node nodeWithLineNumber);\n+        Node n, CompilerInput input);\n   }\n \n   /**\n@@ -189,7 +186,8 @@\n   private class DefaultRedeclarationHandler implements RedeclarationHandler {\n     public void onRedeclaration(\n         Scope s, String name,\n-        Node n, Node parent, Node gramps, Node nodeWithLineNumber) {\n+        Node n, CompilerInput input) {\n+      Node parent \u003d n.getParent();\n       // Don\u0027t allow multiple variables to be declared at the top level scope\n       if (scope.isGlobal()) {\n         Scope.Var origVar \u003d scope.getVar(name);\n@@ -210,7 +208,7 @@\n \n         if (!allowDupe) {\n           compiler.report(\n-              JSError.make(sourceName, nodeWithLineNumber,\n+              JSError.make(sourceName, n,\n                            VAR_MULTIPLY_DECLARED_ERROR,\n                            name,\n                            (origVar.input !\u003d null\n@@ -221,7 +219,7 @@\n         // Disallow shadowing \"arguments\" as we can\u0027t handle with our current\n         // scope modeling.\n         compiler.report(\n-            JSError.make(sourceName, nodeWithLineNumber,\n+            JSError.make(sourceName, n,\n                 VAR_ARGUMENTS_SHADOWED_ERROR));\n       }\n     }\n@@ -238,15 +236,16 @@\n    * @param nodeWithLineNumber The node to use to access the line number of\n    *     the variable declaration, if needed\n    */\n-  private void declareVar(String name, Node n, Node parent,\n-                          Node gramps, JSType declaredType,\n-                          Node nodeWithLineNumber) {\n+  private void declareVar(Node n) {\n+    Preconditions.checkState(n.getType() \u003d\u003d Token.NAME);\n+    CompilerInput input \u003d compiler.getInput(sourceName);\n+    String name \u003d n.getString();\n     if (scope.isDeclared(name, false)\n         || (scope.isLocal() \u0026\u0026 name.equals(ARGUMENTS))) {\n       redeclarationHandler.onRedeclaration(\n-          scope, name, n, parent, gramps, nodeWithLineNumber);\n+          scope, name, n, input);\n     } else {\n-      scope.declare(name, n, declaredType, compiler.getInput(sourceName));\n+      scope.declare(name, n, null, input);\n     }\n   }\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [758,796]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [1213,1234]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [19425,19488]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [19685,19704]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [19803,19831]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [19839,20266]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [21899,21917]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [19555,19566]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [19568,19579]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [19589,19612]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_ARGUMENTS [20811,20829]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: gramps [21381,21387]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/SyntacticScopeCreator.java",
+        "src/com/google/javascript/jscomp/SyntacticScopeCreator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "scanVars",
+            "declareVar",
+            "onRedeclaration",
+            "scanRoot",
+            "onRedeclaration"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "scanVars",
+            "onRedeclaration",
+            "declareVar",
+            "scanRoot",
+            "onRedeclaration"
+          ],
+          "num": 5
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "20",
+            "29",
+            "96",
+            "104",
+            "126",
+            "127",
+            "128",
+            "129",
+            "144",
+            "156",
+            "183",
+            "192",
+            "213",
+            "224",
+            "241",
+            "242",
+            "243",
+            "247",
+            "249",
+            "571",
+            "572",
+            "596",
+            "608"
+          ],
+          "num": 23
+        },
+        {
+          "qualified_names": [
+            "21",
+            "31",
+            "96",
+            "104",
+            "126",
+            "141",
+            "153",
+            "180",
+            "189",
+            "190",
+            "211",
+            "222",
+            "239",
+            "240",
+            "241",
+            "242",
+            "246",
+            "248",
+            "567",
+            "568",
+            "575",
+            "578",
+            "579",
+            "580",
+            "581",
+            "582",
+            "583",
+            "584",
+            "585",
+            "586",
+            "587",
+            "588",
+            "589",
+            "590",
+            "612",
+            "624"
+          ],
+          "num": 36
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Closure_153/properties/modified_classes/inducing/src/com/google/javascript/jscomp/Normalize.java data/changesInfo//Closure_153/cleaned/fixing/src/com/google/javascript/jscomp/Normalize.java\n--- data/changesInfo//Closure_153/properties/modified_classes/inducing/src/com/google/javascript/jscomp/Normalize.java\t2023-08-25 14:16:38.739602043 +0800\n+++ data/changesInfo//Closure_153/cleaned/fixing/src/com/google/javascript/jscomp/Normalize.java\t2023-07-27 20:55:37.193851299 +0800\n@@ -18,6 +18,7 @@\n import com.google.common.base.Preconditions;\n import com.google.common.collect.Lists;\n import com.google.common.collect.Maps;\n+import com.google.common.collect.Sets;\n import com.google.javascript.jscomp.MakeDeclaredNamesUnique.BoilerplateRenamer;\n import com.google.javascript.jscomp.NodeTraversal.AbstractPostOrderCallback;\n import com.google.javascript.jscomp.NodeTraversal.Callback;\n@@ -27,6 +28,7 @@\n import com.google.javascript.rhino.Token;\n \n import java.util.Map;\n+import java.util.Set;\n \n /**\n  * The goal with this pass is to simplify the other passes,\n@@ -562,16 +564,30 @@\n   private final class DuplicateDeclarationHandler implements\n       SyntacticScopeCreator.RedeclarationHandler {\n \n+    private Set\u003cVar\u003e hasOkDuplicateDeclaration \u003d Sets.newHashSet();\n+\n     /**\n      * Remove duplicate VAR declarations encountered discovered during\n      * scope creation.\n      */\n     @Override\n     public void onRedeclaration(\n-        Scope s, String name, Node n, Node parent, Node gramps,\n-        Node nodeWithLineNumber) {\n+        Scope s, String name, Node n, CompilerInput input) {\n       Preconditions.checkState(n.getType() \u003d\u003d Token.NAME);\n       Var v \u003d s.getVar(name);\n+      Node parent \u003d n.getParent();\n+\n+      if (v !\u003d null \u0026\u0026 s.isGlobal()) {\n+        // We allow variables to be duplicate declared if one\n+        // declaration appears in source and the other in externs.\n+        // This deals with issues where a browser built-in is declared\n+        // in one browser but not in another.\n+        if (v.isExtern() \u0026\u0026 !input.isExtern()) {\n+          if (hasOkDuplicateDeclaration.add(v)) {\n+            return;\n+          }\n+        }\n+      }\n       // If name is \"arguments\", Var maybe null.\n       if (v !\u003d null \u0026\u0026 v.getParentNode().getType() \u003d\u003d Token.CATCH) {\n         // Redeclaration of a catch expression variable is hard to model\n@@ -593,7 +609,7 @@\n             name);\n         compiler.report(\n             JSError.make(\n-                NodeUtil.getSourceName(nodeWithLineNumber), nodeWithLineNumber,\n+                input.getName(), n,\n                 CATCH_BLOCK_VAR_ERROR, name));\n       } else if (v !\u003d null \u0026\u0026 parent.getType() \u003d\u003d Token.FUNCTION) {\n         if (v.getParentNode().getType() \u003d\u003d Token.VAR) {\n@@ -605,7 +621,7 @@\n       } else if (parent.getType() \u003d\u003d Token.VAR) {\n         Preconditions.checkState(parent.hasOneChild());\n \n-        replaceVarWithAssignment(n, parent, gramps);\n+        replaceVarWithAssignment(n, parent, parent.getParent());\n       }\n     }\n \ndiff -u -r data/changesInfo//Closure_153/properties/modified_classes/inducing/src/com/google/javascript/jscomp/SyntacticScopeCreator.java data/changesInfo//Closure_153/cleaned/fixing/src/com/google/javascript/jscomp/SyntacticScopeCreator.java\n--- data/changesInfo//Closure_153/properties/modified_classes/inducing/src/com/google/javascript/jscomp/SyntacticScopeCreator.java\t2023-07-27 20:56:36.520019361 +0800\n+++ data/changesInfo//Closure_153/cleaned/fixing/src/com/google/javascript/jscomp/SyntacticScopeCreator.java\t2023-07-27 21:03:57.793069838 +0800\n@@ -93,7 +93,7 @@\n       // been declared in the outer scope.\n       String fnName \u003d fnNameNode.getString();\n       if (!fnName.isEmpty() \u0026\u0026 NodeUtil.isFunctionExpression(n)) {\n-        declareVar(fnName, fnNameNode, n, null, null, n);\n+        declareVar(fnNameNode);\n       }\n \n       // Args: Declare function variables\n@@ -101,7 +101,7 @@\n       for (Node a \u003d args.getFirstChild(); a !\u003d null;\n            a \u003d a.getNext()) {\n         Preconditions.checkState(a.getType() \u003d\u003d Token.NAME);\n-        declareVar(a.getString(), a, args, n, null, n);\n+        declareVar(a);\n       }\n \n       // Body\n@@ -123,10 +123,7 @@\n         for (Node child \u003d n.getFirstChild();\n              child !\u003d null;) {\n           Node next \u003d child.getNext();\n-          Preconditions.checkState(child.getType() \u003d\u003d Token.NAME);\n-\n-          String name \u003d child.getString();\n-          declareVar(name, child, n, parent, null, n);\n+          declareVar(child);\n           child \u003d next;\n         }\n         return;\n@@ -141,7 +138,7 @@\n           // This is invalid, but allow it so the checks can catch it.\n           return;\n         }\n-        declareVar(fnName, n.getFirstChild(), n, parent, null, n);\n+        declareVar(n.getFirstChild());\n         return;   // should not examine function\u0027s children\n \n       case Token.CATCH:\n@@ -153,7 +150,7 @@\n         final Node var \u003d n.getFirstChild();\n         final Node block \u003d var.getNext().getNext();\n \n-        declareVar(var.getString(), var, n, parent, null, n);\n+        declareVar(var);\n         scanVars(block, n);\n         return;  // only one child to scan\n \n@@ -180,7 +177,7 @@\n   interface RedeclarationHandler {\n     void onRedeclaration(\n         Scope s, String name,\n-        Node n, Node parent, Node gramps, Node nodeWithLineNumber);\n+        Node n, CompilerInput input);\n   }\n \n   /**\n@@ -189,7 +186,8 @@\n   private class DefaultRedeclarationHandler implements RedeclarationHandler {\n     public void onRedeclaration(\n         Scope s, String name,\n-        Node n, Node parent, Node gramps, Node nodeWithLineNumber) {\n+        Node n, CompilerInput input) {\n+      Node parent \u003d n.getParent();\n       // Don\u0027t allow multiple variables to be declared at the top level scope\n       if (scope.isGlobal()) {\n         Scope.Var origVar \u003d scope.getVar(name);\n@@ -210,7 +208,7 @@\n \n         if (!allowDupe) {\n           compiler.report(\n-              JSError.make(sourceName, nodeWithLineNumber,\n+              JSError.make(sourceName, n,\n                            VAR_MULTIPLY_DECLARED_ERROR,\n                            name,\n                            (origVar.input !\u003d null\n@@ -221,7 +219,7 @@\n         // Disallow shadowing \"arguments\" as we can\u0027t handle with our current\n         // scope modeling.\n         compiler.report(\n-            JSError.make(sourceName, nodeWithLineNumber,\n+            JSError.make(sourceName, n,\n                 VAR_ARGUMENTS_SHADOWED_ERROR));\n       }\n     }\n@@ -238,15 +236,16 @@\n    * @param nodeWithLineNumber The node to use to access the line number of\n    *     the variable declaration, if needed\n    */\n-  private void declareVar(String name, Node n, Node parent,\n-                          Node gramps, JSType declaredType,\n-                          Node nodeWithLineNumber) {\n+  private void declareVar(Node n) {\n+    Preconditions.checkState(n.getType() \u003d\u003d Token.NAME);\n+    CompilerInput input \u003d compiler.getInput(sourceName);\n+    String name \u003d n.getString();\n     if (scope.isDeclared(name, false)\n         || (scope.isLocal() \u0026\u0026 name.equals(ARGUMENTS))) {\n       redeclarationHandler.onRedeclaration(\n-          scope, name, n, parent, gramps, nodeWithLineNumber);\n+          scope, name, n, input);\n     } else {\n-      scope.declare(name, n, declaredType, compiler.getInput(sourceName));\n+      scope.declare(name, n, null, input);\n     }\n   }\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [5395,5484]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [5712,5731]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [7540,7592]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [7597,7649]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [7654,7682]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [5741,5769]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [7597,7610]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [7611,7648]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: input [7611,7616]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NullLiteral [7899,7903]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: fnName [3071,3077]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: n [3091,3092]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NullLiteral [3094,3098]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NullLiteral [3100,3104]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: n [3106,3107]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [3384,3397]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: args [3402,3406]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: n [3408,3409]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NullLiteral [3411,3415]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: n [3417,3418]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [3955,4011]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [4023,4055]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: name [4077,4081]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: n [4090,4091]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: parent [4093,4099]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NullLiteral [4101,4105]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: n [4107,4108]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: fnName [4471,4477]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: n [4498,4499]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: parent [4501,4507]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NullLiteral [4509,4513]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: n [4515,4516]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [4949,4964]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: n [4971,4972]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: parent [4974,4980]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NullLiteral [4982,4986]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: n [4988,4989]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [5656,5775]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [6003,6014]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [6016,6027]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [6029,6052]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [7846,7857]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [7867,7871]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SingleVariableDeclaration [7867,7878]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [7906,7910]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SingleVariableDeclaration [7906,7917]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [7919,7938]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [7966,7970]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SingleVariableDeclaration [7966,7989]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: gramps [8167,8173]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: nodeWithLineNumber [8175,8193]",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "parseAndNormalizeSyntheticCode"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "PropogateConstantAnnotations"
+      ],
+      "num": 1
+    }
+  }
+}

@@ -1,0 +1,163 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.joda.time.TestPartial_Basics::testWith_baseAndArgHaveNoRange",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.joda.time.field.UnsupportedDurationField,org.joda.time.Partial",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Time",
+  "id": "2",
+  "workingDir": "../bugs/Time_2_tmp",
+  "bug_name": "Time_2",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.joda.time.TestPartial_Basics",
+      "test_function": "testWith_baseAndArgHaveNoRange",
+      "assertion_line": "469",
+      "exception": "java.lang.IllegalArgumentException",
+      "message": "Types array must not contain duplicate: era and year"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/joda/time/Partial.java",
+        "src/main/java/org/joda/time/Partial.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.joda.time.Partial:Partial:[DateTimeFieldType[] types, int[] values, Chronology chronology]:null",
+            "org.joda.time.Partial:with:[DateTimeFieldType fieldType, int value]:Partial"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.joda.time.Partial:with:[DateTimeFieldType fieldType, int value]:Partial",
+            "org.joda.time.Partial:Partial:[DateTimeFieldType[] types, int[] values, Chronology chronology]:null"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "218",
+            "449",
+            "450",
+            "451"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "218",
+            "448"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/joda/time/Partial.java b/src/main/java/org/joda/time/Partial.java\nindex 3b84fdc..b9ec964 100644\n--- a/src/main/java/org/joda/time/Partial.java\n+++ b/src/main/java/org/joda/time/Partial.java\n@@ -215,7 +215,7 @@\n             DurationField loopUnitField \u003d loopType.getDurationType().getField(iChronology);\n             if (i \u003e 0) {\n                 int compare \u003d lastUnitField.compareTo(loopUnitField);\n-                if (compare \u003c 0) {\n+                if (compare \u003c 0 || (compare !\u003d 0 \u0026\u0026 loopUnitField.isSupported() \u003d\u003d false)) {\n                     throw new IllegalArgumentException(\"Types array must be in order largest-smallest: \" +\n                             types[i - 1].getName() + \" \u003c \" + loopType.getName());\n                 } else if (compare \u003d\u003d 0) {\n@@ -446,9 +446,6 @@\n                         if (compare \u003e 0) {\n                             break;\n                         } else if (compare \u003d\u003d 0) {\n-                            if (fieldType.getRangeDurationType() \u003d\u003d null) {\n-                                break;\n-                            }\n                             DurationField rangeField \u003d fieldType.getRangeDurationType().getField(iChronology);\n                             DurationField loopRangeField \u003d loopType.getRangeDurationType().getField(iChronology);\n                             if (rangeField.compareTo(loopRangeField) \u003e 0) {\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [8391,8460]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: || [8403,8405]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ParenthesizedExpression [8406,8460]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [17722,17838]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/joda/time/field/UnsupportedDurationField.java",
+        "src/main/java/org/joda/time/field/UnsupportedDurationField.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.joda.time.field.UnsupportedDurationField:compareTo:[DurationField durationField]:int"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.joda.time.field.UnsupportedDurationField:compareTo:[DurationField durationField]:int"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "227",
+            "228",
+            "229"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "226"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/joda/time/field/UnsupportedDurationField.java b/src/main/java/org/joda/time/field/UnsupportedDurationField.java\nindex 7e0ce57..bf44e01 100644\n--- a/src/main/java/org/joda/time/field/UnsupportedDurationField.java\n+++ b/src/main/java/org/joda/time/field/UnsupportedDurationField.java\n@@ -224,9 +224,6 @@\n      * @return zero always\n      */\n     public int compareTo(DurationField durationField) {\n-        if (durationField.isSupported()) {\n-            return 1;\n-        }\n         return 0;\n     }\n \n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [5773,5839]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

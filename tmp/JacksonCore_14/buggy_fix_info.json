@@ -1,0 +1,110 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.core.io.TestIOContext::testAllocations",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.core.io.IOContext",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonCore",
+  "id": "14",
+  "workingDir": "../bugs/JacksonCore_14_tmp",
+  "bug_name": "JacksonCore_14",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.core.io.TestIOContext",
+      "test_function": "testAllocations",
+      "assertion_line": "27",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected an exception with one of substrings ([smaller than original]): got one with message \"Trying to release buffer not owned by the context\""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/core/io/IOContext.java",
+        "src/main/java/com/fasterxml/jackson/core/io/IOContext.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.io.IOContext:_verifyRelease:[byte[] toRelease, byte[] src]:void",
+            "com.fasterxml.jackson.core.io.IOContext:wrongBuf:[]:IllegalArgumentException",
+            "com.fasterxml.jackson.core.io.IOContext:_verifyRelease:[char[] toRelease, char[] src]:void"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.io.IOContext:_verifyRelease:[char[] toRelease, char[] src]:void",
+            "com.fasterxml.jackson.core.io.IOContext:_verifyRelease:[byte[] toRelease, byte[] src]:void",
+            "com.fasterxml.jackson.core.io.IOContext:wrongBuf:[]:IllegalArgumentException"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "274",
+            "279",
+            "284"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "274",
+            "279",
+            "284"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/core/io/IOContext.java b/src/main/java/com/fasterxml/jackson/core/io/IOContext.java\nindex 18f50c8..94797ee 100644\n--- a/src/main/java/com/fasterxml/jackson/core/io/IOContext.java\n+++ b/src/main/java/com/fasterxml/jackson/core/io/IOContext.java\n@@ -271,16 +271,16 @@\n \n     protected final void _verifyRelease(byte[] toRelease, byte[] src) {\n         // 07-Mar-2016, tatu: As per [core#255], only prevent shrinking of buffer\n-        if ((toRelease !\u003d src) \u0026\u0026 (toRelease.length \u003c src.length)) { throw wrongBuf(); }\n+        if ((toRelease !\u003d src) \u0026\u0026 (toRelease.length \u003c\u003d src.length)) { throw wrongBuf(); }\n     }\n \n     protected final void _verifyRelease(char[] toRelease, char[] src) {\n         // 07-Mar-2016, tatu: As per [core#255], only prevent shrinking of buffer\n-        if ((toRelease !\u003d src) \u0026\u0026 (toRelease.length \u003c src.length)) { throw wrongBuf(); }\n+        if ((toRelease !\u003d src) \u0026\u0026 (toRelease.length \u003c\u003d src.length)) { throw wrongBuf(); }\n     }\n \n     private IllegalArgumentException wrongBuf() {\n         // sanity check failed; trying to return different, smaller buffer.\n-        return new IllegalArgumentException(\"Trying to release buffer smaller than original\");\n+return new IllegalArgumentException(\"Trying to release buffer not owned by the context\"); \n     }\n }\n",
+      "operations": [
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

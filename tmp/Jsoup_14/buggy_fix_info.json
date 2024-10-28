@@ -1,0 +1,159 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.jsoup.parser.ParserTest::parsesUnterminatedTextarea,org.jsoup.parser.ParserTest::handlesUnclosedTitle",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.jsoup.parser.Tokeniser,org.jsoup.parser.TokeniserState",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Jsoup",
+  "id": "14",
+  "workingDir": "../bugs/Jsoup_14_tmp",
+  "bug_name": "Jsoup_14",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.jsoup.parser.ParserTest",
+      "test_function": "parsesUnterminatedTextarea",
+      "assertion_line": "101",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003cone[]\u003e but was:\u003cone[\u003cp\u003etwo]\u003e"
+    },
+    {
+      "test_class": "org.jsoup.parser.ParserTest",
+      "test_function": "handlesUnclosedTitle",
+      "assertion_line": "560",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003cOne[]\u003e but was:\u003cOne[\u003cb\u003eTwo \u003cp\u003eTest\u003c/p]\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/parser/Tokeniser.java",
+        "src/main/java/org/jsoup/parser/Tokeniser.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.parser.Tokeniser:appropriateEndTagName:[]:String"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "197",
+            "198",
+            "199"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "196"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/parser/Tokeniser.java b/src/main/java/org/jsoup/parser/Tokeniser.java\nindex 316cbea..6d729cf 100644\n--- a/src/main/java/org/jsoup/parser/Tokeniser.java\n+++ b/src/main/java/org/jsoup/parser/Tokeniser.java\n@@ -194,9 +194,6 @@\n         return tagPending.tagName.equals(lastStartTag.tagName);\n     }\n \n-    String appropriateEndTagName() {\n-        return lastStartTag.tagName;\n-    }\n \n     boolean isTrackErrors() {\n         return trackErrors;\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [6725,6800]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/parser/TokeniserState.java",
+        "src/main/java/org/jsoup/parser/TokeniserState.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "218",
+            "221",
+            "222",
+            "223",
+            "224"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "217"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/parser/TokeniserState.java b/src/main/java/org/jsoup/parser/TokeniserState.java\nindex 8774823..ca27ea0 100644\n--- a/src/main/java/org/jsoup/parser/TokeniserState.java\n+++ b/src/main/java/org/jsoup/parser/TokeniserState.java\n@@ -215,13 +215,8 @@\n             if (r.matches(\u0027/\u0027)) {\n                 t.createTempBuffer();\n                 t.advanceTransition(RCDATAEndTagOpen);\n-            } else if (r.matchesLetter() \u0026\u0026 !r.containsIgnoreCase(\"\u003c/\" + t.appropriateEndTagName())) {\n                 // diverge from spec: got a start tag, but there\u0027s no appropriate end tag (\u003c/title\u003e), so rather than\n                 // consuming to EOF; break out here\n-                t.tagPending \u003d new Token.EndTag(t.appropriateEndTagName());\n-                t.emitTagPending();\n-                r.unconsume(); // undo \"\u003c\"\n-                t.transition(Data);\n             } else {\n                 t.emit(\"\u003c\");\n                 t.transition(Rcdata);\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [7251,7327]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [7329,7704]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [7247,7792]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.jsoup.parser.Tokeniser:appropriateEndTagName:[]:String"
+      ],
+      "num": 1
+    }
+  }
+}

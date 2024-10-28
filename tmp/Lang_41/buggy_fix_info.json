@@ -1,0 +1,203 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.lang.ClassUtilsTest::test_getShortClassName_Class,org.apache.commons.lang.ClassUtilsTest::test_getPackageName_Class",
+    "test.dir": "src/test",
+    "clz.modified": "org.apache.commons.lang.ClassUtils",
+    "src.dir": "src/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Lang",
+  "id": "41",
+  "workingDir": "../bugs/Lang_41_tmp",
+  "bug_name": "Lang_41",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.lang.ClassUtilsTest",
+      "test_function": "test_getShortClassName_Class",
+      "assertion_line": "97",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003cString[[]]\u003e but was:\u003cString[;]\u003e"
+    },
+    {
+      "test_class": "org.apache.commons.lang.ClassUtilsTest",
+      "test_function": "test_getPackageName_Class",
+      "assertion_line": "146",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c[]java.lang\u003e but was:\u003c[[L]java.lang\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/lang/ClassUtils.java",
+        "src/java/org/apache/commons/lang/ClassUtils.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.lang.ClassUtils:getPackageName:[String className]:String",
+            "org.apache.commons.lang.ClassUtils:getShortClassName:[String className]:String"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.lang.ClassUtils:getShortClassName:[String className]:String",
+            "org.apache.commons.lang.ClassUtils:getPackageName:[String className]:String"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "191",
+            "194",
+            "195",
+            "196",
+            "197",
+            "198",
+            "200",
+            "201",
+            "202",
+            "203",
+            "205",
+            "206",
+            "207",
+            "216",
+            "258",
+            "263",
+            "264",
+            "265",
+            "267",
+            "268",
+            "269"
+          ],
+          "num": 21
+        },
+        {
+          "qualified_names": [
+            "190",
+            "203",
+            "245"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/lang/ClassUtils.java b/src/java/org/apache/commons/lang/ClassUtils.java\nindex 478b377..d5de42b 100644\n--- a/src/java/org/apache/commons/lang/ClassUtils.java\n+++ b/src/java/org/apache/commons/lang/ClassUtils.java\n@@ -188,23 +188,10 @@\n             return StringUtils.EMPTY;\n         }\n \n-        StringBuffer arrayPrefix \u003d new StringBuffer();\n \n         // Handle array encoding\n-        if (className.startsWith(\"[\")) {\n-            while (className.charAt(0) \u003d\u003d \u0027[\u0027) {\n-                className \u003d className.substring(1);\n-                arrayPrefix.append(\"[]\");\n-            }\n             // Strip Object type encoding\n-            if (className.charAt(0) \u003d\u003d \u0027L\u0027 \u0026\u0026 className.charAt(className.length() - 1) \u003d\u003d \u0027;\u0027) {\n-                className \u003d className.substring(1, className.length() - 1);\n-            }\n-        }\n \n-        if (reverseAbbreviationMap.containsKey(className)) {\n-            className \u003d reverseAbbreviationMap.get(className);\n-        }\n \n         int lastDotIdx \u003d className.lastIndexOf(PACKAGE_SEPARATOR_CHAR);\n         int innerIdx \u003d className.indexOf(\n@@ -213,7 +200,7 @@\n         if (innerIdx !\u003d -1) {\n             out \u003d out.replace(INNER_CLASS_SEPARATOR_CHAR, PACKAGE_SEPARATOR_CHAR);\n         }\n-        return out + arrayPrefix;\n+        return out;\n     }\n \n     // Package name\n@@ -255,18 +242,12 @@\n      * @return the package name or an empty string\n      */\n     public static String getPackageName(String className) {\n-        if (className \u003d\u003d null || className.length() \u003d\u003d 0) {\n+        if (className \u003d\u003d null) {\n             return StringUtils.EMPTY;\n         }\n \n         // Strip array encoding\n-        while (className.charAt(0) \u003d\u003d \u0027[\u0027) {\n-            className \u003d className.substring(1);\n-        }\n         // Strip Object type encoding\n-        if (className.charAt(0) \u003d\u003d \u0027L\u0027 \u0026\u0026 className.charAt(className.length() - 1) \u003d\u003d \u0027;\u0027) {\n-            className \u003d className.substring(1);\n-        }\n \n         int i \u003d className.lastIndexOf(PACKAGE_SEPARATOR_CHAR);\n         if (i \u003d\u003d -1) {\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: static [4550,4556]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [4515,4537]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [4515,4537]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: static [4550,4556]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [6884,6930]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [6973,7401]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [7411,7536]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: + [7936,7937]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: arrayPrefix [7938,7949]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [7932,7949]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: || [9424,9426]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [9427,9450]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [9406,9450]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "WhileStatement [9543,9637]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [9684,9826]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

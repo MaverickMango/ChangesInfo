@@ -1,0 +1,264 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.lang3.text.translate.NumericEntityUnescaperTest::testUnfinishedEntity,org.apache.commons.lang3.text.translate.NumericEntityUnescaperTest::testOutOfBounds",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.lang3.text.translate.NumericEntityUnescaper",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Lang",
+  "id": "19",
+  "workingDir": "../bugs/Lang_19_tmp",
+  "bug_name": "Lang_19",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.lang3.text.translate.NumericEntityUnescaperTest",
+      "test_function": "testUnfinishedEntity",
+      "assertion_line": "51",
+      "exception": "java.lang.StringIndexOutOfBoundsException",
+      "message": "String index out of range: 19"
+    },
+    {
+      "test_class": "org.apache.commons.lang3.text.translate.NumericEntityUnescaperTest",
+      "test_function": "testOutOfBounds",
+      "assertion_line": "41",
+      "exception": "java.lang.StringIndexOutOfBoundsException",
+      "message": "String index out of range: 7"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/lang3/text/translate/NumericEntityUnescaper.java",
+        "src/main/java/org/apache/commons/lang3/text/translate/NumericEntityUnescaper.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.lang3.text.translate.NumericEntityUnescaper:translate:[CharSequence input, int index, Writer out]:int"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.lang3.text.translate.NumericEntityUnescaper:translate:[CharSequence input, int index, Writer out]:int"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "40",
+            "50",
+            "51",
+            "52",
+            "57",
+            "58",
+            "59",
+            "84",
+            "86"
+          ],
+          "num": 9
+        },
+        {
+          "qualified_names": [
+            "40",
+            "54",
+            "80"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/lang3/text/translate/NumericEntityUnescaper.java b/src/main/java/org/apache/commons/lang3/text/translate/NumericEntityUnescaper.java\nindex 3d4c238..68891ac 100644\n--- a/src/main/java/org/apache/commons/lang3/text/translate/NumericEntityUnescaper.java\n+++ b/src/main/java/org/apache/commons/lang3/text/translate/NumericEntityUnescaper.java\n@@ -37,7 +37,7 @@\n     public int translate(CharSequence input, int index, Writer out) throws IOException {\n         int seqEnd \u003d input.length();\n         // Uses -2 to ensure there is something after the \u0026#\n-        if(input.charAt(index) \u003d\u003d \u0027\u0026\u0027 \u0026\u0026 index \u003c seqEnd - 2 \u0026\u0026 input.charAt(index + 1) \u003d\u003d \u0027#\u0027) {\n+        if(input.charAt(index) \u003d\u003d \u0027\u0026\u0027 \u0026\u0026 index \u003c seqEnd - 1 \u0026\u0026 input.charAt(index + 1) \u003d\u003d \u0027#\u0027) {\n             int start \u003d index + 2;\n             boolean isHex \u003d false;\n \n@@ -47,16 +47,11 @@\n                 isHex \u003d true;\n \n                 // Check there\u0027s more than just an x after the \u0026#\n-                if(start \u003d\u003d seqEnd) {\n-                    return 0;\n-                }\n             }\n \n             int end \u003d start;\n             // Note that this supports character codes without a ; on the end\n-            while(end \u003c seqEnd \u0026\u0026 ( (input.charAt(end) \u003e\u003d \u00270\u0027 \u0026\u0026 input.charAt(end) \u003c\u003d \u00279\u0027) ||\n-                                    (input.charAt(end) \u003e\u003d \u0027a\u0027 \u0026\u0026 input.charAt(end) \u003c\u003d \u0027f\u0027) ||\n-                                    (input.charAt(end) \u003e\u003d \u0027A\u0027 \u0026\u0026 input.charAt(end) \u003c\u003d \u0027F\u0027) ) )\n+            while(input.charAt(end) !\u003d \u0027;\u0027) \n             {\n                 end++;\n             }\n@@ -81,9 +76,8 @@\n                 out.write(entityValue);\n             }\n \n-            boolean semiNext \u003d (end !\u003d seqEnd) \u0026\u0026 (input.charAt(end) \u003d\u003d \u0027;\u0027);\n \n-            return 2 + (end - start) + (isHex ? 1 : 0) + (semiNext ? 1 : 0);\n+            return 2 + (end - start) + (isHex ? 1 : 0) + 1;\n         }\n         return 0;\n     }\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [2783,2822]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NumberLiteral: 2 [2783,2784]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: + [2785,2786]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ParenthesizedExpression [2787,2800]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ParenthesizedExpression [2803,2818]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NumberLiteral: 1 [2821,2822]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ConditionalExpression [2804,2817]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: isHex [2804,2809]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NumberLiteral: 1 [2812,2813]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [1806,1821]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [1823,1872]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [1803,1872]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [2013,2025]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [2026,2028]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [2057,2059]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [2060,2084]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [2032,2084]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ParenthesizedExpression [2031,2085]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: || [2086,2088]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ParenthesizedExpression [2125,2179]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ParenthesizedExpression [2219,2273]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [2031,2273]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ParenthesizedExpression [2029,2275]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [2013,2275]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [3099,3164]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [3178,3242]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

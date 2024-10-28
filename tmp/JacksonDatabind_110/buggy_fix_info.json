@@ -1,0 +1,121 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.deser.jdk.UtilCollectionsTypesTest::testUnmodifiableListFromLinkedList",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.deser.impl.JavaUtilCollectionsDeserializers",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "110",
+  "workingDir": "../bugs/JacksonDatabind_110_tmp",
+  "bug_name": "JacksonDatabind_110",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.deser.jdk.UtilCollectionsTypesTest",
+      "test_function": "testUnmodifiableListFromLinkedList",
+      "assertion_line": "71",
+      "exception": "com.fasterxml.jackson.databind.exc.InvalidDefinitionException",
+      "message": "Cannot construct instance of `java.util.Collections$UnmodifiableList` (no Creators, like default construct, exist): no default no-arguments constructor found"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/deser/impl/JavaUtilCollectionsDeserializers.java",
+        "src/main/java/com/fasterxml/jackson/databind/deser/impl/JavaUtilCollectionsDeserializers.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.impl.JavaUtilCollectionsDeserializers:findForCollection:[DeserializationContext ctxt, JavaType type]:JsonDeserializer\u003c?\u003e"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.impl.JavaUtilCollectionsDeserializers:findForCollection:[DeserializationContext ctxt, JavaType type]:JsonDeserializer\u003c?\u003e"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "47",
+            "59",
+            "80"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "46",
+            "59",
+            "78"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/impl/JavaUtilCollectionsDeserializers.java b/src/main/java/com/fasterxml/jackson/databind/deser/impl/JavaUtilCollectionsDeserializers.java\nindex f16d95e..3228bac 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/deser/impl/JavaUtilCollectionsDeserializers.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/deser/impl/JavaUtilCollectionsDeserializers.java\n@@ -44,7 +44,6 @@\n     /* 02-Mar-2019, tatu: for [databind#2265], need to consider possible alternate type...\n      *    which we essentially coerce into the other one\n      */\n-    private final static Class\u003c?\u003e CLASS_UNMODIFIABLE_LIST_ALIAS;\n     private final static Class\u003c?\u003e CLASS_UNMODIFIABLE_MAP;\n \n     static {\n@@ -56,7 +55,6 @@\n         CLASS_SINGLETON_LIST \u003d list.getClass();\n         CLASS_UNMODIFIABLE_LIST \u003d Collections.unmodifiableList(list).getClass();\n         // for [databind#2265]\n-        CLASS_UNMODIFIABLE_LIST_ALIAS \u003d Collections.unmodifiableList(new LinkedList\u003cObject\u003e()).getClass();\n         \n         Map\u003c?,?\u003e map \u003d Collections.singletonMap(\"a\", \"b\");\n         CLASS_SINGLETON_MAP \u003d map.getClass();\n@@ -77,7 +75,7 @@\n         } else if (type.hasRawClass(CLASS_SINGLETON_SET)) {\n             conv \u003d converter(TYPE_SINGLETON_SET, type, Set.class);\n         // [databind#2265]: we may have another impl type for unmodifiable Lists, check both\n-        } else if (type.hasRawClass(CLASS_UNMODIFIABLE_LIST) || type.hasRawClass(CLASS_UNMODIFIABLE_LIST_ALIAS)) {\n+        } else if (type.hasRawClass(CLASS_UNMODIFIABLE_LIST)) {\n             conv \u003d converter(TYPE_UNMODIFIABLE_LIST, type, List.class);\n         } else if (type.hasRawClass(CLASS_UNMODIFIABLE_SET)) {\n             conv \u003d converter(TYPE_UNMODIFIABLE_SET, type, Set.class);\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [1870,1930]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [2418,2516]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: || [3550,3552]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [3553,3600]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [3508,3600]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

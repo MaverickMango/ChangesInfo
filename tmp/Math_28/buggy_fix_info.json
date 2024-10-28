@@ -1,0 +1,151 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math3.optimization.linear.SimplexSolverTest::testMath828Cycle",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math3.optimization.linear.SimplexSolver",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "28",
+  "workingDir": "../bugs/Math_28_tmp",
+  "bug_name": "Math_28",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math3.optimization.linear.SimplexSolverTest",
+      "test_function": "testMath828Cycle",
+      "assertion_line": "70",
+      "exception": "org.apache.commons.math3.exception.MaxCountExceededException",
+      "message": "illegal state: maximal count (100) exceeded"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math3/optimization/linear/SimplexSolver.java",
+        "src/main/java/org/apache/commons/math3/optimization/linear/SimplexSolver.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.optimization.linear.SimplexSolver:getPivotRow:[SimplexTableau tableau, final int col]:Integer"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.optimization.linear.SimplexSolver:doIteration:[final SimplexTableau tableau]:void",
+            "org.apache.commons.math3.optimization.linear.SimplexSolver:getPivotRow:[SimplexTableau tableau, final int col]:Integer"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "119",
+            "129",
+            "140",
+            "155"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "118",
+            "129",
+            "141",
+            "157"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math3/optimization/linear/SimplexSolver.java b/src/main/java/org/apache/commons/math3/optimization/linear/SimplexSolver.java\nindex dec310b..a84438d 100644\n--- a/src/main/java/org/apache/commons/math3/optimization/linear/SimplexSolver.java\n+++ b/src/main/java/org/apache/commons/math3/optimization/linear/SimplexSolver.java\n@@ -116,7 +116,6 @@\n             // there\u0027s a degeneracy as indicated by a tie in the minimum ratio test\n \n             // 1. check if there\u0027s an artificial variable that can be forced out of the basis\n-            if (tableau.getNumArtificialVariables() \u003e 0) {\n                 for (Integer row : minRatioPositions) {\n                     for (int i \u003d 0; i \u003c tableau.getNumArtificialVariables(); i++) {\n                         int column \u003d i + tableau.getArtificialVariableOffset();\n@@ -126,7 +125,6 @@\n                         }\n                     }\n                 }\n-            }\n \n             // 2. apply Bland\u0027s rule to prevent cycling:\n             //    take the row for which the corresponding basic variable has the smallest index\n@@ -137,7 +135,6 @@\n             // Additional heuristic: if we did not get a solution after half of maxIterations\n             //                       revert to the simple case of just returning the top-most row\n             // This heuristic is based on empirical data gathered while investigating MATH-828.\n-            if (getIterations() \u003c getMaxIterations() / 2) {\n                 Integer minRow \u003d null;\n                 int minIndex \u003d tableau.getWidth();\n                 for (Integer row : minRatioPositions) {\n@@ -152,7 +149,6 @@\n                     }\n                 }\n                 return minRow;\n-            }\n         }\n         return minRatioPositions.get(0);\n     }\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [4764,4803]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [4805,5333]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [4760,5333]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [5995,6035]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [6037,6669]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [5991,6669]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.apache.commons.math3.optimization.linear.SimplexSolver:doIteration:[final SimplexTableau tableau]:void"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.node.TestTreeTraversingParser::testNumberOverflowLong,com.fasterxml.jackson.databind.node.TestTreeTraversingParser::testNumberOverflowInt",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.node.TreeTraversingParser",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "106",
+  "workingDir": "../bugs/JacksonDatabind_106_tmp",
+  "bug_name": "JacksonDatabind_106",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.node.TestTreeTraversingParser",
+      "test_function": "testNumberOverflowLong",
+      "assertion_line": "323",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected failure for `long` overflow"
+    },
+    {
+      "test_class": "com.fasterxml.jackson.databind.node.TestTreeTraversingParser",
+      "test_function": "testNumberOverflowInt",
+      "assertion_line": "282",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected failure for `int` overflow"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/node/TreeTraversingParser.java",
+        "src/main/java/com/fasterxml/jackson/databind/node/TreeTraversingParser.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.node.TreeTraversingParser:getLongValue:[]:long",
+            "com.fasterxml.jackson.databind.node.TreeTraversingParser:getIntValue:[]:int"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.node.TreeTraversingParser:getIntValue:[]:int"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "308",
+            "309",
+            "310",
+            "317",
+            "318",
+            "319"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "307"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/node/TreeTraversingParser.java b/src/main/java/com/fasterxml/jackson/databind/node/TreeTraversingParser.java\nindex 151aefa..2e2b100 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/node/TreeTraversingParser.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/node/TreeTraversingParser.java\n@@ -305,18 +305,12 @@\n     @Override\n     public int getIntValue() throws IOException {\n         final NumericNode node \u003d (NumericNode) currentNumericNode();\n-        if (!node.canConvertToInt()) {\n-            reportOverflowInt();\n-        }\n         return node.intValue();\n     }\n \n     @Override\n     public long getLongValue() throws IOException {\n         final NumericNode node \u003d (NumericNode) currentNumericNode();\n-        if (!node.canConvertToInt()) {\n-            reportOverflowLong();\n-        }\n         return node.longValue();\n     }\n \n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [8836,8909]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [9092,9166]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.node.TreeTraversingParser:getLongValue:[]:long"
+      ],
+      "num": 1
+    }
+  }
+}

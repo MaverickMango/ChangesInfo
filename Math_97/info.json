@@ -1,0 +1,185 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Math",
+  "id": "97",
+  "workingDir": "../bugs/Math_97_buggy",
+  "inducingCommit": "4f1e69b5313761cb95909359a408d13e6aa29635",
+  "originalCommit": "6013c8da1956cd765e28061b7cdc94a33fff5fd4",
+  "bug_name": "Math_97",
+  "derive": "defects4j",
+  "original_fixing_commit": "ed492bd0c5c5c3a0258a65cb31cc8723d8f011fd",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/math/analysis/BrentSolver.java",
+        "src/java/org/apache/commons/math/analysis/BrentSolver.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "solve"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "solve"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "2",
+            "85",
+            "95"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "2",
+            "85",
+            "96",
+            "97",
+            "98",
+            "99",
+            "100",
+            "101",
+            "102",
+            "103"
+          ],
+          "num": 10
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/math/analysis/BrentSolver.java b/src/java/org/apache/commons/math/analysis/BrentSolver.java\nindex 9f5dc90..2becdbf 100644\n--- a/src/java/org/apache/commons/math/analysis/BrentSolver.java\n+++ b/src/java/org/apache/commons/math/analysis/BrentSolver.java\n@@ -1,5 +1,5 @@\n /*\n- * Copyright 2003-2004 The Apache Software Foundation.\n+ * Copyright 2003-2005 The Apache Software Foundation.\n  *\n  * Licensed under the Apache License, Version 2.0 (the \"License\");\n  * you may not use this file except in compliance with the License.\n@@ -82,7 +82,7 @@\n         FunctionEvaluationException {\n         \n         clearResult();\n-        verifyBracketing(min, max, f);\n+        verifyInterval(min, max);\n         \n         // Index 0 is the old approximation for the root.\n         // Index 1 is the last calculated approximation  for the root.\n@@ -93,6 +93,14 @@\n         double y1;\n         y0 \u003d f.value(x0);\n         y1 \u003d f.value(x1);\n+        \n+        // Verify bracketing\n+        if (y0 * y1 \u003e\u003d 0) {\n+            throw new IllegalArgumentException\n+            (\"Function values at endpoints do not have different signs.\" +\n+                    \"  Endpoints: [\" + min + \",\" + max + \"]\" + \n+                    \"  Values: [\" + y0 + \",\" + y1 + \"]\");       \n+        }\n    \n         double x2 \u003d x0;\n         double y2 \u003d y0;\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [3164,3189]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [3579,3859]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [3164,3194]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/math/analysis/SecantSolver.java",
+        "src/java/org/apache/commons/math/analysis/SecantSolver.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "solve"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "solve"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "87",
+            "97"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "87",
+            "98",
+            "99",
+            "100",
+            "101",
+            "102",
+            "103",
+            "104",
+            "105",
+            "106"
+          ],
+          "num": 10
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/math/analysis/SecantSolver.java b/src/java/org/apache/commons/math/analysis/SecantSolver.java\nindex cb090e4..030ce12 100644\n--- a/src/java/org/apache/commons/math/analysis/SecantSolver.java\n+++ b/src/java/org/apache/commons/math/analysis/SecantSolver.java\n@@ -84,7 +84,7 @@\n         FunctionEvaluationException {\n         \n         clearResult();\n-        verifyBracketing(min, max, f);\n+        verifyInterval(min, max);\n         \n         // Index 0 is the old approximation for the root.\n         // Index 1 is the last calculated approximation  for the root.\n@@ -95,6 +95,15 @@\n         double x1 \u003d max;\n         double y0 \u003d f.value(x0);\n         double y1 \u003d f.value(x1);\n+        \n+        // Verify bracketing\n+        if (y0 * y1 \u003e\u003d 0) {\n+            throw new IllegalArgumentException\n+            (\"Function values at endpoints do not have different signs.\" +\n+                    \"  Endpoints: [\" + min + \",\" + max + \"]\" + \n+                    \"  Values: [\" + y0 + \",\" + y1 + \"]\");       \n+        }\n+        \n         double x2 \u003d x0;\n         double y2 \u003d y0;\n         double oldDelta \u003d x2 - x1;\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [3351,3376]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [3837,4117]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [3351,3381]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [],
+  "fixing_changes": [],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

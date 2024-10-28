@@ -1,0 +1,1542 @@
+diff --git a/CHANGES b/CHANGES
+index a323425..b97e634 100644
+--- a/CHANGES
++++ b/CHANGES
+@@ -14,6 +14,10 @@
+ 
+   * Performance improvements in text and HTML generation (through less GC).
+ 
++  * Reduced memory consumption of text, scripts, and comments in the DOM by 40%, by refactoring the node
++    hierarchy to not track childnodes or attributes by default for lead nodes. For the average document, that's about a
++    30% memory reduction.
++
+   * Added Element.appendTo(parent) to simplify slinging elements about.
+     <https://github.com/jhy/jsoup/pull/662>
+ 
+diff --git a/src/main/java/org/jsoup/nodes/Attributes.java b/src/main/java/org/jsoup/nodes/Attributes.java
+index b014941..ba9a91d 100644
+--- a/src/main/java/org/jsoup/nodes/Attributes.java
++++ b/src/main/java/org/jsoup/nodes/Attributes.java
+@@ -77,13 +77,15 @@
+     }
+ 
+     /**
+-     Set a new attribute, or replace an existing one by key.
+-     @param key attribute key
+-     @param value attribute value
++     * Set a new attribute, or replace an existing one by key.
++     * @param key attribute key
++     * @param value attribute value
++     * @return these attributes, for chaining
+      */
+-    public void put(String key, String value) {
++    public Attributes put(String key, String value) {
+         Attribute attr = new Attribute(key, value);
+         put(attr);
++        return this;
+     }
+ 
+     void putIgnoreCase(String key, String value) {
+@@ -96,26 +98,30 @@
+     }
+ 
+     /**
+-    Set a new boolean attribute, remove attribute if value is false.
+-    @param key attribute key
+-    @param value attribute value
+-    */
+-    public void put(String key, boolean value) {
++     * Set a new boolean attribute, remove attribute if value is false.
++     * @param key attribute key
++     * @param value attribute value
++     * @return these attributes, for chaining
++     */
++    public Attributes put(String key, boolean value) {
+         if (value)
+             put(new BooleanAttribute(key));
+         else
+             remove(key);
++        return this;
+     }
+ 
+     /**
+      Set a new attribute, or replace an existing one by key.
+      @param attribute attribute
++     @return these attributes, for chaining
+      */
+-    public void put(Attribute attribute) {
++    public Attributes put(Attribute attribute) {
+         Validate.notNull(attribute);
+         if (attributes == null)
+              attributes = new LinkedHashMap<>(2);
+         attributes.put(attribute.getKey(), attribute);
++        return this;
+     }
+ 
+     /**
+diff --git a/src/main/java/org/jsoup/nodes/Comment.java b/src/main/java/org/jsoup/nodes/Comment.java
+index 40b87c9..e467a39 100644
+--- a/src/main/java/org/jsoup/nodes/Comment.java
++++ b/src/main/java/org/jsoup/nodes/Comment.java
+@@ -6,17 +6,25 @@
+  A comment node.
+ 
+  @author Jonathan Hedley, jonathan@hedley.net */
+-public class Comment extends Node {
++public class Comment extends LeafNode {
+     private static final String COMMENT_KEY = "comment";
+ 
+     /**
+      Create a new comment node.
+      @param data The contents of the comment
+-     @param baseUri base URI
++     */
++    public Comment(String data) {
++        value = data;
++    }
++
++    /**
++     Create a new comment node.
++     @param data The contents of the comment
++     @param baseUri base URI not used. This is a leaf node.
++     @deprecated
+      */
+     public Comment(String data, String baseUri) {
+-        super(baseUri);
+-        attributes.put(COMMENT_KEY, data);
++        this(data);
+     }
+ 
+     public String nodeName() {
+@@ -28,7 +36,7 @@
+      @return comment content
+      */
+     public String getData() {
+-        return attributes.get(COMMENT_KEY);
++        return coreValue();
+     }
+ 
+ 	void outerHtmlHead(Appendable accum, int depth, Document.OutputSettings out) throws IOException {
+diff --git a/src/main/java/org/jsoup/nodes/DataNode.java b/src/main/java/org/jsoup/nodes/DataNode.java
+index b58ad35..b71cd4a 100644
+--- a/src/main/java/org/jsoup/nodes/DataNode.java
++++ b/src/main/java/org/jsoup/nodes/DataNode.java
+@@ -6,17 +6,24 @@
+  A data node, for contents of style, script tags etc, where contents should not show in text().
+ 
+  @author Jonathan Hedley, jonathan@hedley.net */
+-public class DataNode extends Node{
+-    private static final String DATA_KEY = "data";
++public class DataNode extends LeafNode {
+ 
+     /**
+      Create a new DataNode.
+      @param data data contents
+-     @param baseUri base URI
++     */
++    public DataNode(String data) {
++        value = data;
++    }
++
++    /**
++     Create a new DataNode.
++     @param data data contents
++     @param baseUri Unused, Leaf Nodes do not hold base URis
++     @deprecated
+      */
+     public DataNode(String data, String baseUri) {
+-        super(baseUri);
+-        attributes.put(DATA_KEY, data);
++        this(data);
+     }
+ 
+     public String nodeName() {
+@@ -28,7 +35,7 @@
+      @return data
+      */
+     public String getWholeData() {
+-        return attributes.get(DATA_KEY);
++        return coreValue();
+     }
+ 
+     /**
+@@ -37,7 +44,7 @@
+      * @return this node, for chaining
+      */
+     public DataNode setWholeData(String data) {
+-        attributes.put(DATA_KEY, data);
++        coreValue(data);
+         return this;
+     }
+ 
+diff --git a/src/main/java/org/jsoup/nodes/Document.java b/src/main/java/org/jsoup/nodes/Document.java
+index c6e5700..3c54d4b 100644
+--- a/src/main/java/org/jsoup/nodes/Document.java
++++ b/src/main/java/org/jsoup/nodes/Document.java
+@@ -150,7 +150,7 @@
+         for (int i = toMove.size()-1; i >= 0; i--) {
+             Node node = toMove.get(i);
+             element.removeChild(node);
+-            body().prependChild(new TextNode(" ", ""));
++            body().prependChild(new TextNode(" "));
+             body().prependChild(node);
+         }
+     }
+@@ -163,7 +163,7 @@
+             List<Node> toMove = new ArrayList<>();
+             for (int i = 1; i < elements.size(); i++) {
+                 Node dupe = elements.get(i);
+-                toMove.addAll(dupe.childNodes);
++                toMove.addAll(dupe.ensureChildNodes());
+                 dupe.remove();
+             }
+ 
+@@ -181,8 +181,9 @@
+         if (node.nodeName().equals(tag))
+             return (Element) node;
+         else {
+-            for (Node child: node.childNodes) {
+-                Element found = findFirstElementByTagName(tag, child);
++            int size = node.childNodeSize();
++            for (int i = 0; i < size; i++) {
++                Element found = findFirstElementByTagName(tag, node.childNode(i));
+                 if (found != null)
+                     return found;
+             }
+@@ -342,14 +343,14 @@
+                             decl.attr("version", "1.0");
+                         }
+                     } else {
+-                        decl = new XmlDeclaration("xml", baseUri, false);
++                        decl = new XmlDeclaration("xml", false);
+                         decl.attr("version", "1.0");
+                         decl.attr("encoding", charset().displayName());
+ 
+                         prependChild(decl);
+                     }
+                 } else {
+-                    XmlDeclaration decl = new XmlDeclaration("xml", baseUri, false);
++                    XmlDeclaration decl = new XmlDeclaration("xml", false);
+                     decl.attr("version", "1.0");
+                     decl.attr("encoding", charset().displayName());
+ 
+diff --git a/src/main/java/org/jsoup/nodes/DocumentType.java b/src/main/java/org/jsoup/nodes/DocumentType.java
+index 4e7730b..7d5d42f 100644
+--- a/src/main/java/org/jsoup/nodes/DocumentType.java
++++ b/src/main/java/org/jsoup/nodes/DocumentType.java
+@@ -1,14 +1,15 @@
+ package org.jsoup.nodes;
+ 
+-import java.io.IOException;
+-
+ import org.jsoup.helper.StringUtil;
+-import org.jsoup.nodes.Document.OutputSettings.*;
++import org.jsoup.nodes.Document.OutputSettings.Syntax;
++
++import java.io.IOException;
+ 
+ /**
+  * A {@code <!DOCTYPE>} node.
+  */
+-public class DocumentType extends Node {
++public class DocumentType extends LeafNode {
++    // todo needs a bit of a chunky cleanup. this level of detail isn't needed
+     public static final String PUBLIC_KEY = "PUBLIC";
+     public static final String SYSTEM_KEY = "SYSTEM";
+     private static final String NAME = "name";
+@@ -22,11 +23,8 @@
+      * @param name the doctype's name
+      * @param publicId the doctype's public ID
+      * @param systemId the doctype's system ID
+-     * @param baseUri the doctype's base URI
+      */
+-    public DocumentType(String name, String publicId, String systemId, String baseUri) {
+-        super(baseUri);
+-
++    public DocumentType(String name, String publicId, String systemId) {
+         attr(NAME, name);
+         attr(PUBLIC_ID, publicId);
+         if (has(PUBLIC_ID)) {
+@@ -40,11 +38,27 @@
+      * @param name the doctype's name
+      * @param publicId the doctype's public ID
+      * @param systemId the doctype's system ID
+-     * @param baseUri the doctype's base URI
++     * @param baseUri unused
++     * @deprecated
++     */
++    public DocumentType(String name, String publicId, String systemId, String baseUri) {
++        attr(NAME, name);
++        attr(PUBLIC_ID, publicId);
++        if (has(PUBLIC_ID)) {
++            attr(PUB_SYS_KEY, PUBLIC_KEY);
++        }
++        attr(SYSTEM_ID, systemId);
++    }
++
++    /**
++     * Create a new doctype element.
++     * @param name the doctype's name
++     * @param publicId the doctype's public ID
++     * @param systemId the doctype's system ID
++     * @param baseUri unused
++     * @deprecated
+      */
+     public DocumentType(String name, String pubSysKey, String publicId, String systemId, String baseUri) {
+-        super(baseUri);
+-
+         attr(NAME, name);
+         if (pubSysKey != null) {
+             attr(PUB_SYS_KEY, pubSysKey);
+@@ -52,6 +66,10 @@
+         attr(PUBLIC_ID, publicId);
+         attr(SYSTEM_ID, systemId);
+     }
++    public void setPubSysKey(String value) {
++        if (value != null)
++            attr(PUB_SYS_KEY, value);
++    }
+ 
+     @Override
+     public String nodeName() {
+diff --git a/src/main/java/org/jsoup/nodes/Element.java b/src/main/java/org/jsoup/nodes/Element.java
+index 3a9154e..266bd14 100644
+--- a/src/main/java/org/jsoup/nodes/Element.java
++++ b/src/main/java/org/jsoup/nodes/Element.java
+@@ -1,5 +1,6 @@
+ package org.jsoup.nodes;
+ 
++import org.jsoup.helper.ChangeNotifyingArrayList;
+ import org.jsoup.helper.StringUtil;
+ import org.jsoup.helper.Validate;
+ import org.jsoup.parser.ParseSettings;
+@@ -37,10 +38,13 @@
+  * @author Jonathan Hedley, jonathan@hedley.net
+  */
+ public class Element extends Node {
++    private static final List<Node> EMPTY_NODES = Collections.emptyList();
++    private static final Pattern classSplit = Pattern.compile("\\s+");
+     private Tag tag;
+     private WeakReference<List<Element>> shadowChildrenRef; // points to child elements shadowed from node children
+-
+-    private static final Pattern classSplit = Pattern.compile("\\s+");
++    List<Node> childNodes;
++    private Attributes attributes;
++    private String baseUri;
+ 
+     /**
+      * Create a new, standalone element.
+@@ -60,9 +64,11 @@
+      * @see #appendElement(String)
+      */
+     public Element(Tag tag, String baseUri, Attributes attributes) {
+-        super(baseUri, attributes);
+-        
+-        Validate.notNull(tag);    
++        Validate.notNull(tag);
++        Validate.notNull(baseUri);
++        childNodes = EMPTY_NODES;
++        this.baseUri = baseUri;
++        this.attributes = attributes;
+         this.tag = tag;
+     }
+     
+@@ -75,7 +81,41 @@
+      * @see Tag#valueOf(String, ParseSettings)
+      */
+     public Element(Tag tag, String baseUri) {
+-        this(tag, baseUri, new Attributes());
++        this(tag, baseUri, null);
++    }
++
++    protected List<Node> ensureChildNodes() {
++        if (childNodes == EMPTY_NODES) {
++            childNodes = new NodeList(4);
++        }
++        return childNodes;
++    }
++
++    @Override
++    protected boolean hasAttributes() {
++        return attributes != null;
++    }
++
++    @Override
++    public Attributes attributes() {
++        if (!hasAttributes())
++            attributes = new Attributes();
++        return attributes;
++    }
++
++    @Override
++    public String baseUri() {
++        return baseUri;
++    }
++
++    @Override
++    protected void doSetBaseUri(String baseUri) {
++        this.baseUri = baseUri;
++    }
++
++    @Override
++    public int childNodeSize() {
++        return childNodes.size();
+     }
+ 
+     @Override
+@@ -130,7 +170,7 @@
+      * @return The id attribute, if present, or an empty string if not.
+      */
+     public String id() {
+-        return attributes.getIgnoreCase("id");
++        return attributes().getIgnoreCase("id");
+     }
+ 
+     /**
+@@ -155,7 +195,7 @@
+      * @return this element
+      */
+     public Element attr(String attributeKey, boolean attributeValue) {
+-        attributes.put(attributeKey, attributeValue);
++        attributes().put(attributeKey, attributeValue);
+         return this;
+     }
+ 
+@@ -173,7 +213,7 @@
+      * @return a map of {@code key=value} custom data attributes.
+      */
+     public Map<String, String> dataset() {
+-        return attributes.dataset();
++        return attributes().dataset();
+     }
+ 
+     @Override
+@@ -458,7 +498,7 @@
+      */
+     public Element appendText(String text) {
+         Validate.notNull(text);
+-        TextNode node = new TextNode(text, baseUri());
++        TextNode node = new TextNode(text);
+         appendChild(node);
+         return this;
+     }
+@@ -471,7 +511,7 @@
+      */
+     public Element prependText(String text) {
+         Validate.notNull(text);
+-        TextNode node = new TextNode(text, baseUri());
++        TextNode node = new TextNode(text);
+         prependChild(node);
+         return this;
+     }
+@@ -1052,7 +1092,7 @@
+         Validate.notNull(text);
+ 
+         empty();
+-        TextNode textNode = new TextNode(text, baseUri);
++        TextNode textNode = new TextNode(text);
+         appendChild(textNode);
+ 
+         return this;
+@@ -1135,7 +1175,7 @@
+      */
+     public Element classNames(Set<String> classNames) {
+         Validate.notNull(classNames);
+-        attributes.put("class", StringUtil.join(classNames, " "));
++        attributes().put("class", StringUtil.join(classNames, " "));
+         return this;
+     }
+ 
+@@ -1146,7 +1186,7 @@
+      */
+     // performance sensitive
+     public boolean hasClass(String className) {
+-        final String classAttr = attributes.getIgnoreCase("class");
++        final String classAttr = attributes().getIgnoreCase("class");
+         final int len = classAttr.length();
+         final int wantLen = className.length();
+ 
+@@ -1272,7 +1312,8 @@
+         accum
+                 .append("<")
+                 .append(tagName());
+-        attributes.html(accum, out);
++        if (hasAttributes())
++            attributes.html(accum, out);
+ 
+         // selfclosing includes unknown tags, isEmpty defines tags that are always empty
+         if (childNodes.isEmpty() && tag.isSelfClosing()) {
+@@ -1344,4 +1385,26 @@
+     public Element clone() {
+         return (Element) super.clone();
+     }
++
++    @Override
++    protected Element doClone(Node parent) {
++        Element clone = (Element) super.doClone(parent);
++        clone.attributes = attributes != null ? attributes.clone() : null;
++        clone.baseUri = baseUri;
++        clone.childNodes = new NodeList(childNodes.size());
++
++        clone.childNodes.addAll(childNodes);
++
++        return clone;
++    }
++
++    private final class NodeList extends ChangeNotifyingArrayList<Node> {
++        NodeList(int initialCapacity) {
++            super(initialCapacity);
++        }
++
++        public void onContentsChanged() {
++            nodelistChanged();
++        }
++    }
+ }
+diff --git a/src/main/java/org/jsoup/nodes/LeafNode.java b/src/main/java/org/jsoup/nodes/LeafNode.java
+new file mode 100644
+index 0000000..77bac9b
+--- /dev/null
++++ b/src/main/java/org/jsoup/nodes/LeafNode.java
+@@ -0,0 +1,95 @@
++package org.jsoup.nodes;
++
++import org.jsoup.helper.Validate;
++
++import java.util.List;
++
++abstract class LeafNode extends Node {
++    Object value; // either a string value, or an attribute map (in the rare case multiple attributes are set)
++
++    protected final boolean hasAttributes() {
++        return value instanceof Attributes;
++    }
++
++    @Override
++    public final Attributes attributes() {
++        ensureAttributes();
++        return (Attributes) value;
++    }
++
++    private void ensureAttributes() {
++        if (!hasAttributes()) {
++            Object coreValue = value;
++            Attributes attributes = new Attributes();
++            value = attributes;
++            if (coreValue != null)
++                attributes.put(nodeName(), (String) coreValue);
++        }
++    }
++
++    String coreValue() {
++        return attr(nodeName());
++    }
++
++    void coreValue(String value) {
++        attr(nodeName(), value);
++    }
++
++    @Override
++    public String attr(String key) {
++        Validate.notNull(key);
++        if (!hasAttributes()) {
++            return key.equals(nodeName()) ? (String) value : EmptyString;
++        }
++        return super.attr(key);
++    }
++
++    @Override
++    public Node attr(String key, String value) {
++        if (!hasAttributes() && key.equals(nodeName())) {
++            this.value = value;
++        } else {
++            ensureAttributes();
++            super.attr(key, value);
++        }
++        return this;
++    }
++
++    @Override
++    public boolean hasAttr(String key) {
++        ensureAttributes();
++        return super.hasAttr(key);
++    }
++
++    @Override
++    public Node removeAttr(String key) {
++        ensureAttributes();
++        return super.removeAttr(key);
++    }
++
++    @Override
++    public String absUrl(String key) {
++        ensureAttributes();
++        return super.absUrl(key);
++    }
++
++    @Override
++    public String baseUri() {
++        return hasParent() ? parent().baseUri() : "";
++    }
++
++    @Override
++    protected void doSetBaseUri(String baseUri) {
++        // noop
++    }
++
++    @Override
++    public int childNodeSize() {
++        return 0;
++    }
++
++    @Override
++    protected List<Node> ensureChildNodes() {
++        throw new UnsupportedOperationException("Leaf Nodes do not have child nodes.");
++    }
++}
+diff --git a/src/main/java/org/jsoup/nodes/Node.java b/src/main/java/org/jsoup/nodes/Node.java
+index b82710e..9866e43 100644
+--- a/src/main/java/org/jsoup/nodes/Node.java
++++ b/src/main/java/org/jsoup/nodes/Node.java
+@@ -1,7 +1,6 @@
+ package org.jsoup.nodes;
+ 
+ import org.jsoup.SerializationException;
+-import org.jsoup.helper.ChangeNotifyingArrayList;
+ import org.jsoup.helper.StringUtil;
+ import org.jsoup.helper.Validate;
+ import org.jsoup.parser.Parser;
+@@ -22,37 +21,14 @@
+ 
+  @author Jonathan Hedley, jonathan@hedley.net */
+ public abstract class Node implements Cloneable {
+-    private static final List<Node> EMPTY_NODES = Collections.emptyList();
++    static final String EmptyString = "";
+     Node parentNode;
+-    List<Node> childNodes;
+-    Attributes attributes;
+-    String baseUri;
+     int siblingIndex;
+ 
+     /**
+-     Create a new Node.
+-     @param baseUri base URI
+-     @param attributes attributes (not null, but may be empty)
+-     */
+-    protected Node(String baseUri, Attributes attributes) {
+-        Validate.notNull(baseUri);
+-        Validate.notNull(attributes);
+-        
+-        childNodes = EMPTY_NODES;
+-        this.baseUri = baseUri.trim();
+-        this.attributes = attributes;
+-    }
+-
+-    protected Node(String baseUri) {
+-        this(baseUri, new Attributes());
+-    }
+-
+-    /**
+      * Default constructor. Doesn't setup base uri, children, or attributes; use with caution.
+      */
+     protected Node() {
+-        childNodes = EMPTY_NODES;
+-        attributes = null;
+     }
+ 
+     /**
+@@ -62,6 +38,15 @@
+     public abstract String nodeName();
+ 
+     /**
++     * Check if this Node has an actual Attributes object.
++     */
++    protected abstract boolean hasAttributes();
++
++    public boolean hasParent() {
++        return parentNode != null;
++    }
++
++    /**
+      * Get an attribute's value by its key. <b>Case insensitive</b>
+      * <p>
+      * To get an absolute URL from an attribute that may be a relative URL, prefix the key with <code><b>abs</b></code>,
+@@ -69,7 +54,7 @@
+      * </p>
+      * E.g.:
+      * <blockquote><code>String url = a.attr("abs:href");</code></blockquote>
+-     * 
++     *
+      * @param attributeKey The attribute key.
+      * @return The attribute, or empty string if not present (to avoid nulls).
+      * @see #attributes()
+@@ -78,8 +63,10 @@
+      */
+     public String attr(String attributeKey) {
+         Validate.notNull(attributeKey);
++        if (!hasAttributes())
++            return EmptyString;
+ 
+-        String val = attributes.getIgnoreCase(attributeKey);
++        String val = attributes().getIgnoreCase(attributeKey);
+         if (val.length() > 0)
+             return val;
+         else if (lowerCase(attributeKey).startsWith("abs:"))
+@@ -91,9 +78,7 @@
+      * Get all of the element's attributes.
+      * @return attributes (which implements iterable, in same order as presented in original HTML).
+      */
+-    public Attributes attributes() {
+-        return attributes;
+-    }
++    public abstract Attributes attributes();
+ 
+     /**
+      * Set an attribute (key=value). If the attribute already exists, it is replaced. The attribute key comparison is
+@@ -103,7 +88,7 @@
+      * @return this (for chaining)
+      */
+     public Node attr(String attributeKey, String attributeValue) {
+-        attributes.putIgnoreCase(attributeKey, attributeValue);
++        attributes().putIgnoreCase(attributeKey, attributeValue);
+         return this;
+     }
+ 
+@@ -117,10 +102,10 @@
+ 
+         if (attributeKey.startsWith("abs:")) {
+             String key = attributeKey.substring("abs:".length());
+-            if (attributes.hasKeyIgnoreCase(key) && !absUrl(key).equals(""))
++            if (attributes().hasKeyIgnoreCase(key) && !absUrl(key).equals(""))
+                 return true;
+         }
+-        return attributes.hasKeyIgnoreCase(attributeKey);
++        return attributes().hasKeyIgnoreCase(attributeKey);
+     }
+ 
+     /**
+@@ -130,7 +115,7 @@
+      */
+     public Node removeAttr(String attributeKey) {
+         Validate.notNull(attributeKey);
+-        attributes.removeIgnoreCase(attributeKey);
++        attributes().removeIgnoreCase(attributeKey);
+         return this;
+     }
+ 
+@@ -139,7 +124,7 @@
+      * @return this, for chaining
+      */
+     public Node clearAttributes() {
+-        Iterator<Attribute> it = attributes.iterator();
++        Iterator<Attribute> it = attributes().iterator();
+         while (it.hasNext()) {
+             it.next();
+             it.remove();
+@@ -151,9 +136,13 @@
+      Get the base URI of this node.
+      @return base URI
+      */
+-    public String baseUri() {
+-        return baseUri;
+-    }
++    public abstract String baseUri();
++
++    /**
++     * Set the baseUri for just this node (not its descendants), if this Node tracks base URIs.
++     * @param baseUri
++     */
++    protected abstract void doSetBaseUri(String baseUri);
+ 
+     /**
+      Update the base URI of this node and all of its descendants.
+@@ -164,7 +153,7 @@
+ 
+         traverse(new NodeVisitor() {
+             public void head(Node node, int depth) {
+-                node.baseUri = baseUri;
++                node.doSetBaseUri(baseUri);
+             }
+ 
+             public void tail(Node node, int depth) {
+@@ -188,7 +177,7 @@
+      * As an alternate, you can use the {@link #attr} method with the <code>abs:</code> prefix, e.g.:
+      * <code>String absUrl = linkEl.attr("abs:href");</code>
+      * </p>
+-     * 
++     *
+      * @param attributeKey The attribute key
+      * @return An absolute URL if one could be made, or an empty string (not null) if the attribute was missing or
+      * could not be made successfully into a URL.
+@@ -201,17 +190,19 @@
+         if (!hasAttr(attributeKey)) {
+             return ""; // nothing to make absolute with
+         } else {
+-            return StringUtil.resolve(baseUri, attr(attributeKey));
++            return StringUtil.resolve(baseUri(), attr(attributeKey));
+         }
+     }
+ 
++    protected abstract List<Node> ensureChildNodes();
++
+     /**
+      Get a child node by its 0-based index.
+      @param index index of child node
+      @return the child node at this index. Throws a {@code IndexOutOfBoundsException} if the index is out of bounds.
+      */
+     public Node childNode(int index) {
+-        return childNodes.get(index);
++        return ensureChildNodes().get(index);
+     }
+ 
+     /**
+@@ -220,7 +211,7 @@
+      @return list of children. If no children, returns an empty list.
+      */
+     public List<Node> childNodes() {
+-        return Collections.unmodifiableList(childNodes);
++        return Collections.unmodifiableList(ensureChildNodes());
+     }
+ 
+     /**
+@@ -229,8 +220,9 @@
+      * @return a deep copy of this node's children
+      */
+     public List<Node> childNodesCopy() {
+-        List<Node> children = new ArrayList<>(childNodes.size());
+-        for (Node node : childNodes) {
++        final List<Node> nodes = ensureChildNodes();
++        final ArrayList<Node> children = new ArrayList<>(nodes.size());
++        for (Node node : nodes) {
+             children.add(node.clone());
+         }
+         return children;
+@@ -240,12 +232,10 @@
+      * Get the number of child nodes that this node holds.
+      * @return the number of child nodes that this node holds.
+      */
+-    public final int childNodeSize() {
+-        return childNodes.size();
+-    }
+-    
++    public abstract int childNodeSize();
++
+     protected Node[] childNodesAsArray() {
+-        return childNodes.toArray(new Node[childNodeSize()]);
++        return ensureChildNodes().toArray(new Node[childNodeSize()]);
+     }
+ 
+     /**
+@@ -274,16 +264,16 @@
+             node = node.parentNode;
+         return node;
+     }
+-    
++
+     /**
+-     * Gets the Document associated with this Node. 
++     * Gets the Document associated with this Node.
+      * @return the Document associated with this Node, or null if there is no such Document.
+      */
+     public Document ownerDocument() {
+         Node root = root();
+         return (root instanceof Document) ? (Document) root : null;
+     }
+-    
++
+     /**
+      * Remove (delete) this node from the DOM tree. If this node has children, they are also removed.
+      */
+@@ -346,7 +336,7 @@
+         Validate.notNull(html);
+         Validate.notNull(parentNode);
+ 
+-        Element context = parent() instanceof Element ? (Element) parent() : null;        
++        Element context = parent() instanceof Element ? (Element) parent() : null;
+         List<Node> nodes = Parser.parseFragment(html, context, baseUri());
+         parentNode.addChildren(index, nodes.toArray(new Node[nodes.size()]));
+     }
+@@ -392,14 +382,14 @@
+      * Calling {@code element.unwrap()} on the {@code span} element will result in the html:
+      * <p>{@code <div>One Two <b>Three</b></div>}</p>
+      * and the {@code "Two "} {@link TextNode} being returned.
+-     * 
++     *
+      * @return the first child of this node, after the node has been unwrapped. Null if the node had no children.
+      * @see #remove()
+      * @see #wrap(String)
+      */
+     public Node unwrap() {
+         Validate.notNull(parentNode);
+-
++        final List<Node> childNodes = ensureChildNodes();
+         Node firstChild = childNodes.size() > 0 ? childNodes.get(0) : null;
+         parentNode.addChildren(siblingIndex, this.childNodesAsArray());
+         this.remove();
+@@ -418,7 +408,7 @@
+     void nodelistChanged() {
+         // Element overrides this to clear its shadow children elements
+     }
+-    
++
+     /**
+      * Replace this node in the DOM with the supplied node.
+      * @param in the node that will will replace the existing node.
+@@ -441,9 +431,9 @@
+         Validate.notNull(in);
+         if (in.parentNode != null)
+             in.parentNode.removeChild(in);
+-        
++
+         final int index = out.siblingIndex;
+-        childNodes.set(index, in);
++        ensureChildNodes().set(index, in);
+         in.parentNode = this;
+         in.setSiblingIndex(index);
+         out.parentNode = null;
+@@ -452,50 +442,48 @@
+     protected void removeChild(Node out) {
+         Validate.isTrue(out.parentNode == this);
+         final int index = out.siblingIndex;
+-        childNodes.remove(index);
++        ensureChildNodes().remove(index);
+         reindexChildren(index);
+         out.parentNode = null;
+     }
+ 
+     protected void addChildren(Node... children) {
+         //most used. short circuit addChildren(int), which hits reindex children and array copy
++        final List<Node> nodes = ensureChildNodes();
++
+         for (Node child: children) {
+             reparentChild(child);
+-            ensureChildNodes();
+-            childNodes.add(child);
+-            child.setSiblingIndex(childNodes.size()-1);
++            nodes.add(child);
++            child.setSiblingIndex(nodes.size()-1);
+         }
+     }
+ 
+     protected void addChildren(int index, Node... children) {
+         Validate.noNullElements(children);
+-        ensureChildNodes();
++        final List<Node> nodes = ensureChildNodes();
++
+         for (int i = children.length - 1; i >= 0; i--) {
+             Node in = children[i];
+             reparentChild(in);
+-            childNodes.add(index, in);
++            nodes.add(index, in);
+             reindexChildren(index);
+         }
+     }
+-
+-    protected void ensureChildNodes() {
+-        if (childNodes == EMPTY_NODES) {
+-            childNodes = new NodeList(4);
+-        }
+-    }
+-
++    
+     protected void reparentChild(Node child) {
+         if (child.parentNode != null)
+             child.parentNode.removeChild(child);
+         child.setParentNode(this);
+     }
+-    
++
+     private void reindexChildren(int start) {
++        final List<Node> childNodes = ensureChildNodes();
++
+         for (int i = start; i < childNodes.size(); i++) {
+             childNodes.get(i).setSiblingIndex(i);
+         }
+     }
+-    
++
+     /**
+      Retrieves this node's sibling nodes. Similar to {@link #childNodes()  node.parent.childNodes()}, but does not
+      include this node (a node is not a sibling of itself).
+@@ -505,7 +493,7 @@
+         if (parentNode == null)
+             return Collections.emptyList();
+ 
+-        List<Node> nodes = parentNode.childNodes;
++        List<Node> nodes = parentNode.ensureChildNodes();
+         List<Node> siblings = new ArrayList<>(nodes.size() - 1);
+         for (Node node: nodes)
+             if (node != this)
+@@ -520,8 +508,8 @@
+     public Node nextSibling() {
+         if (parentNode == null)
+             return null; // root
+-        
+-        final List<Node> siblings = parentNode.childNodes;
++
++        final List<Node> siblings = parentNode.ensureChildNodes();
+         final int index = siblingIndex+1;
+         if (siblings.size() > index)
+             return siblings.get(index);
+@@ -538,7 +526,7 @@
+             return null; // root
+ 
+         if (siblingIndex > 0)
+-            return parentNode.childNodes.get(siblingIndex-1);
++            return parentNode.ensureChildNodes().get(siblingIndex-1);
+         else
+             return null;
+     }
+@@ -552,7 +540,7 @@
+     public int siblingIndex() {
+         return siblingIndex;
+     }
+-    
++
+     protected void setSiblingIndex(int siblingIndex) {
+         this.siblingIndex = siblingIndex;
+     }
+@@ -608,7 +596,7 @@
+         outerHtml(appendable);
+         return appendable;
+     }
+-    
++
+ 	public String toString() {
+         return outerHtml();
+     }
+@@ -656,15 +644,17 @@
+         Node thisClone = doClone(null); // splits for orphan
+ 
+         // Queue up nodes that need their children cloned (BFS).
+-        LinkedList<Node> nodesToProcess = new LinkedList<>();
++        final LinkedList<Node> nodesToProcess = new LinkedList<>();
+         nodesToProcess.add(thisClone);
+ 
+         while (!nodesToProcess.isEmpty()) {
+             Node currParent = nodesToProcess.remove();
+ 
+-            for (int i = 0; i < currParent.childNodes.size(); i++) {
+-                Node childClone = currParent.childNodes.get(i).doClone(currParent);
+-                currParent.childNodes.set(i, childClone);
++            final int size = currParent.childNodeSize();
++            for (int i = 0; i < size; i++) {
++                final List<Node> childNodes = currParent.ensureChildNodes();
++                Node childClone = childNodes.get(i).doClone(currParent);
++                childNodes.set(i, childClone);
+                 nodesToProcess.add(childClone);
+             }
+         }
+@@ -687,11 +677,6 @@
+ 
+         clone.parentNode = parent; // can be null, to create an orphan split
+         clone.siblingIndex = parent == null ? 0 : siblingIndex;
+-        clone.attributes = attributes != null ? attributes.clone() : null;
+-        clone.baseUri = baseUri;
+-        clone.childNodes = new NodeList(childNodes.size());
+-
+-        clone.childNodes.addAll(childNodes);
+ 
+         return clone;
+     }
+@@ -723,14 +708,4 @@
+             }
+         }
+     }
+-
+-    private final class NodeList extends ChangeNotifyingArrayList<Node> {
+-        NodeList(int initialCapacity) {
+-            super(initialCapacity);
+-        }
+-
+-        public void onContentsChanged() {
+-            nodelistChanged();
+-        }
+-    }
+ }
+diff --git a/src/main/java/org/jsoup/nodes/TextNode.java b/src/main/java/org/jsoup/nodes/TextNode.java
+index 1f95c61..1e7f5ae 100644
+--- a/src/main/java/org/jsoup/nodes/TextNode.java
++++ b/src/main/java/org/jsoup/nodes/TextNode.java
+@@ -1,33 +1,36 @@
+ package org.jsoup.nodes;
+ 
+-import java.io.IOException;
+-
+ import org.jsoup.helper.StringUtil;
+ import org.jsoup.helper.Validate;
+ 
++import java.io.IOException;
++
+ /**
+  A text node.
+ 
+  @author Jonathan Hedley, jonathan@hedley.net */
+-public class TextNode extends Node {
+-    /*
+-    TextNode is a node, and so by default comes with attributes and children. The attributes are seldom used, but use
+-    memory, and the child nodes are never used. So we don't have them, and override accessors to attributes to create
+-    them as needed on the fly.
+-     */
+-    private static final String TEXT_KEY = "text";
+-    String text;
++public class TextNode extends LeafNode {
+ 
+     /**
+      Create a new TextNode representing the supplied (unencoded) text).
+ 
+      @param text raw text
+-     @param baseUri base uri
++     @see #createFromEncoded(String)
++     */
++    public TextNode(String text) {
++        value = text;
++    }
++
++    /**
++     Create a new TextNode representing the supplied (unencoded) text).
++
++     @param text raw text
++     @param baseUri base uri - ignored for this node type
+      @see #createFromEncoded(String, String)
++     @deprecated use {@link TextNode(String)}
+      */
+     public TextNode(String text, String baseUri) {
+-        this.baseUri = baseUri;
+-        this.text = text;
++        this(text);
+     }
+ 
+ 	public String nodeName() {
+@@ -49,9 +52,7 @@
+      * @return this, for chaining
+      */
+     public TextNode text(String text) {
+-        this.text = text;
+-        if (attributes != null)
+-            attributes.put(TEXT_KEY, text);
++        coreValue(text);
+         return this;
+     }
+ 
+@@ -60,7 +61,7 @@
+      @return text
+      */
+     public String getWholeText() {
+-        return attributes == null ? text : attributes.get(TEXT_KEY);
++        return coreValue();
+     }
+ 
+     /**
+@@ -68,7 +69,7 @@
+      @return true if this document is empty or only whitespace, false if it contains any text content.
+      */
+     public boolean isBlank() {
+-        return StringUtil.isBlank(getWholeText());
++        return StringUtil.isBlank(coreValue());
+     }
+ 
+     /**
+@@ -78,11 +79,12 @@
+      * @return the newly created text node containing the text after the offset.
+      */
+     public TextNode splitText(int offset) {
++        final String text = coreValue();
+         Validate.isTrue(offset >= 0, "Split offset must be not be negative");
+         Validate.isTrue(offset < text.length(), "Split offset must not be greater than current text length");
+ 
+-        String head = getWholeText().substring(0, offset);
+-        String tail = getWholeText().substring(offset);
++        String head = text.substring(0, offset);
++        String tail = text.substring(offset);
+         text(head);
+         TextNode tailNode = new TextNode(tail, this.baseUri());
+         if (parent() != null)
+@@ -97,7 +99,7 @@
+ 
+         boolean normaliseWhite = out.prettyPrint() && parent() instanceof Element
+                 && !Element.preserveWhitespace(parent());
+-        Entities.escape(accum, getWholeText(), out, false, normaliseWhite, false);
++        Entities.escape(accum, coreValue(), out, false, normaliseWhite, false);
+     }
+ 
+ 	void outerHtmlTail(Appendable accum, int depth, Document.OutputSettings out) {}
+@@ -112,10 +114,21 @@
+      * @param encodedText Text containing encoded HTML (e.g. &amp;lt;)
+      * @param baseUri Base uri
+      * @return TextNode containing unencoded data (e.g. &lt;)
++     * @deprecated use {@link TextNode#createFromEncoded(String)} instead, as LeafNodes don't carry base URIs.
+      */
+     public static TextNode createFromEncoded(String encodedText, String baseUri) {
+         String text = Entities.unescape(encodedText);
+-        return new TextNode(text, baseUri);
++        return new TextNode(text);
++    }
++
++    /**
++     * Create a new TextNode from HTML encoded (aka escaped) data.
++     * @param encodedText Text containing encoded HTML (e.g. &amp;lt;)
++     * @return TextNode containing unencoded data (e.g. &lt;)
++     */
++    public static TextNode createFromEncoded(String encodedText) {
++        String text = Entities.unescape(encodedText);
++        return new TextNode(text);
+     }
+ 
+     static String normaliseWhitespace(String text) {
+@@ -131,47 +144,5 @@
+         return sb.length() != 0 && sb.charAt(sb.length() - 1) == ' ';
+     }
+ 
+-    // attribute fiddling. create on first access.
+-    private void ensureAttributes() {
+-        if (attributes == null) {
+-            attributes = new Attributes();
+-            attributes.put(TEXT_KEY, text);
+-        }
+-    }
+ 
+-    @Override
+-    public String attr(String attributeKey) {
+-        ensureAttributes();
+-        return super.attr(attributeKey);
+-    }
+-
+-    @Override
+-    public Attributes attributes() {
+-        ensureAttributes();
+-        return super.attributes();
+-    }
+-
+-    @Override
+-    public Node attr(String attributeKey, String attributeValue) {
+-        ensureAttributes();
+-        return super.attr(attributeKey, attributeValue);
+-    }
+-
+-    @Override
+-    public boolean hasAttr(String attributeKey) {
+-        ensureAttributes();
+-        return super.hasAttr(attributeKey);
+-    }
+-
+-    @Override
+-    public Node removeAttr(String attributeKey) {
+-        ensureAttributes();
+-        return super.removeAttr(attributeKey);
+-    }
+-
+-    @Override
+-    public String absUrl(String attributeKey) {
+-        ensureAttributes();
+-        return super.absUrl(attributeKey);
+-    }
+ }
+diff --git a/src/main/java/org/jsoup/nodes/XmlDeclaration.java b/src/main/java/org/jsoup/nodes/XmlDeclaration.java
+index 619cd14..602805b 100644
+--- a/src/main/java/org/jsoup/nodes/XmlDeclaration.java
++++ b/src/main/java/org/jsoup/nodes/XmlDeclaration.java
+@@ -1,63 +1,88 @@
+ package org.jsoup.nodes;
+ 
++import org.jsoup.SerializationException;
+ import org.jsoup.helper.Validate;
+ 
+ import java.io.IOException;
+ 
+ /**
+- An XML Declaration.
+-
+- @author Jonathan Hedley, jonathan@hedley.net */
+-public class XmlDeclaration extends Node {
+-    private final String name;
++ * An XML Declaration.
++ */
++public class XmlDeclaration extends LeafNode {
++    // todo this impl isn't really right, the data shouldn't be attributes, just a run of text after the name
+     private final boolean isProcessingInstruction; // <! if true, <? if false, declaration (and last data char should be ?)
+ 
+     /**
+-     Create a new XML declaration
+-     @param name of declaration
+-     @param baseUri base uri
+-     @param isProcessingInstruction is processing instruction
++     * Create a new XML declaration
++     * @param name of declaration
++     * @param isProcessingInstruction is processing instruction
++     */
++    public XmlDeclaration(String name, boolean isProcessingInstruction) {
++        Validate.notNull(name);
++        value = name;
++        this.isProcessingInstruction = isProcessingInstruction;
++    }
++
++    /**
++     * Create a new XML declaration
++     * @param name of declaration
++     * @param baseUri Leaf Nodes don't have base URIs; they inherit from their Element
++     * @param isProcessingInstruction is processing instruction
++     * @see XmlDeclaration#XmlDeclaration(String, boolean)
++     * @deprecated
+      */
+     public XmlDeclaration(String name, String baseUri, boolean isProcessingInstruction) {
+-        super(baseUri);
+-        Validate.notNull(name);
+-        this.name = name;
+-        this.isProcessingInstruction = isProcessingInstruction;
++        this(name, isProcessingInstruction);
+     }
+ 
+     public String nodeName() {
+         return "#declaration";
+     }
+ 
+-
+     /**
+      * Get the name of this declaration.
+      * @return name of this declaration.
+      */
+     public String name() {
+-        return name;
++        return coreValue();
+     }
+ 
+     /**
+-     Get the unencoded XML declaration.
+-     @return XML declaration
++     * Get the unencoded XML declaration.
++     * @return XML declaration
+      */
+     public String getWholeDeclaration() {
+-        return attributes.html().trim(); // attr html starts with a " "
++        StringBuilder sb = new StringBuilder();
++        try {
++            getWholeDeclaration(sb, new Document.OutputSettings());
++        } catch (IOException e) {
++            throw new SerializationException(e);
++        }
++        return sb.toString().trim();
+     }
+ 
+-	void outerHtmlHead(Appendable accum, int depth, Document.OutputSettings out) throws IOException {
++    private void getWholeDeclaration(Appendable accum, Document.OutputSettings out) throws IOException {
++        for (Attribute attribute : attributes()) {
++            if (!attribute.getKey().equals(nodeName())) { // skips coreValue (name)
++                accum.append(' ');
++                attribute.html(accum, out);
++            }
++        }
++    }
++
++    void outerHtmlHead(Appendable accum, int depth, Document.OutputSettings out) throws IOException {
+         accum
+             .append("<")
+             .append(isProcessingInstruction ? "!" : "?")
+-            .append(name);
+-        attributes.html(accum, out);
++            .append(coreValue());
++        getWholeDeclaration(accum, out);
+         accum
+             .append(isProcessingInstruction ? "!" : "?")
+             .append(">");
+     }
+ 
+-	void outerHtmlTail(Appendable accum, int depth, Document.OutputSettings out) {}
++    void outerHtmlTail(Appendable accum, int depth, Document.OutputSettings out) {
++    }
+ 
+     @Override
+     public String toString() {
+diff --git a/src/main/java/org/jsoup/parser/HtmlTreeBuilder.java b/src/main/java/org/jsoup/parser/HtmlTreeBuilder.java
+index 3fe076a..6ada343 100644
+--- a/src/main/java/org/jsoup/parser/HtmlTreeBuilder.java
++++ b/src/main/java/org/jsoup/parser/HtmlTreeBuilder.java
+@@ -244,7 +244,7 @@
+     }
+ 
+     void insert(Token.Comment commentToken) {
+-        Comment comment = new Comment(commentToken.getData(), baseUri);
++        Comment comment = new Comment(commentToken.getData());
+         insertNode(comment);
+     }
+ 
+@@ -253,9 +253,9 @@
+         // characters in script and style go in as datanodes, not text nodes
+         String tagName = currentElement().tagName();
+         if (tagName.equals("script") || tagName.equals("style"))
+-            node = new DataNode(characterToken.getData(), baseUri);
++            node = new DataNode(characterToken.getData());
+         else
+-            node = new TextNode(characterToken.getData(), baseUri);
++            node = new TextNode(characterToken.getData());
+         currentElement().appendChild(node); // doesn't use insertNode, because we don't foster these; and will always have a stack.
+     }
+ 
+diff --git a/src/main/java/org/jsoup/parser/HtmlTreeBuilderState.java b/src/main/java/org/jsoup/parser/HtmlTreeBuilderState.java
+index a9a9583..bb2a61e 100644
+--- a/src/main/java/org/jsoup/parser/HtmlTreeBuilderState.java
++++ b/src/main/java/org/jsoup/parser/HtmlTreeBuilderState.java
+@@ -20,7 +20,8 @@
+                 // todo: quirk state check on doctype ids
+                 Token.Doctype d = t.asDoctype();
+                 DocumentType doctype = new DocumentType(
+-                    tb.settings.normalizeTag(d.getName()), d.getPubSysKey(), d.getPublicIdentifier(), d.getSystemIdentifier(), tb.getBaseUri());
++                    tb.settings.normalizeTag(d.getName()), d.getPublicIdentifier(), d.getSystemIdentifier());
++                doctype.setPubSysKey(d.getPubSysKey());
+                 tb.getDocument().appendChild(doctype);
+                 if (d.isForceQuirks())
+                     tb.getDocument().quirksMode(Document.QuirksMode.quirks);
+diff --git a/src/main/java/org/jsoup/parser/XmlTreeBuilder.java b/src/main/java/org/jsoup/parser/XmlTreeBuilder.java
+index 0507243..631a74a 100644
+--- a/src/main/java/org/jsoup/parser/XmlTreeBuilder.java
++++ b/src/main/java/org/jsoup/parser/XmlTreeBuilder.java
+@@ -81,7 +81,7 @@
+     }
+ 
+     void insert(Token.Comment commentToken) {
+-        Comment comment = new Comment(commentToken.getData(), baseUri);
++        Comment comment = new Comment(commentToken.getData());
+         Node insert = comment;
+         if (commentToken.bogus) { // xml declarations are emitted as bogus comments (which is right for html, but not xml)
+             // so we do a bit of a hack and parse the data as an element to pull the attributes out
+@@ -89,7 +89,7 @@
+             if (data.length() > 1 && (data.startsWith("!") || data.startsWith("?"))) {
+                 Document doc = Jsoup.parse("<" + data.substring(1, data.length() -1) + ">", baseUri, Parser.xmlParser());
+                 Element el = doc.child(0);
+-                insert = new XmlDeclaration(settings.normalizeTag(el.tagName()), comment.baseUri(), data.startsWith("!"));
++                insert = new XmlDeclaration(settings.normalizeTag(el.tagName()), data.startsWith("!"));
+                 insert.attributes().addAll(el.attributes());
+             }
+         }
+@@ -97,12 +97,13 @@
+     }
+ 
+     void insert(Token.Character characterToken) {
+-        Node node = new TextNode(characterToken.getData(), baseUri);
++        Node node = new TextNode(characterToken.getData());
+         insertNode(node);
+     }
+ 
+     void insert(Token.Doctype d) {
+-        DocumentType doctypeNode = new DocumentType(settings.normalizeTag(d.getName()), d.getPubSysKey(), d.getPublicIdentifier(), d.getSystemIdentifier(), baseUri);
++        DocumentType doctypeNode = new DocumentType(settings.normalizeTag(d.getName()), d.getPublicIdentifier(), d.getSystemIdentifier());
++        doctypeNode.setPubSysKey(d.getPubSysKey());
+         insertNode(doctypeNode);
+     }
+ 
+diff --git a/src/main/java/org/jsoup/safety/Cleaner.java b/src/main/java/org/jsoup/safety/Cleaner.java
+index 1223bbe..34f0b14 100644
+--- a/src/main/java/org/jsoup/safety/Cleaner.java
++++ b/src/main/java/org/jsoup/safety/Cleaner.java
+@@ -119,11 +119,11 @@
+                 }
+             } else if (source instanceof TextNode) {
+                 TextNode sourceText = (TextNode) source;
+-                TextNode destText = new TextNode(sourceText.getWholeText(), source.baseUri());
++                TextNode destText = new TextNode(sourceText.getWholeText());
+                 destination.appendChild(destText);
+             } else if (source instanceof DataNode && whitelist.isSafeTag(source.parent().nodeName())) {
+               DataNode sourceData = (DataNode) source;
+-              DataNode destData = new DataNode(sourceData.getWholeData(), source.baseUri());
++              DataNode destData = new DataNode(sourceData.getWholeData());
+               destination.appendChild(destData);
+             } else { // else, we don't care about comments, xml proc instructions, etc
+                 numDiscarded++;
+diff --git a/src/test/java/org/jsoup/nodes/DocumentTest.java b/src/test/java/org/jsoup/nodes/DocumentTest.java
+index 95b9700..61feee4 100644
+--- a/src/test/java/org/jsoup/nodes/DocumentTest.java
++++ b/src/test/java/org/jsoup/nodes/DocumentTest.java
+@@ -403,7 +403,7 @@
+         doc.outputSettings().syntax(Syntax.xml);
+         
+         if( addDecl == true ) {
+-            XmlDeclaration decl = new XmlDeclaration("xml", "", false);
++            XmlDeclaration decl = new XmlDeclaration("xml", false);
+             decl.attr("version", version);
+             decl.attr("encoding", charset);
+             doc.prependChild(decl);
+diff --git a/src/test/java/org/jsoup/nodes/DocumentTypeTest.java b/src/test/java/org/jsoup/nodes/DocumentTypeTest.java
+index 38110ff..7f32adb 100644
+--- a/src/test/java/org/jsoup/nodes/DocumentTypeTest.java
++++ b/src/test/java/org/jsoup/nodes/DocumentTypeTest.java
+@@ -14,30 +14,30 @@
+ public class DocumentTypeTest {
+     @Test
+     public void constructorValidationOkWithBlankName() {
+-        DocumentType fail = new DocumentType("","", "", "");
++        DocumentType fail = new DocumentType("","", "");
+     }
+ 
+     @Test(expected = IllegalArgumentException.class)
+     public void constructorValidationThrowsExceptionOnNulls() {
+-        DocumentType fail = new DocumentType("html", null, null, "");
++        DocumentType fail = new DocumentType("html", null, null);
+     }
+ 
+     @Test
+     public void constructorValidationOkWithBlankPublicAndSystemIds() {
+-        DocumentType fail = new DocumentType("html","", "","");
++        DocumentType fail = new DocumentType("html","", "");
+     }
+ 
+     @Test public void outerHtmlGeneration() {
+-        DocumentType html5 = new DocumentType("html", "", "", "");
++        DocumentType html5 = new DocumentType("html", "", "");
+         assertEquals("<!doctype html>", html5.outerHtml());
+ 
+-        DocumentType publicDocType = new DocumentType("html", "-//IETF//DTD HTML//", "", "");
++        DocumentType publicDocType = new DocumentType("html", "-//IETF//DTD HTML//", "");
+         assertEquals("<!DOCTYPE html PUBLIC \"-//IETF//DTD HTML//\">", publicDocType.outerHtml());
+ 
+-        DocumentType systemDocType = new DocumentType("html", "", "http://www.ibm.com/data/dtd/v11/ibmxhtml1-transitional.dtd", "");
++        DocumentType systemDocType = new DocumentType("html", "", "http://www.ibm.com/data/dtd/v11/ibmxhtml1-transitional.dtd");
+         assertEquals("<!DOCTYPE html \"http://www.ibm.com/data/dtd/v11/ibmxhtml1-transitional.dtd\">", systemDocType.outerHtml());
+ 
+-        DocumentType combo = new DocumentType("notHtml", "--public", "--system", "");
++        DocumentType combo = new DocumentType("notHtml", "--public", "--system");
+         assertEquals("<!DOCTYPE notHtml PUBLIC \"--public\" \"--system\">", combo.outerHtml());
+     }
+ 
+diff --git a/src/test/java/org/jsoup/nodes/ElementTest.java b/src/test/java/org/jsoup/nodes/ElementTest.java
+index e59e338..e69ebe4 100644
+--- a/src/test/java/org/jsoup/nodes/ElementTest.java
++++ b/src/test/java/org/jsoup/nodes/ElementTest.java
+@@ -783,7 +783,7 @@
+         List<Node> els = new ArrayList<Node>();
+         Element el1 = new Element(Tag.valueOf("span"), "").text("Span1");
+         Element el2 = new Element(Tag.valueOf("span"), "").text("Span2");
+-        TextNode tn1 = new TextNode("Text4", "");
++        TextNode tn1 = new TextNode("Text4");
+         els.add(el1);
+         els.add(el2);
+         els.add(tn1);
+diff --git a/src/test/java/org/jsoup/nodes/TextNodeTest.java b/src/test/java/org/jsoup/nodes/TextNodeTest.java
+index 148a0ab..42b35ad 100644
+--- a/src/test/java/org/jsoup/nodes/TextNodeTest.java
++++ b/src/test/java/org/jsoup/nodes/TextNodeTest.java
+@@ -12,11 +12,11 @@
+  @author Jonathan Hedley, jonathan@hedley.net */
+ public class TextNodeTest {
+     @Test public void testBlank() {
+-        TextNode one = new TextNode("", "");
+-        TextNode two = new TextNode("     ", "");
+-        TextNode three = new TextNode("  \n\n   ", "");
+-        TextNode four = new TextNode("Hello", "");
+-        TextNode five = new TextNode("  \nHello ", "");
++        TextNode one = new TextNode("");
++        TextNode two = new TextNode("     ");
++        TextNode three = new TextNode("  \n\n   ");
++        TextNode four = new TextNode("Hello");
++        TextNode five = new TextNode("  \nHello ");
+ 
+         assertTrue(one.isBlank());
+         assertTrue(two.isBlank());
+@@ -40,7 +40,7 @@
+         tn.text(" POW!");
+         assertEquals("One <span>two &amp;</span> POW!", TextUtil.stripNewlines(p.html()));
+ 
+-        tn.attr("text", "kablam &");
++        tn.attr(tn.nodeName(), "kablam &");
+         assertEquals("kablam &", tn.text());
+         assertEquals("One <span>two &amp;</span>kablam &amp;", TextUtil.stripNewlines(p.html()));
+     }

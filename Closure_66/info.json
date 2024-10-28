@@ -1,0 +1,972 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Closure",
+  "id": "66",
+  "workingDir": "../bugs/Closure_66_buggy",
+  "inducingCommit": "70f817ae4f80ac11dd2dfe97babf5896c690fb48",
+  "originalCommit": "026a1083635e5564b6c18264372ee884f410490f",
+  "bug_name": "Closure_66",
+  "derive": "defects4j",
+  "original_fixing_commit": "59a30b48325cccadabae8687fdf603d72e26c157",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/NodeUtil.java",
+        "src/com/google/javascript/jscomp/NodeUtil.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "isGetOrSetKey"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "isGetOrSetKey",
+            "getObjectLitKeyName",
+            "getObjectLitKeyTypeFromValueType"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "27",
+            "1865"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "28",
+            "29",
+            "1868",
+            "1869",
+            "1870",
+            "1871",
+            "1872",
+            "1873",
+            "1874",
+            "1875",
+            "1876",
+            "1877",
+            "1878",
+            "1879",
+            "1880",
+            "1881",
+            "1882",
+            "1883",
+            "1884",
+            "1885",
+            "1886",
+            "1887",
+            "1888",
+            "1889",
+            "1890",
+            "1891",
+            "1892",
+            "1893",
+            "1894",
+            "1895",
+            "1896",
+            "1897",
+            "1898",
+            "1899",
+            "1900",
+            "1901",
+            "1902",
+            "1903",
+            "1904",
+            "1905",
+            "1906",
+            "1907",
+            "1908",
+            "1909",
+            "1910",
+            "1911",
+            "1912",
+            "1913",
+            "1914",
+            "1915",
+            "1916"
+          ],
+          "num": 51
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/NodeUtil.java b/src/com/google/javascript/jscomp/NodeUtil.java\nindex 52e25f0..615cec4 100644\n--- a/src/com/google/javascript/jscomp/NodeUtil.java\n+++ b/src/com/google/javascript/jscomp/NodeUtil.java\n@@ -25,6 +25,8 @@\n import com.google.javascript.rhino.Node;\n import com.google.javascript.rhino.Token;\n import com.google.javascript.rhino.TokenStream;\n+import com.google.javascript.rhino.jstype.FunctionType;\n+import com.google.javascript.rhino.jstype.JSType;\n import com.google.javascript.rhino.jstype.TernaryValue;\n \n import java.util.Arrays;\n@@ -1863,6 +1865,55 @@\n   }\n \n   /**\n+   * Get the name of an object literal key.\n+   *\n+   * @param key A node\n+   */\n+  static String getObjectLitKeyName(Node key) {\n+    switch (key.getType()) {\n+      case Token.NUMBER:\n+        return NodeUtil.getStringValue(key);\n+      case Token.STRING:\n+      case Token.GET:\n+      case Token.SET:\n+        return key.getString();\n+    }\n+    throw new IllegalStateException(\"Unexpected node type: \" + key);\n+  }\n+\n+  /**\n+   * @param key A OBJECTLIT key node.\n+   * @return The type expected when using the key.\n+   */\n+  static JSType getObjectLitKeyTypeFromValueType(Node key, JSType valueType) {\n+    if (valueType !\u003d null) {\n+      switch (key.getType()) {\n+        case Token.GET:\n+          // GET must always return a function type.\n+          if (valueType.isFunctionType()) {\n+            FunctionType fntype \u003d ((FunctionType) valueType);\n+            valueType \u003d fntype.getReturnType();\n+          } else {\n+            return null;\n+          }\n+          break;\n+        case Token.SET:\n+          if (valueType.isFunctionType()) {\n+            // SET must always return a function type.\n+            FunctionType fntype \u003d ((FunctionType) valueType);\n+            Node param \u003d fntype.getParametersNode().getFirstChild();\n+            // SET function must always have one parameter.\n+            valueType \u003d param.getJSType();\n+          } else {\n+            return null;\n+          }\n+          break;\n+      }\n+    }\n+    return valueType;\n+  }\n+\n+  /**\n    * Determines whether a node represents an object literal get or set key\n    * (e.g. key1 in {get key1() {}, set key2(a){}).\n    *\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [1044,1099]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [1100,1149]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [54167,54575]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [54579,55590]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/TypeCheck.java",
+        "src/com/google/javascript/jscomp/TypeCheck.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "propertyIsImplicitCast",
+            "visit"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "propertyIsImplicitCast",
+            "visitObjLitKey",
+            "visit"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "495",
+            "497",
+            "498",
+            "506",
+            "507",
+            "508",
+            "509",
+            "510",
+            "511",
+            "512",
+            "513",
+            "776",
+            "929"
+          ],
+          "num": 13
+        },
+        {
+          "qualified_names": [
+            "495",
+            "496",
+            "501",
+            "502",
+            "503",
+            "504",
+            "505",
+            "506",
+            "507",
+            "508",
+            "509",
+            "510",
+            "511",
+            "512",
+            "780",
+            "781",
+            "782",
+            "783",
+            "784",
+            "938",
+            "939",
+            "940",
+            "941",
+            "942",
+            "943",
+            "944",
+            "945",
+            "946",
+            "947",
+            "948",
+            "949",
+            "950",
+            "951",
+            "952",
+            "953",
+            "954",
+            "955",
+            "956",
+            "957",
+            "958",
+            "959",
+            "960",
+            "961",
+            "962",
+            "963",
+            "964",
+            "965",
+            "966",
+            "967",
+            "968",
+            "969",
+            "970",
+            "971",
+            "972",
+            "973",
+            "974",
+            "975",
+            "976",
+            "977",
+            "978",
+            "979",
+            "980",
+            "981",
+            "982",
+            "983",
+            "984",
+            "985",
+            "986",
+            "987",
+            "988",
+            "989",
+            "990",
+            "991",
+            "992",
+            "993",
+            "994",
+            "995"
+          ],
+          "num": 77
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/TypeCheck.java b/src/com/google/javascript/jscomp/TypeCheck.java\nindex 38f3847..5760f79 100644\n--- a/src/com/google/javascript/jscomp/TypeCheck.java\n+++ b/src/com/google/javascript/jscomp/TypeCheck.java\n@@ -492,25 +492,28 @@\n         break;\n \n       case Token.NUMBER:\n-        if (n.getParent().getType() !\u003d Token.OBJECTLIT) {\n+        // Object literal keys are handled with OBJECTLIT\n+        if (!NodeUtil.isObjectLitKey(n, n.getParent())) {\n           ensureTyped(t, n, NUMBER_TYPE);\n-        } else {\n-          typeable \u003d false;\n         }\n         break;\n \n+      case Token.STRING:\n+        // Object literal keys are handled with OBJECTLIT\n+        if (!NodeUtil.isObjectLitKey(n, n.getParent())) {\n+          ensureTyped(t, n, STRING_TYPE);\n+        }\n+        break;\n+\n+      case Token.GET:\n+      case Token.SET:\n+        // Object literal keys are handled with OBJECTLIT\n+        break;\n+\n       case Token.ARRAYLIT:\n         ensureTyped(t, n, ARRAY_TYPE);\n         break;\n \n-      case Token.STRING:\n-        if (n.getParent().getType() !\u003d Token.OBJECTLIT) {\n-          ensureTyped(t, n, STRING_TYPE);\n-        } else {\n-          typeable \u003d false;\n-        }\n-        break;\n-\n       case Token.REGEXP:\n         ensureTyped(t, n, REGEXP_TYPE);\n         break;\n@@ -774,6 +777,11 @@\n             ensureTyped(t, n);\n           }\n         }\n+        if (n.getType() \u003d\u003d Token.OBJECTLIT) {\n+          for (Node key : n.children()) {\n+            visitObjLitKey(t, key, n);\n+          }\n+        }\n         break;\n \n       default:\n@@ -927,6 +935,64 @@\n   }\n \n   /**\n+   * Visits an object literal field definition \u003ccode\u003ekey : value\u003c/code\u003e.\n+   *\n+   * If the \u003ccode\u003elvalue\u003c/code\u003e is a prototype modification, we change the\n+   * schema of the object type it is referring to.\n+   *\n+   * @param t the traversal\n+   * @param key the assign node\n+   */\n+  private void visitObjLitKey(NodeTraversal t, Node key, Node objlit) {\n+    // TODO(johnlenz): Validate get and set function declarations are valid\n+    // as is the functions can have \"extraneous\" bits.\n+\n+    // For getter and setter property definitions the\n+    // rvalue type !\u003d the property type.\n+    Node rvalue \u003d key.getFirstChild();\n+    JSType rightType \u003d NodeUtil.getObjectLitKeyTypeFromValueType(\n+        key, getJSType(rvalue));\n+    if (rightType \u003d\u003d null) {\n+      rightType \u003d getNativeType(UNKNOWN_TYPE);\n+    }\n+\n+    Node owner \u003d objlit;\n+\n+    // Validate value is assignable to the key type.\n+\n+    JSType keyType \u003d getJSType(key);\n+    boolean valid \u003d validator.expectCanAssignToPropertyOf(t, key,\n+        rightType, keyType,\n+        owner, NodeUtil.getObjectLitKeyName(key));\n+    if (valid) {\n+      ensureTyped(t, key, rightType);\n+    } else {\n+      ensureTyped(t, key);\n+    }\n+\n+    // Validate that the key type is assignable to the object property type.\n+    // This is necessary as the objlit may have been cast to a non-literal\n+    // object type.\n+    // TODO(johnlenz): consider introducing a CAST node to the AST (or\n+    // perhaps a parentheses node).\n+\n+    JSType objlitType \u003d getJSType(objlit);\n+    ObjectType type \u003d ObjectType.cast(\n+        objlitType.restrictByNotNullOrUndefined());\n+    if (type !\u003d null) {\n+      String property \u003d NodeUtil.getObjectLitKeyName(key);\n+      if (type.hasProperty(property) \u0026\u0026\n+          !type.isPropertyTypeInferred(property) \u0026\u0026\n+          !propertyIsImplicitCast(type, property)) {\n+        validator.expectCanAssignToPropertyOf(\n+            t, key, keyType,\n+            type.getPropertyType(property), owner, property);\n+      }\n+      return;\n+    }\n+  }\n+\n+  /**\n    * Returns true if any type in the chain has an implictCast annotation for\n    * the given property.\n    */\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [31138,33112]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [17391,17492]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [17600,17701]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SwitchCase [17724,17739]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SwitchCase [17746,17761]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [18447,18464]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "BreakStatement [19830,19836]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [25403,25420]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PrefixExpression [17395,17437]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PrefixExpression [17604,17646]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "EnhancedForStatement [26074,26156]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [17615,17657]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [17611,17757]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [24547,24564]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [24366,24587]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [25080,25097]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [25259,25276]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_RECEIVER [17337,17350]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [17337,17360]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [17730,17747]",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/TypeInference.java",
+        "src/com/google/javascript/jscomp/TypeInference.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "traverseObjectLiteral"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "traverseObjectLiteral"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "705",
+            "707",
+            "708",
+            "711"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "705",
+            "707",
+            "708",
+            "709",
+            "710",
+            "711",
+            "712",
+            "713"
+          ],
+          "num": 8
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/TypeInference.java b/src/com/google/javascript/jscomp/TypeInference.java\nindex e1567f5..9f776c6 100644\n--- a/src/com/google/javascript/jscomp/TypeInference.java\n+++ b/src/com/google/javascript/jscomp/TypeInference.java\n@@ -702,13 +702,17 @@\n          name \u003d name.getNext()) {\n       Node value \u003d name.getFirstChild();\n       scope \u003d traverse(value, scope);\n-      String memberName \u003d NodeUtil.getStringValue(name);\n+      String memberName \u003d NodeUtil.getObjectLitKeyName(name);\n       if (memberName !\u003d null) {\n-        objectType.defineInferredProperty(memberName, getJSType(value), false,\n-            name);\n+        JSType rawValueType \u003d  name.getFirstChild().getJSType();\n+        JSType valueType \u003d NodeUtil.getObjectLitKeyTypeFromValueType(\n+            name, rawValueType);\n+        if (valueType \u003d\u003d null) {\n+          valueType \u003d getNativeType(UNKNOWN_TYPE);\n+        }\n+        objectType.defineInferredProperty(memberName, valueType, false, name);\n       } else {\n         n.setJSType(getNativeType(UNKNOWN_TYPE));\n-        return scope;\n       }\n     }\n     return scope;\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [25113,25169]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [25178,25272]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [25281,25366]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: valueType [25421,25430]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [25154,25170]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [25303,25316]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/TypedScopeCreator.java",
+        "src/com/google/javascript/jscomp/TypedScopeCreator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "attachLiteralTypes",
+            "getEnumType",
+            "processObjectLitProperties"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "processObjectLitProperties",
+            "attachLiteralTypes",
+            "getEnumType"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "491",
+            "495",
+            "560",
+            "561",
+            "562",
+            "563",
+            "564",
+            "565",
+            "569",
+            "570",
+            "572",
+            "573",
+            "574",
+            "575",
+            "920",
+            "921"
+          ],
+          "num": 16
+        },
+        {
+          "qualified_names": [
+            "491",
+            "492",
+            "493",
+            "494",
+            "498",
+            "499",
+            "500",
+            "501",
+            "569",
+            "570",
+            "572",
+            "573",
+            "574",
+            "575",
+            "576",
+            "577",
+            "578",
+            "579",
+            "580",
+            "581",
+            "582",
+            "927",
+            "928",
+            "929",
+            "930",
+            "931"
+          ],
+          "num": 26
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/TypedScopeCreator.java b/src/com/google/javascript/jscomp/TypedScopeCreator.java\nindex adc4aca..a2dc149 100644\n--- a/src/com/google/javascript/jscomp/TypedScopeCreator.java\n+++ b/src/com/google/javascript/jscomp/TypedScopeCreator.java\n@@ -488,11 +488,17 @@\n           break;\n \n         case Token.STRING:\n-          n.setJSType(getNativeType(STRING_TYPE));\n+          // Defer keys to the Token.OBJECTLIT case\n+          if (!NodeUtil.isObjectLitKey(n, n.getParent())) {\n+            n.setJSType(getNativeType(STRING_TYPE));\n+          }\n           break;\n \n         case Token.NUMBER:\n-          n.setJSType(getNativeType(NUMBER_TYPE));\n+          // Defer keys to the Token.OBJECTLIT case\n+          if (!NodeUtil.isObjectLitKey(n, n.getParent())) {\n+            n.setJSType(getNativeType(NUMBER_TYPE));\n+          }\n           break;\n \n         case Token.TRUE:\n@@ -557,22 +563,23 @@\n      */\n     void processObjectLitProperties(\n         NodeTraversal t, Node objLit, ObjectType objLitType) {\n-      // TODO(nicksantos): Even if the type of the object literal is null,\n-      // we may want to declare its properties in the current scope.\n-      if (objLitType \u003d\u003d null) {\n-        return;\n-      }\n-\n       for (Node name \u003d objLit.getFirstChild(); name !\u003d null;\n            name \u003d name.getNext()) {\n         Node value \u003d name.getFirstChild();\n-        String memberName \u003d NodeUtil.getStringValue(name);\n-        JSType type \u003d getDeclaredTypeInAnnotation(\n+        String memberName \u003d NodeUtil.getObjectLitKeyName(name);\n+        JSType valueType \u003d getDeclaredTypeInAnnotation(\n             t, name, name.getJSDocInfo());\n-        if (type !\u003d null) {\n-          boolean isExtern \u003d t.getInput() !\u003d null \u0026\u0026 t.getInput().isExtern();\n-          objLitType.defineDeclaredProperty(\n-              memberName, type, isExtern, name);\n+        JSType keyType \u003d NodeUtil.getObjectLitKeyTypeFromValueType(\n+            name, valueType);\n+        if (keyType !\u003d null) {\n+          name.setJSType(keyType);\n+          // TODO(nicksantos): Even if the type of the object literal is null,\n+          // we may want to declare its properties in the current scope.\n+          if (objLitType !\u003d null) {\n+            boolean isExtern \u003d t.getInput() !\u003d null \u0026\u0026 t.getInput().isExtern();\n+            objLitType.defineDeclaredProperty(\n+                memberName, keyType, isExtern, name);\n+          }\n         }\n       }\n     }\n@@ -917,8 +924,11 @@\n           Node key \u003d value.getFirstChild();\n           while (key !\u003d null) {\n             String keyName \u003d NodeUtil.getStringValue(key);\n-\n-            if (enumType.hasOwnProperty(keyName)) {\n+            if (keyName \u003d\u003d null) {\n+              // GET and SET don\u0027t have a String value;\n+              compiler.report(\n+                  JSError.make(sourceName, key, ENUM_NOT_CONSTANT, keyName));\n+            } else if (enumType.hasOwnProperty(keyName)) {\n               compiler.report(JSError.make(sourceName, key, ENUM_DUP, keyName));\n             } else if (!codingConvention.isValidEnumKey(keyName)) {\n               compiler.report(\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [18369,18483]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [18591,18705]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PrefixExpression [18373,18415]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [18417,18483]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PrefixExpression [18595,18637]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [18639,18705]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [21041,21130]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [21172,21196]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [34244,34835]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [34248,34263]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Block [34265,34445]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ReturnStatement [20662,20669]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "getObjectLitKeyTypeFromValueType",
+        "visitObjLitKey",
+        "getObjectLitKeyName"
+      ],
+      "num": 3
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testBadTemplateType1",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "unexpected warnings(s):"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testPrototypeLoop",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "unexpected warnings(s):"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testIn4",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c...found   : function ([this]:Date, ?, ?, ?, ?, ?...\u003e but was:\u003c...found   : function ([new]:Date, ?, ?, ?, ?, ?...\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testDuplicateOldTypeDef",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c...with type function ([this]:goog.Bar): undefine...\u003e but was:\u003c...with type function ([new]:goog.Bar): undefine...\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testGetTypedPercent5",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c100.0\u003e but was:\u003c80.0\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testStubConstructorImplementingInterface",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "unexpected warnings(s):"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testBadConstructorCall",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c...nstructor function ([this]:Foo): undefined sho...\u003e but was:\u003c...nstructor function ([new]:Foo): undefined sho...\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testForwardTypeDeclaration1",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "unexpected warning(s) : JSC_TYPE_MISMATCH. inconsistent return type"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testForwardTypeDeclaration2",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "unexpected warning(s) : JSC_TYPE_MISMATCH. actual parameter 1 of f does not match formal parameter"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testStubFunctionDeclaration2",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c[initializing variable"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testDuplicateTypeDef",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c...with type function ([this]:goog.Bar): undefine...\u003e but was:\u003c...with type function ([new]:goog.Bar): undefine...\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testGatherProperyWithoutAnnotation1",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c[T]\u003e but was:\u003c[T]\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testGatherProperyWithoutAnnotation2",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c[Object]\u003e but was:\u003c[Object]\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testInterfaceInstantiation",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c[cannot instantiate non-constructor]\u003e but was:\u003c[Interface f must be initialized at declaration]\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testBooleanPreservation3",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "unexpected warnings(s):"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testBooleanPreservation4",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "unexpected warnings(s):"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testGoodExtends7",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c...found   : function ([this]:derived): undefined...\u003e but was:\u003c...found   : function ([new]:derived): undefined...\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testTypeRedefinition",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c...with type function ([this]:a.A): undefined, or...\u003e but was:\u003c...with type function ([new]:a.A): undefined, or...\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testTypeCheck2",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "parsing error: JSC_PARSE_ERROR. Parse error. invalid decrement target at [testcode] line 1 : 0 expected:\u003c0\u003e but was:\u003c1\u003e"
+    }
+  ],
+  "fixing_changes": [],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

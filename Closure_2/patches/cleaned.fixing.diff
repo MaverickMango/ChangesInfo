@@ -1,0 +1,118 @@
+diff -u -r data/changesInfo//Closure_2/properties/modified_classes/inducing/src/com/google/javascript/jscomp/TypeCheck.java data/changesInfo//Closure_2/cleaned/fixing/src/com/google/javascript/jscomp/TypeCheck.java
+--- data/changesInfo//Closure_2/properties/modified_classes/inducing/src/com/google/javascript/jscomp/TypeCheck.java	2023-12-27 22:35:31.730515006 -0800
++++ data/changesInfo//Closure_2/cleaned/fixing/src/com/google/javascript/jscomp/TypeCheck.java	2023-06-20 01:04:20.621505816 -0700
+@@ -28,6 +28,7 @@
+ import static com.google.javascript.rhino.jstype.JSTypeNative.VOID_TYPE;
+ 
+ import com.google.common.base.Preconditions;
++import com.google.common.collect.ImmutableSet;
+ import com.google.javascript.jscomp.CheckLevel;
+ import com.google.javascript.jscomp.Scope.Var;
+ import com.google.javascript.jscomp.type.ReverseAbstractInterpreter;
+@@ -238,6 +239,11 @@
+                              "Cannot add a property to a struct instance " +
+                              "after it is constructed.");
+ 
++  static final DiagnosticType ILLEGAL_OBJLIT_KEY =
++      DiagnosticType.warning(
++          "ILLEGAL_OBJLIT_KEY",
++          "Illegal key, the object literal is a {0}");
++
+   static final DiagnosticGroup ALL_DIAGNOSTICS = new DiagnosticGroup(
+       DETERMINISTIC_TEST,
+       DETERMINISTIC_TEST_NO_RESULT,
+@@ -269,6 +275,7 @@
+       EXPECTED_THIS_TYPE,
+       IN_USED_WITH_STRUCT,
+       ILLEGAL_PROPERTY_CREATION,
++      ILLEGAL_OBJLIT_KEY,
+       RhinoErrorReporter.TYPE_PARSE_ERROR,
+       TypedScopeCreator.UNKNOWN_LENDS,
+       TypedScopeCreator.LENDS_ON_NON_OBJECT,
+@@ -476,6 +483,19 @@
+     boolean typeable = true;
+ 
+     switch (n.getType()) {
++      case Token.CAST:
++        Node expr = n.getFirstChild();
++        ensureTyped(t, n, getJSType(expr));
++
++        // If the cast, tightens the type apply it, so it is available post
++        // normalization.
++        JSType castType = getJSType(n);
++        JSType exprType = getJSType(expr);
++        if (castType.isSubtype(exprType)) {
++          expr.setJSType(castType);
++        }
++        break;
++
+       case Token.NAME:
+         typeable = visitName(t, n, parent);
+         break;
+@@ -810,8 +830,9 @@
+           }
+         }
+         if (n.isObjectLit()) {
++          JSType typ = getJSType(n);
+           for (Node key : n.children()) {
+-            visitObjLitKey(t, key, n);
++            visitObjLitKey(t, key, n, typ);
+           }
+         }
+         break;
+@@ -1035,7 +1056,8 @@
+    * @param t the traversal
+    * @param key the assign node
+    */
+-  private void visitObjLitKey(NodeTraversal t, Node key, Node objlit) {
++  private void visitObjLitKey(
++      NodeTraversal t, Node key, Node objlit, JSType litType) {
+     // Do not validate object lit value types in externs. We don't really care,
+     // and it makes it easier to generate externs.
+     if (objlit.isFromExterns()) {
+@@ -1043,6 +1065,13 @@
+       return;
+     }
+ 
++    // Structs must have unquoted keys and dicts must have quoted keys
++    if (litType.isStruct() && key.isQuotedString()) {
++      report(t, key, ILLEGAL_OBJLIT_KEY, "struct");
++    } else if (litType.isDict() && !key.isQuotedString()) {
++      report(t, key, ILLEGAL_OBJLIT_KEY, "dict");
++    }
++
+     // TODO(johnlenz): Validate get and set function declarations are valid
+     // as is the functions can have "extraneous" bits.
+ 
+@@ -1538,8 +1567,13 @@
+       String functionName, HashMap<String, ObjectType> properties,
+       HashMap<String, ObjectType> currentProperties,
+       ObjectType interfaceType) {
+-    Set<String> currentPropertyNames =
+-        interfaceType.getImplicitPrototype().getOwnPropertyNames();
++    Set<String> currentPropertyNames;
++    ObjectType implicitProto = interfaceType.getImplicitPrototype();
++    if (implicitProto == null) {
++      currentPropertyNames = ImmutableSet.of();
++    } else {
++      currentPropertyNames = interfaceType.getImplicitPrototype().getOwnPropertyNames();
++    }
+     for (String name : currentPropertyNames) {
+       ObjectType oType = properties.get(name);
+       if (oType != null) {
+@@ -1936,8 +1970,11 @@
+     JSDocInfo info = n.getJSDocInfo();
+     if (info != null) {
+       if (info.hasType()) {
++        // TODO(johnlenz): Change this so that we only look for casts on CAST
++        // nodes one the misplaced type annotation warning is on by default and
++        // people have been given a chance to fix them.  As is, this is here
++        // simply for legacy casts.
+         JSType infoType = info.getType().evaluate(t.getScope(), typeRegistry);
+-        // remove cast check here.
+         validator.expectCanCast(t, n, infoType, type);
+         type = infoType;
+       }
+Only in data/changesInfo//Closure_2/properties/modified_classes/inducing/src/com/google/javascript/jscomp: TypedScopeCreator.java
+Only in data/changesInfo//Closure_2/properties/modified_classes/inducing/src/com/google/javascript: rhino
+Only in data/changesInfo//Closure_2/properties/modified_classes/inducing/: test

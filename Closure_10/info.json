@@ -1,0 +1,1070 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Closure",
+  "id": "10",
+  "workingDir": "../bugs/Closure_10_buggy",
+  "inducingCommit": "1a7fbd18b47c102152869c3b046b65ff0f12fc43",
+  "originalCommit": "915f3c76062ddc6c9d1cc2c6e8e40aedac9089ed",
+  "bug_name": "Closure_10",
+  "derive": "defects4j",
+  "original_fixing_commit": "0884a4cbef1c82153ef306477a12af0480385a35",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/NodeUtil.java",
+        "src/com/google/javascript/jscomp/NodeUtil.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "isNumericResult"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "isBooleanResultHelper",
+            "isBooleanResult",
+            "isNumericResult",
+            "apply",
+            "apply",
+            "mayBeString",
+            "mayBeString",
+            "apply",
+            "isNumericResultHelper",
+            "mayBeStringHelper",
+            "valueCheck"
+          ],
+          "num": 11
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1082",
+            "1083",
+            "1114",
+            "1158"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "1078",
+            "1079",
+            "1080",
+            "1081",
+            "1082",
+            "1083",
+            "1084",
+            "1085",
+            "1086",
+            "1087",
+            "1088",
+            "1089",
+            "1090",
+            "1091",
+            "1092",
+            "1093",
+            "1094",
+            "1095",
+            "1096",
+            "1097",
+            "1098",
+            "1099",
+            "1100",
+            "1101",
+            "1102",
+            "1103",
+            "1104",
+            "1105",
+            "1106",
+            "1107",
+            "1111",
+            "1112",
+            "1113",
+            "1114",
+            "1116",
+            "1117",
+            "1118",
+            "1150",
+            "1151",
+            "1152",
+            "1153",
+            "1154",
+            "1155",
+            "1156",
+            "1157",
+            "1158",
+            "1163",
+            "1164",
+            "1165",
+            "1166",
+            "1207",
+            "1208",
+            "1209",
+            "1210",
+            "1211",
+            "1212",
+            "1213",
+            "1214",
+            "1215",
+            "1220",
+            "1221",
+            "1222",
+            "1223",
+            "1224",
+            "1225",
+            "1226",
+            "1227",
+            "1228",
+            "1229",
+            "1230",
+            "1231"
+          ],
+          "num": 71
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/NodeUtil.java b/src/com/google/javascript/jscomp/NodeUtil.java\nindex 615cec4..bfc4ba8 100644\n--- a/src/com/google/javascript/jscomp/NodeUtil.java\n+++ b/src/com/google/javascript/jscomp/NodeUtil.java\n@@ -1075,12 +1075,47 @@\n   }\n \n   /**\n+   * Apply the supplied predicate against the potential\n+   * all possible result of the expression.\n+   */\n+  static boolean valueCheck(Node n, Predicate\u003cNode\u003e p) {\n+    switch (n.getType()) {\n+      case Token.ASSIGN:\n+      case Token.COMMA:\n+        return valueCheck(n.getLastChild(), p);\n+      case Token.AND:\n+      case Token.OR:\n+        return valueCheck(n.getFirstChild(), p)\n+            \u0026\u0026 valueCheck(n.getLastChild(), p);\n+      case Token.HOOK:\n+        return valueCheck(n.getFirstChild().getNext(), p)\n+            \u0026\u0026 valueCheck(n.getLastChild(), p);\n+      default:\n+        return p.apply(n);\n+    }\n+  }\n+\n+  static class NumbericResultPredicate implements Predicate\u003cNode\u003e {\n+    public boolean apply(Node n) {\n+      return isNumericResultHelper(n);\n+    }\n+  }\n+\n+  static final NumbericResultPredicate NUMBERIC_RESULT_PREDICATE \u003d\n+      new NumbericResultPredicate();\n+\n+  /**\n    * Returns true if the result of node evaluation is always a number\n    */\n   static boolean isNumericResult(Node n) {\n+    return valueCheck(n, NUMBERIC_RESULT_PREDICATE);\n+  }\n+\n+  static boolean isNumericResultHelper(Node n) {\n     switch (n.getType()) {\n-      // NOTE: ADD is deliberately excluded as it may produce\n-      // a string.\n+      case Token.ADD:\n+        return !mayBeString(n.getFirstChild())\n+            \u0026\u0026 !mayBeString(n.getLastChild());\n       case Token.BITNOT:\n       case Token.BITOR:\n       case Token.BITXOR:\n@@ -1112,10 +1147,23 @@\n     }\n   }\n \n+  static class BooleanResultPredicate implements Predicate\u003cNode\u003e {\n+    public boolean apply(Node n) {\n+      return isBooleanResultHelper(n);\n+    }\n+  }\n+\n+  static final BooleanResultPredicate BOOLEAN_RESULT_PREDICATE \u003d\n+      new BooleanResultPredicate();\n+\n   /**\n    * @return Whether the result of node evaluation is always a boolean\n    */\n   static boolean isBooleanResult(Node n) {\n+    return valueCheck(n, BOOLEAN_RESULT_PREDICATE);\n+  }\n+\n+  static boolean isBooleanResultHelper(Node n) {\n     // TODO(johnlenz): Add a recursive option to recurse into\n     // AND, OR, HOOK, COMMA and ASSIGN, like \"getExpressionBooleanValue\".\n     switch (n.getType()) {\n@@ -1156,10 +1204,31 @@\n     return n.getType() \u003d\u003d Token.NULL;\n   }\n \n+  static class MayBeStringResultPredicate implements Predicate\u003cNode\u003e {\n+    public boolean apply(Node n) {\n+      return mayBeStringHelper(n);\n+    }\n+  }\n+\n+  static final MayBeStringResultPredicate MAY_BE_STRING_PREDICATE \u003d\n+      new MayBeStringResultPredicate();\n+\n   /**\n    * @returns Whether the results is possibly a string.\n    */\n   static boolean mayBeString(Node n) {\n+    return mayBeString(n, true);\n+  }\n+\n+  static boolean mayBeString(Node n, boolean recurse) {\n+    if (recurse) {\n+      return valueCheck(n, MAY_BE_STRING_PREDICATE);\n+    } else {\n+      return mayBeStringHelper(n);\n+    }\n+  }\n+\n+  static boolean mayBeStringHelper(Node n) {\n     return !isNumericResult(n) \u0026\u0026 !isBooleanResult(n)\n         \u0026\u0026 !isUndefined(n) \u0026\u0026 !isNull(n);\n   }\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodDeclaration [32256,32866]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TypeDeclaration [32870,33019]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [33023,33124]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [33311,34156]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TypeDeclaration [34160,34308]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [34312,34410]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [34597,35243]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TypeDeclaration [35536,35684]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [35688,35793]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [35942,36125]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [36129,36271]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [32256,32365]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: static [32368,32374]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrimitiveType: boolean [32375,32382]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: valueCheck [32383,32393]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [32394,32400]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [32402,32419]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [32421,32866]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [33255,33303]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [34542,34589]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [35906,35934]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [32507,32546]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [32598,32685]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [32717,32814]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [32838,32856]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [32493,32511]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [32542,32560]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [32567,32585]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [32614,32629]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [32636,32652]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [32659,32674]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [32725,32740]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [32747,32762]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [32769,32784]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [32813,32828]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [32835,32853]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [32862,32874]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [32881,32897]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [32906,32934]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [32943,33001]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [33010,33073]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [33082,33095]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [33119,33132]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [33459,33475]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [33482,33499]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [33569,33585]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [33592,33608]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [33636,33650]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [33657,33671]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [33678,33692]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [33738,33760]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [33810,33822]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [33846,33859]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [34271,34362]",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/PeepholeFoldConstants.java",
+        "src/com/google/javascript/jscomp/PeepholeFoldConstants.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "tryFoldLeftChildOp",
+            "tryFoldLeftChildAdd",
+            "tryFoldAdd",
+            "tryFoldAddConstant",
+            "performArithmeticOp"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "tryFoldChildAddString",
+            "tryFoldAddConstantString",
+            "tryFoldLeftChildOp",
+            "performArithmeticOp",
+            "tryFoldAdd"
+          ],
+          "num": 5
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "553",
+            "556",
+            "557",
+            "565",
+            "566",
+            "569",
+            "570",
+            "571",
+            "572",
+            "573",
+            "574",
+            "575",
+            "576",
+            "586",
+            "589",
+            "599",
+            "600",
+            "601",
+            "628",
+            "629",
+            "719",
+            "721",
+            "757",
+            "758",
+            "759",
+            "760",
+            "762",
+            "763"
+          ],
+          "num": 28
+        },
+        {
+          "qualified_names": [
+            "553",
+            "556",
+            "564",
+            "565",
+            "566",
+            "567",
+            "568",
+            "569",
+            "570",
+            "571",
+            "572",
+            "573",
+            "574",
+            "576",
+            "578",
+            "579",
+            "580",
+            "581",
+            "582",
+            "583",
+            "584",
+            "585",
+            "586",
+            "587",
+            "588",
+            "589",
+            "590",
+            "591",
+            "592",
+            "593",
+            "594",
+            "595",
+            "596",
+            "597",
+            "607",
+            "621",
+            "622",
+            "647",
+            "648",
+            "739",
+            "740",
+            "741",
+            "742",
+            "743",
+            "779",
+            "780",
+            "781",
+            "782",
+            "783",
+            "784",
+            "785",
+            "786",
+            "787",
+            "789",
+            "790",
+            "791",
+            "792",
+            "793",
+            "794"
+          ],
+          "num": 59
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/PeepholeFoldConstants.java b/src/com/google/javascript/jscomp/PeepholeFoldConstants.java\nindex de6b020..8a20be4 100644\n--- a/src/com/google/javascript/jscomp/PeepholeFoldConstants.java\n+++ b/src/com/google/javascript/jscomp/PeepholeFoldConstants.java\n@@ -550,11 +550,10 @@\n    *  - The right child is a constant value\n    *  - The left child\u0027s right child is a STRING constant.\n    */\n-  private Node tryFoldLeftChildAdd(Node n, Node left, Node right) {\n+  private Node tryFoldChildAddString(Node n, Node left, Node right) {\n \n     if (NodeUtil.isLiteralValue(right, false) \u0026\u0026\n-        left.getType() \u003d\u003d Token.ADD \u0026\u0026\n-        left.getChildCount() \u003d\u003d 2) {\n+        left.getType() \u003d\u003d Token.ADD) {\n \n       Node ll \u003d left.getFirstChild();\n       Node lr \u003d ll.getNext();\n@@ -562,18 +561,40 @@\n       // Left\u0027s right child MUST be a string. We would not want to fold\n       // foo() + 2 + \u0027a\u0027 because we don\u0027t know what foo() will return, and\n       // therefore we don\u0027t know if left is a string concat, or a numeric add.\n-      if (lr.getType() !\u003d Token.STRING) {\n-        return n;\n+      if (lr.getType() \u003d\u003d Token.STRING) {\n+        String leftString \u003d NodeUtil.getStringValue(lr);\n+        String rightString \u003d NodeUtil.getStringValue(right);\n+        if (leftString !\u003d null \u0026\u0026 rightString !\u003d null) {\n+          left.removeChild(ll);\n+          String result \u003d leftString + rightString;\n+          n.replaceChild(left, ll);\n+          n.replaceChild(right, Node.newString(result));\n+          reportCodeChange();\n+          return n;\n+        }\n       }\n+    }\n \n-      String leftString \u003d NodeUtil.getStringValue(lr);\n-      String rightString \u003d NodeUtil.getStringValue(right);\n-      if (leftString !\u003d null \u0026\u0026 rightString !\u003d null) {\n-        left.removeChild(ll);\n-        String result \u003d leftString + rightString;\n-        n.replaceChild(left, ll);\n-        n.replaceChild(right, Node.newString(result));\n-        reportCodeChange();\n+    if (NodeUtil.isLiteralValue(left, false) \u0026\u0026\n+        right.getType() \u003d\u003d Token.ADD) {\n+\n+      Node rl \u003d right.getFirstChild();\n+      Node rr \u003d right.getLastChild();\n+\n+      // Left\u0027s right child MUST be a string. We would not want to fold\n+      // foo() + 2 + \u0027a\u0027 because we don\u0027t know what foo() will return, and\n+      // therefore we don\u0027t know if left is a string concat, or a numeric add.\n+      if (rl.getType() \u003d\u003d Token.STRING) {\n+        String leftString \u003d NodeUtil.getStringValue(left);\n+        String rightString \u003d NodeUtil.getStringValue(rl);\n+        if (leftString !\u003d null \u0026\u0026 rightString !\u003d null) {\n+          right.removeChild(rr);\n+          String result \u003d leftString + rightString;\n+          n.replaceChild(right, rr);\n+          n.replaceChild(left, Node.newString(result));\n+          reportCodeChange();\n+          return n;\n+        }\n       }\n     }\n \n@@ -583,10 +604,9 @@\n   /**\n    * Try to fold an ADD node with constant operands\n    */\n-  private Node tryFoldAddConstant(Node n, Node left, Node right) {\n+  private Node tryFoldAddConstantString(Node n, Node left, Node right) {\n     if (left.getType() \u003d\u003d Token.STRING ||\n         right.getType() \u003d\u003d Token.STRING) {\n-\n       // Add strings.\n       String leftString \u003d NodeUtil.getStringValue(left);\n       String rightString \u003d NodeUtil.getStringValue(right);\n@@ -596,11 +616,10 @@\n         reportCodeChange();\n         return newStringNode;\n       }\n-    } else {\n-      // Try arithmetic add\n-      return tryFoldArithmeticOp(n, left, right);\n     }\n \n+\n+\n     return n;\n   }\n \n@@ -625,8 +644,8 @@\n     // Unlike other operations, ADD operands are not always converted\n     // to Number.\n     if (opType \u003d\u003d Token.ADD\n-        \u0026\u0026 (left.getType() !\u003d Token.NUMBER\n-            || right.getType() !\u003d Token.NUMBER)) {\n+        \u0026\u0026 (NodeUtil.mayBeString(left, false)\n+            || NodeUtil.mayBeString(right, false))) {\n       return null;\n     }\n \n@@ -716,9 +735,12 @@\n    */\n   private Node tryFoldLeftChildOp(Node n, Node left, Node right) {\n     int opType \u003d n.getType();\n-    // TODO(johnlenz): Add support for ADD in numberic contexts.\n     Preconditions.checkState(\n-      NodeUtil.isAssociative(opType) \u0026\u0026 NodeUtil.isCommutative(opType));\n+        (NodeUtil.isAssociative(opType) \u0026\u0026 NodeUtil.isCommutative(opType))\n+        || n.getType() \u003d\u003d Token.ADD);\n+\n+    Preconditions.checkState(\n+        n.getType() !\u003d Token.ADD || !NodeUtil.mayBeString(n));\n \n     // Use getNumberValue to handle constants like \"NaN\" and \"Infinity\"\n     // other values are converted to numbers elsewhere.\n@@ -754,13 +776,22 @@\n   private Node tryFoldAdd(Node node, Node left, Node right) {\n     Preconditions.checkArgument(node.getType() \u003d\u003d Token.ADD);\n \n-    if (NodeUtil.isLiteralValue(left, false) \u0026\u0026\n-        NodeUtil.isLiteralValue(right, false)) {\n-      // 6 + 7\n-      return tryFoldAddConstant(node, left, right);\n+    if (NodeUtil.mayBeString(node, true)) {\n+      if (NodeUtil.isLiteralValue(left, false) \u0026\u0026\n+          NodeUtil.isLiteralValue(right, false)) {\n+        // \u00276\u0027 + 7\n+        return tryFoldAddConstantString(node, left, right);\n+      } else {\n+        // a + 7 or 6 + a\n+        return tryFoldChildAddString(node, left, right);\n+      }\n     } else {\n-      // a + 7 or 6 + a\n-      return tryFoldLeftChildAdd(node, left, right);\n+      // Try arithmetic add\n+      Node result \u003d tryFoldArithmeticOp(node, left, right);\n+      if (result !\u003d node) {\n+        return result;\n+      }\n+      return tryFoldLeftChildOp(node, left, right);\n     }\n   }\n \n",
+      "operations": [
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [16479,17335]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [21715,21803]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [23039,23582]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [23043,23075]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [23077,23370]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Block [23376,23582]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [21605,21707]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [18624,18657]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [18673,18707]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ParenthesizedExpression [21605,21671]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: || [21680,21682]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [21683,21707]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [23308,23356]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [18624,18632]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: mayBeString [18633,18644]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [18645,18656]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [18673,18681]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: mayBeString [18682,18693]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [18694,18706]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "BooleanLiteral: false [18651,18656]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "BooleanLiteral: false [18701,18706]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [15705,15707]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [15716,15741]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [15628,15741]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [17122,17207]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_RECEIVER [17862,17866]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: getType [17867,17874]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [17862,17876]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: !\u003d [17877,17879]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "QualifiedName: Token.NUMBER [17880,17892]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [17862,17892]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_RECEIVER [17908,17913]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: getType [17914,17921]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [17908,17923]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: !\u003d [17924,17926]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "QualifiedName: Token.NUMBER [17927,17939]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [17908,17939]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [22405,22451]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "mayBeString",
+        "tryFoldChildAddString",
+        "isBooleanResultHelper",
+        "apply",
+        "tryFoldAddConstantString",
+        "mayBeStringHelper",
+        "isNumericResultHelper",
+        "valueCheck",
+        "isBooleanResult"
+      ],
+      "num": 9
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "tryFoldLeftChildAdd",
+        "tryFoldAddConstant"
+      ],
+      "num": 2
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.CrossModuleMethodMotionTest",
+      "test_function": "testTwoMethods",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.CrossModuleMethodMotionTest",
+      "test_function": "testClosureVariableReads3",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/NodeUtil.java",
+        "src/com/google/javascript/jscomp/NodeUtil.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "mayBeString"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "anyResultsMatch",
+            "mayBeString"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1097",
+            "1225"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "1098",
+            "1099",
+            "1100",
+            "1101",
+            "1102",
+            "1103",
+            "1104",
+            "1105",
+            "1106",
+            "1107",
+            "1108",
+            "1109",
+            "1110",
+            "1111",
+            "1112",
+            "1113",
+            "1114",
+            "1115",
+            "1116",
+            "1117",
+            "1118",
+            "1246"
+          ],
+          "num": 22
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Closure_10/properties/modified_classes/inducing/src/com/google/javascript/jscomp/NodeUtil.java data/changesInfo//Closure_10/cleaned/fixing/src/com/google/javascript/jscomp/NodeUtil.java\n--- data/changesInfo//Closure_10/properties/modified_classes/inducing/src/com/google/javascript/jscomp/NodeUtil.java\t2023-08-25 13:04:57.056550899 +0800\n+++ data/changesInfo//Closure_10/cleaned/fixing/src/com/google/javascript/jscomp/NodeUtil.java\t2023-06-20 16:49:25.536859398 +0800\n@@ -1095,6 +1095,27 @@\n     }\n   }\n \n+  /**\n+   * Apply the supplied predicate against\n+   * all possible result Nodes of the expression.\n+   */\n+  static boolean anyResultsMatch(Node n, Predicate\u003cNode\u003e p) {\n+    switch (n.getType()) {\n+      case Token.ASSIGN:\n+      case Token.COMMA:\n+        return anyResultsMatch(n.getLastChild(), p);\n+      case Token.AND:\n+      case Token.OR:\n+        return anyResultsMatch(n.getFirstChild(), p)\n+                || anyResultsMatch(n.getLastChild(), p);\n+      case Token.HOOK:\n+        return anyResultsMatch(n.getFirstChild().getNext(), p)\n+                || anyResultsMatch(n.getLastChild(), p);\n+      default:\n+        return p.apply(n);\n+    }\n+  }\n+\n   static class NumbericResultPredicate implements Predicate\u003cNode\u003e {\n     public boolean apply(Node n) {\n       return isNumericResultHelper(n);\n@@ -1222,7 +1243,7 @@\n \n   static boolean mayBeString(Node n, boolean recurse) {\n     if (recurse) {\n-      return valueCheck(n, MAY_BE_STRING_PREDICATE);\n+      return anyResultsMatch(n, MAY_BE_STRING_PREDICATE);\n     } else {\n       return mayBeStringHelper(n);\n     }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [32870,33510]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [36665,36716]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [36021,36067]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "anyResultsMatch"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

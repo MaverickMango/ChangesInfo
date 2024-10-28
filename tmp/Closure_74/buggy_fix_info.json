@@ -1,0 +1,145 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.PeepholeFoldConstantsTest::testFoldComparison3,com.google.javascript.jscomp.PeepholeFoldConstantsTest::testInvertibleOperators,com.google.javascript.jscomp.PeepholeFoldConstantsTest::testCommutativeOperators",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.PeepholeFoldConstants",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "74",
+  "workingDir": "../bugs/Closure_74_tmp",
+  "bug_name": "Closure_74",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.PeepholeFoldConstantsTest",
+      "test_function": "testFoldComparison3",
+      "assertion_line": "700",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: x\u003dfalse\nResult: x\u003d!1\u003d\u003d!0"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.PeepholeFoldConstantsTest",
+      "test_function": "testInvertibleOperators",
+      "assertion_line": "1184",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "Expressions did not fold the same"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.PeepholeFoldConstantsTest",
+      "test_function": "testCommutativeOperators",
+      "assertion_line": "1184",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "Expressions did not fold the same"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/PeepholeFoldConstants.java",
+        "src/com/google/javascript/jscomp/PeepholeFoldConstants.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.PeepholeFoldConstants:getNormalizedNodeType:[Node n]:int",
+            "com.google.javascript.jscomp.PeepholeFoldConstants:tryFoldComparison:[Node n, Node left, Node right]:Node"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.PeepholeFoldConstants:tryFoldComparison:[Node n, Node left, Node right]:Node"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "907",
+            "908",
+            "1074",
+            "1075",
+            "1076",
+            "1077",
+            "1078",
+            "1079",
+            "1080",
+            "1081",
+            "1082",
+            "1083",
+            "1084",
+            "1085",
+            "1086"
+          ],
+          "num": 15
+        },
+        {
+          "qualified_names": [
+            "907",
+            "908",
+            "1073"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/PeepholeFoldConstants.java b/src/com/google/javascript/jscomp/PeepholeFoldConstants.java\nindex 9d2f97a..a61bb6c 100644\n--- a/src/com/google/javascript/jscomp/PeepholeFoldConstants.java\n+++ b/src/com/google/javascript/jscomp/PeepholeFoldConstants.java\n@@ -904,8 +904,8 @@\n           \u0026\u0026 right.getString().equals(\"undefined\"))\n           || (Token.VOID \u003d\u003d right.getType()\n               \u0026\u0026 NodeUtil.isLiteralValue(right.getFirstChild(), false)));\n-    int lhType \u003d getNormalizedNodeType(left);\n-    int rhType \u003d getNormalizedNodeType(right);\n+    int lhType \u003d left.getType();\n+    int rhType \u003d right.getType();\n     switch (lhType) {\n       case Token.VOID:\n         if (!NodeUtil.isLiteralValue(left.getFirstChild(), false)) {\n@@ -1071,19 +1071,6 @@\n   /**\n    * @return Translate NOT expressions into TRUE or FALSE when possible.\n    */\n-  private int getNormalizedNodeType(Node n) {\n-    int type \u003d n.getType();\n-    if (type \u003d\u003d Token.NOT) {\n-      TernaryValue value \u003d NodeUtil.getPureBooleanValue(n);\n-      switch (value) {\n-        case TRUE:\n-          return Token.TRUE;\n-        case FALSE:\n-          return Token.FALSE;\n-      }\n-    }\n-    return type;\n-  }\n \n   /**\n    * The result of the comparison as a Boolean or null if the\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [26939,26967]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [26972,27001]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [26939,26980]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [26985,27027]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [31269,31670]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.PeepholeFoldConstants:getNormalizedNodeType:[Node n]:int"
+      ],
+      "num": 1
+    }
+  }
+}

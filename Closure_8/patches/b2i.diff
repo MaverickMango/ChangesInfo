@@ -1,0 +1,148 @@
+diff -r -u buggy/src/com/google/javascript/jscomp/CollapseVariableDeclarations.java inducing/src/com/google/javascript/jscomp/CollapseVariableDeclarations.java
+--- buggy/src/com/google/javascript/jscomp/CollapseVariableDeclarations.java	2023-06-12 11:34:16.222033523 +0800
++++ inducing/src/com/google/javascript/jscomp/CollapseVariableDeclarations.java	2023-06-12 11:34:16.454037767 +0800
+@@ -20,7 +20,6 @@
+ import com.google.common.collect.Lists;
+ import com.google.common.collect.Sets;
+ import com.google.javascript.jscomp.NodeTraversal.AbstractPostOrderCallback;
+-import com.google.javascript.jscomp.Scope.Var;
+ import com.google.javascript.rhino.JSDocInfo;
+ import com.google.javascript.rhino.Node;
+ import com.google.javascript.rhino.Token;
+@@ -105,7 +104,6 @@
+     this.compiler = compiler;
+   }
+ 
+-  @Override
+   public void process(Node externs, Node root) {
+     collapses.clear();
+     nodesToCollapse.clear();
+@@ -127,31 +125,23 @@
+    */
+   private class GatherCollapses extends AbstractPostOrderCallback {
+ 
+-    // If a VAR is declared like
+-    // var x;
+-    // then we should not create new VAR nodes for it later in the tree.
+-    // This is a workaround for a bug in Firefox.
+-    private final Set<Var> blacklistedVars = Sets.newHashSet();
++    // TODO(user): This is purely a subtree peep hole optimization. We
++    // can rewrite this so it no longer have a sperate gather and merge stage.
+ 
+-    @Override
+     public void visit(NodeTraversal t, Node n, Node parent) {
+-      if (n.isVar()) {
+-        blacklistStubVars(t, n);
+-      }
+-
+       // Only care about var nodes
+-      if (!n.isVar() && !canBeRedeclared(n, t.getScope())) return;
++      if (n.getType() != Token.VAR && !canBeRedeclared(n, t.getScope())) return;
+ 
+       // If we've already looked at this node, skip it
+       if (nodesToCollapse.contains(n)) return;
+ 
+       // Adjacent VAR children of an IF node are the if and else parts and can't
+       // be collapsed
+-      if (parent.isIf()) return;
++      if (parent.getType() == Token.IF) return;
+ 
+       Node varNode = n;
+ 
+-      boolean hasVar = n.isVar();
++      boolean hasVar = n.getType() == Token.VAR;
+ 
+       // Find variable declarations that follow this one (if any)
+       n = n.getNext();
+@@ -159,10 +149,9 @@
+       boolean hasNodesToCollapse = false;
+ 
+       while (n != null &&
+-          (n.isVar() || canBeRedeclared(n, t.getScope()))) {
++          (n.getType() == Token.VAR || canBeRedeclared(n, t.getScope()))) {
+ 
+-        if (n.isVar()) {
+-          blacklistStubVars(t, n);
++        if (NodeUtil.isVar(n)) {
+           hasVar = true;
+         }
+ 
+@@ -177,31 +166,20 @@
+         collapses.add(new Collapse(varNode, n, parent));
+       }
+     }
++  }
+ 
+-    private void blacklistStubVars(NodeTraversal t, Node varNode) {
+-      for (Node child = varNode.getFirstChild();
+-           child != null; child = child.getNext()) {
+-        if (child.getFirstChild() == null) {
+-          blacklistedVars.add(t.getScope().getVar(child.getString()));
+-        }
+-      }
++  private boolean canBeRedeclared(Node n, Scope s) {
++    if (!NodeUtil.isExprAssign(n)) {
++      return false;
+     }
++    Node assign = n.getFirstChild();
++    Node lhs = assign.getFirstChild();
+ 
+-    private boolean canBeRedeclared(Node n, Scope s) {
+-      if (!NodeUtil.isExprAssign(n)) {
+-        return false;
+-      }
+-      Node assign = n.getFirstChild();
+-      Node lhs = assign.getFirstChild();
+-
+-      if (!lhs.isName()) {
+-        return false;
+-      }
+-
+-      Var var = s.getVar(lhs.getString());
+-      return var != null &&
+-          var.getScope() == s && !blacklistedVars.contains(var);
++    if (!NodeUtil.isName(lhs)) {
++      return false;
+     }
++
++    return s.isDeclared(lhs.getString(), false);
+   }
+ 
+   private void applyCollapses() {
+@@ -218,14 +196,14 @@
+         Preconditions.checkState(var.getNext() == n);
+         collapse.parent.removeChildAfter(var);
+ 
+-        if (n.isVar()) {
++        if (NodeUtil.isVar(n)) {
+           while(n.hasChildren()) {
+             var.addChildToBack(n.removeFirstChild());
+           }
+         } else {
+           Node assign = n.getFirstChild();
+           Node lhs = assign.getFirstChild();
+-          Preconditions.checkState(lhs.isName());
++          Preconditions.checkState(NodeUtil.isName(lhs));
+           Node rhs = assign.getLastChild();
+           lhs.addChildToBack(rhs.detachFromParent());
+           var.addChildToBack(lhs.detachFromParent());
+diff -r -u buggy/test/com/google/javascript/jscomp/CollapseVariableDeclarationsTest.java inducing/test/com/google/javascript/jscomp/CollapseVariableDeclarationsTest.java
+--- buggy/test/com/google/javascript/jscomp/CollapseVariableDeclarationsTest.java	2023-06-12 11:34:16.222033523 +0800
++++ inducing/test/com/google/javascript/jscomp/CollapseVariableDeclarationsTest.java	2023-06-12 11:34:16.454037767 +0800
+@@ -66,16 +66,6 @@
+     testSame("var x; for(x = 1; x = 2; z = 3) {x = 4}");
+   }
+ 
+-  public void testIssue397() {
+-    test("var x; var y = 3; x = 5;",
+-         "var x, y = 3; x = 5;");
+-    testSame("var x; x = 5; var z = 7;");
+-    test("var x; var y = 3; x = 5; var z = 7;",
+-         "var x, y = 3; x = 5; var z = 7;");
+-    test("var a = 1; var x; var y = 3; x = 5;",
+-         "var a = 1, x, y = 3; x = 5;");
+-  }
+-
+   @Override
+   protected CompilerPass getProcessor(Compiler compiler) {
+     return new CollapseVariableDeclarations(compiler);

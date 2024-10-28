@@ -1,0 +1,99 @@
+Only in data/changesInfo//Closure_59/properties/modified_classes/inducing/src/com/google/javascript/jscomp: CheckGlobalThis.java
+diff -u -r data/changesInfo//Closure_59/properties/modified_classes/inducing/src/com/google/javascript/jscomp/Compiler.java data/changesInfo//Closure_59/cleaned/fixing/src/com/google/javascript/jscomp/Compiler.java
+--- data/changesInfo//Closure_59/properties/modified_classes/inducing/src/com/google/javascript/jscomp/Compiler.java	2023-12-27 22:38:36.313245583 -0800
++++ data/changesInfo//Closure_59/cleaned/fixing/src/com/google/javascript/jscomp/Compiler.java	2023-08-18 02:18:15.776000000 -0700
+@@ -232,27 +232,6 @@
+       }
+     }
+ 
+-    // DiagnosticGroups override the plain checkTypes option.
+-    if (options.enables(DiagnosticGroups.CHECK_TYPES)) {
+-      options.checkTypes = true;
+-    } else if (options.disables(DiagnosticGroups.CHECK_TYPES)) {
+-      options.checkTypes = false;
+-    } else if (!options.checkTypes) {
+-      // If DiagnosticGroups did not override the plain checkTypes
+-      // option, and checkTypes is enabled, then turn off the
+-      // parser type warnings.
+-      options.setWarningLevel(
+-          DiagnosticGroup.forType(
+-              RhinoErrorReporter.TYPE_PARSE_ERROR),
+-          CheckLevel.OFF);
+-    }
+-
+-    if (options.checkGlobalThisLevel.isOn()) {
+-      options.setWarningLevel(
+-          DiagnosticGroups.GLOBAL_THIS,
+-          options.checkGlobalThisLevel);
+-    }
+-
+     // Initialize the warnings guard.
+     List<WarningsGuard> guards = Lists.newArrayList();
+     guards.add(
+@@ -275,6 +254,21 @@
+           DiagnosticGroups.CHECK_VARIABLES, CheckLevel.OFF));
+     }
+ 
++    // DiagnosticGroups override the plain checkTypes option.
++    if (options.enables(DiagnosticGroups.CHECK_TYPES)) {
++      options.checkTypes = true;
++    } else if (options.disables(DiagnosticGroups.CHECK_TYPES)) {
++      options.checkTypes = false;
++    } else if (!options.checkTypes) {
++      // If DiagnosticGroups did not override the plain checkTypes
++      // option, and checkTypes is enabled, then turn off the
++      // parser type warnings.
++      guards.add(
++          new DiagnosticGroupWarningsGuard(
++              DiagnosticGroup.forType(
++                  RhinoErrorReporter.TYPE_PARSE_ERROR),
++              CheckLevel.OFF));
++    }
+     this.warningsGuard = new ComposeWarningsGuard(guards);
+   }
+ 
+@@ -1449,9 +1443,6 @@
+     builder.setLineBreak(options.lineBreak);
+     builder.setSourceMap(sourceMap);
+     builder.setSourceMapDetailLevel(options.sourceMapDetailLevel);
+-    builder.setTagAsStrict(
+-        options.getLanguageOut() == LanguageMode.ECMASCRIPT5_STRICT);
+-    builder.setLineLengthThreshold(options.lineLengthThreshold);
+ 
+     Charset charset = options.outputCharset != null ?
+         Charset.forName(options.outputCharset) : null;
+@@ -1652,11 +1643,7 @@
+ 
+   @Override
+   public boolean acceptEcmaScript5() {
+-    return options.getLanguageIn() == LanguageMode.ECMASCRIPT5;
+-  }
+-
+-  public LanguageMode languageMode() {
+-    return options.getLanguageIn();
++    return options.languageIn == LanguageMode.ECMASCRIPT5;
+   }
+ 
+   @Override
+@@ -1668,16 +1655,13 @@
+   Config getParserConfig() {
+     if (parserConfig == null) {
+       Config.LanguageMode mode;
+-      switch (options.getLanguageIn()) {
++      switch (options.languageIn) {
+         case ECMASCRIPT3:
+           mode = Config.LanguageMode.ECMASCRIPT3;
+           break;
+         case ECMASCRIPT5:
+           mode = Config.LanguageMode.ECMASCRIPT5;
+           break;
+-        case ECMASCRIPT5_STRICT:
+-          mode = Config.LanguageMode.ECMASCRIPT5_STRICT;
+-          break;
+         default:
+           throw new IllegalStateException("unexpected language mode");
+       }
+Only in data/changesInfo//Closure_59/properties/modified_classes/inducing/src/com/google/javascript/jscomp: DefaultPassConfig.java
+Only in data/changesInfo//Closure_59/properties/modified_classes/inducing/src/com/google/javascript/jscomp: DiagnosticGroups.java
+Only in data/changesInfo//Closure_59/properties/modified_classes/inducing/src/com/google/javascript/jscomp: TypeValidator.java
+Only in data/changesInfo//Closure_59/properties/modified_classes/inducing/: test

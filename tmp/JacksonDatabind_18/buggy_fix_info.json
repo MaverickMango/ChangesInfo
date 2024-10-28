@@ -1,0 +1,558 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.seq.ReadRecoveryTest::testSimpleRootRecovery,com.fasterxml.jackson.databind.seq.ReadRecoveryTest::testRootBeans,com.fasterxml.jackson.databind.seq.ReadRecoveryTest::testSimpleArrayRecovery",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.MappingIterator",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "18",
+  "workingDir": "../bugs/JacksonDatabind_18_tmp",
+  "bug_name": "JacksonDatabind_18",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.seq.ReadRecoveryTest",
+      "test_function": "testSimpleRootRecovery",
+      "assertion_line": "67",
+      "exception": "com.fasterxml.jackson.databind.JsonMappingException",
+      "message": "Can not instantiate value of type [simple type, class com.fasterxml.jackson.databind.seq.ReadRecoveryTest$Bean] from Integral number (1); no single-int-arg constructor/factory method"
+    },
+    {
+      "test_class": "com.fasterxml.jackson.databind.seq.ReadRecoveryTest",
+      "test_function": "testRootBeans",
+      "assertion_line": "41",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    },
+    {
+      "test_class": "com.fasterxml.jackson.databind.seq.ReadRecoveryTest",
+      "test_function": "testSimpleArrayRecovery",
+      "assertion_line": "96",
+      "exception": "com.fasterxml.jackson.databind.JsonMappingException",
+      "message": "Can not instantiate value of type [simple type, class com.fasterxml.jackson.databind.seq.ReadRecoveryTest$Bean] from Integral number (1); no single-int-arg constructor/factory method"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/MappingIterator.java",
+        "src/main/java/com/fasterxml/jackson/databind/MappingIterator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.MappingIterator:MappingIterator:[JavaType type, JsonParser p, DeserializationContext ctxt, JsonDeserializer\u003c?\u003e deser, boolean managedParser, Object valueToUpdate]:null",
+            "com.fasterxml.jackson.databind.MappingIterator:hasNextValue:[]:boolean",
+            "com.fasterxml.jackson.databind.MappingIterator:_resync:[]:void",
+            "com.fasterxml.jackson.databind.MappingIterator:close:[]:void",
+            "com.fasterxml.jackson.databind.MappingIterator:nextValue:[]:T"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.MappingIterator:nextValue:[]:T",
+            "com.fasterxml.jackson.databind.MappingIterator:MappingIterator:[JavaType type, JsonParser p, DeserializationContext ctxt, JsonDeserializer\u003c?\u003e deser, boolean managedParser, Object valueToUpdate]:null",
+            "com.fasterxml.jackson.databind.MappingIterator:hasNextValue:[]:boolean"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "28",
+            "33",
+            "39",
+            "45",
+            "73",
+            "79",
+            "103",
+            "143",
+            "144",
+            "145",
+            "146",
+            "147",
+            "148",
+            "151",
+            "155",
+            "156",
+            "157",
+            "158",
+            "159",
+            "160",
+            "161",
+            "207",
+            "208",
+            "212",
+            "231",
+            "232",
+            "234",
+            "235",
+            "237",
+            "243",
+            "244",
+            "245",
+            "250",
+            "251",
+            "252",
+            "260",
+            "261",
+            "262",
+            "263",
+            "264",
+            "268",
+            "269",
+            "270",
+            "273",
+            "282",
+            "285",
+            "382",
+            "383",
+            "384",
+            "386",
+            "387",
+            "388",
+            "390",
+            "391",
+            "392",
+            "393",
+            "394",
+            "395",
+            "396",
+            "397",
+            "398",
+            "399",
+            "400",
+            "401",
+            "402",
+            "403"
+          ],
+          "num": 66
+        },
+        {
+          "qualified_names": [
+            "27",
+            "69",
+            "98",
+            "138",
+            "210",
+            "213",
+            "214",
+            "216",
+            "221",
+            "222",
+            "223",
+            "224",
+            "236",
+            "241",
+            "242",
+            "243",
+            "244",
+            "309",
+            "411"
+          ],
+          "num": 19
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/MappingIterator.java b/src/main/java/com/fasterxml/jackson/databind/MappingIterator.java\nindex c0e79c8..b4ce3e9 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/MappingIterator.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/MappingIterator.java\n@@ -25,24 +25,20 @@\n     /**\n      * State in which iterator is closed\n      */\n-    protected final static int STATE_CLOSED \u003d 0;\n     \n     /**\n      * State in which value read failed\n      */\n-    protected final static int STATE_NEED_RESYNC \u003d 1;\n     \n     /**\n      * State in which no recovery is needed, but \"hasNextValue()\" needs\n      * to be called first\n      */\n-    protected final static int STATE_MAY_HAVE_VALUE \u003d 2;\n \n     /**\n      * State in which \"hasNextValue()\" has been succesfully called\n      * and deserializer can be called to fetch value\n      */\n-    protected final static int STATE_HAS_VALUE \u003d 3;\n \n     /*\n     /**********************************************************\n@@ -70,13 +66,12 @@\n      * as not \u003ccode\u003enull\u003c/code\u003e but set as \u003ccode\u003enull\u003c/null\u003e when\n      * iterator is closed, to denote closing.\n      */\n-    protected final JsonParser _parser;\n+    protected JsonParser _parser;\n \n     /**\n      * Context to resynchronize to, in case an exception is encountered\n      * but caller wants to try to read more elements.\n      */\n-    protected final JsonStreamContext _seqContext;\n     \n     /**\n      * If not null, \"value to update\" instead of creating a new instance\n@@ -100,7 +95,7 @@\n     /**\n      * State of the iterator\n      */\n-    protected int _state;\n+    protected boolean _hasNextChecked;\n \n     /*\n     /**********************************************************\n@@ -140,25 +135,12 @@\n          * and if not, caller needs to hand us JsonParser instead, pointing to\n          * the first token of the first element.\n          */\n-        if (p \u003d\u003d null) { // can this occur?\n-            _seqContext \u003d null;\n-            _state \u003d STATE_CLOSED;\n-        } else {\n-            JsonStreamContext sctxt \u003d p.getParsingContext();\n-            if (managedParser \u0026\u0026 p.isExpectedStartArrayToken()) {\n+        if (managedParser \u0026\u0026 (p !\u003d null) \u0026\u0026 p.isExpectedStartArrayToken()) {\n                 // If pointing to START_ARRAY, context should be that ARRAY\n                 p.clearCurrentToken();\n-            } else {\n                 // regardless, recovery context should be whatever context we have now,\n                 // with sole exception of pointing to a start marker, in which case it\u0027s\n                 // the parent\n-                JsonToken t \u003d p.getCurrentToken();\n-                if ((t \u003d\u003d JsonToken.START_OBJECT) || (t \u003d\u003d JsonToken.START_ARRAY)) {\n-                    sctxt \u003d sctxt.getParent();\n-                }\n-            }\n-            _seqContext \u003d sctxt;\n-            _state \u003d STATE_MAY_HAVE_VALUE;\n         }\n     }\n \n@@ -204,12 +186,9 @@\n     \n     @Override\n     public void close() throws IOException {\n-        if (_state !\u003d STATE_CLOSED) {\n-            _state \u003d STATE_CLOSED;\n             if (_parser !\u003d null) {\n                 _parser.close();\n             }\n-        }\n     }\n \n     /*\n@@ -228,28 +207,25 @@\n      */\n     public boolean hasNextValue() throws IOException\n     {\n-        switch (_state) {\n-        case STATE_CLOSED:\n+        if (_parser \u003d\u003d null) {\n             return false;\n-        case STATE_NEED_RESYNC:\n-            _resync();\n             // fall-through\n-        case STATE_MAY_HAVE_VALUE:\n+        }\n+        if (!_hasNextChecked) {\n             JsonToken t \u003d _parser.getCurrentToken();\n+            _hasNextChecked \u003d true;\n             if (t \u003d\u003d null) { // un-initialized or cleared; find next\n                 t \u003d _parser.nextToken();\n                 // If EOF, no more, or if we hit END_ARRAY (although we don\u0027t clear the token).\n                 if (t \u003d\u003d null || t \u003d\u003d JsonToken.END_ARRAY) {\n-                    _state \u003d STATE_CLOSED;\n-                    if (_closeParser \u0026\u0026 (_parser !\u003d null)) {\n-                        _parser.close();\n+                    JsonParser jp \u003d _parser;\n+                    _parser \u003d null;\n+                    if (_closeParser) {\n+                        jp.close();\n                     }\n                     return false;\n                 }\n             }\n-            _state \u003d STATE_HAS_VALUE;\n-            return true;\n-        case STATE_HAS_VALUE:\n             // fall through\n         }\n         return true;\n@@ -257,20 +233,16 @@\n \n     public T nextValue() throws IOException\n     {\n-        switch (_state) {\n-        case STATE_CLOSED:\n-            return _throwNoSuchElement();\n-        case STATE_NEED_RESYNC: // fall-through, will do re-sync\n-        case STATE_MAY_HAVE_VALUE:\n+        if (!_hasNextChecked) {\n             if (!hasNextValue()) {\n                 return _throwNoSuchElement();\n             }\n-            break;\n-        case STATE_HAS_VALUE:\n-            break;\n         }\n+        if (_parser \u003d\u003d null) {\n+            return _throwNoSuchElement();\n+        }\n+        _hasNextChecked \u003d false;\n \n-        int nextState \u003d STATE_NEED_RESYNC;\n         try {\n             T value;\n             if (_updatedValue \u003d\u003d null) {\n@@ -279,10 +251,8 @@\n                 _deserializer.deserialize(_parser, _context, _updatedValue);\n                 value \u003d _updatedValue;\n             }\n-            nextState \u003d STATE_MAY_HAVE_VALUE;\n             return value;\n         } finally {\n-            _state \u003d nextState;\n             /* 24-Mar-2015, tatu: As per [#733], need to mark token consumed no\n              *   matter what, to avoid infinite loop for certain failure cases.\n              *   For 2.6 need to improve further.\n@@ -379,28 +349,8 @@\n     /**********************************************************\n      */\n \n-    protected void _resync() throws IOException\n-    {\n-        final JsonParser p \u003d _parser;\n         // First, a quick check to see if we might have been lucky and no re-sync needed\n-        if (p.getParsingContext() \u003d\u003d _seqContext) {\n-            return;\n-        }\n \n-        while (true) {\n-            JsonToken t \u003d p.nextToken();\n-            if ((t \u003d\u003d JsonToken.END_ARRAY) || (t \u003d\u003d JsonToken.END_OBJECT)) {\n-                if (p.getParsingContext() \u003d\u003d _seqContext) {\n-                    p.clearCurrentToken();\n-                    return;\n-                }\n-            } else if ((t \u003d\u003d JsonToken.START_ARRAY) || (t \u003d\u003d JsonToken.START_OBJECT)) {\n-                p.skipChildren();\n-            } else if (t \u003d\u003d null) {\n-                return;\n-            }\n-        }\n-    }\n \n     protected \u003cR\u003e R _throwNoSuchElement() {\n         throw new NoSuchElementException();\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [2587,2666]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [6327,6413]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [7171,7299]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [7308,7382]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [7391,7415]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [6331,6346]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [6348,6413]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PrefixExpression [6426,6442]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [6444,7084]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PrefixExpression [7175,7191]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [7193,7299]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [7312,7327]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [7329,7382]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ParenthesizedExpression [4346,4357]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [6511,6534]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [6822,6846]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [6867,6882]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [6822,6832]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [6833,6845]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: jp [6833,6835]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [745,846]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [856,961]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [971,1137]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [1143,1326]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: final [2071,2076]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [2102,2290]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [2856,2922]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [4962,5385]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [4585,4594]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [4596,4693]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [4713,4761]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [5398,5418]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [5431,5461]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [4699,5471]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [4581,5471]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [6598,6620]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [6636,6658]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [6622,6750]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [6594,6750]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [7685,7707]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [7745,7747]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ParenthesizedExpression [7748,7765]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [7732,7765]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: _state [7164,7170]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [7182,7200]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [7235,7258]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [7271,7281]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [7318,7344]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [7910,7935]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [7948,7960]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [7969,7990]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: _state [8123,8129]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [8141,8159]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [8210,8233]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [8275,8301]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "BreakStatement [8409,8415]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [8424,8445]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "BreakStatement [8458,8464]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SwitchStatement [8115,8474]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [8484,8518]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [8827,8860]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [8919,8938]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [11484,12245]",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.MappingIterator:_resync:[]:void",
+        "com.fasterxml.jackson.databind.MappingIterator:close:[]:void"
+      ],
+      "num": 2
+    }
+  }
+}

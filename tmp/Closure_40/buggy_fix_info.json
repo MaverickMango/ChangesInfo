@@ -1,0 +1,121 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.IntegrationTest::testIssue284,com.google.javascript.jscomp.NameAnalyzerTest::testIssue284",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.NameAnalyzer",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "40",
+  "workingDir": "../bugs/Closure_40_tmp",
+  "bug_name": "Closure_40",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.IntegrationTest",
+      "test_function": "testIssue284",
+      "assertion_line": "1769",
+      "exception": "java.lang.RuntimeException",
+      "message": "java.lang.RuntimeException: INTERNAL COMPILER ERROR."
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.NameAnalyzerTest",
+      "test_function": "testIssue284",
+      "assertion_line": "1644",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: \nResult: goog.inherits(ns.PageSelectionModel.ChangeEvent,ns.PageSelectionModel.FooEvent)"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/NameAnalyzer.java",
+        "src/com/google/javascript/jscomp/NameAnalyzer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.NameAnalyzer\\$FindDeclarationsAndSetters:visit:[NodeTraversal t, Node n, Node parent]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.NameAnalyzer\\$FindDeclarationsAndSetters:visit:[NodeTraversal t, Node n, Node parent]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "635"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "635",
+            "636",
+            "639"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/NameAnalyzer.java b/src/com/google/javascript/jscomp/NameAnalyzer.java\nindex 6e9e470..088a993 100644\n--- a/src/com/google/javascript/jscomp/NameAnalyzer.java\n+++ b/src/com/google/javascript/jscomp/NameAnalyzer.java\n@@ -632,9 +632,11 @@\n         Node nameNode \u003d n.getFirstChild();\n         NameInformation ns \u003d createNameInformation(t, nameNode, n);\n         if (ns !\u003d null \u0026\u0026 ns.onlyAffectsClassDef) {\n-          JsName name \u003d getName(ns.name, true);\n+          JsName name \u003d getName(ns.name, false);\n+          if (name !\u003d null) {\n           refNodes.add(new ClassDefiningFunctionNode(\n               name, n, parent, parent.getParent()));\n+          }\n         }\n       }\n     }\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [21098,21236]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [21102,21114]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [21116,21236]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

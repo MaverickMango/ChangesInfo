@@ -1,0 +1,389 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.mockitousage.annotation.MockInjectionUsingSetterOrPropertyTest::shouldInsertFieldWithCorrectNameWhenMultipleTypesAvailable",
+    "test.dir": "test",
+    "clz.modified": "org.mockito.internal.configuration.injection.filter.FinalMockCandidateFilter,org.mockito.internal.configuration.injection.filter.MockCandidateFilter,org.mockito.internal.configuration.injection.filter.NameBasedCandidateFilter,org.mockito.internal.configuration.injection.filter.TypeBasedCandidateFilter,org.mockito.internal.configuration.injection.PropertyAndSetterInjection",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Mockito",
+  "id": "19",
+  "workingDir": "../bugs/Mockito_19_tmp",
+  "bug_name": "Mockito_19",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.mockitousage.annotation.MockInjectionUsingSetterOrPropertyTest",
+      "test_function": "shouldInsertFieldWithCorrectNameWhenMultipleTypesAvailable",
+      "assertion_line": "115",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: \u003cnull\u003e but was: candidate2"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/org/mockito/internal/configuration/injection/PropertyAndSetterInjection.java",
+        "src/org/mockito/internal/configuration/injection/PropertyAndSetterInjection.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.mockito.internal.configuration.injection.PropertyAndSetterInjection:injectMockCandidatesOnFields:[Set\u003cObject\u003e mocks, Object instance, boolean injectionOccurred, List\u003cField\u003e orderedInstanceFields]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.mockito.internal.configuration.injection.PropertyAndSetterInjection:injectMockCandidatesOnFields:[Set\u003cObject\u003e mocks, Object instance, boolean injectionOccurred, List\u003cField\u003e orderedInstanceFields]:boolean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "114"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "114"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/org/mockito/internal/configuration/injection/PropertyAndSetterInjection.java b/src/org/mockito/internal/configuration/injection/PropertyAndSetterInjection.java\nindex c17f961..67126af 100644\n--- a/src/org/mockito/internal/configuration/injection/PropertyAndSetterInjection.java\n+++ b/src/org/mockito/internal/configuration/injection/PropertyAndSetterInjection.java\n@@ -111,7 +111,7 @@\n     private boolean injectMockCandidatesOnFields(Set\u003cObject\u003e mocks, Object instance, boolean injectionOccurred, List\u003cField\u003e orderedInstanceFields) {\n         for (Iterator\u003cField\u003e it \u003d orderedInstanceFields.iterator(); it.hasNext(); ) {\n             Field field \u003d it.next();\n-            Object injected \u003d mockCandidateFilter.filterCandidate(mocks, field, orderedInstanceFields, instance).thenInject();\n+            Object injected \u003d mockCandidateFilter.filterCandidate(mocks, field, instance).thenInject();\n             if (injected !\u003d null) {\n                 injectionOccurred |\u003d true;\n                 mocks.remove(injected);\n",
+      "operations": [
+        {
+          "type": "delete-node",
+          "from": "SimpleName: orderedInstanceFields [5222,5243]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/org/mockito/internal/configuration/injection/filter/FinalMockCandidateFilter.java",
+        "src/org/mockito/internal/configuration/injection/filter/FinalMockCandidateFilter.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.mockito.internal.configuration.injection.filter.FinalMockCandidateFilter:filterCandidate:[final Collection\u003cObject\u003e mocks, final Field field, List\u003cField\u003e fields, final Object fieldInstance]:OngoingInjecter"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.mockito.internal.configuration.injection.filter.FinalMockCandidateFilter:filterCandidate:[final Collection\u003cObject\u003e mocks, final Field field, final Object fieldInstance]:OngoingInjecter"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "13",
+            "24"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "12",
+            "23"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/org/mockito/internal/configuration/injection/filter/FinalMockCandidateFilter.java b/src/org/mockito/internal/configuration/injection/filter/FinalMockCandidateFilter.java\nindex aebf6f7..7bd7073 100644\n--- a/src/org/mockito/internal/configuration/injection/filter/FinalMockCandidateFilter.java\n+++ b/src/org/mockito/internal/configuration/injection/filter/FinalMockCandidateFilter.java\n@@ -10,7 +10,6 @@\n \n import java.lang.reflect.Field;\n import java.util.Collection;\n-import java.util.List;\n \n /**\n  * This node returns an actual injecter which will be either :\n@@ -21,7 +20,7 @@\n  * \u003c/ul\u003e\n  */\n public class FinalMockCandidateFilter implements MockCandidateFilter {\n-    public OngoingInjecter filterCandidate(final Collection\u003cObject\u003e mocks, final Field field, List\u003cField\u003e fields, final Object fieldInstance) {\n+    public OngoingInjecter filterCandidate(final Collection\u003cObject\u003e mocks, final Field field, final Object fieldInstance) {\n         if(mocks.size() \u003d\u003d 1) {\n             final Object matchingMock \u003d mocks.iterator().next();\n \n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [405,427]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [925,943]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/org/mockito/internal/configuration/injection/filter/MockCandidateFilter.java",
+        "src/org/mockito/internal/configuration/injection/filter/MockCandidateFilter.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.mockito.internal.configuration.injection.filter.MockCandidateFilter:filterCandidate:[Collection\u003cObject\u003e mocks, Field fieldToBeInjected, List\u003cField\u003e fields, Object instance]:OngoingInjecter"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.mockito.internal.configuration.injection.filter.MockCandidateFilter:filterCandidate:[Collection\u003cObject\u003e mocks, Field fieldToBeInjected, Object fieldInstance]:OngoingInjecter"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "9",
+            "16"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "15"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/org/mockito/internal/configuration/injection/filter/MockCandidateFilter.java b/src/org/mockito/internal/configuration/injection/filter/MockCandidateFilter.java\nindex 81a168b..7a2c087 100644\n--- a/src/org/mockito/internal/configuration/injection/filter/MockCandidateFilter.java\n+++ b/src/org/mockito/internal/configuration/injection/filter/MockCandidateFilter.java\n@@ -6,14 +6,13 @@\n \n import java.lang.reflect.Field;\n import java.util.Collection;\n-import java.util.List;\n \n public interface MockCandidateFilter {\n \n     OngoingInjecter filterCandidate(\n             Collection\u003cObject\u003e mocks,\n             Field fieldToBeInjected,\n-            List\u003cField\u003e fields, Object instance\n+            Object fieldInstance\n     );\n \n }\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodDeclaration [288,435]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [288,303]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: filterCandidate [304,319]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [333,357]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [371,394]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [243,265]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [311,326]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: filterCandidate [327,342]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [356,380]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [394,417]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [431,449]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodDeclaration [311,473]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/org/mockito/internal/configuration/injection/filter/NameBasedCandidateFilter.java",
+        "src/org/mockito/internal/configuration/injection/filter/NameBasedCandidateFilter.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.mockito.internal.configuration.injection.filter.NameBasedCandidateFilter:filterCandidate:[Collection\u003cObject\u003e mocks, Field field, List\u003cField\u003e fields, Object fieldInstance]:OngoingInjecter"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.mockito.internal.configuration.injection.filter.NameBasedCandidateFilter:filterCandidate:[Collection\u003cObject\u003e mocks, Field field, Object fieldInstance]:OngoingInjecter"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "23",
+            "31",
+            "42",
+            "43",
+            "44",
+            "45",
+            "46",
+            "47",
+            "48",
+            "49",
+            "50",
+            "51",
+            "52",
+            "53",
+            "54",
+            "55",
+            "56",
+            "57",
+            "59"
+          ],
+          "num": 19
+        },
+        {
+          "qualified_names": [
+            "23",
+            "31",
+            "43"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/org/mockito/internal/configuration/injection/filter/NameBasedCandidateFilter.java b/src/org/mockito/internal/configuration/injection/filter/NameBasedCandidateFilter.java\nindex abc5d67..b95f31a 100644\n--- a/src/org/mockito/internal/configuration/injection/filter/NameBasedCandidateFilter.java\n+++ b/src/org/mockito/internal/configuration/injection/filter/NameBasedCandidateFilter.java\n@@ -20,7 +20,7 @@\n \t}\n \n \tpublic OngoingInjecter filterCandidate(Collection\u003cObject\u003e mocks,\n-\t\t\tField field, List\u003cField\u003e fields, Object fieldInstance) {\n+\t\t\tField field, Object fieldInstance) {\n \t\tList\u003cObject\u003e mockNameMatches \u003d new ArrayList\u003cObject\u003e();\n \t\tif (mocks.size() \u003e 1) {\n \t\t\tfor (Object mock : mocks) {\n@@ -28,7 +28,7 @@\n \t\t\t\t\tmockNameMatches.add(mock);\n \t\t\t\t}\n \t\t\t}\n-\t\t\treturn next.filterCandidate(mockNameMatches, field, fields,\n+\t\t\treturn next.filterCandidate(mockNameMatches, field,\n \t\t\t\t\tfieldInstance);\n \t\t\t/*\n \t\t\t * In this case we have to check whether we have conflicting naming\n@@ -39,23 +39,7 @@\n \t\t\t * whenever we find a field that does match its name with the mock\n \t\t\t * name, we should take that field instead.\n \t\t\t */\n-\t\t} else if (mocks.size() \u003d\u003d 1) {\n-\t\t\tString mockName \u003d mockUtil.getMockName(mocks.iterator().next())\n-\t\t\t\t\t.toString();\n-\n-\t\t\tfor (Field otherField : fields) {\n-\t\t\t\tif (!otherField.equals(field)\n-\t\t\t\t\t\t\u0026\u0026 otherField.getType().equals(field.getType())\n-\t\t\t\t\t\t\u0026\u0026 otherField.getName().equals(mockName)) {\n-\n-\t\t\t\t\treturn new OngoingInjecter() {\n-\t\t\t\t\t\tpublic Object thenInject() {\n-\t\t\t\t\t\t\treturn null;\n-\t\t\t\t\t\t}\n-\t\t\t\t\t};\n-\t\t\t\t}\n-\t\t\t}\n \t\t}\n-\t\treturn next.filterCandidate(mocks, field, fields, fieldInstance);\n+\t\treturn next.filterCandidate(mocks, field, fieldInstance);\n \t}\n }\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [670,688]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: fields [1000,1006]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [1422,1830]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: fields [1875,1881]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/org/mockito/internal/configuration/injection/filter/TypeBasedCandidateFilter.java",
+        "src/org/mockito/internal/configuration/injection/filter/TypeBasedCandidateFilter.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.mockito.internal.configuration.injection.filter.TypeBasedCandidateFilter:filterCandidate:[Collection\u003cObject\u003e mocks, Field field, List\u003cField\u003e fields, Object fieldInstance]:OngoingInjecter"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.mockito.internal.configuration.injection.filter.TypeBasedCandidateFilter:filterCandidate:[Collection\u003cObject\u003e mocks, Field field, Object fieldInstance]:OngoingInjecter"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "20",
+            "28"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "20",
+            "28"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/org/mockito/internal/configuration/injection/filter/TypeBasedCandidateFilter.java b/src/org/mockito/internal/configuration/injection/filter/TypeBasedCandidateFilter.java\nindex ce7a349..dd79991 100644\n--- a/src/org/mockito/internal/configuration/injection/filter/TypeBasedCandidateFilter.java\n+++ b/src/org/mockito/internal/configuration/injection/filter/TypeBasedCandidateFilter.java\n@@ -17,7 +17,7 @@\n         this.next \u003d next;\n     }\n \n-    public OngoingInjecter filterCandidate(Collection\u003cObject\u003e mocks, Field field, List\u003cField\u003e fields, Object fieldInstance) {\n+    public OngoingInjecter filterCandidate(Collection\u003cObject\u003e mocks, Field field, Object fieldInstance) {\n         List\u003cObject\u003e mockTypeMatches \u003d new ArrayList\u003cObject\u003e();\n         for (Object mock : mocks) {\n             if (field.getType().isAssignableFrom(mock.getClass())) {\n@@ -25,6 +25,6 @@\n             }\n         }\n \n-        return next.filterCandidate(mockTypeMatches, field, fields, fieldInstance);\n+        return next.filterCandidate(mockTypeMatches, field, fieldInstance);\n     }\n }\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [577,595]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: fields [918,924]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.mockito.internal.configuration.injection.filter.MockCandidateFilter:filterCandidate:[Collection\u003cObject\u003e mocks, Field fieldToBeInjected, Object fieldInstance]:OngoingInjecter",
+        "org.mockito.internal.configuration.injection.filter.FinalMockCandidateFilter:filterCandidate:[final Collection\u003cObject\u003e mocks, final Field field, final Object fieldInstance]:OngoingInjecter",
+        "org.mockito.internal.configuration.injection.filter.TypeBasedCandidateFilter:filterCandidate:[Collection\u003cObject\u003e mocks, Field field, Object fieldInstance]:OngoingInjecter",
+        "org.mockito.internal.configuration.injection.filter.NameBasedCandidateFilter:filterCandidate:[Collection\u003cObject\u003e mocks, Field field, Object fieldInstance]:OngoingInjecter"
+      ],
+      "num": 4
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.mockito.internal.configuration.injection.filter.FinalMockCandidateFilter:filterCandidate:[final Collection\u003cObject\u003e mocks, final Field field, List\u003cField\u003e fields, final Object fieldInstance]:OngoingInjecter",
+        "org.mockito.internal.configuration.injection.filter.MockCandidateFilter:filterCandidate:[Collection\u003cObject\u003e mocks, Field fieldToBeInjected, List\u003cField\u003e fields, Object instance]:OngoingInjecter",
+        "org.mockito.internal.configuration.injection.filter.NameBasedCandidateFilter:filterCandidate:[Collection\u003cObject\u003e mocks, Field field, List\u003cField\u003e fields, Object fieldInstance]:OngoingInjecter",
+        "org.mockito.internal.configuration.injection.filter.TypeBasedCandidateFilter:filterCandidate:[Collection\u003cObject\u003e mocks, Field field, List\u003cField\u003e fields, Object fieldInstance]:OngoingInjecter"
+      ],
+      "num": 4
+    }
+  }
+}

@@ -1,0 +1,105 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.type.RecursiveTypeTest::testSuperClassWithReferencedJavaType,com.fasterxml.jackson.databind.type.TestTypeFactoryWithRecursiveTypes::testBasePropertiesIncludedWhenSerializingSubWhenSubTypeLoadedAfterBaseType",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.type.ResolvedRecursiveType",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "86",
+  "workingDir": "../bugs/JacksonDatabind_86_tmp",
+  "bug_name": "JacksonDatabind_86",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.type.RecursiveTypeTest",
+      "test_function": "testSuperClassWithReferencedJavaType",
+      "assertion_line": "113",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    },
+    {
+      "test_class": "com.fasterxml.jackson.databind.type.TestTypeFactoryWithRecursiveTypes",
+      "test_function": "testBasePropertiesIncludedWhenSerializingSubWhenSubTypeLoadedAfterBaseType",
+      "assertion_line": "30",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c{\"[base\":1,\"]sub\":2}\u003e but was:\u003c{\"[]sub\":2}\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/type/ResolvedRecursiveType.java",
+        "src/main/java/com/fasterxml/jackson/databind/type/ResolvedRecursiveType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.type.ResolvedRecursiveType:getSuperClass:[]:JavaType"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "29",
+            "30",
+            "31",
+            "32",
+            "33",
+            "34",
+            "35"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "28"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/type/ResolvedRecursiveType.java b/src/main/java/com/fasterxml/jackson/databind/type/ResolvedRecursiveType.java\nindex 12162c5..3080783 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/type/ResolvedRecursiveType.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/type/ResolvedRecursiveType.java\n@@ -26,13 +26,6 @@\n         _referencedType \u003d ref;\n     }\n    \n-    @Override\n-    public JavaType getSuperClass() {\n-    \tif (_referencedType !\u003d null) {\n-    \t\treturn _referencedType.getSuperClass();\n-    \t}\n-    \treturn super.getSuperClass();\n-    }\n \n     public JavaType getSelfReferencedType() { return _referencedType; }\n \n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [810,987]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.type.ResolvedRecursiveType:getSuperClass:[]:JavaType"
+      ],
+      "num": 1
+    }
+  }
+}

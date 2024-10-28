@@ -1,0 +1,187 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.lang3.StringEscapeUtilsTest::testLang720",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.lang3.text.translate.CharSequenceTranslator",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Lang",
+  "id": "17",
+  "workingDir": "../bugs/Lang_17_tmp",
+  "bug_name": "Lang_17",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.lang3.StringEscapeUtilsTest",
+      "test_function": "testLang720",
+      "assertion_line": "431",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c𠮷[A]\u003e but was:\u003c𠮷[?]\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/lang3/text/translate/CharSequenceTranslator.java",
+        "src/main/java/org/apache/commons/lang3/text/translate/CharSequenceTranslator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.lang3.text.translate.CharSequenceTranslator:translate:[CharSequence input, Writer out]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.lang3.text.translate.CharSequenceTranslator:translate:[CharSequence input, Writer out]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "83",
+            "89",
+            "90"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "83",
+            "90",
+            "94",
+            "96",
+            "97",
+            "98",
+            "99",
+            "100",
+            "102"
+          ],
+          "num": 9
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/lang3/text/translate/CharSequenceTranslator.java b/src/main/java/org/apache/commons/lang3/text/translate/CharSequenceTranslator.java\nindex 4d010ea..4cb581d 100644\n--- a/src/main/java/org/apache/commons/lang3/text/translate/CharSequenceTranslator.java\n+++ b/src/main/java/org/apache/commons/lang3/text/translate/CharSequenceTranslator.java\n@@ -80,20 +80,26 @@\n             return;\n         }\n         int pos \u003d 0;\n-        int len \u003d input.length();\n+        int len \u003d Character.codePointCount(input, 0, input.length());\n         while (pos \u003c len) {\n             int consumed \u003d translate(input, pos, out);\n             if (consumed \u003d\u003d 0) {\n                 char[] c \u003d Character.toChars(Character.codePointAt(input, pos));\n                 out.write(c);\n-                pos+\u003d c.length;\n-                continue;\n             }\n+            else {\n //          // contract with translators is that they have to understand codepoints \n //          // and they just took care of a surrogate pair\n             for (int pt \u003d 0; pt \u003c consumed; pt++) {\n+                    if (pos \u003c len - 2) {\n                 pos +\u003d Character.charCount(Character.codePointAt(input, pos));\n+                    } else {\n+                        pos++;\n+                    }\n+                }\n+                pos--;\n             }\n+            pos++;\n         }\n     }\n \n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [3277,3327]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [4054,4060]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [3277,3286]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: codePointCount [3287,3301]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [3302,3326]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [3587,4041]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: input [3302,3307]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NumberLiteral: 0 [3309,3310]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [4021,4027]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [3805,3986]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [3809,3822]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [3824,3926]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Block [3932,3986]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [3536,3551]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ContinueStatement [3568,3577]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

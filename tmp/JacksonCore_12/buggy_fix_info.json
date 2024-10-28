@@ -1,0 +1,246 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.core.json.LocationInObjectTest::testOffsetWithObjectFieldsUsingReader",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.core.json.ReaderBasedJsonParser,com.fasterxml.jackson.core.json.UTF8StreamJsonParser",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonCore",
+  "id": "12",
+  "workingDir": "../bugs/JacksonCore_12_tmp",
+  "bug_name": "JacksonCore_12",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.core.json.LocationInObjectTest",
+      "test_function": "testOffsetWithObjectFieldsUsingReader",
+      "assertion_line": "66",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c6\u003e but was:\u003c1\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java",
+        "src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.json.ReaderBasedJsonParser:nextToken:[]:JsonToken",
+            "com.fasterxml.jackson.core.json.ReaderBasedJsonParser:getTokenLocation:[]:JsonLocation",
+            "com.fasterxml.jackson.core.json.ReaderBasedJsonParser:_isNextTokenNameYes:[int i]:void",
+            "com.fasterxml.jackson.core.json.ReaderBasedJsonParser:nextFieldName:[]:String",
+            "com.fasterxml.jackson.core.json.ReaderBasedJsonParser:nextFieldName:[SerializableString sstr]:boolean",
+            "com.fasterxml.jackson.core.json.ReaderBasedJsonParser:_isNextTokenNameMaybe:[int i, String nameToMatch]:boolean"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.json.ReaderBasedJsonParser:nextFieldName:[SerializableString sstr]:boolean",
+            "com.fasterxml.jackson.core.json.ReaderBasedJsonParser:_isNextTokenNameMaybe:[int i, String nameToMatch]:boolean",
+            "com.fasterxml.jackson.core.json.ReaderBasedJsonParser:getTokenLocation:[]:JsonLocation",
+            "com.fasterxml.jackson.core.json.ReaderBasedJsonParser:_isNextTokenNameYes:[int i]:void",
+            "com.fasterxml.jackson.core.json.ReaderBasedJsonParser:nextFieldName:[]:String",
+            "com.fasterxml.jackson.core.json.ReaderBasedJsonParser:nextToken:[]:JsonToken"
+          ],
+          "num": 6
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "621",
+            "629",
+            "635",
+            "776",
+            "781",
+            "854",
+            "859",
+            "865",
+            "921",
+            "972",
+            "2677",
+            "2678",
+            "2679",
+            "2680",
+            "2682"
+          ],
+          "num": 15
+        },
+        {
+          "qualified_names": [
+            "622",
+            "627",
+            "773",
+            "851",
+            "924",
+            "976",
+            "2672",
+            "2673"
+          ],
+          "num": 8
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java b/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java\nindex c2c413f..60919c8 100644\n--- a/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java\n+++ b/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java\n@@ -619,6 +619,7 @@\n         if (_parsingContext.expectComma()) {\n             i \u003d _skipComma(i);\n         }\n+        _updateLocation();\n \n         /* And should we now have a name? Always true for Object contexts, since\n          * the intermediate \u0027expect-value\u0027 state is never retained.\n@@ -626,13 +627,11 @@\n         boolean inObject \u003d _parsingContext.inObject();\n         if (inObject) {\n             // First, field name itself:\n-            _updateNameLocation();\n             String name \u003d (i \u003d\u003d INT_QUOTE) ? _parseName() : _handleOddName(i);\n             _parsingContext.setCurrentName(name);\n             _currToken \u003d JsonToken.FIELD_NAME;\n             i \u003d _skipColon();\n         }\n-        _updateLocation();\n \n         // Ok: we must have a value... what is it?\n \n@@ -771,14 +770,13 @@\n         if (_parsingContext.expectComma()) {\n             i \u003d _skipComma(i);\n         }\n+        _updateLocation();\n \n         if (!_parsingContext.inObject()) {\n-            _updateLocation();\n             _nextTokenNotInObject(i);\n             return false;\n         }\n \n-        _updateNameLocation();\n         if (i \u003d\u003d INT_QUOTE) {\n             // when doing literal match, must consider escaping:\n             char[] nameChars \u003d sstr.asQuotedChars();\n@@ -850,19 +848,17 @@\n         if (_parsingContext.expectComma()) {\n             i \u003d _skipComma(i);\n         }\n+        _updateLocation();\n         if (!_parsingContext.inObject()) {\n-            _updateLocation();\n             _nextTokenNotInObject(i);\n             return null;\n         }\n \n-        _updateNameLocation();\n         String name \u003d (i \u003d\u003d INT_QUOTE) ? _parseName() : _handleOddName(i);\n         _parsingContext.setCurrentName(name);\n         _currToken \u003d JsonToken.FIELD_NAME;\n         i \u003d _skipColon();\n \n-        _updateLocation();\n         if (i \u003d\u003d INT_QUOTE) {\n             _tokenIncomplete \u003d true;\n             _nextToken \u003d JsonToken.VALUE_STRING;\n@@ -918,7 +914,6 @@\n     private final void _isNextTokenNameYes(int i) throws IOException\n     {\n         _currToken \u003d JsonToken.FIELD_NAME;\n-        _updateLocation();\n \n         switch (i) {\n         case \u0027\"\u0027:\n@@ -969,7 +964,6 @@\n         _parsingContext.setCurrentName(name);\n         _currToken \u003d JsonToken.FIELD_NAME;\n         i \u003d _skipColon();\n-        _updateLocation();\n         if (i \u003d\u003d INT_QUOTE) {\n             _tokenIncomplete \u003d true;\n             _nextToken \u003d JsonToken.VALUE_STRING;\n@@ -2674,12 +2668,9 @@\n     public JsonLocation getTokenLocation()\n     {\n         final Object src \u003d _ioContext.getSourceReference();\n-        if (_currToken \u003d\u003d JsonToken.FIELD_NAME) {\n-            return new JsonLocation(src,\n-                    -1L, _nameInputTotal, _nameInputRow, _tokenInputCol);\n-        }\n         return new JsonLocation(src,\n-                -1L, _tokenInputTotal, _tokenInputRow,\n+                -1L, getTokenCharacterOffset(),\n+                getTokenLineNr(),\n                 getTokenColumnNr());\n     }\n \n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [92020,92045]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [92063,92079]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [21686,21708]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [26203,26225]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [28744,28762]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [28845,28867]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [30366,30384]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [31806,31824]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [92156,92322]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: _tokenInputTotal [92381,92397]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: _tokenInputRow [92399,92413]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/core/json/UTF8StreamJsonParser.java",
+        "src/main/java/com/fasterxml/jackson/core/json/UTF8StreamJsonParser.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.json.UTF8StreamJsonParser:getTokenLocation:[]:JsonLocation"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.json.UTF8StreamJsonParser:getTokenLocation:[]:JsonLocation"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "3622"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "3622"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/core/json/UTF8StreamJsonParser.java b/src/main/java/com/fasterxml/jackson/core/json/UTF8StreamJsonParser.java\nindex b0c007b..589a34c 100644\n--- a/src/main/java/com/fasterxml/jackson/core/json/UTF8StreamJsonParser.java\n+++ b/src/main/java/com/fasterxml/jackson/core/json/UTF8StreamJsonParser.java\n@@ -3619,7 +3619,7 @@\n                     _nameInputTotal, -1L, _nameInputRow, _tokenInputCol);\n         }\n         return new JsonLocation(src,\n-                _tokenInputTotal, -1L, _tokenInputRow,\n+                getTokenCharacterOffset(), -1L, getTokenLineNr(),\n                 getTokenColumnNr());\n     }\n \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [125144,125169]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [125176,125192]"
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: _tokenInputTotal [125144,125160]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: _tokenInputRow [125167,125181]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

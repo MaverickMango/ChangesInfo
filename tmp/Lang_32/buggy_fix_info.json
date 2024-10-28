@@ -1,0 +1,230 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.lang3.builder.HashCodeBuilderTest::testReflectionObjectCycle",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.lang3.builder.HashCodeBuilder",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Lang",
+  "id": "32",
+  "workingDir": "../bugs/Lang_32_tmp",
+  "bug_name": "Lang_32",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.lang3.builder.HashCodeBuilderTest",
+      "test_function": "testReflectionObjectCycle",
+      "assertion_line": "524",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: \u003cnull\u003e but was: []"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/lang3/builder/HashCodeBuilder.java",
+        "src/main/java/org/apache/commons/lang3/builder/HashCodeBuilder.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.lang3.builder.HashCodeBuilder:isRegistered:[Object value]:boolean",
+            "org.apache.commons.lang3.builder.HashCodeBuilder:unregister:[Object value]:void",
+            "org.apache.commons.lang3.builder.HashCodeBuilder:register:[Object value]:void"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.lang3.builder.HashCodeBuilder:isRegistered:[Object value]:boolean",
+            "org.apache.commons.lang3.builder.HashCodeBuilder:unregister:[Object value]:void",
+            "org.apache.commons.lang3.builder.HashCodeBuilder:register:[Object value]:void"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "104",
+            "147",
+            "148",
+            "518",
+            "519",
+            "520",
+            "521",
+            "522",
+            "539",
+            "540",
+            "541",
+            "542",
+            "543",
+            "544",
+            "545",
+            "546",
+            "547"
+          ],
+          "num": 17
+        },
+        {
+          "qualified_names": [
+            "104",
+            "105",
+            "106",
+            "107",
+            "108",
+            "109",
+            "152",
+            "513",
+            "538"
+          ],
+          "num": 9
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/lang3/builder/HashCodeBuilder.java b/src/main/java/org/apache/commons/lang3/builder/HashCodeBuilder.java\nindex 9f7e890..4ae351d 100644\n--- a/src/main/java/org/apache/commons/lang3/builder/HashCodeBuilder.java\n+++ b/src/main/java/org/apache/commons/lang3/builder/HashCodeBuilder.java\n@@ -101,7 +101,12 @@\n      * \n      * @since 2.3\n      */\n-    private static final ThreadLocal\u003cSet\u003cIDKey\u003e\u003e REGISTRY \u003d new ThreadLocal\u003cSet\u003cIDKey\u003e\u003e();\n+    private static final ThreadLocal\u003cSet\u003cIDKey\u003e\u003e REGISTRY \u003d new ThreadLocal\u003cSet\u003cIDKey\u003e\u003e() {\n+        @Override\n+        protected Set\u003cIDKey\u003e initialValue() {\n+            return new HashSet\u003cIDKey\u003e();\n+        }\n+    };\n \n     /*\n      * N.B. we cannot store the actual objects in a HashSet, as that would use the very hashCode()\n@@ -144,8 +149,7 @@\n      * @since 2.3\n      */\n     static boolean isRegistered(Object value) {\n-        Set\u003cIDKey\u003e registry \u003d getRegistry();\n-        return registry !\u003d null \u0026\u0026 registry.contains(new IDKey(value));\n+        return getRegistry().contains(new IDKey(value));\n     }\n \n     /**\n@@ -515,11 +519,6 @@\n      *            The object to register.\n      */\n     static void register(Object value) {\n-        synchronized (HashCodeBuilder.class) {\n-            if (getRegistry() \u003d\u003d null) {\n-                REGISTRY.set(new HashSet\u003cIDKey\u003e());\n-            }\n-        }\n         getRegistry().add(new IDKey(value));\n     }\n \n@@ -536,15 +535,7 @@\n      * @since 2.3\n      */\n     static void unregister(Object value) {\n-        Set\u003cIDKey\u003e s \u003d getRegistry();\n-        if (s !\u003d null) {\n-            s.remove(new IDKey(value));\n-            synchronized (HashCodeBuilder.class) {\n-                if (s.isEmpty()) {\n-                    REGISTRY.remove();\n-                }\n-            }\n-        }\n+        getRegistry().remove(new IDKey(value));\n     }\n \n     /**\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "AnonymousClassDeclaration [3421,3543]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ParameterizedType [4955,4965]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: registry [4966,4974]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [4966,4990]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [4955,4991]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: registry [5027,5035]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [5007,5023]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [5024,5026]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [5007,5062]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SynchronizedStatement [20039,20194]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: s [20613,20614]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ParameterizedType [20546,20556]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: s [20557,20558]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [20557,20574]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [20546,20575]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [20588,20597]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SynchronizedStatement [20653,20797]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [20599,20807]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [20584,20807]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

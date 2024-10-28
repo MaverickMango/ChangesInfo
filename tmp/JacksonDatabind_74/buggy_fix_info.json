@@ -1,0 +1,98 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.jsontype.TestPolymorphicWithDefaultImpl::testWithEmptyStringAsNullObject1533",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.jsontype.impl.AsPropertyTypeDeserializer",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "74",
+  "workingDir": "../bugs/JacksonDatabind_74_tmp",
+  "bug_name": "JacksonDatabind_74",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.jsontype.TestPolymorphicWithDefaultImpl",
+      "test_function": "testWithEmptyStringAsNullObject1533",
+      "assertion_line": "274",
+      "exception": "com.fasterxml.jackson.databind.JsonMappingException",
+      "message": "Unexpected token (VALUE_STRING), expected FIELD_NAME: missing property \u0027type\u0027 that is to contain type id  (for class com.fasterxml.jackson.databind.jsontype.TestPolymorphicWithDefaultImpl$AsProperty)"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/jsontype/impl/AsPropertyTypeDeserializer.java",
+        "src/main/java/com/fasterxml/jackson/databind/jsontype/impl/AsPropertyTypeDeserializer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.jsontype.impl.AsPropertyTypeDeserializer:_deserializeTypedUsingDefaultImpl:[JsonParser p, DeserializationContext ctxt, TokenBuffer tb]:Object"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.jsontype.impl.AsPropertyTypeDeserializer:_deserializeTypedUsingDefaultImpl:[JsonParser p, DeserializationContext ctxt, TokenBuffer tb]:Object"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "156",
+            "157",
+            "158",
+            "159",
+            "160",
+            "161",
+            "162"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "155"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/AsPropertyTypeDeserializer.java b/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/AsPropertyTypeDeserializer.java\nindex 7941e05..d1d096a 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/AsPropertyTypeDeserializer.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/AsPropertyTypeDeserializer.java\n@@ -153,13 +153,6 @@\n         // or, something for which \"as-property\" won\u0027t work, changed into \"wrapper-array\" type:\n         if (p.getCurrentToken() \u003d\u003d JsonToken.START_ARRAY) {\n             return super.deserializeTypedFromAny(p, ctxt);\n-        } else if (p.getCurrentToken() \u003d\u003d JsonToken.VALUE_STRING) {\n-            if (ctxt.isEnabled(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT)) {\n-                String str \u003d p.getText().trim();\n-                if (str.isEmpty()) {\n-                    return null;\n-                }\n-            }\n         }\n         ctxt.reportWrongTokenException(p, JsonToken.FIELD_NAME,\n                 \"missing property \u0027\"+_typePropertyName+\"\u0027 that is to contain type id  (for class \"+baseTypeName()+\")\");\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [6322,6628]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

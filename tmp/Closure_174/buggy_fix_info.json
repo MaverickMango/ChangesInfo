@@ -1,0 +1,350 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.ScopedAliasesTest::testIssue1103a,com.google.javascript.jscomp.ScopedAliasesTest::testIssue1103b,com.google.javascript.jscomp.ScopedAliasesTest::testIssue1103c",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.JsAst,com.google.javascript.jscomp.NodeUtil,com.google.javascript.jscomp.ScopedAliases",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "174",
+  "workingDir": "../bugs/Closure_174_tmp",
+  "bug_name": "Closure_174",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.ScopedAliasesTest",
+      "test_function": "testIssue1103a",
+      "assertion_line": "526",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Unexpected error(s): JSC_GOOG_SCOPE_NON_ALIAS_LOCAL. The local variable a is in a goog.scope and is not an alias. at testcode line 1 : 30 expected:\u003c0\u003e but was:\u003c1\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.ScopedAliasesTest",
+      "test_function": "testIssue1103b",
+      "assertion_line": "534",
+      "exception": "java.lang.RuntimeException",
+      "message": "INTERNAL COMPILER ERROR."
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.ScopedAliasesTest",
+      "test_function": "testIssue1103c",
+      "assertion_line": "541",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Unexpected error(s): JSC_GOOG_SCOPE_NON_ALIAS_LOCAL. The local variable a is in a goog.scope and is not an alias. at testcode line 1 : 52 expected:\u003c0\u003e but was:\u003c1\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/JsAst.java",
+        "src/com/google/javascript/jscomp/JsAst.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.JsAst:parse:[AbstractCompiler compiler]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.JsAst:parse:[AbstractCompiler compiler]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "82",
+            "96",
+            "100"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "81",
+            "95"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/JsAst.java b/src/com/google/javascript/jscomp/JsAst.java\nindex ff71d94..9f7bf8a 100644\n--- a/src/com/google/javascript/jscomp/JsAst.java\n+++ b/src/com/google/javascript/jscomp/JsAst.java\n@@ -79,7 +79,6 @@\n   }\n \n   private void parse(AbstractCompiler compiler) {\n-    int startErrorCount \u003d compiler.getErrorManager().getErrorCount();\n     try {\n       ParserRunner.ParseResult result \u003d ParserRunner.parse(sourceFile, sourceFile.getCode(),\n           compiler.getParserConfig(),\n@@ -93,11 +92,10 @@\n     }\n \n \n-    if (root \u003d\u003d null ||\n+    if (root \u003d\u003d null || compiler.hasHaltingErrors()) {\n         // Most passes try to report as many errors as possible,\n         // so there may already be errors. We only care if there were\n         // errors in the code we just parsed.\n-        (compiler.getErrorManager().getErrorCount() \u003e startErrorCount \u0026\u0026 !compiler.isIdeMode())) {\n       // There was a parse error or IOException, so use a dummy block.\n       root \u003d IR.script();\n     } else {\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [2319,2384]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [3037,3097]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [3098,3100]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PREFIX_EXPRESSION_OPERATOR: ! [3101,3102]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PrefixExpression [3101,3122]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [3037,3122]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ParenthesizedExpression [3036,3123]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/NodeUtil.java",
+        "src/com/google/javascript/jscomp/NodeUtil.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.NodeUtil:newQualifiedNameNodeDeclaration:[CodingConvention convention, String name, Node value, JSDocInfo info]:Node"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.NodeUtil:newQualifiedNameNodeDeclaration:[CodingConvention convention, String name, Node value, JSDocInfo info]:Node"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "2367",
+            "2368",
+            "2369",
+            "2371"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "2368"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/NodeUtil.java b/src/com/google/javascript/jscomp/NodeUtil.java\nindex 4facea3..c4f7f8d 100644\n--- a/src/com/google/javascript/jscomp/NodeUtil.java\n+++ b/src/com/google/javascript/jscomp/NodeUtil.java\n@@ -2364,11 +2364,8 @@\n     if (nameNode.isName()) {\n       result \u003d IR.var(nameNode, value);\n       result.setJSDocInfo(info);\n-    } else if (value !\u003d null) {\n-      result \u003d IR.exprResult(IR.assign(nameNode, value));\n-      result.getFirstChild().setJSDocInfo(info);\n     } else {\n-      result \u003d IR.exprResult(nameNode);\n+      result \u003d IR.exprResult(IR.assign(nameNode, value));\n       result.getFirstChild().setJSDocInfo(info);\n     }\n     return result;\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [69048,69061]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [69183,69279]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [69044,69279]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/ScopedAliases.java",
+        "src/com/google/javascript/jscomp/ScopedAliases.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.ScopedAliases\\$Traversal:findAliases:[NodeTraversal t]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.ScopedAliases\\$Traversal:findAliases:[NodeTraversal t]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "356",
+            "357",
+            "365",
+            "366",
+            "367",
+            "368",
+            "379",
+            "389"
+          ],
+          "num": 8
+        },
+        {
+          "qualified_names": [
+            "356",
+            "357",
+            "365",
+            "366",
+            "380",
+            "391"
+          ],
+          "num": 6
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/ScopedAliases.java b/src/com/google/javascript/jscomp/ScopedAliases.java\nindex 3a771c9..a4e503d 100644\n--- a/src/com/google/javascript/jscomp/ScopedAliases.java\n+++ b/src/com/google/javascript/jscomp/ScopedAliases.java\n@@ -353,8 +353,8 @@\n       for (Var v : scope.getVarIterable()) {\n         Node n \u003d v.getNode();\n         Node parent \u003d n.getParent();\n-        boolean isVar \u003d parent.isVar();\n-        if (isVar \u0026\u0026 n.getFirstChild() !\u003d null \u0026\u0026 n.getFirstChild().isQualifiedName()) {\n+        boolean isVarAssign \u003d parent.isVar() \u0026\u0026 n.hasChildren();\n+        if (isVarAssign \u0026\u0026 n.getFirstChild().isQualifiedName()) {\n           recordAlias(v);\n         } else if (v.isBleedingFunction()) {\n           // Bleeding functions already get a BAD_PARAMETERS error, so just\n@@ -362,10 +362,8 @@\n         } else if (parent.getType() \u003d\u003d Token.LP) {\n           // Parameters of the scope function also get a BAD_PARAMETERS\n           // error.\n-        } else if (isVar) {\n-          Node value \u003d n.hasChildren() ?\n-              v.getInitialValue().detachFromParent() :\n-              null;\n+        } else if (isVarAssign) {\n+          Node value \u003d v.getInitialValue().detachFromParent();\n           String name \u003d n.getString();\n           int nameCount \u003d scopedAliasNames.count(name);\n           scopedAliasNames.add(name);\n@@ -376,7 +374,6 @@\n \n           // Add $jscomp.scope.name \u003d EXPR;\n           // Make sure we copy over all the jsdoc and debug info.\n-          if (value !\u003d null || v.getJSDocInfo() !\u003d null) {\n             Node newDecl \u003d NodeUtil.newQualifiedNameNodeDeclaration(\n                 compiler.getCodingConvention(),\n                 globalName,\n@@ -386,7 +383,6 @@\n             NodeUtil.setDebugInformation(\n                 newDecl.getFirstChild().getFirstChild(), n, name);\n             parent.getParent().addChildBefore(newDecl, parent);\n-          }\n \n           // Rewrite \"var name \u003d EXPR;\" to \"var name \u003d $jscomp.scope.name;\"\n           v.getNameNode().addChildToFront(\n",
+      "operations": [
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [12142,12175]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: isVarAssign [12189,12200]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [12157,12159]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [12160,12175]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [12164,12198]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [12607,12622]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NullLiteral [12694,12698]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ConditionalExpression [12607,12698]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [13122,13163]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [13165,13608]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [13118,13608]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

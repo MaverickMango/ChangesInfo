@@ -1,0 +1,157 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.DevirtualizePrototypeMethodsTest::testRewritePrototypeMethods2,com.google.javascript.jscomp.TypeCheckTest::testGoodExtends9",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.DevirtualizePrototypeMethods,com.google.javascript.rhino.jstype.FunctionType",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "135",
+  "workingDir": "../bugs/Closure_135_tmp",
+  "bug_name": "Closure_135",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.DevirtualizePrototypeMethodsTest",
+      "test_function": "testRewritePrototypeMethods2",
+      "assertion_line": "144",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c[FUNCTION a \u003d function (this:a): ?, NAME JSCompiler_StaticMethods_foo$self \u003d a, FUNCTION JSCompiler_StaticMethods_foo \u003d function (a): number, NAME JSCompiler_StaticMethods_bar$self \u003d a, FUNCTION JSCompiler_StaticMethods_bar \u003d function (a, number): number, FUNCTION JSCompiler_StaticMethods_baz \u003d function (a): ?, NEW a \u003d a, CALL JSCompiler_StaticMethods_foo \u003d number, CALL JSCompiler_StaticMethods_bar \u003d number, CALL JSCompiler_StaticMethods_baz \u003d ?]\u003e but was:\u003c[FUNCTION a \u003d function (this:a): ?, NAME JSCompiler_StaticMethods_foo$self \u003d null, FUNCTION JSCompiler_StaticMethods_foo \u003d function (a): number, NAME JSCompiler_StaticMethods_bar$self \u003d null, FUNCTION JSCompiler_StaticMethods_bar \u003d function (a, number): number, FUNCTION JSCompiler_StaticMethods_baz \u003d function (a): ?, NEW a \u003d a, CALL JSCompiler_StaticMethods_foo \u003d number, CALL JSCompiler_StaticMethods_bar \u003d number, CALL JSCompiler_StaticMethods_baz \u003d ?]\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testGoodExtends9",
+      "assertion_line": "6872",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "unexpected warnings(s):"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/DevirtualizePrototypeMethods.java",
+        "src/com/google/javascript/jscomp/DevirtualizePrototypeMethods.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.DevirtualizePrototypeMethods:replaceReferencesToThis:[Node node, String name]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.DevirtualizePrototypeMethods:replaceReferencesToThis:[Node node, String name]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "362"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "361"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/DevirtualizePrototypeMethods.java b/src/com/google/javascript/jscomp/DevirtualizePrototypeMethods.java\nindex e7cfc6d..a42dc34 100644\n--- a/src/com/google/javascript/jscomp/DevirtualizePrototypeMethods.java\n+++ b/src/com/google/javascript/jscomp/DevirtualizePrototypeMethods.java\n@@ -359,7 +359,6 @@\n     for (Node child : node.children()) {\n       if (NodeUtil.isThis(child)) {\n         Node newName \u003d Node.newString(Token.NAME, name);\n-        newName.setJSType(child.getJSType());\n         node.replaceChild(child, newName);\n       } else {\n         replaceReferencesToThis(child, name);\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [11632,11669]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/FunctionType.java",
+        "src/com/google/javascript/rhino/jstype/FunctionType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.jstype.FunctionType:hasOwnProperty:[String name]:boolean",
+            "com.google.javascript.rhino.jstype.FunctionType:defineProperty:[String name, JSType type, boolean inferred, boolean inExterns]:boolean"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.jstype.FunctionType:defineProperty:[String name, JSType type, boolean inferred, boolean inExterns]:boolean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "412",
+            "413",
+            "414",
+            "415",
+            "476",
+            "477",
+            "478"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "411",
+            "479"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/FunctionType.java b/src/com/google/javascript/rhino/jstype/FunctionType.java\nindex b318d8a..3e8ab07 100644\n--- a/src/com/google/javascript/rhino/jstype/FunctionType.java\n+++ b/src/com/google/javascript/rhino/jstype/FunctionType.java\n@@ -409,10 +409,6 @@\n     return super.hasProperty(name) || \"prototype\".equals(name);\n   }\n \n-  @Override\n-  public boolean hasOwnProperty(String name) {\n-    return super.hasOwnProperty(name) || \"prototype\".equals(name);\n-  }\n \n   @Override\n   public JSType getPropertyType(String name) {\n@@ -473,9 +469,6 @@\n     if (\"prototype\".equals(name)) {\n       ObjectType objType \u003d type.toObjectType();\n       if (objType !\u003d null) {\n-        if (objType.equals(prototype)) {\n-          return true;\n-        }\n         return setPrototype(\n             new FunctionPrototypeType(\n                 registry, this, objType, isNativeObjectType()));\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [13866,13993]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [16218,16283]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.javascript.rhino.jstype.FunctionType:hasOwnProperty:[String name]:boolean"
+      ],
+      "num": 1
+    }
+  }
+}

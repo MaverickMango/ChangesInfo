@@ -1,0 +1,122 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math.fraction.BigFractionTest::testFloatValueForLargeNumeratorAndDenominator,org.apache.commons.math.fraction.BigFractionTest::testDoubleValueForLargeNumeratorAndDenominator",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math.fraction.BigFraction",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "36",
+  "workingDir": "../bugs/Math_36_tmp",
+  "bug_name": "Math_36",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math.fraction.BigFractionTest",
+      "test_function": "testFloatValueForLargeNumeratorAndDenominator",
+      "assertion_line": "222",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c5.0\u003e but was:\u003cNaN\u003e"
+    },
+    {
+      "test_class": "org.apache.commons.math.fraction.BigFractionTest",
+      "test_function": "testDoubleValueForLargeNumeratorAndDenominator",
+      "assertion_line": "210",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c5.0\u003e but was:\u003cNaN\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/fraction/BigFraction.java",
+        "src/main/java/org/apache/commons/math/fraction/BigFraction.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.fraction.BigFraction:doubleValue:[]:double",
+            "org.apache.commons.math.fraction.BigFraction:floatValue:[]:float"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.fraction.BigFraction:getDenominator:[]:BigInteger",
+            "org.apache.commons.math.fraction.BigFraction:doubleValue:[]:double"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "686",
+            "689",
+            "690",
+            "691",
+            "692",
+            "693",
+            "739",
+            "742",
+            "743",
+            "744",
+            "745",
+            "746"
+          ],
+          "num": 12
+        },
+        {
+          "qualified_names": [
+            "685",
+            "744"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/fraction/BigFraction.java b/src/main/java/org/apache/commons/math/fraction/BigFraction.java\nindex a6672e4..6181ec3 100644\n--- a/src/main/java/org/apache/commons/math/fraction/BigFraction.java\n+++ b/src/main/java/org/apache/commons/math/fraction/BigFraction.java\n@@ -683,14 +683,8 @@\n     @Override\n     public double doubleValue() {\n         double result \u003d numerator.doubleValue() / denominator.doubleValue();\n-        if (Double.isNaN(result)) {\n             // Numerator and/or denominator must be out of range:\n             // Calculate how far to shift them to put them in range.\n-            int shift \u003d Math.max(numerator.bitLength(),\n-                                 denominator.bitLength()) - Double.MAX_EXPONENT;\n-            result \u003d numerator.shiftRight(shift).doubleValue() /\n-                denominator.shiftRight(shift).doubleValue();\n-        }\n         return result;\n     }\n \n@@ -736,14 +730,8 @@\n     @Override\n     public float floatValue() {\n         float result \u003d numerator.floatValue() / denominator.floatValue();\n-        if (Double.isNaN(result)) {\n             // Numerator and/or denominator must be out of range:\n             // Calculate how far to shift them to put them in range.\n-            int shift \u003d Math.max(numerator.bitLength(),\n-                                 denominator.bitLength()) - Float.MAX_EXPONENT;\n-            result \u003d numerator.shiftRight(shift).floatValue() /\n-                denominator.shiftRight(shift).floatValue();\n-        }\n         return result;\n     }\n \n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [23850,24285]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [25767,26199]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.apache.commons.math.fraction.BigFraction:getDenominator:[]:BigInteger"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.apache.commons.math.fraction.BigFraction:floatValue:[]:float"
+      ],
+      "num": 1
+    }
+  }
+}

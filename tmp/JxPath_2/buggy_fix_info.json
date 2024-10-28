@@ -1,0 +1,117 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest::testNodeSetReturn",
+    "test.dir": "src/test",
+    "clz.modified": "org.apache.commons.jxpath.ri.compiler.Expression",
+    "src.dir": "src/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JxPath",
+  "id": "2",
+  "workingDir": "../bugs/JxPath_2_tmp",
+  "bug_name": "JxPath_2",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest",
+      "test_function": "testNodeSetReturn",
+      "assertion_line": "342",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Evaluating value iterator \u003ctest:nodeSet()\u003e expected:\u003c[Nested: Name 1, Nested: Name 2]\u003e but was:\u003c[[/beans[1], /beans[2]]]\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/jxpath/ri/compiler/Expression.java",
+        "src/java/org/apache/commons/jxpath/ri/compiler/Expression.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.jxpath.ri.compiler.Expression:iterate:[EvalContext context]:Iterator",
+            "org.apache.commons.jxpath.ri.compiler.Expression:iteratePointers:[EvalContext context]:Iterator"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.jxpath.ri.compiler.Expression:iterate:[EvalContext context]:Iterator"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "19",
+            "78",
+            "79",
+            "80",
+            "92",
+            "93",
+            "94",
+            "95",
+            "96",
+            "154"
+          ],
+          "num": 10
+        },
+        {
+          "qualified_names": [
+            "18",
+            "78",
+            "95",
+            "162"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/jxpath/ri/compiler/Expression.java b/src/java/org/apache/commons/jxpath/ri/compiler/Expression.java\nindex 355c8e3..5f7dcd0 100644\n--- a/src/java/org/apache/commons/jxpath/ri/compiler/Expression.java\n+++ b/src/java/org/apache/commons/jxpath/ri/compiler/Expression.java\n@@ -16,7 +16,6 @@\n  */\n package org.apache.commons.jxpath.ri.compiler;\n \n-import org.apache.commons.jxpath.NodeSet;\n import org.apache.commons.jxpath.Pointer;\n import org.apache.commons.jxpath.ri.EvalContext;\n import org.apache.commons.jxpath.ri.model.NodePointer;\n@@ -75,9 +74,6 @@\n         if (result instanceof EvalContext) {\n             return new ValueIterator((EvalContext) result);\n         }\n-        if (result instanceof NodeSet) {\n-            return new ValueIterator(((NodeSet) result).getPointers().iterator());\n-        }\n         return ValueUtils.iterate(result);\n     }\n \n@@ -89,11 +85,6 @@\n         if (result instanceof EvalContext) {\n             return (EvalContext) result;\n         }\n-        if (result instanceof NodeSet) {\n-            return new PointerIterator(((NodeSet) result).getPointers().iterator(),\n-                    new QName(null, \"value\"),\n-                    context.getRootContext().getCurrentNodePointer().getLocale());\n-        }\n         return new PointerIterator(ValueUtils.iterate(result),\n                 new QName(null, \"value\"),\n                 context.getRootContext().getCurrentNodePointer().getLocale());\n@@ -151,4 +142,4 @@\n             throw new UnsupportedOperationException();\n         }\n     }\n-}\n\\ No newline at end of file\n+}\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [850,891]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [2909,3034]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [3384,3639]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.apache.commons.jxpath.ri.compiler.Expression:iteratePointers:[EvalContext context]:Iterator"
+      ],
+      "num": 1
+    }
+  }
+}

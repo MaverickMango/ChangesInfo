@@ -1,0 +1,1947 @@
+diff --git a/NOTICE.txt b/NOTICE.txt
+index d488740..72d2e28 100644
+--- a/NOTICE.txt
++++ b/NOTICE.txt
+@@ -7,3 +7,4 @@
+ Original BZip2 classes contributed by Keiron Liddle <keiron@aftexsw.com>, Aftex Software to the Apache Ant project
+ Original Tar classes from contributors of the Apache Ant project
+ Original Zip classes from contributors of the Apache Ant project
++Original CPIO classes contributed by Markus Kuss and the jRPM project (jrpm.sourceforge.net)
+\ No newline at end of file
+diff --git a/src/main/java/org/apache/commons/compress/archivers/ArchiveStreamFactory.java b/src/main/java/org/apache/commons/compress/archivers/ArchiveStreamFactory.java
+index f0ad1a9..47fd98b 100644
+--- a/src/main/java/org/apache/commons/compress/archivers/ArchiveStreamFactory.java
++++ b/src/main/java/org/apache/commons/compress/archivers/ArchiveStreamFactory.java
+@@ -24,6 +24,8 @@
+ 
+ import org.apache.commons.compress.archivers.ar.ArArchiveInputStream;
+ import org.apache.commons.compress.archivers.ar.ArArchiveOutputStream;
++import org.apache.commons.compress.archivers.cpio.CpioArchiveInputStream;
++import org.apache.commons.compress.archivers.cpio.CpioArchiveOutputStream;
+ import org.apache.commons.compress.archivers.jar.JarArchiveInputStream;
+ import org.apache.commons.compress.archivers.jar.JarArchiveOutputStream;
+ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+@@ -53,6 +55,8 @@
+         	return new TarArchiveInputStream(in);
+         } else if("jar".equalsIgnoreCase(archiverName)) {
+         	return new JarArchiveInputStream(in);
++        } else if("cpio".equalsIgnoreCase(archiverName)) {
++        	return new CpioArchiveInputStream(in);
+         }
+     	return null;
+     }
+@@ -66,6 +70,8 @@
+         	return new TarArchiveOutputStream(out);
+         } else if("jar".equalsIgnoreCase(archiverName)) {
+         	return new JarArchiveOutputStream(out);
++        } else if("cpio".equalsIgnoreCase(archiverName)) {
++        	return new CpioArchiveOutputStream(out);
+         }
+     	return null;
+     }
+@@ -86,6 +92,8 @@
+ 			return new TarArchiveInputStream(input);
+ 		} else if(ArArchiveInputStream.matches(signature)) {
+ 			return new ArArchiveInputStream(input);
++		} else if(CpioArchiveInputStream.matches(signature)) {
++			return new CpioArchiveInputStream(input);
+ 		} 
+ 		return null;
+ 	}
+diff --git a/src/main/java/org/apache/commons/compress/archivers/cpio/CpioArchiveEntry.java b/src/main/java/org/apache/commons/compress/archivers/cpio/CpioArchiveEntry.java
+new file mode 100644
+index 0000000..e76e245
+--- /dev/null
++++ b/src/main/java/org/apache/commons/compress/archivers/cpio/CpioArchiveEntry.java
+@@ -0,0 +1,622 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++package org.apache.commons.compress.archivers.cpio;
++
++import org.apache.commons.compress.archivers.ArchiveEntry;
++
++/**
++ * A cpio archive consists of a sequence of files. There are several types of
++ * headers defided in two categories of new and old format. The headers are
++ * recognized by magic numbers: "070701" ascii for "new" portable format
++ * "070702" ascii for "new" portable format with CRC format "070707" ascii for
++ * old ascii "070707" short for old binary CPIO 2.5 knows also about tar, but it
++ * is not recognized here.
++ * 
++ * OLD FORMAT: Each file has a 76(ascii)/26(binary) byte header, a variable
++ * length, NUL terminated filename, and variable length file data. A header for
++ * a filename "TRAILER!!!" indicates the end of the archive.
++ * 
++ * All the fields in the header are ISO 646 (approximately ASCII) strings of
++ * octal numbers, left padded, not NUL terminated.
++ * 
++ * Field Name Length in Bytes Notes ASCII / BINARY c_magic 6 / 2 c_dev 6 / 2
++ * Device that contains a directory entry for this file c_ino 6 / 2 I-node
++ * number that identifies the input file to the file system c_mode 6 / 2 Mode of
++ * the input file c_uid 6 / 2 User ID of the owner of the input file c_gid 6 / 2
++ * Group ID of the owner of the input file c_nlink 6 / 2 Number of links that
++ * are connected to the input file c_rdev 6 / 2 ID of the remote device from
++ * which the input file is taken only valid for chr and blk special files
++ * c_mtime 11 / 4 Time when data was last modified. For remote files, this field
++ * contains the time at the server c_namesize 6 / 2 Length of the path name,
++ * including the terminating null byte c_filesize 11 / 4 Length of the file in
++ * bytes. This is the length of the data section that follows the header
++ * structure. Must be 0 for FIFOs and directories
++ * 
++ * Special files, directories, and the trailer are recorded with the h_filesize
++ * field equal to 0.
++ * 
++ * NEW FORMAT: Each file has a 110 byte header, a variable length, NUL
++ * terminated filename, and variable length file data. A header for a filename
++ * "TRAILER!!!" indicates the end of the archive. All the fields in the header
++ * are ISO 646 (approximately ASCII) strings of hexadecimal numbers, left
++ * padded, not NUL terminated.
++ * 
++ * Field Name Length in Bytes Notes c_magic 6 c_ino 8 c_mode 8 c_uid 8 c_gid 8
++ * c_nlink 8 c_mtime 8 c_filesize 8 must be 0 for FIFOs and directories c_maj 8
++ * c_min 8 c_rmaj 8 only valid for chr and blk special files c_rmin 8 only valid
++ * for chr and blk special files c_namesize 8 count includes terminating NUL in
++ * pathname c_chksum 8 0 for "new" portable format; for CRC format the sum of
++ * all the bytes in the file
++ * 
++ * based on code from the jRPM project (jrpm.sourceforge.net) 
++ */
++public class CpioArchiveEntry implements CpioConstants, ArchiveEntry {
++	
++    private long chksum = 0;
++
++    private short fileFormat = -1;
++
++    private long filesize = 0;
++
++    private long gid = 0;
++
++    private long headerSize = -1;
++
++    private long inode = 0;
++
++    private long maj = 0;
++
++    private long min = 0;
++
++    private long mode = -1;
++
++    private long mtime = -1;
++
++    private String name;
++
++    private long nlink = 0;
++
++    private long rmaj = 0;
++
++    private long rmin = 0;
++
++    private long uid = 0;
++
++    /**
++     * Ceates a CPIOArchiveEntry without a cpio format.
++     */
++    public CpioArchiveEntry() {
++        // do nothing
++    }
++
++    /**
++     * Ceates a CPIOArchiveEntry with a specified format.
++     * 
++     * @param format
++     *            The cpio format for this entry.
++     */
++    public CpioArchiveEntry(final short format) {
++        setFormat(format);
++    }
++
++    /**
++     * Ceates a CPIOArchiveEntry with a specified name. The format of this entry will
++     * be the new format.
++     * 
++     * @param name
++     *            The name of this entry.
++     */
++    public CpioArchiveEntry(final String name) {
++        this(FORMAT_NEW);
++        this.name = name;
++    }
++
++    /**
++     * Ceates a CPIOArchiveEntry with a specified name. The format of this entry will
++     * be the new format.
++     * 
++     * @param name
++     *            The name of this entry.
++     * @param size
++     * 			  The size of this entry
++     */
++    public CpioArchiveEntry(final String name, final long size) {
++        this(FORMAT_NEW);
++        this.name = name;
++        this.setSize(size);
++    }
++    
++    /**
++     * Check if the method is allowed for the defined format.
++     */
++    private void checkNewFormat() {
++        if ((this.fileFormat & FORMAT_NEW_MASK) == 0) {
++            throw new UnsupportedOperationException();
++        }
++    }
++
++    /**
++     * Check if the method is allowed for the defined format.
++     */
++    private void checkOldFormat() {
++        if ((this.fileFormat & FORMAT_OLD_MASK) == 0) {
++            throw new UnsupportedOperationException();
++        }
++    }
++
++    /**
++     * Get the checksum.
++     * 
++     * @return Returns the checksum.
++     */
++    public long getChksum() {
++        checkNewFormat();
++        return this.chksum;
++    }
++
++    /**
++     * Get the device id.
++     * 
++     * @return Returns the device id.
++     * @throws UnsupportedOperationException
++     *             if this method is called for a CPIOArchiveEntry with a new format.
++     */
++    public long getDevice() {
++        checkOldFormat();
++        return this.min;
++    }
++
++    /**
++     * Get the major device id.
++     * 
++     * @return Returns the major device id.
++     * @throws UnsupportedOperationException
++     *             if this method is called for a CPIOArchiveEntry with an old format.
++     */
++    public long getDeviceMaj() {
++        checkNewFormat();
++        return this.maj;
++    }
++
++    /**
++     * Get the minor device id
++     * 
++     * @return Returns the minor device id.
++     */
++    public long getDeviceMin() {
++        checkNewFormat();
++        return this.min;
++    }
++
++    /**
++     * Get the filesize.
++     * 
++     * @return Returns the filesize.
++     */
++    /* (non-Javadoc)
++     * @see org.apache.commons.compress.archivers.ArchiveEntry#getSize()
++     */
++    public long getSize() {
++        return this.filesize;
++    }
++
++    /**
++     * Get the format for this entry.
++     * 
++     * @return Returns the format.
++     */
++    public short getFormat() {
++        return this.fileFormat;
++    }
++
++    /**
++     * Get the group id.
++     * 
++     * @return Returns the group id.
++     */
++    public long getGID() {
++        return this.gid;
++    }
++
++    /**
++     * Get the size of this entry on the stream
++     * 
++     * @return Returns the size.
++     */
++    public long getHeaderSize() {
++        return this.headerSize;
++    }
++
++    /**
++     * Set the inode.
++     * 
++     * @return Returns the inode.
++     */
++    public long getInode() {
++        return this.inode;
++    }
++
++    /**
++     * Get the mode of this entry (e.g. directory, regular file).
++     * 
++     * @return Returns the mode.
++     */
++    public long getMode() {
++        return this.mode;
++    }
++
++    /**
++     * Get the name.
++     * 
++     * @return Returns the name.
++     */
++    public String getName() {
++        return this.name;
++    }
++
++    /**
++     * Get the number of links.
++     * 
++     * @return Returns the number of links.
++     */
++    public long getNumberOfLinks() {
++        return this.nlink;
++    }
++
++    /**
++     * Get the remote device id.
++     * 
++     * @return Returns the remote device id.
++     * @throws UnsupportedOperationException
++     *             if this method is called for a CPIOArchiveEntry with a new format.
++     */
++    public long getRemoteDevice() {
++        checkOldFormat();
++        return this.rmin;
++    }
++
++    /**
++     * Get the remote major device id.
++     * 
++     * @return Returns the remote major device id.
++     * @throws UnsupportedOperationException
++     *             if this method is called for a CPIOArchiveEntry with an old format.
++     */
++    public long getRemoteDeviceMaj() {
++        checkNewFormat();
++        return this.rmaj;
++    }
++
++    /**
++     * Get the remote minor device id.
++     * 
++     * @return Returns the remote minor device id.
++     * @throws UnsupportedOperationException
++     *             if this method is called for a CPIOArchiveEntry with an old format.
++     */
++    public long getRemoteDeviceMin() {
++        checkNewFormat();
++        return this.rmin;
++    }
++
++    /**
++     * Get the time in seconds.
++     * 
++     * @return Returns the time.
++     */
++    public long getTime() {
++        return this.mtime;
++    }
++
++    /**
++     * Get the user id.
++     * 
++     * @return Returns the user id.
++     */
++    public long getUID() {
++        return this.uid;
++    }
++
++    /**
++     * Check if this entry represents a block device.
++     * 
++     * @return TRUE if this entry is a block device.
++     */
++    public boolean isBlockDevice() {
++        return (this.mode & S_IFMT) == C_ISBLK;
++    }
++
++    /**
++     * Check if this entry represents a character device.
++     * 
++     * @return TRUE if this entry is a character device.
++     */
++    public boolean isCharacterDevice() {
++        return (this.mode & S_IFMT) == C_ISCHR;
++    }
++
++    /**
++     * Check if this entry represents a directory.
++     * 
++     * @return TRUE if this entry is a directory.
++     */
++    public boolean isDirectory() {
++        return (this.mode & S_IFMT) == C_ISDIR;
++    }
++
++    /**
++     * Check if this entry represents a network device.
++     * 
++     * @return TRUE if this entry is a network device.
++     */
++    public boolean isNetwork() {
++        return (this.mode & S_IFMT) == C_ISNWK;
++    }
++
++    /**
++     * Check if this entry represents a pipe.
++     * 
++     * @return TRUE if this entry is a pipe.
++     */
++    public boolean isPipe() {
++        return (this.mode & S_IFMT) == C_ISFIFO;
++    }
++
++    /**
++     * Check if this entry represents a regular file.
++     * 
++     * @return TRUE if this entry is a regular file.
++     */
++    public boolean isRegularFile() {
++        return (this.mode & S_IFMT) == C_ISREG;
++    }
++
++    /**
++     * Check if this entry represents a socket.
++     * 
++     * @return TRUE if this entry is a socket.
++     */
++    public boolean isSocket() {
++        return (this.mode & S_IFMT) == C_ISSOCK;
++    }
++
++    /**
++     * Check if this entry represents a symbolic link.
++     * 
++     * @return TRUE if this entry is a symbolic link.
++     */
++    public boolean isSymbolicLink() {
++        return (this.mode & S_IFMT) == C_ISLNK;
++    }
++
++    /**
++     * Set the checksum. The checksum is calculated by adding all bytes of a
++     * file to transfer (crc += buf[pos] & 0xFF).
++     * 
++     * @param chksum
++     *            The checksum to set.
++     */
++    public void setChksum(final long chksum) {
++        checkNewFormat();
++        this.chksum = chksum;
++    }
++
++    /**
++     * Set the device id.
++     * 
++     * @param device
++     *            The device id to set.
++     * @throws UnsupportedOperationException
++     *             if this method is called for a CPIOArchiveEntry with a new format.
++     */
++    public void setDevice(final long device) {
++        checkOldFormat();
++        this.min = device;
++    }
++
++    /**
++     * Set major device id.
++     * 
++     * @param maj
++     *            The major device id to set.
++     */
++    public void setDeviceMaj(final long maj) {
++        checkNewFormat();
++        this.maj = maj;
++    }
++
++    /**
++     * Set the minor device id
++     * 
++     * @param min
++     *            The minor device id to set.
++     */
++    public void setDeviceMin(final long min) {
++        checkNewFormat();
++        this.min = min;
++    }
++
++    /**
++     * Set the filesize.
++     * 
++     * @param size
++     *            The filesize to set.
++     */
++    public void setSize(final long size) {
++        if (size < 0 || size > 0xFFFFFFFFL) {
++            throw new IllegalArgumentException("invalid entry size <" + size
++                    + ">");
++        }
++        this.filesize = size;
++    }
++
++    /**
++     * Set the format for this entry. Possible values are:
++     * CPIOConstants.FORMAT_NEW, CPIOConstants.FORMAT_NEW_CRC,
++     * CPIOConstants.FORMAT_OLD_BINARY, CPIOConstants.FORMAT_OLD_ASCII
++     * 
++     * @param format
++     *            The format to set.
++     */
++    void setFormat(final short format) {
++        switch (format) {
++        case FORMAT_NEW:
++            this.fileFormat = FORMAT_NEW;
++            this.headerSize = 110;
++            break;
++        case FORMAT_NEW_CRC:
++            this.fileFormat = FORMAT_NEW_CRC;
++            this.headerSize = 110;
++            break;
++        case FORMAT_OLD_ASCII:
++            this.fileFormat = FORMAT_OLD_ASCII;
++            this.headerSize = 76;
++            break;
++        case FORMAT_OLD_BINARY:
++            this.fileFormat = FORMAT_OLD_BINARY;
++            this.headerSize = 26;
++            break;
++        default:
++            throw new IllegalArgumentException("Unknown header type");
++        }
++    }
++
++    /**
++     * Set the group id.
++     * 
++     * @param gid
++     *            The group id to set.
++     */
++    public void setGID(final long gid) {
++        this.gid = gid;
++    }
++
++    /**
++     * Set the inode.
++     * 
++     * @param inode
++     *            The inode to set.
++     */
++    public void setInode(final long inode) {
++        this.inode = inode;
++    }
++
++    /**
++     * Set the mode of this entry (e.g. directory, regular file).
++     * 
++     * @param mode
++     *            The mode to set.
++     */
++    public void setMode(final long mode) {
++        switch ((int) (mode & S_IFMT)) {
++        case C_ISDIR:
++        case C_ISLNK:
++        case C_ISREG:
++        case C_ISFIFO:
++        case C_ISCHR:
++        case C_ISBLK:
++        case C_ISSOCK:
++        case C_ISNWK:
++            break;
++        default:
++            new IllegalArgumentException("Unknown mode");
++        }
++
++        this.mode = mode;
++    }
++
++    /**
++     * Set the name.
++     * 
++     * @param name
++     *            The name to set.
++     */
++    public void setName(final String name) {
++        this.name = name;
++    }
++
++    /**
++     * Set the number of links.
++     * 
++     * @param nlink
++     *            The number of links to set.
++     */
++    public void setNumberOfLinks(final long nlink) {
++        this.nlink = nlink;
++    }
++
++    /**
++     * Set the remote device id.
++     * 
++     * @param device
++     *            The remote device id to set.
++     * @throws UnsupportedOperationException
++     *             if this method is called for a CPIOArchiveEntry with a new format.
++     */
++    public void setRemoteDevice(final long device) {
++        checkOldFormat();
++        this.rmin = device;
++    }
++
++    /**
++     * Set the remote major device id.
++     * 
++     * @param rmaj
++     *            The remote major device id to set.
++     * @throws UnsupportedOperationException
++     *             if this method is called for a CPIOArchiveEntry with an old format.
++     */
++    public void setRemoteDeviceMaj(final long rmaj) {
++        checkNewFormat();
++        this.rmaj = rmaj;
++    }
++
++    /**
++     * Set the remote minor device id.
++     * 
++     * @param rmin
++     *            The remote minor device id to set.
++     * @throws UnsupportedOperationException
++     *             if this method is called for a CPIOArchiveEntry with an old format.
++     */
++    public void setRemoteDeviceMin(final long rmin) {
++        checkNewFormat();
++        this.rmin = rmin;
++    }
++
++    /**
++     * Set the time in seconds.
++     * 
++     * @param time
++     *            The time to set.
++     */
++    public void setTime(final long time) {
++        this.mtime = time;
++    }
++
++    /**
++     * Set the user id.
++     * 
++     * @param uid
++     *            The user id to set.
++     */
++    public void setUID(final long uid) {
++        this.uid = uid;
++    }
++}
+diff --git a/src/main/java/org/apache/commons/compress/archivers/cpio/CpioArchiveInputStream.java b/src/main/java/org/apache/commons/compress/archivers/cpio/CpioArchiveInputStream.java
+new file mode 100644
+index 0000000..bcf38d4
+--- /dev/null
++++ b/src/main/java/org/apache/commons/compress/archivers/cpio/CpioArchiveInputStream.java
+@@ -0,0 +1,466 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++package org.apache.commons.compress.archivers.cpio;
++
++import java.io.EOFException;
++import java.io.IOException;
++import java.io.InputStream;
++
++import org.apache.commons.compress.archivers.ArchiveEntry;
++import org.apache.commons.compress.archivers.ArchiveInputStream;
++
++/**
++ * CPIOArchiveInputStream is a stream for reading cpio streams. All formats of cpio are
++ * supported (old ascii, old binary, new portable format and the new portable
++ * format with crc).
++ * <p/>
++ * <p/>
++ * The stream can be read by extracting a cpio entry (containing all
++ * informations about a entry) and afterwards reading from the stream the file
++ * specified by the entry.
++ * <p/>
++ * <code><pre>
++ * CPIOArchiveInputStream cpioIn = new CPIOArchiveInputStream(new BufferedInputStream(
++ *         new FileInputStream(new File(&quot;test.cpio&quot;))));
++ * CPIOArchiveEntry cpioEntry;
++ * <p/>
++ * while ((cpioEntry = cpioIn.getNextEntry()) != null) {
++ *     System.out.println(cpioEntry.getName());
++ *     int tmp;
++ *     StringBuffer buf = new StringBuffer();
++ *     while ((tmp = cpIn.read()) != -1) {
++ *         buf.append((char) tmp);
++ *     }
++ *     System.out.println(buf.toString());
++ * }
++ * cpioIn.close();
++ * </pre></code>
++ * <p/>
++ * Note: This implementation should be compatible to cpio 2.5
++ * 
++ * based on code from the jRPM project (jrpm.sourceforge.net) 
++ */
++
++public class CpioArchiveInputStream extends ArchiveInputStream implements CpioConstants {
++	
++    private boolean closed = false;
++
++    private CpioArchiveEntry entry;
++
++    private long entryBytesRead = 0;
++
++    private boolean entryEOF = false;
++
++    private byte[] singleByteBuf = new byte[1];
++
++    private byte tmpbuf[] = new byte[4096];
++
++    private long crc = 0;
++    
++    private InputStream in = null;
++
++    /**
++     * Construct the cpio input stream
++     *
++     * @param in The cpio stream
++     */
++    public CpioArchiveInputStream(final InputStream in) {
++        this.in = in;
++    }
++
++    /**
++     * Returns 0 after EOF has reached for the current entry data, otherwise
++     * always return 1.
++     * <p/>
++     * Programs should not count on this method to return the actual number of
++     * bytes that could be read without blocking.
++     *
++     * @return 1 before EOF and 0 after EOF has reached for current entry.
++     * @throws IOException if an I/O error has occurred or if a CPIO file error has
++     *                     occurred
++     */
++    public int available() throws IOException {
++        ensureOpen();
++        if (this.entryEOF) {
++            return 0;
++        }
++        return 1;
++    }
++
++    /**
++     * Converts a byte array to a long. Halfwords can be swaped with setting
++     * swapHalfWord=true.
++     *
++     * @param number       An array of bytes containing a number
++     * @param swapHalfWord Swap halfwords ([0][1][2][3]->[1][0][3][2])
++     * @return The long value
++     */
++    private long byteArray2long(final byte[] number, final boolean swapHalfWord) {
++        long ret = 0;
++        int pos = 0;
++        byte tmp_number[] = new byte[number.length];
++        System.arraycopy(number, 0, tmp_number, 0, number.length);
++
++        if (tmp_number.length % 2 != 0) {
++            throw new UnsupportedOperationException();
++        }
++
++        if (!swapHalfWord) {
++            byte tmp = 0;
++            for (pos = 0; pos < tmp_number.length; pos++) {
++                tmp = tmp_number[pos];
++                tmp_number[pos++] = tmp_number[pos];
++                tmp_number[pos] = tmp;
++            }
++        }
++
++        ret = tmp_number[0] & 0xFF;
++        for (pos = 1; pos < tmp_number.length; pos++) {
++            ret <<= 8;
++            ret |= tmp_number[pos] & 0xFF;
++        }
++        return ret;
++    }
++
++    /**
++     * Closes the CPIO input stream.
++     *
++     * @throws IOException if an I/O error has occurred
++     */
++    public void close() throws IOException {
++        if (!this.closed) {
++            super.close();
++            this.closed = true;
++        }
++    }
++
++    /**
++     * Closes the current CPIO entry and positions the stream for reading the
++     * next entry.
++     *
++     * @throws IOException if an I/O error has occurred or if a CPIO file error has
++     *                     occurred
++     */
++    public void closeEntry() throws IOException {
++        ensureOpen();
++        while (read(this.tmpbuf, 0, this.tmpbuf.length) != -1) {
++            // do nothing
++        }
++
++        this.entryEOF = true;
++    }
++
++    /**
++     * Check to make sure that this stream has not been closed
++     *
++     * @throws IOException if the stream is already closed
++     */
++    private void ensureOpen() throws IOException {
++        if (this.closed) {
++            throw new IOException("Stream closed");
++        }
++    }
++
++    /**
++     * Reads the next CPIO file entry and positions stream at the beginning of
++     * the entry data.
++     *
++     * @return the CPIOArchiveEntry just read
++     * @throws IOException if an I/O error has occurred or if a CPIO file error has
++     *                     occurred
++     */
++    public CpioArchiveEntry getNextCPIOEntry() throws IOException {
++        ensureOpen();
++        if (this.entry != null) {
++            closeEntry();
++        }
++        byte magic[] = new byte[2];
++        readFully(magic, 0, magic.length);
++        if (byteArray2long(magic, false) == MAGIC_OLD_BINARY) {
++            this.entry = readOldBinaryEntry(false);
++        } else if (byteArray2long(magic, true) == MAGIC_OLD_BINARY) {
++            this.entry = readOldBinaryEntry(true);
++        } else {
++            byte more_magic[] = new byte[4];
++            readFully(more_magic, 0, more_magic.length);
++            byte tmp[] = new byte[6];
++            System.arraycopy(magic, 0, tmp, 0, magic.length);
++            System.arraycopy(more_magic, 0, tmp, magic.length,
++                    more_magic.length);
++            String magicString = new String(tmp);
++            if (magicString.equals(MAGIC_NEW)) {
++                this.entry = readNewEntry(false);
++            } else if (magicString.equals(MAGIC_NEW_CRC)) {
++                this.entry = readNewEntry(true);
++            } else if (magicString.equals(MAGIC_OLD_ASCII)) {
++                this.entry = readOldAsciiEntry();
++            } else {
++                throw new IOException("Unknown magic [" + magicString + "]");
++            }
++        }
++
++        this.entryBytesRead = 0;
++        this.entryEOF = false;
++        this.crc = 0;
++
++        if (this.entry.getName().equals("TRAILER!!!")) {
++            this.entryEOF = true;
++            return null;
++        }
++        return this.entry;
++    }
++
++    private long pad(final long count, final int border) throws IOException {
++        long skip = count % border;
++        if (skip > 0) {
++            skip = this.in.skip(border - skip);
++        }
++        return skip;
++    }
++
++    /**
++     * Reads a byte of data. This method will block until enough input is
++     * available.
++     *
++     * @return the byte read, or -1 if end of input is reached
++     * @throws IOException if an I/O error has occurred or if a CPIO file error has
++     *                     occurred
++     */
++    public int read() throws IOException {
++        return read(this.singleByteBuf, 0, 1) == -1 ? -1
++                : this.singleByteBuf[0] & 0xff;
++    }
++
++    /**
++     * Reads from the current CPIO entry into an array of bytes. Blocks until
++     * some input is available.
++     *
++     * @param b   the buffer into which the data is read
++     * @param off the start offset of the data
++     * @param len the maximum number of bytes read
++     * @return the actual number of bytes read, or -1 if the end of the entry is
++     *         reached
++     * @throws IOException if an I/O error has occurred or if a CPIO file error has
++     *                     occurred
++     */
++    public int read(final byte[] b, final int off, final int len)
++            throws IOException {
++        ensureOpen();
++        if (off < 0 || len < 0 || off > b.length - len) {
++            throw new IndexOutOfBoundsException();
++        } else if (len == 0) {
++            return 0;
++        }
++
++        if (this.entry == null || this.entryEOF) {
++            return -1;
++        }
++        if (this.entryBytesRead == this.entry.getSize()) {
++            if ((this.entry.getFormat() | FORMAT_NEW_MASK) == FORMAT_NEW_MASK) {
++                pad(this.entry.getSize(), 4);
++            } else if ((this.entry.getFormat() | FORMAT_OLD_BINARY) == FORMAT_OLD_BINARY) {
++                pad(this.entry.getSize(), 2);
++            }
++            this.entryEOF = true;
++            if ((this.entry.getFormat() | FORMAT_NEW_CRC) == FORMAT_NEW_CRC) {
++                if (this.crc != this.entry.getChksum()) {
++                    throw new IOException("CRC Error");
++                }
++            }
++            return -1;
++        }
++        int tmplength = (int) Math.min(len, this.entry.getSize()
++                - this.entryBytesRead);
++        if (tmplength < 0) {
++            return -1;
++        }
++
++        int tmpread = this.in.read(b, off, tmplength);
++        if ((this.entry.getFormat() | FORMAT_NEW_CRC) == FORMAT_NEW_CRC) {
++            for (int pos = 0; pos < tmpread; pos++) {
++                this.crc += b[pos] & 0xFF;
++            }
++        }
++        this.entryBytesRead += tmpread;
++
++        return tmpread;
++    }
++
++    private final int readFully(final byte[] b, final int off, final int len)
++            throws IOException {
++        if (len < 0) {
++            throw new IndexOutOfBoundsException();
++        }
++        int n = 0;
++        while (n < len) {
++            int count = this.in.read(b, off + n, len - n);
++            if (count < 0) {
++                throw new EOFException();
++            }
++            n += count;
++        }
++        return n;
++    }
++
++    private long readBinaryLong(final int length, final boolean swapHalfWord)
++            throws IOException {
++        byte tmp[] = new byte[length];
++        readFully(tmp, 0, tmp.length);
++        return byteArray2long(tmp, swapHalfWord);
++    }
++
++    private long readAsciiLong(final int length, final int radix)
++            throws IOException {
++        byte tmpBuffer[] = new byte[length];
++        readFully(tmpBuffer, 0, tmpBuffer.length);
++        return Long.parseLong(new String(tmpBuffer), radix);
++    }
++
++    private CpioArchiveEntry readNewEntry(final boolean hasCrc) throws IOException {
++        CpioArchiveEntry ret;
++        if (hasCrc) {
++            ret = new CpioArchiveEntry(FORMAT_NEW_CRC);
++        } else {
++            ret = new CpioArchiveEntry(FORMAT_NEW);
++        }
++
++        ret.setInode(readAsciiLong(8, 16));
++        ret.setMode(readAsciiLong(8, 16));
++        ret.setUID(readAsciiLong(8, 16));
++        ret.setGID(readAsciiLong(8, 16));
++        ret.setNumberOfLinks(readAsciiLong(8, 16));
++        ret.setTime(readAsciiLong(8, 16));
++        ret.setSize(readAsciiLong(8, 16));
++        ret.setDeviceMaj(readAsciiLong(8, 16));
++        ret.setDeviceMin(readAsciiLong(8, 16));
++        ret.setRemoteDeviceMaj(readAsciiLong(8, 16));
++        ret.setRemoteDeviceMin(readAsciiLong(8, 16));
++        long namesize = readAsciiLong(8, 16);
++        ret.setChksum(readAsciiLong(8, 16));
++        ret.setName(readCString((int) namesize));
++        pad(ret.getHeaderSize() + namesize, 4);
++
++        return ret;
++    }
++
++    private CpioArchiveEntry readOldAsciiEntry() throws IOException {
++        CpioArchiveEntry ret = new CpioArchiveEntry(FORMAT_OLD_ASCII);
++
++        ret.setDevice(readAsciiLong(6, 8));
++        ret.setInode(readAsciiLong(6, 8));
++        ret.setMode(readAsciiLong(6, 8));
++        ret.setUID(readAsciiLong(6, 8));
++        ret.setGID(readAsciiLong(6, 8));
++        ret.setNumberOfLinks(readAsciiLong(6, 8));
++        ret.setRemoteDevice(readAsciiLong(6, 8));
++        ret.setTime(readAsciiLong(11, 8));
++        long namesize = readAsciiLong(6, 8);
++        ret.setSize(readAsciiLong(11, 8));
++        ret.setName(readCString((int) namesize));
++
++        return ret;
++    }
++
++    private CpioArchiveEntry readOldBinaryEntry(final boolean swapHalfWord)
++            throws IOException {
++        CpioArchiveEntry ret = new CpioArchiveEntry(FORMAT_OLD_BINARY);
++
++        ret.setDevice(readBinaryLong(2, swapHalfWord));
++        ret.setInode(readBinaryLong(2, swapHalfWord));
++        ret.setMode(readBinaryLong(2, swapHalfWord));
++        ret.setUID(readBinaryLong(2, swapHalfWord));
++        ret.setGID(readBinaryLong(2, swapHalfWord));
++        ret.setNumberOfLinks(readBinaryLong(2, swapHalfWord));
++        ret.setRemoteDevice(readBinaryLong(2, swapHalfWord));
++        ret.setTime(readBinaryLong(4, swapHalfWord));
++        long namesize = readBinaryLong(2, swapHalfWord);
++        ret.setSize(readBinaryLong(4, swapHalfWord));
++        ret.setName(readCString((int) namesize));
++        pad(ret.getHeaderSize() + namesize, 2);
++
++        return ret;
++    }
++
++    private String readCString(final int length) throws IOException {
++        byte tmpBuffer[] = new byte[length];
++        readFully(tmpBuffer, 0, tmpBuffer.length);
++        return new String(tmpBuffer, 0, tmpBuffer.length - 1);
++    }
++
++    /**
++     * Skips specified number of bytes in the current CPIO entry.
++     *
++     * @param n the number of bytes to skip
++     * @return the actual number of bytes skipped
++     * @throws IOException              if an I/O error has occurred
++     * @throws IllegalArgumentException if n < 0
++     */
++    public long skip(final long n) throws IOException {
++        if (n < 0) {
++            throw new IllegalArgumentException("negative skip length");
++        }
++        ensureOpen();
++        int max = (int) Math.min(n, Integer.MAX_VALUE);
++        int total = 0;
++
++        while (total < max) {
++            int len = max - total;
++            if (len > this.tmpbuf.length) {
++                len = this.tmpbuf.length;
++            }
++            len = read(this.tmpbuf, 0, len);
++            if (len == -1) {
++                this.entryEOF = true;
++                break;
++            }
++            total += len;
++        }
++        return total;
++    }
++
++	public ArchiveEntry getNextEntry() throws IOException {
++		CpioArchiveEntry entry = this.getNextCPIOEntry();
++    	if(entry == null) {
++    		return null;
++    	}
++		return (ArchiveEntry)entry;
++	}
++	
++	public static boolean matches( byte[] signature ) {
++		// 3037 3037 30
++    	
++    	if (signature[0] != 0x30) {
++    		return false;
++    	}
++    	if (signature[1] != 0x37) {
++    		return false;
++    	}
++    	if (signature[2] != 0x30) {
++    		return false;
++    	}
++    	if (signature[3] != 0x37) {
++    		return false;
++    	}
++    	if (signature[4] != 0x30) {
++    		return false;
++    	}
++    	
++    	return true;
++	}
++}
+diff --git a/src/main/java/org/apache/commons/compress/archivers/cpio/CpioArchiveOutputStream.java b/src/main/java/org/apache/commons/compress/archivers/cpio/CpioArchiveOutputStream.java
+new file mode 100644
+index 0000000..5d22d26
+--- /dev/null
++++ b/src/main/java/org/apache/commons/compress/archivers/cpio/CpioArchiveOutputStream.java
+@@ -0,0 +1,433 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++package org.apache.commons.compress.archivers.cpio;
++
++import java.io.FilterOutputStream;
++import java.io.IOException;
++import java.io.OutputStream;
++import java.util.HashMap;
++
++import org.apache.commons.compress.archivers.ArchiveEntry;
++import org.apache.commons.compress.archivers.ArchiveOutputStream;
++
++/**
++ * CPIOArchiveOutputStream is a stream for writting cpio streams. All formats of cpio
++ * are supported (old ascii, old binary, new portable format and the new
++ * portable format with crc).
++ * <p/>
++ * <p/>
++ * An entry can be written by creating an instance of CPIOArchiveEntry and fill it with
++ * the necessary values and put it into the cpio stream. Afterwards write the
++ * contents of the file into the cpio stream. Either close the stream by calling
++ * finish() or put a next entry into the cpio stream.
++ * <p/>
++ * <code><pre>
++ * CPIOArchiveOutputStream cpioOut = new CPIOArchiveOutputStream(new BufferedOutputStream(
++ *         new FileOutputStream(new File(&quot;test.cpio&quot;))));
++ * CPIOArchiveEntry cpioEntry = new CPIOArchiveEntry();
++ * cpioEntry.setName(&quot;testfile&quot;);
++ * String testContents = &quot;12345&quot;;
++ * cpioEntry.setFileSize(testContents.length());
++ * cpioOut.putNextEntry(cpioEntry);
++ * cpioOut.write(testContents.getBytes());
++ * cpioOut.finish();
++ * cpioOut.close();
++ * </pre></code>
++ * <p/>
++ * Note: This implementation should be compatible to cpio 2.5
++ *
++ * based on code from the jRPM project (jrpm.sourceforge.net) 
++ */
++public class CpioArchiveOutputStream extends ArchiveOutputStream implements CpioConstants {
++	
++    private CpioArchiveEntry cpioEntry;
++
++    private boolean closed = false;
++
++    private boolean finished;
++
++    private short entryFormat = FORMAT_NEW;
++
++    private HashMap names = new HashMap();
++
++    private long crc = 0;
++
++    private long written;
++    
++    private OutputStream out = null;
++
++    /**
++     * Check to make sure that this stream has not been closed
++     *
++     * @throws IOException if the stream is already closed
++     */
++    private void ensureOpen() throws IOException {
++        if (this.closed) {
++            throw new IOException("Stream closed");
++        }
++    }
++
++    /**
++     * Construct the cpio output stream with a specified format
++     *
++     * @param out    The cpio stream
++     * @param format The format of the stream
++     */
++    public CpioArchiveOutputStream(final OutputStream out, final short format) {
++    	this.out = new FilterOutputStream(out);
++        setFormat(format);
++    }
++
++    /**
++     * Construct the cpio output stream. The format for this CPIO stream is the
++     * "new" format
++     *
++     * @param out The cpio stream
++     */
++    public CpioArchiveOutputStream(final OutputStream out) {
++        this(out, FORMAT_NEW);
++    }
++
++    /**
++     * Set a default header format. This will be used if no format is defined in
++     * the cpioEntry given to putNextEntry().
++     *
++     * @param format A CPIO format
++     */
++    public void setFormat(final short format) {
++        switch (format) {
++            case FORMAT_NEW:
++            case FORMAT_NEW_CRC:
++            case FORMAT_OLD_ASCII:
++            case FORMAT_OLD_BINARY:
++                break;
++            default:
++                throw new IllegalArgumentException("Unknown header type");
++
++        }
++        this.entryFormat = format;
++    }
++
++    /**
++     * Begins writing a new CPIO file entry and positions the stream to the
++     * start of the entry data. Closes the current entry if still active. The
++     * current time will be used if the entry has no set modification time and
++     * the default header format will be used if no other format is specified in
++     * the entry.
++     *
++     * @param e the CPIO cpioEntry to be written
++     * @throws IOException if an I/O error has occurred or if a CPIO file error has
++     *                     occurred
++     */
++    public void putNextEntry(final CpioArchiveEntry e) throws IOException {
++        ensureOpen();
++        if (this.cpioEntry != null) {
++            closeEntry(); // close previous entry
++        }
++        if (e.getTime() == -1) {
++            e.setTime(System.currentTimeMillis());
++        }
++        if (e.getFormat() == -1) {
++            e.setFormat(this.entryFormat);
++        }
++
++        if (this.names.put(e.getName(), e) != null) {
++            throw new IOException("duplicate entry: " + e.getName());
++        }
++
++        writeHeader(e);
++        this.cpioEntry = e;
++        this.written = 0;
++    }
++
++    private void writeHeader(final CpioArchiveEntry e) throws IOException {
++        switch (e.getFormat()) {
++            case FORMAT_NEW:
++            	out.write(MAGIC_NEW.getBytes());
++                writeNewEntry(e);
++                break;
++            case FORMAT_NEW_CRC:
++            	out.write(MAGIC_NEW_CRC.getBytes());
++                writeNewEntry(e);
++                break;
++            case FORMAT_OLD_ASCII:
++            	out.write(MAGIC_OLD_ASCII.getBytes());
++                writeOldAsciiEntry(e);
++                break;
++            case FORMAT_OLD_BINARY:
++                boolean swapHalfWord = true;
++                writeBinaryLong(MAGIC_OLD_BINARY, 2, swapHalfWord);
++                writeOldBinaryEntry(e, swapHalfWord);
++                break;
++        }
++    }
++
++    private void writeNewEntry(final CpioArchiveEntry entry) throws IOException {
++        writeAsciiLong(entry.getInode(), 8, 16);
++        writeAsciiLong(entry.getMode(), 8, 16);
++        writeAsciiLong(entry.getUID(), 8, 16);
++        writeAsciiLong(entry.getGID(), 8, 16);
++        writeAsciiLong(entry.getNumberOfLinks(), 8, 16);
++        writeAsciiLong(entry.getTime(), 8, 16);
++        writeAsciiLong(entry.getSize(), 8, 16);
++        writeAsciiLong(entry.getDeviceMaj(), 8, 16);
++        writeAsciiLong(entry.getDeviceMin(), 8, 16);
++        writeAsciiLong(entry.getRemoteDeviceMaj(), 8, 16);
++        writeAsciiLong(entry.getRemoteDeviceMin(), 8, 16);
++        writeAsciiLong(entry.getName().length() + 1, 8, 16);
++        writeAsciiLong(entry.getChksum(), 8, 16);
++        writeCString(entry.getName());
++        pad(entry.getHeaderSize() + entry.getName().length() + 1, 4);
++    }
++
++    private void writeOldAsciiEntry(final CpioArchiveEntry entry) throws IOException {
++        writeAsciiLong(entry.getDevice(), 6, 8);
++        writeAsciiLong(entry.getInode(), 6, 8);
++        writeAsciiLong(entry.getMode(), 6, 8);
++        writeAsciiLong(entry.getUID(), 6, 8);
++        writeAsciiLong(entry.getGID(), 6, 8);
++        writeAsciiLong(entry.getNumberOfLinks(), 6, 8);
++        writeAsciiLong(entry.getRemoteDevice(), 6, 8);
++        writeAsciiLong(entry.getTime(), 11, 8);
++        writeAsciiLong(entry.getName().length() + 1, 6, 8);
++        writeAsciiLong(entry.getSize(), 11, 8);
++        writeCString(entry.getName());
++    }
++
++    private void writeOldBinaryEntry(final CpioArchiveEntry entry,
++                                     final boolean swapHalfWord) throws IOException {
++        writeBinaryLong(entry.getDevice(), 2, swapHalfWord);
++        writeBinaryLong(entry.getInode(), 2, swapHalfWord);
++        writeBinaryLong(entry.getMode(), 2, swapHalfWord);
++        writeBinaryLong(entry.getUID(), 2, swapHalfWord);
++        writeBinaryLong(entry.getGID(), 2, swapHalfWord);
++        writeBinaryLong(entry.getNumberOfLinks(), 2, swapHalfWord);
++        writeBinaryLong(entry.getRemoteDevice(), 2, swapHalfWord);
++        writeBinaryLong(entry.getTime(), 4, swapHalfWord);
++        writeBinaryLong(entry.getName().length() + 1, 2, swapHalfWord);
++        writeBinaryLong(entry.getSize(), 4, swapHalfWord);
++        writeCString(entry.getName());
++        pad(entry.getHeaderSize() + entry.getName().length() + 1, 2);
++    }
++
++    /**
++     * Closes the current CPIO entry and positions the stream for writing the
++     * next entry.
++     *
++     * @throws IOException if an I/O error has occurred or if a CPIO file error has
++     *                     occurred
++     */
++    public void closeEntry() throws IOException {
++        ensureOpen();
++
++        if (this.cpioEntry.getSize() != this.written) {
++            throw new IOException("invalid entry size (expected "
++                    + this.cpioEntry.getSize() + " but got " + this.written
++                    + " bytes)");
++        }
++        if ((this.cpioEntry.getFormat() | FORMAT_NEW_MASK) == FORMAT_NEW_MASK) {
++            pad(this.cpioEntry.getSize(), 4);
++        } else if ((this.cpioEntry.getFormat() | FORMAT_OLD_BINARY) == FORMAT_OLD_BINARY) {
++            pad(this.cpioEntry.getSize(), 2);
++        }
++        if ((this.cpioEntry.getFormat() | FORMAT_NEW_CRC) == FORMAT_NEW_CRC) {
++            if (this.crc != this.cpioEntry.getChksum()) {
++                throw new IOException("CRC Error");
++            }
++        }
++        if (this.cpioEntry != null) {
++            this.cpioEntry = null;
++        }
++        this.crc = 0;
++        this.written = 0;
++    }
++
++    /**
++     * Writes an array of bytes to the current CPIO entry data. This method will
++     * block until all the bytes are written.
++     *
++     * @param b   the data to be written
++     * @param off the start offset in the data
++     * @param len the number of bytes that are written
++     * @throws IOException if an I/O error has occurred or if a CPIO file error has
++     *                     occurred
++     */
++    public synchronized void write(final byte[] b, final int off, final int len)
++            throws IOException {
++        ensureOpen();
++        if (off < 0 || len < 0 || off > b.length - len) {
++            throw new IndexOutOfBoundsException();
++        } else if (len == 0) {
++            return;
++        }
++
++        if (this.cpioEntry == null) {
++            throw new IOException("no current CPIO entry");
++        }
++        if (this.written + len > this.cpioEntry.getSize()) {
++            throw new IOException("attempt to write past end of STORED entry");
++        }
++        out.write(b, off, len);
++        this.written += len;
++        if ((this.cpioEntry.getFormat() | FORMAT_NEW_CRC) == FORMAT_NEW_CRC) {
++            for (int pos = 0; pos < len; pos++) {
++                this.crc += b[pos] & 0xFF;
++            }
++        }
++    }
++
++    /**
++     * Finishes writing the contents of the CPIO output stream without closing
++     * the underlying stream. Use this method when applying multiple filters in
++     * succession to the same output stream.
++     *
++     * @throws IOException if an I/O exception has occurred or if a CPIO file error
++     *                     has occurred
++     */
++    public void finish() throws IOException {
++        ensureOpen();
++        // TODO: synchronize and finish
++        if (this.finished) {
++            return;
++        }
++        if (this.cpioEntry != null) {
++            closeEntry();
++        }
++        this.cpioEntry = new CpioArchiveEntry(this.entryFormat);
++        this.cpioEntry.setMode(0);
++        this.cpioEntry.setName("TRAILER!!!");
++        this.cpioEntry.setNumberOfLinks(1);
++        writeHeader(this.cpioEntry);
++        closeEntry();
++    }
++
++    /**
++     * Closes the CPIO output stream as well as the stream being filtered.
++     *
++     * @throws IOException if an I/O error has occurred or if a CPIO file error has
++     *                     occurred
++     */
++    public void close() throws IOException {
++        if (!this.closed) {
++            super.close();
++            this.closed = true;
++        }
++    }
++
++    private void pad(final long count, final int border) throws IOException {
++        long skip = count % border;
++        if (skip > 0) {
++            byte tmp[] = new byte[(int) (border - skip)];
++            out.write(tmp);
++        }
++    }
++
++    private void writeBinaryLong(final long number, final int length,
++                                 final boolean swapHalfWord) throws IOException {
++        byte tmp[] = long2byteArray(number, length, swapHalfWord);
++        out.write(tmp);
++    }
++
++    private void writeAsciiLong(final long number, final int length,
++                                final int radix) throws IOException {
++        StringBuffer tmp = new StringBuffer();
++        String tmpStr;
++        if (radix == 16) {
++            tmp.append(Long.toHexString(number));
++        } else if (radix == 8) {
++            tmp.append(Long.toOctalString(number));
++        } else {
++            tmp.append(Long.toString(number));
++        }
++
++        if (tmp.length() <= length) {
++            long insertLength = length - tmp.length();
++            for (int pos = 0; pos < insertLength; pos++) {
++                tmp.insert(0, "0");
++            }
++            tmpStr = tmp.toString();
++        } else {
++            tmpStr = tmp.substring(tmp.length() - length);
++        }
++        out.write(tmpStr.getBytes());
++    }
++
++    private void writeCString(final String str) throws IOException {
++    	out.write(str.getBytes());
++    	out.write('\0');
++    }
++
++    /**
++     * Converts a byte array to a long. Halfwords can be swaped with setting
++     * swapHalfWord=true.
++     *
++     * @param number       An array of bytes containing a number
++     * @param length       The length of the returned array
++     * @param swapHalfWord Swap halfwords ([0][1][2][3]->[1][0][3][2])
++     * @return The long value
++     */
++    private static byte[] long2byteArray(final long number, final int length,
++                                         final boolean swapHalfWord) {
++        byte[] ret = new byte[length];
++        int pos = 0;
++        long tmp_number = 0;
++
++        if (length % 2 != 0 || length < 2) {
++            throw new UnsupportedOperationException();
++        }
++
++        tmp_number = number;
++        for (pos = length - 1; pos >= 0; pos--) {
++            ret[pos] = (byte) (tmp_number & 0xFF);
++            tmp_number >>= 8;
++        }
++
++        if (!swapHalfWord) {
++            byte tmp = 0;
++            for (pos = 0; pos < length; pos++) {
++                tmp = ret[pos];
++                ret[pos++] = ret[pos];
++                ret[pos] = tmp;
++            }
++        }
++
++        return ret;
++    }
++
++	/* (non-Javadoc)
++	 * @see org.apache.commons.compress.archivers.ArchiveOutputStream#closeArchiveEntry()
++	 */
++	public void closeArchiveEntry() throws IOException {
++		this.closeEntry();
++	}
++
++	/* (non-Javadoc)
++	 * @see org.apache.commons.compress.archivers.ArchiveOutputStream#putArchiveEntry(org.apache.commons.compress.archivers.ArchiveEntry)
++	 */
++	public void putArchiveEntry(ArchiveEntry entry) throws IOException {
++		this.putNextEntry((CpioArchiveEntry)entry);
++	}
++
++	/* (non-Javadoc)
++	 * @see java.io.OutputStream#write(int)
++	 */
++	public void write(int b) throws IOException {
++		out.write(b);
++	}
++}
+diff --git a/src/main/java/org/apache/commons/compress/archivers/cpio/CpioConstants.java b/src/main/java/org/apache/commons/compress/archivers/cpio/CpioConstants.java
+new file mode 100644
+index 0000000..3b08409
+--- /dev/null
++++ b/src/main/java/org/apache/commons/compress/archivers/cpio/CpioConstants.java
+@@ -0,0 +1,125 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++package org.apache.commons.compress.archivers.cpio;
++
++/**
++ * All constants needed by CPIO.
++ * 
++ * based on code from the jRPM project (jrpm.sourceforge.net) 
++ */
++public interface CpioConstants {
++    /** magic number of a cpio entry in the new format */
++    final String MAGIC_NEW = "070701";
++
++    /** magic number of a cpio entry in the new format with crc */
++    final String MAGIC_NEW_CRC = "070702";
++
++    /** magic number of a cpio entry in the old ascii format */
++    final String MAGIC_OLD_ASCII = "070707";
++
++    /** magic number of a cpio entry in the old binary format */
++    final int MAGIC_OLD_BINARY = 070707;
++
++    /** write/read a CPIOArchiveEntry in the new format */
++    final short FORMAT_NEW = 1;
++
++    /** write/read a CPIOArchiveEntry in the new format with crc */
++    final short FORMAT_NEW_CRC = 2;
++
++    /** write/read a CPIOArchiveEntry in the old ascii format */
++    final short FORMAT_OLD_ASCII = 4;
++
++    /** write/read a CPIOArchiveEntry in the old binary format */
++    final short FORMAT_OLD_BINARY = 8;
++
++    /** Mask for both new formats */
++    final short FORMAT_NEW_MASK = 3;
++
++    /** Mask for both old formats */
++    final short FORMAT_OLD_MASK = 12;
++
++    /** Mask for all file type bits. */
++    final int S_IFMT = 0170000;
++
++    /** Defines a directory */
++    final int C_ISDIR = 0040000;
++
++    /** Defines a symbolic link */
++    final int C_ISLNK = 0120000;
++
++    /** Defines a regular file */
++    final int C_ISREG = 0100000;
++
++    /** Defines a pipe */
++    final int C_ISFIFO = 0010000;
++
++    /** Defines a character device */
++    final int C_ISCHR = 0020000;
++
++    /** Defines a block device */
++    final int C_ISBLK = 0060000;
++
++    /** Defines a socket */
++    final int C_ISSOCK = 0140000;
++
++    /** HP/UX network special (C_ISCTG) */
++    final int C_ISNWK = 0110000;
++
++    /** Permits the owner of a file to read the file */
++    final int C_IRUSR = 000400;
++
++    /** Permits the owner of a file to write to the file */
++    final int C_IWUSR = 000200;
++
++    /**
++     * Permits the owner of a file to execute the file or to search the file's
++     * directory
++     */
++    final int C_IXUSR = 000100;
++
++    /** Permits a file's group to read the file */
++    final int C_IRGRP = 000040;
++
++    /** Permits a file's group to write to the file */
++    final int C_IWGRP = 000020;
++
++    /**
++     * Permits a file's group to execute the file or to search the file's
++     * directory
++     */
++    final int C_IXGRP = 000010;
++
++    /** Permits others to read the file */
++    final int C_IROTH = 000004;
++
++    /** Permits others to write to the file */
++    final int C_IWOTH = 000002;
++
++    /** Permits others to execute the file or to search the file's directory */
++    final int C_IXOTH = 000001;
++
++    /** TODO document */
++    final int C_ISUID = 004000;
++
++    /** TODO document */
++    final int C_ISGID = 002000;
++
++    /** TODO document */
++    final int C_ISVTX = 001000;
++}
+diff --git a/src/main/java/org/apache/commons/compress/compressors/bzip2/BZip2CompressorOutputStream.java b/src/main/java/org/apache/commons/compress/compressors/bzip2/BZip2CompressorOutputStream.java
+index 9efdc25..5f4b96c 100644
+--- a/src/main/java/org/apache/commons/compress/compressors/bzip2/BZip2CompressorOutputStream.java
++++ b/src/main/java/org/apache/commons/compress/compressors/bzip2/BZip2CompressorOutputStream.java
+@@ -565,7 +565,7 @@
+ 
+         int v, t, i, j, gs, ge, totc, bt, bc, iter;
+         int nSelectors = 0, alphaSize, minLen, maxLen, selCtr;
+-        int nGroups, nBytes;
++        int nGroups; //, nBytes;
+ 
+         alphaSize = nInUse + 2;
+         for (t = 0; t < N_GROUPS; t++) {
+@@ -796,7 +796,7 @@
+                 }
+             }
+ 
+-            nBytes = bytesOut;
++            //nBytes = bytesOut;
+             for (i = 0; i < 16; i++) {
+                 if (inUse16[i]) {
+                     bsW(1, 1);
+@@ -820,7 +820,7 @@
+         }
+ 
+         /* Now the selectors. */
+-        nBytes = bytesOut;
++        //nBytes = bytesOut;
+         bsW (3, nGroups);
+         bsW (15, nSelectors);
+         for (i = 0; i < nSelectors; i++) {
+@@ -831,7 +831,7 @@
+         }
+ 
+         /* Now the coding tables. */
+-        nBytes = bytesOut;
++        //nBytes = bytesOut;
+ 
+         for (t = 0; t < nGroups; t++) {
+             int curr = len[t][0];
+@@ -850,7 +850,7 @@
+         }
+ 
+         /* And finally, the block data proper */
+-        nBytes = bytesOut;
++        //nBytes = bytesOut;
+         selCtr = 0;
+         gs = 0;
+         while (true) {
+diff --git a/src/main/resources/bla.jar b/src/main/resources/bla.jar
+deleted file mode 100644
+index ad3ed82..0000000
+--- a/src/main/resources/bla.jar
++++ /dev/null
+Binary files differ
+diff --git a/src/main/resources/bla.tar b/src/main/resources/bla.tar
+deleted file mode 100644
+index c7af537..0000000
+--- a/src/main/resources/bla.tar
++++ /dev/null
+Binary files differ
+diff --git a/src/main/resources/bla.tgz b/src/main/resources/bla.tgz
+deleted file mode 100644
+index d741f1e..0000000
+--- a/src/main/resources/bla.tgz
++++ /dev/null
+Binary files differ
+diff --git a/src/main/resources/test1.xml b/src/main/resources/test1.xml
+deleted file mode 100644
+index e611d7b..0000000
+--- a/src/main/resources/test1.xml
++++ /dev/null
+@@ -1,2 +0,0 @@
+-<?xml version="1.0"?>
+-<empty/>
+\ No newline at end of file
+diff --git a/src/main/resources/test2.xml b/src/main/resources/test2.xml
+deleted file mode 100644
+index 08e6c40..0000000
+--- a/src/main/resources/test2.xml
++++ /dev/null
+@@ -1,2 +0,0 @@
+-<?xml version="1.0"?>
+-<empty/>
+diff --git a/src/test/java/org/apache/commons/compress/DetectArchiverTestCase.java b/src/test/java/org/apache/commons/compress/DetectArchiverTestCase.java
+index b028c6f..e8b50c3 100644
+--- a/src/test/java/org/apache/commons/compress/DetectArchiverTestCase.java
++++ b/src/test/java/org/apache/commons/compress/DetectArchiverTestCase.java
+@@ -27,6 +27,7 @@
+ import org.apache.commons.compress.archivers.ArchiveInputStream;
+ import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+ import org.apache.commons.compress.archivers.ar.ArArchiveInputStream;
++import org.apache.commons.compress.archivers.cpio.CpioArchiveInputStream;
+ import org.apache.commons.compress.archivers.jar.JarArchiveInputStream;
+ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+ import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
+@@ -38,23 +39,33 @@
+ 		final ArchiveInputStream ar = factory.createArchiveInputStream(
+ 				new BufferedInputStream(new FileInputStream(
+ 						new File(getClass().getClassLoader().getResource("bla.ar").getFile())))); 
++		assertNotNull(ar);
+ 		assertTrue(ar instanceof ArArchiveInputStream);
+ 
+ 		final ArchiveInputStream tar = factory.createArchiveInputStream(
+ 				new BufferedInputStream(new FileInputStream(
+ 						new File(getClass().getClassLoader().getResource("bla.tar").getFile()))));
++		assertNotNull(tar);
+ 		assertTrue(tar instanceof TarArchiveInputStream);
+ 
+ 		final ArchiveInputStream zip = factory.createArchiveInputStream(
+ 				new BufferedInputStream(new FileInputStream(
+ 						new File(getClass().getClassLoader().getResource("bla.zip").getFile()))));
++		assertNotNull(zip);
+ 		assertTrue(zip instanceof ZipArchiveInputStream);
+ 
+ 		final ArchiveInputStream jar = factory.createArchiveInputStream(
+ 				new BufferedInputStream(new FileInputStream(
+ 						new File(getClass().getClassLoader().getResource("bla.jar").getFile()))));
++		assertNotNull(jar);
+ 		assertTrue(jar instanceof JarArchiveInputStream);
+ 
++		final ArchiveInputStream cpio = factory.createArchiveInputStream(
++				new BufferedInputStream(new FileInputStream(
++						new File(getClass().getClassLoader().getResource("bla.cpio").getFile()))));
++		assertNotNull(cpio);
++		assertTrue(cpio instanceof CpioArchiveInputStream);
++
+ //		final ArchiveInputStream tgz = factory.createArchiveInputStream(
+ //				new BufferedInputStream(new FileInputStream(
+ //						new File(getClass().getClassLoader().getResource("bla.tgz").getFile()))));
+diff --git a/src/test/java/org/apache/commons/compress/archivers/CpioTestCase.java b/src/test/java/org/apache/commons/compress/archivers/CpioTestCase.java
+new file mode 100644
+index 0000000..1f724e1
+--- /dev/null
++++ b/src/test/java/org/apache/commons/compress/archivers/CpioTestCase.java
+@@ -0,0 +1,85 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++package org.apache.commons.compress.archivers;
++
++import java.io.File;
++import java.io.FileInputStream;
++import java.io.FileOutputStream;
++import java.io.InputStream;
++import java.io.OutputStream;
++
++import org.apache.commons.compress.AbstractTestCase;
++import org.apache.commons.compress.archivers.cpio.CpioArchiveEntry;
++import org.apache.commons.compress.utils.IOUtils;
++
++public final class CpioTestCase extends AbstractTestCase {
++
++	public void testCpioArchiveCreation() throws Exception {
++		final File output = new File(dir, "bla.cpio");
++		
++		final File file1 = getFile("test1.xml");
++		final File file2 = getFile("test2.xml");
++		
++		final OutputStream out = new FileOutputStream(output);
++        final ArchiveOutputStream os = new ArchiveStreamFactory().createArchiveOutputStream("cpio", out);
++		os.putArchiveEntry(new CpioArchiveEntry("test1.xml", file1.length()));
++		IOUtils.copy(new FileInputStream(file1), os);
++		os.closeArchiveEntry();
++		
++		os.putArchiveEntry(new CpioArchiveEntry("test2.xml", file2.length()));
++		IOUtils.copy(new FileInputStream(file2), os);
++		os.closeArchiveEntry();
++		
++		os.close();
++	}
++
++	public void testCpioUnarchive() throws Exception {
++		final File output = new File(dir, "bla.cpio");
++		{
++			final File file1 = getFile("test1.xml");
++			final File file2 = getFile("test2.xml");
++			
++			final OutputStream out = new FileOutputStream(output);
++	        final ArchiveOutputStream os = new ArchiveStreamFactory().createArchiveOutputStream("cpio", out);
++			os.putArchiveEntry(new CpioArchiveEntry("test1.xml", file1.length()));
++			IOUtils.copy(new FileInputStream(file1), os);
++			os.closeArchiveEntry();
++			
++			os.putArchiveEntry(new CpioArchiveEntry("test2.xml", file2.length()));
++			IOUtils.copy(new FileInputStream(file2), os);
++			os.closeArchiveEntry();
++			os.close();
++		}
++		
++		// Unarchive Operation
++		final File input = output;
++		final InputStream is = new FileInputStream(input);
++		final ArchiveInputStream in = new ArchiveStreamFactory().createArchiveInputStream("cpio", is);
++		final CpioArchiveEntry entry = (CpioArchiveEntry)in.getNextEntry();
++		
++		File target = new File(dir, entry.getName());
++        final OutputStream out = new FileOutputStream(target);
++        
++        IOUtils.copy(in, out);
++    
++        out.close();
++        in.close();
++	}
++
++}
+diff --git a/src/test/resources/bla.cpio b/src/test/resources/bla.cpio
+new file mode 100644
+index 0000000..47da420
+--- /dev/null
++++ b/src/test/resources/bla.cpio
+Binary files differ

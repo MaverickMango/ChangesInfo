@@ -1,0 +1,272 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.jfree.data.junit.KeyedObjects2DTests::testRemoveColumnByKey,org.jfree.data.junit.KeyedObjects2DTests::testRemoveValue,org.jfree.data.junit.KeyedObjects2DTests::testGetValueByKey,org.jfree.data.junit.KeyedObjects2DTests::testRemoveColumnByIndex,org.jfree.data.junit.KeyedObjects2DTests::testSetObject,org.jfree.data.junit.KeyedObjects2DTests::testRemoveRowByKey",
+    "test.dir": "tests",
+    "clz.modified": "org.jfree.data.KeyedObjects2D",
+    "src.dir": "source"
+  },
+  "timeoutSecond": 100,
+  "proj": "Chart",
+  "id": "22",
+  "workingDir": "../bugs/Chart_22_tmp",
+  "bug_name": "Chart_22",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.jfree.data.junit.KeyedObjects2DTests",
+      "test_function": "testRemoveColumnByKey",
+      "assertion_line": "391",
+      "exception": "org.jfree.data.UnknownKeyException",
+      "message": "The key (C2) is not recognised."
+    },
+    {
+      "test_class": "org.jfree.data.junit.KeyedObjects2DTests",
+      "test_function": "testRemoveValue",
+      "assertion_line": "425",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c1\u003e but was:\u003c2\u003e"
+    },
+    {
+      "test_class": "org.jfree.data.junit.KeyedObjects2DTests",
+      "test_function": "testGetValueByKey",
+      "assertion_line": "211",
+      "exception": "org.jfree.data.UnknownKeyException",
+      "message": "The key (C2) is not recognised."
+    },
+    {
+      "test_class": "org.jfree.data.junit.KeyedObjects2DTests",
+      "test_function": "testRemoveColumnByIndex",
+      "assertion_line": "327",
+      "exception": "org.jfree.data.UnknownKeyException",
+      "message": "The key (C1) is not recognised."
+    },
+    {
+      "test_class": "org.jfree.data.junit.KeyedObjects2DTests",
+      "test_function": "testSetObject",
+      "assertion_line": "261",
+      "exception": "org.jfree.data.UnknownKeyException",
+      "message": "The key (C2) is not recognised."
+    },
+    {
+      "test_class": "org.jfree.data.junit.KeyedObjects2DTests",
+      "test_function": "testRemoveRowByKey",
+      "assertion_line": "366",
+      "exception": "java.lang.ArrayIndexOutOfBoundsException",
+      "message": "-1"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "source/org/jfree/data/KeyedObjects2D.java",
+        "source/org/jfree/data/KeyedObjects2D.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jfree.data.KeyedObjects2D:removeColumn:[Comparable columnKey]:void",
+            "org.jfree.data.KeyedObjects2D:removeRow:[Comparable rowKey]:void",
+            "org.jfree.data.KeyedObjects2D:getObject:[Comparable rowKey, Comparable columnKey]:Object",
+            "org.jfree.data.KeyedObjects2D:removeObject:[Comparable rowKey, Comparable columnKey]:void"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "org.jfree.data.KeyedObjects2D:getObject:[Comparable rowKey, Comparable columnKey]:Object",
+            "org.jfree.data.KeyedObjects2D:removeObject:[Comparable rowKey, Comparable columnKey]:void",
+            "org.jfree.data.KeyedObjects2D:equals:[Object obj]:boolean",
+            "org.jfree.data.KeyedObjects2D:removeColumn:[Comparable columnKey]:void"
+          ],
+          "num": 4
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "232",
+            "233",
+            "234",
+            "319",
+            "321",
+            "322",
+            "323",
+            "324",
+            "325",
+            "326",
+            "327",
+            "328",
+            "329",
+            "331",
+            "332",
+            "333",
+            "334",
+            "335",
+            "336",
+            "337",
+            "338",
+            "339",
+            "340",
+            "341",
+            "367",
+            "368",
+            "369",
+            "370",
+            "404",
+            "405",
+            "406",
+            "407"
+          ],
+          "num": 32
+        },
+        {
+          "qualified_names": [
+            "231",
+            "233",
+            "319",
+            "378",
+            "388"
+          ],
+          "num": 5
+        }
+      ],
+      "diff": "diff --git a/source/org/jfree/data/KeyedObjects2D.java b/source/org/jfree/data/KeyedObjects2D.java\nindex 7cc5ad6..d0e832f 100644\n--- a/source/org/jfree/data/KeyedObjects2D.java\n+++ b/source/org/jfree/data/KeyedObjects2D.java\n@@ -228,10 +228,9 @@\n             throw new UnknownKeyException(\"Column key (\" + columnKey \r\n                     + \") not recognised.\");\r\n         }\r\n+        if (row \u003e\u003d 0) {\r\n         KeyedObjects rowData \u003d (KeyedObjects) this.rows.get(row);\r\n-        int index \u003d rowData.getIndex(columnKey);\r\n-        if (index \u003e\u003d 0) {\r\n-            return rowData.getObject(index);\r\n+            return rowData.getObject(columnKey);\r\n         }\r\n         else {\r\n             return null;\r\n@@ -316,29 +315,8 @@\n         }\r\n         \r\n         // 2. check whether the column is now empty.\r\n-        allNull \u003d true;\r\n         \r\n-        for (int item \u003d 0, itemCount \u003d this.rows.size(); item \u003c itemCount; \r\n-             item++) {\r\n-            row \u003d (KeyedObjects) this.rows.get(item);\r\n-            int columnIndex \u003d row.getIndex(columnKey);\r\n-            if (columnIndex \u003e\u003d 0 \u0026\u0026 row.getObject(columnIndex) !\u003d null) {\r\n-                allNull \u003d false;\r\n-                break;\r\n-            }\r\n-        }\r\n         \r\n-        if (allNull) {\r\n-            for (int item \u003d 0, itemCount \u003d this.rows.size(); item \u003c itemCount; \r\n-                 item++) {\r\n-                row \u003d (KeyedObjects) this.rows.get(item);\r\n-                int columnIndex \u003d row.getIndex(columnKey);\r\n-                if (columnIndex \u003e\u003d 0) {\r\n-                    row.removeValue(columnIndex);\r\n-                }\r\n-            }\r\n-            this.columnKeys.remove(columnKey);\r\n-        }\r\n     }\r\n \r\n     /**\r\n@@ -364,10 +342,6 @@\n      */\r\n     public void removeRow(Comparable rowKey) {\r\n         int index \u003d getRowIndex(rowKey);\r\n-        if (index \u003c 0) {\r\n-            throw new UnknownKeyException(\"Row key (\" + rowKey \r\n-                    + \") not recognised.\");\r\n-        }\r\n         removeRow(index);\r\n     }\r\n \r\n@@ -401,10 +375,7 @@\n         Iterator iterator \u003d this.rows.iterator();\r\n         while (iterator.hasNext()) {\r\n             KeyedObjects rowData \u003d (KeyedObjects) iterator.next();\r\n-            int i \u003d rowData.getIndex(columnKey);\r\n-            if (i \u003e\u003d 0) {\r\n-                rowData.removeValue(i);\r\n-            }\r\n+                rowData.removeValue(columnKey);\r\n         }\r\n         this.columnKeys.remove(columnKey);\r\n     }\r\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [6942,7138]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [6946,6954]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ExpressionStatement [11654,11685]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [7009,7049]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [7063,7073]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [7059,7186]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [9975,9990]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ForStatement [10010,10371]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [10391,10818]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [11486,11623]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PrimitiveType: int [12678,12681]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: i [12682,12683]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [12682,12713]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [12678,12714]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [12728,12797]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.jfree.data.KeyedObjects2D:equals:[Object obj]:boolean"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.jfree.data.KeyedObjects2D:removeRow:[Comparable rowKey]:void"
+      ],
+      "num": 1
+    }
+  }
+}

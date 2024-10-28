@@ -1,0 +1,238 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.core.json.TestParserNonStandard::testAllowNaN",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.core.io.NumberInput,com.fasterxml.jackson.core.util.TextBuffer",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonCore",
+  "id": "1",
+  "workingDir": "../bugs/JacksonCore_1_tmp",
+  "bug_name": "JacksonCore_1",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.core.json.TestParserNonStandard",
+      "test_function": "testAllowNaN",
+      "assertion_line": "63",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected an exception with one of substrings ([can not be represented as BigDecimal]): got one with message \"null\""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/core/io/NumberInput.java",
+        "src/main/java/com/fasterxml/jackson/core/io/NumberInput.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.io.NumberInput:_badBigDecimal:[String str]:NumberFormatException",
+            "com.fasterxml.jackson.core.io.NumberInput:parseBigDecimal:[String numStr]:BigDecimal",
+            "com.fasterxml.jackson.core.io.NumberInput:parseBigDecimal:[char[] buffer, int offset, int len]:BigDecimal"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.io.NumberInput:parseBigDecimal:[String numStr]:BigDecimal"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "295",
+            "297",
+            "298",
+            "299",
+            "309",
+            "311",
+            "312",
+            "313",
+            "316",
+            "317",
+            "318"
+          ],
+          "num": 11
+        },
+        {
+          "qualified_names": [
+            "294",
+            "312"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/core/io/NumberInput.java b/src/main/java/com/fasterxml/jackson/core/io/NumberInput.java\nindex eb463b9..01c18d9 100644\n--- a/src/main/java/com/fasterxml/jackson/core/io/NumberInput.java\n+++ b/src/main/java/com/fasterxml/jackson/core/io/NumberInput.java\n@@ -292,11 +292,7 @@\n \n     public static BigDecimal parseBigDecimal(String numStr) throws NumberFormatException\n     {\n-        try {\n             return new BigDecimal(numStr);\n-        } catch (NumberFormatException e) {\n-            throw _badBigDecimal(numStr);\n-        }\n     }\n \n     public static BigDecimal parseBigDecimal(char[] buffer) throws NumberFormatException {\n@@ -306,14 +302,7 @@\n     public static BigDecimal parseBigDecimal(char[] buffer, int offset, int len)\n             throws NumberFormatException\n     {\n-        try {\n             return new BigDecimal(buffer, offset, len);\n-        } catch (NumberFormatException e) {\n-            throw _badBigDecimal(new String(buffer, offset, len));\n-        }\n     }\n \n-    private static NumberFormatException _badBigDecimal(String str) {\n-        return new NumberFormatException(\"Value \\\"\"+str+\"\\\" can not be represented as BigDecimal\");\n-    }\n }\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [10214,10268]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "CatchClause [10269,10354]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TryStatement [10210,10354]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [10662,10729]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "CatchClause [10730,10840]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TryStatement [10658,10840]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [10852,11023]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java",
+        "src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.util.TextBuffer:contentsAsDecimal:[]:BigDecimal"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.util.TextBuffer:contentsAsDecimal:[]:BigDecimal"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "390",
+            "394"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "390",
+            "394"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java b/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java\nindex bab80e0..a05410d 100644\n--- a/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java\n+++ b/src/main/java/com/fasterxml/jackson/core/util/TextBuffer.java\n@@ -387,11 +387,11 @@\n             return NumberInput.parseBigDecimal(_resultArray);\n         }\n         // Or a shared buffer?\n-        if ((_inputStart \u003e\u003d 0) \u0026\u0026 (_inputBuffer !\u003d null)) {\n+        if (_inputStart \u003e\u003d 0) {\n             return NumberInput.parseBigDecimal(_inputBuffer, _inputStart, _inputLen);\n         }\n         // Or if not, just a single buffer (the usual case)\n-        if ((_segmentSize \u003d\u003d 0) \u0026\u0026 (_currentSegment !\u003d null)) {\n+        if (_segmentSize \u003d\u003d 0) {\n             return NumberInput.parseBigDecimal(_currentSegment, 0, _currentSize);\n         }\n         // If not, let\u0027s just get it aggregated...\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ParenthesizedExpression [11940,11958]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [11959,11961]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ParenthesizedExpression [11962,11984]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [11940,11984]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ParenthesizedExpression [12156,12175]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [12176,12178]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ParenthesizedExpression [12179,12204]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [12156,12204]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.core.io.NumberInput:_badBigDecimal:[String str]:NumberFormatException",
+        "com.fasterxml.jackson.core.io.NumberInput:parseBigDecimal:[char[] buffer, int offset, int len]:BigDecimal"
+      ],
+      "num": 2
+    }
+  }
+}

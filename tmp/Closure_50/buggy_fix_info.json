@@ -1,0 +1,125 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.PeepholeReplaceKnownMethodsTest::testStringJoinAdd,com.google.javascript.jscomp.PeepholeReplaceKnownMethodsTest::testNoStringJoin",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.PeepholeReplaceKnownMethods",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "50",
+  "workingDir": "../bugs/Closure_50_tmp",
+  "bug_name": "Closure_50",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.PeepholeReplaceKnownMethodsTest",
+      "test_function": "testStringJoinAdd",
+      "assertion_line": "87",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: x\u003d[\"a\",foo,\"b,c\"].join()\nResult: x\u003d[\"a\",foo,\"b,c\"].join(\",\")"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.PeepholeReplaceKnownMethodsTest",
+      "test_function": "testNoStringJoin",
+      "assertion_line": "276",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: x\u003d[].join(\",\",2)\nResult: x\u003d\"\""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/PeepholeReplaceKnownMethods.java",
+        "src/com/google/javascript/jscomp/PeepholeReplaceKnownMethods.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.PeepholeReplaceKnownMethods:tryFoldArrayJoin:[Node n]:Node"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.PeepholeReplaceKnownMethods:tryFoldArrayJoin:[Node n]:Node"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "376",
+            "389",
+            "390",
+            "392",
+            "393",
+            "394"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "376",
+            "388"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/PeepholeReplaceKnownMethods.java b/src/com/google/javascript/jscomp/PeepholeReplaceKnownMethods.java\nindex afaf85a..ffe47d3 100644\n--- a/src/com/google/javascript/jscomp/PeepholeReplaceKnownMethods.java\n+++ b/src/com/google/javascript/jscomp/PeepholeReplaceKnownMethods.java\n@@ -373,7 +373,7 @@\n \n     Node right \u003d callTarget.getNext();\n     if (right !\u003d null) {\n-      if (right.getNext() !\u003d null || !NodeUtil.isImmutableValue(right)) {\n+      if (!NodeUtil.isImmutableValue(right)) {\n         return n;\n       }\n     }\n@@ -386,12 +386,7 @@\n       return n;\n     }\n \n-    if (right !\u003d null \u0026\u0026 right.getType() \u003d\u003d Token.STRING\n-        \u0026\u0026 \",\".equals(right.getString())) {\n       // \",\" is the default, it doesn\u0027t need to be explicit\n-      n.removeChild(right);\n-      reportCodeChange();\n-    }\n \n     String joinString \u003d (right \u003d\u003d null) ? \",\" : NodeUtil.getStringValue(right);\n     List\u003cNode\u003e arrayFoldedChildren \u003d Lists.newLinkedList();\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [11821,11844]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: || [11845,11847]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [11821,11881]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [12143,12359]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

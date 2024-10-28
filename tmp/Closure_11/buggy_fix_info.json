@@ -1,0 +1,115 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.TypeCheckTest::testGetprop4,com.google.javascript.jscomp.TypeCheckTest::testIssue810",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.TypeCheck",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "11",
+  "workingDir": "../bugs/Closure_11_tmp",
+  "bug_name": "Closure_11",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testGetprop4",
+      "assertion_line": "3927",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected a warning"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testIssue810",
+      "assertion_line": "6186",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected a warning"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/TypeCheck.java",
+        "src/com/google/javascript/jscomp/TypeCheck.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypeCheck:visitGetProp:[NodeTraversal t, Node n, Node parent]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypeCheck:visitGetProp:[NodeTraversal t, Node n, Node parent]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1313"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "1314",
+            "1315"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/TypeCheck.java b/src/com/google/javascript/jscomp/TypeCheck.java\nindex e428dfa..ae8a320 100644\n--- a/src/com/google/javascript/jscomp/TypeCheck.java\n+++ b/src/com/google/javascript/jscomp/TypeCheck.java\n@@ -1311,6 +1311,8 @@\n \n     if (childType.isDict()) {\n       report(t, property, TypeValidator.ILLEGAL_PROPERTY_ACCESS, \"\u0027.\u0027\", \"dict\");\n+    } else if (n.getJSType() !\u003d null \u0026\u0026 parent.isAssign()) {\n+      return;\n     } else if (validator.expectNotNullOrUndefined(t, n, childType,\n         \"No properties on this expression\", getNativeType(OBJECT_TYPE))) {\n       checkPropertyAccess(childType, property.getString(), t, n);\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [45291,45568]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [45295,45337]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Block [45339,45360]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

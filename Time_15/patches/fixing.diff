@@ -1,0 +1,211 @@
+diff --git a/RELEASE-NOTES.txt b/RELEASE-NOTES.txt
+index 790834f..51e2697 100644
+--- a/RELEASE-NOTES.txt
++++ b/RELEASE-NOTES.txt
+@@ -50,6 +50,9 @@
+   parseInto() to lose the year. This fix reverts behaviour to v1.x so that parseInto()
+   will use the supplied year, not the default year of the formatter.
+ 
++- FieldUtils.safeMultiply(long,int) [3520651]
++  Fix implementation to throw exception for (Long.MIN_VALUE, -1)
++
+ - Javadoc fix to BaseChronology [3513326]
+ 
+ 
+diff --git a/src/main/java/org/joda/time/field/FieldUtils.java b/src/main/java/org/joda/time/field/FieldUtils.java
+index 55ed991..1e045b2 100644
+--- a/src/main/java/org/joda/time/field/FieldUtils.java
++++ b/src/main/java/org/joda/time/field/FieldUtils.java
+@@ -118,8 +118,7 @@
+     public static int safeMultiply(int val1, int val2) {
+         long total = (long) val1 * (long) val2;
+         if (total < Integer.MIN_VALUE || total > Integer.MAX_VALUE) {
+-            throw new ArithmeticException
+-                ("The calculation caused an overflow: " + val1 + " * " + val2);
++          throw new ArithmeticException("Multiplication overflows an int: " + val1 + " * " + val2);
+         }
+         return (int) total;
+     }
+@@ -128,24 +127,26 @@
+      * Multiply two values throwing an exception if overflow occurs.
+      * 
+      * @param val1  the first value
+-     * @param scalar  the second value
++     * @param val2  the second value
+      * @return the new total
+      * @throws ArithmeticException if the value is too big or too small
+      * @since 1.2
+      */
+-    public static long safeMultiply(long val1, int scalar) {
+-        switch (scalar) {
+-        case -1:
+-            return -val1;
+-        case 0:
+-            return 0L;
+-        case 1:
+-            return val1;
++    public static long safeMultiply(long val1, int val2) {
++        switch (val2) {
++            case -1:
++                if (val1 == Long.MIN_VALUE) {
++                    throw new ArithmeticException("Multiplication overflows a long: " + val1 + " * " + val2);
++                }
++                return -val1;
++            case 0:
++                return 0L;
++            case 1:
++                return val1;
+         }
+-        long total = val1 * scalar;
+-        if (total / scalar != val1) {
+-            throw new ArithmeticException
+-                ("The calculation caused an overflow: " + val1 + " * " + scalar);
++        long total = val1 * val2;
++        if (total / val2 != val1) {
++          throw new ArithmeticException("Multiplication overflows a long: " + val1 + " * " + val2);
+         }
+         return total;
+     }
+diff --git a/src/test/java/org/joda/time/field/TestFieldUtils.java b/src/test/java/org/joda/time/field/TestFieldUtils.java
+index 2933d41..e60d192 100644
+--- a/src/test/java/org/joda/time/field/TestFieldUtils.java
++++ b/src/test/java/org/joda/time/field/TestFieldUtils.java
+@@ -191,50 +191,94 @@
+ 
+     //-----------------------------------------------------------------------
+     public void testSafeMultiplyLongLong() {
+-      assertEquals(0L, FieldUtils.safeMultiply(0L, 0L));
++        assertEquals(0L, FieldUtils.safeMultiply(0L, 0L));
++        
++        assertEquals(1L, FieldUtils.safeMultiply(1L, 1L));
++        assertEquals(3L, FieldUtils.safeMultiply(1L, 3L));
++        assertEquals(3L, FieldUtils.safeMultiply(3L, 1L));
++        
++        assertEquals(6L, FieldUtils.safeMultiply(2L, 3L));
++        assertEquals(-6L, FieldUtils.safeMultiply(2L, -3L));
++        assertEquals(-6L, FieldUtils.safeMultiply(-2L, 3L));
++        assertEquals(6L, FieldUtils.safeMultiply(-2L, -3L));
++        
++        assertEquals(Long.MAX_VALUE, FieldUtils.safeMultiply(Long.MAX_VALUE, 1L));
++        assertEquals(Long.MIN_VALUE, FieldUtils.safeMultiply(Long.MIN_VALUE, 1L));
++        assertEquals(-Long.MAX_VALUE, FieldUtils.safeMultiply(Long.MAX_VALUE, -1L));
++        
++        try {
++            FieldUtils.safeMultiply(Long.MIN_VALUE, -1L);
++            fail();
++        } catch (ArithmeticException e) {
++        }
++        
++        try {
++            FieldUtils.safeMultiply(-1L, Long.MIN_VALUE);
++            fail();
++        } catch (ArithmeticException e) {
++        }
+       
+-      assertEquals(1L, FieldUtils.safeMultiply(1L, 1L));
+-      assertEquals(3L, FieldUtils.safeMultiply(1L, 3L));
+-      assertEquals(3L, FieldUtils.safeMultiply(3L, 1L));
+-      
+-      assertEquals(6L, FieldUtils.safeMultiply(2L, 3L));
+-      assertEquals(-6L, FieldUtils.safeMultiply(2L, -3L));
+-      assertEquals(-6L, FieldUtils.safeMultiply(-2L, 3L));
+-      assertEquals(6L, FieldUtils.safeMultiply(-2L, -3L));
+-      
+-      assertEquals(Long.MAX_VALUE, FieldUtils.safeMultiply(Long.MAX_VALUE, 1L));
+-      assertEquals(Long.MIN_VALUE, FieldUtils.safeMultiply(Long.MIN_VALUE, 1L));
+-      assertEquals(-Long.MAX_VALUE, FieldUtils.safeMultiply(Long.MAX_VALUE, -1L));
+-      
+-      try {
+-          FieldUtils.safeMultiply(Long.MIN_VALUE, -1L);
+-          fail();
+-      } catch (ArithmeticException e) {
+-      }
+-      
+-      try {
+-          FieldUtils.safeMultiply(-1L, Long.MIN_VALUE);
+-          fail();
+-      } catch (ArithmeticException e) {
+-      }
+-    
+-      try {
+-          FieldUtils.safeMultiply(Long.MIN_VALUE, 100L);
+-          fail();
+-      } catch (ArithmeticException e) {
+-      }
+-      
+-      try {
+-          FieldUtils.safeMultiply(Long.MIN_VALUE, Long.MAX_VALUE);
+-          fail();
+-      } catch (ArithmeticException e) {
+-      }
+-      
+-      try {
+-          FieldUtils.safeMultiply(Long.MAX_VALUE, Long.MIN_VALUE);
+-          fail();
+-      } catch (ArithmeticException e) {
+-      }
+-  }
++        try {
++            FieldUtils.safeMultiply(Long.MIN_VALUE, 100L);
++            fail();
++        } catch (ArithmeticException e) {
++        }
++        
++        try {
++            FieldUtils.safeMultiply(Long.MIN_VALUE, Long.MAX_VALUE);
++            fail();
++        } catch (ArithmeticException e) {
++        }
++        
++        try {
++            FieldUtils.safeMultiply(Long.MAX_VALUE, Long.MIN_VALUE);
++            fail();
++        } catch (ArithmeticException e) {
++        }
++    }
++
++    //-----------------------------------------------------------------------
++    public void testSafeMultiplyLongInt() {
++        assertEquals(0L, FieldUtils.safeMultiply(0L, 0));
++        
++        assertEquals(1L, FieldUtils.safeMultiply(1L, 1));
++        assertEquals(3L, FieldUtils.safeMultiply(1L, 3));
++        assertEquals(3L, FieldUtils.safeMultiply(3L, 1));
++        
++        assertEquals(6L, FieldUtils.safeMultiply(2L, 3));
++        assertEquals(-6L, FieldUtils.safeMultiply(2L, -3));
++        assertEquals(-6L, FieldUtils.safeMultiply(-2L, 3));
++        assertEquals(6L, FieldUtils.safeMultiply(-2L, -3));
++        
++        assertEquals(-1L * Integer.MIN_VALUE, FieldUtils.safeMultiply(-1L, Integer.MIN_VALUE));
++        
++        assertEquals(Long.MAX_VALUE, FieldUtils.safeMultiply(Long.MAX_VALUE, 1));
++        assertEquals(Long.MIN_VALUE, FieldUtils.safeMultiply(Long.MIN_VALUE, 1));
++        assertEquals(-Long.MAX_VALUE, FieldUtils.safeMultiply(Long.MAX_VALUE, -1));
++        
++        try {
++            FieldUtils.safeMultiply(Long.MIN_VALUE, -1);
++            fail();
++        } catch (ArithmeticException e) {
++        }
++        
++        try {
++            FieldUtils.safeMultiply(Long.MIN_VALUE, 100);
++            fail();
++        } catch (ArithmeticException e) {
++        }
++        
++        try {
++            FieldUtils.safeMultiply(Long.MIN_VALUE, Integer.MAX_VALUE);
++            fail();
++        } catch (ArithmeticException e) {
++        }
++        
++        try {
++            FieldUtils.safeMultiply(Long.MAX_VALUE, Integer.MIN_VALUE);
++            fail();
++        } catch (ArithmeticException e) {
++        }
++    }
+ }
+ 

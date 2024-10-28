@@ -1,0 +1,195 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.jsoup.select.SelectorTest::notAll,org.jsoup.select.SelectorTest::testPseudoHas,org.jsoup.select.SelectorTest::notClass,org.jsoup.select.SelectorTest::notParas",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.jsoup.select.Selector",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Jsoup",
+  "id": "11",
+  "workingDir": "../bugs/Jsoup_11_tmp",
+  "bug_name": "Jsoup_11",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.jsoup.select.SelectorTest",
+      "test_function": "notAll",
+      "assertion_line": "559",
+      "exception": "org.jsoup.select.Selector$SelectorParseException",
+      "message": "Could not parse query \u0027:not(p)\u0027: unexpected token at \u0027:not(p)\u0027"
+    },
+    {
+      "test_class": "org.jsoup.select.SelectorTest",
+      "test_function": "testPseudoHas",
+      "assertion_line": "424",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c3\u003e but was:\u003c0\u003e"
+    },
+    {
+      "test_class": "org.jsoup.select.SelectorTest",
+      "test_function": "notClass",
+      "assertion_line": "568",
+      "exception": "org.jsoup.select.Selector$SelectorParseException",
+      "message": "Could not parse query \u0027div:not(.left)\u0027: unexpected token at \u0027:not(.left)\u0027"
+    },
+    {
+      "test_class": "org.jsoup.select.SelectorTest",
+      "test_function": "notParas",
+      "assertion_line": "545",
+      "exception": "org.jsoup.select.Selector$SelectorParseException",
+      "message": "Could not parse query \u0027p:not([id\u003d1])\u0027: unexpected token at \u0027:not([id\u003d1])\u0027"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/select/Selector.java",
+        "src/main/java/org/jsoup/select/Selector.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.select.Selector:filterOut:[Collection\u003cElement\u003e elements, Collection\u003cElement\u003e outs]:Elements",
+            "org.jsoup.select.Selector:select:[]:Elements",
+            "org.jsoup.select.Selector:findElements:[]:Elements",
+            "org.jsoup.select.Selector:not:[]:Elements"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "org.jsoup.select.Selector:findElements:[]:Elements",
+            "org.jsoup.select.Selector:select:[]:Elements",
+            "org.jsoup.select.Selector:filterForChildren:[Collection\u003cElement\u003e parents, Collection\u003cElement\u003e candidates]:Elements"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "110",
+            "111",
+            "183",
+            "184",
+            "309",
+            "310",
+            "311",
+            "312",
+            "314",
+            "315",
+            "409",
+            "410",
+            "411",
+            "412",
+            "413",
+            "414",
+            "415",
+            "416",
+            "417",
+            "418",
+            "419",
+            "420",
+            "421",
+            "422",
+            "423"
+          ],
+          "num": 25
+        },
+        {
+          "qualified_names": [
+            "109",
+            "184",
+            "312",
+            "418"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/select/Selector.java b/src/main/java/org/jsoup/select/Selector.java\nindex e370de8..13341ce 100644\n--- a/src/main/java/org/jsoup/select/Selector.java\n+++ b/src/main/java/org/jsoup/select/Selector.java\n@@ -107,8 +107,6 @@\n         if (tq.matchesAny(combinators)) { // if starts with a combinator, use root as elements\n             elements.add(root);\n             combinator(tq.consume().toString());\n-        } else if (tq.matches(\":has(\")) {\n-            elements.addAll(root.getAllElements());\n         } else {\n             addElements(findElements()); // chomp first element matcher off queue \n         }            \n@@ -180,8 +178,6 @@\n             return matches(false);\n         } else if (tq.matches(\":matchesOwn(\")) {\n             return matches(true);\n-        } else if (tq.matches(\":not(\")) {\n-            return not();\n         } else { // unhandled\n             throw new SelectorParseException(\"Could not parse query \u0027%s\u0027: unexpected token at \u0027%s\u0027\", query, tq.remainder());\n         }\n@@ -306,13 +302,7 @@\n     }\n \n     // :not(selector)\n-    private Elements not() {\n-        tq.consume(\":not\");\n-        String subQuery \u003d tq.chompBalanced(\u0027(\u0027, \u0027)\u0027);\n-        Validate.notEmpty(subQuery, \":not(selector) subselect must not be empty\");\n \n-        return filterOut(root.getAllElements(), select(subQuery, root));\n-    }\n \n     // direct child descendants\n     private static Elements filterForChildren(Collection\u003cElement\u003e parents, Collection\u003cElement\u003e candidates) {\n@@ -406,21 +396,6 @@\n     }\n \n     // exclude set. package open so that Elements can implement .not() selector.\n-    static Elements filterOut(Collection\u003cElement\u003e elements, Collection\u003cElement\u003e outs) {\n-        Elements output \u003d new Elements();\n-        for (Element el: elements) {\n-            boolean found \u003d false;\n-            for (Element out: outs) {\n-                if (el.equals(out)) {\n-                    found \u003d true;\n-                    break;\n-                }\n-            }\n-            if (!found)\n-                output.add(el);\n-        }\n-        return output;\n-    }\n \n     public static class SelectorParseException extends IllegalStateException {\n         public SelectorParseException(String msg, Object... params) {\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [7675,7694]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [7696,7759]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [7671,7859]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [10602,10621]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [10623,10660]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [10598,10815]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [15193,15462]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [18891,19352]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.jsoup.select.Selector:filterForChildren:[Collection\u003cElement\u003e parents, Collection\u003cElement\u003e candidates]:Elements"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.jsoup.select.Selector:filterOut:[Collection\u003cElement\u003e elements, Collection\u003cElement\u003e outs]:Elements",
+        "org.jsoup.select.Selector:not:[]:Elements"
+      ],
+      "num": 2
+    }
+  }
+}

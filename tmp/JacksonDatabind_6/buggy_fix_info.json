@@ -1,0 +1,338 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.deser.TestDateDeserialization::testISO8601MissingSeconds,com.fasterxml.jackson.databind.deser.TestDateDeserialization::testISO8601PartialMilliseconds",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.util.StdDateFormat",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "6",
+  "workingDir": "../bugs/JacksonDatabind_6_tmp",
+  "bug_name": "JacksonDatabind_6",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.deser.TestDateDeserialization",
+      "test_function": "testISO8601MissingSeconds",
+      "assertion_line": "193",
+      "exception": "com.fasterxml.jackson.databind.exc.InvalidFormatException",
+      "message": "Can not construct instance of java.util.Date from String value \u00271997-07-16T19:20+01:00\u0027: not a valid representation (error: Failed to parse Date value \u00271997-07-16T19:20+01:00\u0027: Can not parse date \"1997-07-16T19:20+01:00\": not compatible with any of standard forms (\"yyyy-MM-dd\u0027T\u0027HH:mm:ss.SSSZ\", \"yyyy-MM-dd\u0027T\u0027HH:mm:ss.SSS\u0027Z\u0027\", \"EEE, dd MMM yyyy HH:mm:ss zzz\", \"yyyy-MM-dd\"))"
+    },
+    {
+      "test_class": "com.fasterxml.jackson.databind.deser.TestDateDeserialization",
+      "test_function": "testISO8601PartialMilliseconds",
+      "assertion_line": "156",
+      "exception": "com.fasterxml.jackson.databind.exc.InvalidFormatException",
+      "message": "Can not construct instance of java.util.Date from String value \u00272014-10-03T18:00:00.6-05:00\u0027: not a valid representation (error: Failed to parse Date value \u00272014-10-03T18:00:00.6-05:00\u0027: Can not parse date \"2014-10-03T18:00:00.6-05:00\": not compatible with any of standard forms (\"yyyy-MM-dd\u0027T\u0027HH:mm:ss.SSSZ\", \"yyyy-MM-dd\u0027T\u0027HH:mm:ss.SSS\u0027Z\u0027\", \"EEE, dd MMM yyyy HH:mm:ss zzz\", \"yyyy-MM-dd\"))"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/util/StdDateFormat.java",
+        "src/main/java/com/fasterxml/jackson/databind/util/StdDateFormat.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.util.StdDateFormat:parseAsISO8601:[String dateStr, ParsePosition pos]:Date"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.util.StdDateFormat:parseAsISO8601:[String dateStr, ParsePosition pos]:Date"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "406",
+            "407",
+            "408",
+            "410",
+            "411",
+            "412",
+            "413",
+            "414",
+            "415",
+            "416",
+            "417",
+            "418",
+            "419",
+            "420",
+            "421",
+            "422",
+            "423",
+            "424",
+            "425",
+            "437",
+            "438",
+            "439",
+            "440",
+            "441",
+            "442",
+            "443",
+            "445"
+          ],
+          "num": 27
+        },
+        {
+          "qualified_names": [
+            "406",
+            "407",
+            "409",
+            "421"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/util/StdDateFormat.java b/src/main/java/com/fasterxml/jackson/databind/util/StdDateFormat.java\nindex 6c9d6b3..e04380c 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/util/StdDateFormat.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/util/StdDateFormat.java\n@@ -403,26 +403,10 @@\n                 // Milliseconds partial or missing; and even seconds are optional\n                 len \u003d dateStr.length();\n                 // remove \u0027T\u0027, \u0027+\u0027/\u0027-\u0027 and 4-digit timezone-offset\n-                int timeLen \u003d len - dateStr.lastIndexOf(\u0027T\u0027) - 6;\n-                if (timeLen \u003c 12) { // 8 for hh:mm:ss, 4 for .sss\n-                    int offset \u003d len - 5; // insertion offset, before tz-offset\n+                c \u003d dateStr.charAt(len-9);\n+                if (Character.isDigit(c)) {\n                     StringBuilder sb \u003d new StringBuilder(dateStr);\n-                    switch (timeLen) {\n-                    case 11:\n-                        sb.insert(offset, \u00270\u0027); break;\n-                    case 10:\n-                        sb.insert(offset, \"00\"); break;\n-                    case 9: // is this legal? (just second fraction marker)\n-                        sb.insert(offset, \"000\"); break;\n-                    case 8:\n-                        sb.insert(offset, \".000\"); break;\n-                    case 7: // not legal to have single-digit second\n-                        break;\n-                    case 6: // probably not legal, but let\u0027s allow\n-                        sb.insert(offset, \"00.000\");\n-                    case 5: // is legal to omit seconds\n-                        sb.insert(offset, \":00.000\");\n-                    }\n+                    sb.insert(len-5, \".000\");\n                     dateStr \u003d sb.toString();\n                 }\n                 df \u003d _formatISO8601;\n@@ -434,15 +418,8 @@\n                 StringBuilder sb \u003d new StringBuilder(dateStr);\n                 // And possible also millisecond part if missing\n                 int timeLen \u003d len - dateStr.lastIndexOf(\u0027T\u0027) - 1;\n-                if (timeLen \u003c 12) { // missing, or partial\n-                    switch (timeLen) {\n-                    case 11: sb.append(\u00270\u0027);\n-                    case 10: sb.append(\u00270\u0027);\n-                    case 9: sb.append(\u00270\u0027);\n-                        break;\n-                    default:\n+                if (timeLen \u003c\u003d 8) {\n                         sb.append(\".000\");\n-                    }\n                 }\n                 sb.append(\u0027Z\u0027);\n                 dateStr \u003d sb.toString();\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [13482,13508]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [13525,13728]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [13529,13549]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [13650,13655]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [13618,13639]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: offset [14148,14154]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: timeLen [13773,13780]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [13804,13812]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [13837,13860]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "BreakStatement [13861,13867]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [13888,13896]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [13921,13945]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "BreakStatement [13946,13952]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [13973,13980]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [14053,14078]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "BreakStatement [14079,14085]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [14106,14113]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "BreakStatement [14165,14171]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [14192,14199]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "BreakStatement [14265,14271]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [14292,14299]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [14363,14391]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [14412,14419]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [14472,14501]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SwitchStatement [13765,14523]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [13482,13531]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [13552,13564]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [13548,14586]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: timeLen [15189,15196]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [15220,15228]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [15229,15244]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [15265,15273]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [15274,15289]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [15310,15317]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [15318,15333]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "BreakStatement [15358,15364]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SwitchCase [15385,15393]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SwitchStatement [15181,15458]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

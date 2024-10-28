@@ -1,0 +1,145 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.jxpath.ri.model.dom.DOMModelTest::testAxisFollowing,org.apache.commons.jxpath.ri.model.dom.DOMModelTest::testAxisPreceding,org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest::testAxisFollowing,org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest::testAxisPreceding",
+    "test.dir": "src/test",
+    "clz.modified": "org.apache.commons.jxpath.ri.model.dom.DOMNodePointer,org.apache.commons.jxpath.ri.model.jdom.JDOMNodePointer",
+    "src.dir": "src/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JxPath",
+  "id": "16",
+  "workingDir": "../bugs/JxPath_16_tmp",
+  "bug_name": "JxPath_16",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.jxpath.ri.model.dom.DOMModelTest",
+      "test_function": "testAxisFollowing",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "Evaluating pointer \u003c//location[2]/following::node()[2]\u003e expected:\u003c...vendor[1]/product[1][]\u003e but was:\u003c...vendor[1]/product[1][/product:name[1]]\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/jxpath/ri/model/dom/DOMNodePointer.java",
+        "src/java/org/apache/commons/jxpath/ri/model/dom/DOMNodePointer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.jxpath.ri.model.dom.DOMNodePointer:testNode:[Node node, NodeTest test]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.jxpath.ri.model.dom.DOMNodePointer:testNode:[Node node, NodeTest test]:boolean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "147"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "147",
+            "148"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/jxpath/ri/model/dom/DOMNodePointer.java b/src/java/org/apache/commons/jxpath/ri/model/dom/DOMNodePointer.java\nindex 55c2b98..fcc1f18 100644\n--- a/src/java/org/apache/commons/jxpath/ri/model/dom/DOMNodePointer.java\n+++ b/src/java/org/apache/commons/jxpath/ri/model/dom/DOMNodePointer.java\n@@ -144,7 +144,8 @@\n             int nodeType \u003d node.getNodeType();\n             switch (((NodeTypeTest) test).getNodeType()) {\n                 case Compiler.NODE_TYPE_NODE :\n-                    return true;\n+                    return nodeType \u003d\u003d Node.ELEMENT_NODE\n+                            || nodeType \u003d\u003d Node.DOCUMENT_NODE;\n                 case Compiler.NODE_TYPE_TEXT :\n                     return nodeType \u003d\u003d Node.CDATA_SECTION_NODE\n                         || nodeType \u003d\u003d Node.TEXT_NODE;\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [4965,5064]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [4965,4977]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/jxpath/ri/model/jdom/JDOMNodePointer.java",
+        "src/java/org/apache/commons/jxpath/ri/model/jdom/JDOMNodePointer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.jxpath.ri.model.jdom.JDOMNodePointer:testNode:[NodePointer pointer, Object node, NodeTest test]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.jxpath.ri.model.jdom.JDOMNodePointer:testNode:[NodePointer pointer, Object node, NodeTest test]:boolean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "391"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "391"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/jxpath/ri/model/jdom/JDOMNodePointer.java b/src/java/org/apache/commons/jxpath/ri/model/jdom/JDOMNodePointer.java\nindex 4ff42c7..601db7c 100644\n--- a/src/java/org/apache/commons/jxpath/ri/model/jdom/JDOMNodePointer.java\n+++ b/src/java/org/apache/commons/jxpath/ri/model/jdom/JDOMNodePointer.java\n@@ -388,7 +388,7 @@\n         if (test instanceof NodeTypeTest) {\n             switch (((NodeTypeTest) test).getNodeType()) {\n                 case Compiler.NODE_TYPE_NODE :\n-                    return true;\n+                    return (node instanceof Element) || (node instanceof Document);\n                 case Compiler.NODE_TYPE_TEXT :\n                     return (node instanceof Text) || (node instanceof CDATA);\n                 case Compiler.NODE_TYPE_COMMENT :\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [12988,13051]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [12988,13000]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

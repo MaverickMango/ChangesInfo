@@ -1,0 +1,198 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "/home/liumengjiao/Desktop/CI/Benchmark/data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.CodePrinterTest::testIssue942",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.CodeGenerator",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "128",
+  "workingDir": "../bugs/Closure_128_buggy",
+  "buggyCommit": "79a8906570f44e5f519282bd32595985ed089aed",
+  "inducingCommit": "5909c3db59b16886917456ab950ef9661a7fe6b1",
+  "originalCommit": "d79072969c2f31860ea1f55e392a146c49bc2d0f",
+  "bug_name": "Closure_128",
+  "derive": "defects4j",
+  "original_fixing_commit": "d82fb38b0121bf690cea58df293185c7e91ded9c",
+  "buildFiles_changed": false,
+  "regression": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CodeGenerator.java",
+        "src/com/google/javascript/jscomp/CodeGenerator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CodeGenerator:isSimpleNumber:[String s]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CodeGenerator:isSimpleNumber:[String s]:boolean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "745"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "745"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/CodeGenerator.java b/src/com/google/javascript/jscomp/CodeGenerator.java\nindex ac6299d..535148c 100644\n--- a/src/com/google/javascript/jscomp/CodeGenerator.java\n+++ b/src/com/google/javascript/jscomp/CodeGenerator.java\n@@ -742,7 +742,7 @@\n         return false;\n       }\n     }\n-    return len \u003e 0;\n+    return len \u003e 0 \u0026\u0026 s.charAt(0) !\u003d \u00270\u0027;\n   }\n \n   static double getSimpleNumber(String s) {\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [22258,22287]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [22266,22268]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [22269,22287]"
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.CodePrinterTest",
+      "test_function": "testIssue942",
+      "assertion_line": "1423",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003cvar x\u003d{[0]:1}\u003e but was:\u003cvar x\u003d{[\"0\"]:1}\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CodeGenerator.java",
+        "src/com/google/javascript/jscomp/CodeGenerator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CodeGenerator:isSimpleNumber:[String s]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CodeGenerator:isSimpleNumber:[String s]:boolean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "791"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "785",
+            "786",
+            "787",
+            "794"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/CodeGenerator.java b/src/com/google/javascript/jscomp/CodeGenerator.java\nindex 2270c17..1dc33b7 100644\n--- a/src/com/google/javascript/jscomp/CodeGenerator.java\n+++ b/src/com/google/javascript/jscomp/CodeGenerator.java\n@@ -782,13 +782,16 @@\n \n   static boolean isSimpleNumber(String s) {\n     int len \u003d s.length();\n+    if (len \u003d\u003d 0) {\n+      return false;\n+    }\n     for (int index \u003d 0; index \u003c len; index++) {\n       char c \u003d s.charAt(index);\n       if (c \u003c \u00270\u0027 || c \u003e \u00279\u0027) {\n         return false;\n       }\n     }\n-    return len \u003e 0 \u0026\u0026 s.charAt(0) !\u003d \u00270\u0027;\n+    return len \u003d\u003d 1 || s.charAt(0) !\u003d \u00270\u0027;\n   }\n \n   static double getSimpleNumber(String s) {\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [23324,23365]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "patch_changed_mths": {
+    "qualified_names": [],
+    "num": 0
+  }
+}

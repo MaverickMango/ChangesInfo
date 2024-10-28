@@ -1,0 +1,158 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.TypeCheckTest::testBackwardsTypedefUse8,com.google.javascript.jscomp.TypeCheckTest::testBackwardsTypedefUse9",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.FunctionTypeBuilder,com.google.javascript.rhino.jstype.FunctionType",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "90",
+  "workingDir": "../bugs/Closure_90_tmp",
+  "bug_name": "Closure_90",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testBackwardsTypedefUse8",
+      "assertion_line": "2670",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "unexpected warnings(s):"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testBackwardsTypedefUse9",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c[actual parameter 1 of g does not match formal parameter"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/FunctionTypeBuilder.java",
+        "src/com/google/javascript/jscomp/FunctionTypeBuilder.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.FunctionTypeBuilder\\$ThisTypeValidator:apply:[JSType type]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.FunctionTypeBuilder\\$ThisTypeValidator:apply:[JSType type]:boolean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "184"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "184"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/FunctionTypeBuilder.java b/src/com/google/javascript/jscomp/FunctionTypeBuilder.java\nindex 3394fa6..99c9fce 100644\n--- a/src/com/google/javascript/jscomp/FunctionTypeBuilder.java\n+++ b/src/com/google/javascript/jscomp/FunctionTypeBuilder.java\n@@ -181,7 +181,7 @@\n       // create interfaces JSType, ObjectType, FunctionType etc and have\n       // separate implementation instead of the class hierarchy, so that\n       // union types can also be object types, etc.\n-      if (!type.restrictByNotNullOrUndefined().isSubtype(\n+      if (!type.isSubtype(\n               typeRegistry.getNativeType(OBJECT_TYPE))) {\n         reportWarning(THIS_TYPE_NON_OBJECT, type.toString());\n         return false;\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: restrictByNotNullOrUndefined [7384,7412]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [7379,7414]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_RECEIVER [7379,7414]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/FunctionType.java",
+        "src/com/google/javascript/rhino/jstype/FunctionType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.jstype.FunctionType:resolveInternal:[ErrorReporter t, StaticScope\u003cJSType\u003e scope]:JSType"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.jstype.FunctionType:resolveInternal:[ErrorReporter t, StaticScope\u003cJSType\u003e scope]:JSType"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "880",
+            "881",
+            "882"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "879"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/FunctionType.java b/src/com/google/javascript/rhino/jstype/FunctionType.java\nindex de1d1c2..3f0d245 100644\n--- a/src/com/google/javascript/rhino/jstype/FunctionType.java\n+++ b/src/com/google/javascript/rhino/jstype/FunctionType.java\n@@ -877,9 +877,6 @@\n     // mean \"nullable Foo\". For certain tags (like @extends) we de-nullify\n     // the name for them.\n     JSType maybeTypeOfThis \u003d safeResolve(typeOfThis, t, scope);\n-    if (maybeTypeOfThis !\u003d null) {\n-      maybeTypeOfThis \u003d maybeTypeOfThis.restrictByNotNullOrUndefined();\n-    }\n     if (maybeTypeOfThis instanceof ObjectType) {\n       typeOfThis \u003d (ObjectType) maybeTypeOfThis;\n     }\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [28793,28901]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

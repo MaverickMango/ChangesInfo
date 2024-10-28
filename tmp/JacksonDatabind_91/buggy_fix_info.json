@@ -1,0 +1,120 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.deser.jdk.MapDeserializerCachingTest::testCachedSerialize",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.deser.DeserializerCache",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "91",
+  "workingDir": "../bugs/JacksonDatabind_91_tmp",
+  "bug_name": "JacksonDatabind_91",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.deser.jdk.MapDeserializerCachingTest",
+      "test_function": "testCachedSerialize",
+      "assertion_line": "49",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Not using custom key deserializer for input: {\"data\":{\"1st\":\"onedata\",\"2nd\":\"twodata\"}}; resulted in: {1st\u003donedata, 2nd\u003dtwodata}"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/deser/DeserializerCache.java",
+        "src/main/java/com/fasterxml/jackson/databind/deser/DeserializerCache.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.DeserializerCache:_hasCustomHandlers:[JavaType t]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.DeserializerCache:_hasCustomHandlers:[JavaType t]:boolean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "541",
+            "542",
+            "543",
+            "544",
+            "546",
+            "547",
+            "548",
+            "549",
+            "550"
+          ],
+          "num": 9
+        },
+        {
+          "qualified_names": [
+            "541"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/DeserializerCache.java b/src/main/java/com/fasterxml/jackson/databind/deser/DeserializerCache.java\nindex ded6b68..aae7e87 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/deser/DeserializerCache.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/deser/DeserializerCache.java\n@@ -538,16 +538,8 @@\n             // First: value types may have both value and type handlers\n             JavaType ct \u003d t.getContentType();\n             if (ct !\u003d null) {\n-                if ((ct.getValueHandler() !\u003d null) || (ct.getTypeHandler() !\u003d null)) {\n-                    return true;\n-                }\n-            }\n+                return (ct.getValueHandler() !\u003d null) || (ct.getTypeHandler() !\u003d null);\n             // Second: map(-like) types may have value handler for key (but not type; keys are untyped)\n-            if (t.isMapLikeType()) {\n-                JavaType kt \u003d t.getKeyType();\n-                if (kt.getValueHandler() !\u003d null) {\n-                    return true;\n-                }\n             }\n         }\n         return false;\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ReturnStatement [22752,22823]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [22821,22873]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [22752,22873]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [23004,23191]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,283 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "/home/liumengjiao/Desktop/CI/Benchmark/data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math3.dfp.DfpTest::testMultiply",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math3.dfp.Dfp",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "17",
+  "workingDir": "../bugs/Math_17_buggy",
+  "buggyCommit": "07611165b6176b6e3e6d5ac6ca052a102f10e3c4",
+  "inducingCommit": "1eb0c0d7421823470de3a901643ae3be2c9e0a8e",
+  "originalCommit": "c2e02c98fd01a8395cdc441015860cc4dcb52bc6",
+  "bug_name": "Math_17",
+  "derive": "defects4j",
+  "original_fixing_commit": "621806b796bc416f00341feca894ebae07be5ed0",
+  "buildFiles_changed": false,
+  "regression": false,
+  "inducing_changes": [],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [
+        "src/main/java/org/apache/commons/math/dfp/Dfp.java",
+        "src/main/java/org/apache/commons/math/dfp/DfpDec.java",
+        "src/main/java/org/apache/commons/math/dfp/DfpField.java",
+        "src/main/java/org/apache/commons/math/dfp/DfpMath.java"
+      ],
+      "num": 4
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math3.dfp.DfpTest",
+      "test_function": "testMultiply",
+      "assertion_line": "909",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "assersion failed Multiply #37 x \u003d NaN flags \u003d 1"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math3/dfp/Dfp.java",
+        "src/main/java/org/apache/commons/math3/dfp/Dfp.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.dfp.Dfp:multiply:[final int x]:Dfp"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.dfp.Dfp:multiplyFast:[final int x]:Dfp",
+            "org.apache.commons.math3.dfp.Dfp:multiply:[final int x]:Dfp"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1598",
+            "1599"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "1598",
+            "1603",
+            "1604",
+            "1605",
+            "1606",
+            "1607",
+            "1608",
+            "1609",
+            "1610",
+            "1611",
+            "1612",
+            "1613",
+            "1614",
+            "1615"
+          ],
+          "num": 14
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math3/dfp/Dfp.java b/src/main/java/org/apache/commons/math3/dfp/Dfp.java\nindex d278a31..3a91982 100644\n--- a/src/main/java/org/apache/commons/math3/dfp/Dfp.java\n+++ b/src/main/java/org/apache/commons/math3/dfp/Dfp.java\n@@ -1595,12 +1595,24 @@\n \n     }\n \n-    /** Multiply this by a single digit 0\u0026lt;\u003dx\u0026lt;radix.\n-     * There are speed advantages in this special case\n+    /** Multiply this by a single digit x.\n      * @param x multiplicand\n      * @return product of this and x\n      */\n     public Dfp multiply(final int x) {\n+        if (x \u003e\u003d 0 \u0026\u0026 x \u003c RADIX) {\n+            return multiplyFast(x);\n+        } else {\n+            return multiply(newInstance(x));\n+        }\n+    }\n+\n+    /** Multiply this by a single digit 0\u0026lt;\u003dx\u0026lt;radix.\n+     * There are speed advantages in this special case.\n+     * @param x multiplicand\n+     * @return product of this and x\n+     */\n+    private Dfp multiplyFast(final int x) {\n         Dfp result \u003d newInstance(this);\n \n         /* handle special cases */\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodDeclaration [49501,51394]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [49501,49684]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: private [49689,49696]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [49697,49700]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: multiplyFast [49701,49713]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [49714,49725]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [49727,51394]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [49355,49489]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [49359,49378]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Block [49433,49489]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [49833,50393]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [49394,49417]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: There are speed advantages in this special case [49256,49303]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.apache.commons.math3.dfp.Dfp:multiplyFast:[final int x]:Dfp"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "patch_changed_mths": {
+    "qualified_names": [],
+    "num": 0
+  }
+}

@@ -1,0 +1,131 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.CodePrinterTest::testFunctionSafariCompatiblity,com.google.javascript.jscomp.CodePrinterTest::testDoLoopIECompatiblity",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.CodeGenerator",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "145",
+  "workingDir": "../bugs/Closure_145_tmp",
+  "bug_name": "Closure_145",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.CodePrinterTest",
+      "test_function": "testFunctionSafariCompatiblity",
+      "assertion_line": "958",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003cif(e1)[{A:function goo(){return true}]}\u003e but was:\u003cif(e1)[A:function goo(){return true]}\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.CodePrinterTest",
+      "test_function": "testDoLoopIECompatiblity",
+      "assertion_line": "937",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003cif(x)[{A:do foo();while(y)}]\u003e but was:\u003cif(x)[A:do foo();while(y)]\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CodeGenerator.java",
+        "src/com/google/javascript/jscomp/CodeGenerator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CodeGenerator:isOneExactlyFunctionOrDo:[Node n]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CodeGenerator:isOneExactlyFunctionOrDo:[Node n]:boolean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "709",
+            "710",
+            "711",
+            "712",
+            "713",
+            "717",
+            "718",
+            "719",
+            "722",
+            "723",
+            "724",
+            "725",
+            "727"
+          ],
+          "num": 13
+        },
+        {
+          "qualified_names": [
+            "708"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/CodeGenerator.java b/src/com/google/javascript/jscomp/CodeGenerator.java\nindex cce82f4..42c9ab3 100644\n--- a/src/com/google/javascript/jscomp/CodeGenerator.java\n+++ b/src/com/google/javascript/jscomp/CodeGenerator.java\n@@ -706,25 +706,12 @@\n    * labels).\n    */\n   private boolean isOneExactlyFunctionOrDo(Node n) {\n-    if (n.getType() \u003d\u003d Token.LABEL) {\n-      Node labeledStatement \u003d n.getLastChild();\n-      if (labeledStatement.getType() !\u003d Token.BLOCK) {\n-        return isOneExactlyFunctionOrDo(labeledStatement);\n-      } else {\n         // For labels with block children, we need to ensure that a\n         // labeled FUNCTION or DO isn\u0027t generated when extraneous BLOCKs \n         // are skipped. \n-        if (getNonEmptyChildCount(n, 2) \u003d\u003d 1) { \n-          return isOneExactlyFunctionOrDo(getFirstNonEmptyChild(n));\n-        } else {\n           // Either a empty statement or an block with more than one child,\n           // way it isn\u0027t a FUNCTION or DO.\n-          return false;\n-        }\n-      }\n-    } else {\n       return (n.getType() \u003d\u003d Token.FUNCTION || n.getType() \u003d\u003d Token.DO);\n-    }\n   }\n \n   /**\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [20868,20894]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [20896,21544]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [21550,21630]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [20864,21630]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,181 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.TypeCheckTest::testIssue1023,com.google.javascript.jscomp.TypedScopeCreatorTest::testMethodBeforeFunction2,com.google.javascript.jscomp.TypedScopeCreatorTest::testPropertiesOnInterface2",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.TypeInference,com.google.javascript.jscomp.TypedScopeCreator",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "171",
+  "workingDir": "../bugs/Closure_171_tmp",
+  "bug_name": "Closure_171",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testIssue1023",
+      "assertion_line": "6756",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected a warning"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypedScopeCreatorTest",
+      "test_function": "testMethodBeforeFunction2",
+      "assertion_line": "452",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c[function (this:Window, ?): undefined]\u003e but was:\u003c[?]\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypedScopeCreatorTest",
+      "test_function": "testPropertiesOnInterface2",
+      "assertion_line": "551",
+      "exception": "java.lang.NullPointerException",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/TypeInference.java",
+        "src/com/google/javascript/jscomp/TypeInference.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypeInference:traverseObjectLiteral:[Node n, FlowScope scope]:FlowScope"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypeInference:traverseObjectLiteral:[Node n, FlowScope scope]:FlowScope"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "731"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "731",
+            "732",
+            "733",
+            "734",
+            "735",
+            "736"
+          ],
+          "num": 6
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/TypeInference.java b/src/com/google/javascript/jscomp/TypeInference.java\nindex 4a03b1e..9367b32 100644\n--- a/src/com/google/javascript/jscomp/TypeInference.java\n+++ b/src/com/google/javascript/jscomp/TypeInference.java\n@@ -728,7 +728,12 @@\n     // See CodingConvention#getObjectLiteralCase and goog.object.reflect.\n     // Ignore these types of literals.\n     ObjectType objectType \u003d ObjectType.cast(type);\n-    if (objectType \u003d\u003d null || n.getBooleanProp(Node.REFLECTED_OBJECT)) {\n+    if (objectType \u003d\u003d null) {\n+      return scope;\n+    }\n+    boolean hasLendsName \u003d n.getJSDocInfo() !\u003d null \u0026\u0026\n+        n.getJSDocInfo().getLendsName() !\u003d null;\n+    if (objectType.hasReferenceName() \u0026\u0026 !hasLendsName) {\n       return scope;\n     }\n \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [25660,25759]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [25764,25843]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: || [25627,25629]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [25630,25669]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [25608,25669]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/TypedScopeCreator.java",
+        "src/com/google/javascript/jscomp/TypedScopeCreator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypedScopeCreator\\$AbstractScopeBuilder:isQualifiedNameInferred:[String qName, Node n, JSDocInfo info, Node rhsValue, JSType valueType]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypedScopeCreator\\$AbstractScopeBuilder:isQualifiedNameInferred:[String qName, Node n, JSDocInfo info, Node rhsValue, JSType valueType]:boolean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1669",
+            "1670",
+            "1671"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "1668"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/TypedScopeCreator.java b/src/com/google/javascript/jscomp/TypedScopeCreator.java\nindex ef02b9c..e9e8486 100644\n--- a/src/com/google/javascript/jscomp/TypedScopeCreator.java\n+++ b/src/com/google/javascript/jscomp/TypedScopeCreator.java\n@@ -1666,9 +1666,6 @@\n       }\n \n       // Prototype sets are always declared.\n-      if (qName !\u003d null \u0026\u0026 qName.endsWith(\".prototype\")) {\n-        return false;\n-      }\n \n       boolean inferred \u003d true;\n       if (info !\u003d null) {\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [63673,63755]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

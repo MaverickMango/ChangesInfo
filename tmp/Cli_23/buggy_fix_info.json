@@ -1,0 +1,199 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.cli.bug.BugCLI162Test::testInfiniteLoop,org.apache.commons.cli.bug.BugCLI162Test::testPrintHelpLongLines",
+    "test.dir": "src/test",
+    "clz.modified": "org.apache.commons.cli.HelpFormatter",
+    "src.dir": "src/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Cli",
+  "id": "23",
+  "workingDir": "../bugs/Cli_23_tmp",
+  "bug_name": "Cli_23",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.cli.bug.BugCLI162Test",
+      "test_function": "testInfiniteLoop",
+      "assertion_line": "45",
+      "exception": "java.lang.RuntimeException",
+      "message": "Text too long for line - throwing exception to avoid infinite loop [CLI-162]:              looooong description"
+    },
+    {
+      "test_class": "org.apache.commons.cli.bug.BugCLI162Test",
+      "test_function": "testPrintHelpLongLines",
+      "assertion_line": "49",
+      "exception": "java.lang.RuntimeException",
+      "message": "Text too long for line - throwing exception to avoid infinite loop [CLI-162]:                              used if omited. Example: -e \"Runs such and such\""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/cli/HelpFormatter.java",
+        "src/java/org/apache/commons/cli/HelpFormatter.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.cli.HelpFormatter:renderWrappedText:[StringBuffer sb, int width, int nextLineTabStop, String text]:StringBuffer"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.cli.HelpFormatter:renderWrappedText:[StringBuffer sb, int width, int nextLineTabStop, String text]:StringBuffer"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "823",
+            "832",
+            "833",
+            "834",
+            "835",
+            "836",
+            "837"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "824",
+            "833",
+            "834",
+            "835",
+            "836"
+          ],
+          "num": 5
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/cli/HelpFormatter.java b/src/java/org/apache/commons/cli/HelpFormatter.java\nindex 56f9901..9fa8ebf 100644\n--- a/src/java/org/apache/commons/cli/HelpFormatter.java\n+++ b/src/java/org/apache/commons/cli/HelpFormatter.java\n@@ -821,6 +821,7 @@\n \n         while (true)\n         {\n+            int lastPos \u003d pos;\n             text \u003d padding + text.substring(pos).trim();\n             pos \u003d findWrapPos(text, width, 0);\n \n@@ -829,12 +830,10 @@\n                 sb.append(text);\n \n                 return sb;\n-            }\n-            \n-            if ( (text.length() \u003e width) \u0026\u0026 (pos \u003d\u003d nextLineTabStop - 1) ) {\n-                sb.append(text);\n-\n-                return sb;\n+            } else\n+            if (pos \u003d\u003d lastPos)\n+            {\n+                throw new RuntimeException(\"Text too long for line - throwing exception to avoid infinite loop [CLI-162]: \" + text);\n             }\n \n             sb.append(rtrim(text.substring(0, pos))).append(defaultNewLine);\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [25294,25312]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [25551,25731]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [25555,25569]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ThrowStatement [25601,25717]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ClassInstanceCreation [25607,25716]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [25611,25627]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [25628,25715]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "StringLiteral: \"Text too long for line - throwing exception to avoid infinite loop [CLI-162]: \" [25628,25708]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: + [25709,25710]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_RECEIVER [25609,25611]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: append [25612,25618]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [25619,25623]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [25609,25624]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ExpressionStatement [25609,25625]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [25643,25653]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [25533,25588]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [25528,25667]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

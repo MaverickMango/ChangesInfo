@@ -1,0 +1,258 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.jxpath.ri.model.AliasedNamespaceIterationTest::testIterateJDOM,org.apache.commons.jxpath.ri.model.AliasedNamespaceIterationTest::testIterateDOM",
+    "test.dir": "src/test",
+    "clz.modified": "org.apache.commons.jxpath.ri.model.dom.DOMNodePointer,org.apache.commons.jxpath.ri.model.jdom.JDOMNodePointer",
+    "src.dir": "src/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JxPath",
+  "id": "19",
+  "workingDir": "../bugs/JxPath_19_tmp",
+  "bug_name": "JxPath_19",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.jxpath.ri.model.AliasedNamespaceIterationTest",
+      "test_function": "testIterateJDOM",
+      "assertion_line": "58",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Evaluating pointer iterator \u003c/a:doc/a:elem\u003e expected:\u003c[/a:doc[1]/a:elem[1], /a:doc[1]/a:elem[2]]\u003e but was:\u003c[/a:doc[1]/a:elem[1], /a:doc[1]/a:elem[1]]\u003e"
+    },
+    {
+      "test_class": "org.apache.commons.jxpath.ri.model.AliasedNamespaceIterationTest",
+      "test_function": "testIterateDOM",
+      "assertion_line": "54",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Evaluating pointer iterator \u003c/a:doc/a:elem\u003e expected:\u003c[/a:doc[1]/a:elem[1], /a:doc[1]/a:elem[2]]\u003e but was:\u003c[/a:doc[1]/a:elem[1], /a:doc[1]/a:elem[1]]\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/jxpath/ri/model/dom/DOMNodePointer.java",
+        "src/java/org/apache/commons/jxpath/ri/model/dom/DOMNodePointer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.jxpath.ri.model.dom.DOMNodePointer:matchesQName:[Node n]:boolean",
+            "org.apache.commons.jxpath.ri.model.dom.DOMNodePointer:getRelativePositionByQName:[]:int"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.jxpath.ri.model.dom.DOMNodePointer:getRelativePositionByQName:[]:int"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "560",
+            "568",
+            "569",
+            "570",
+            "571",
+            "572",
+            "573",
+            "574"
+          ],
+          "num": 8
+        },
+        {
+          "qualified_names": [
+            "560",
+            "561",
+            "562",
+            "564"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/jxpath/ri/model/dom/DOMNodePointer.java b/src/java/org/apache/commons/jxpath/ri/model/dom/DOMNodePointer.java\nindex 8e3b775..3300d03 100644\n--- a/src/java/org/apache/commons/jxpath/ri/model/dom/DOMNodePointer.java\n+++ b/src/java/org/apache/commons/jxpath/ri/model/dom/DOMNodePointer.java\n@@ -557,21 +557,17 @@\n         int count \u003d 1;\n         Node n \u003d node.getPreviousSibling();\n         while (n !\u003d null) {\n-            if (n.getNodeType() \u003d\u003d Node.ELEMENT_NODE \u0026\u0026 matchesQName(n)) {\n+            if (n.getNodeType() \u003d\u003d Node.ELEMENT_NODE) {\n+                String nm \u003d n.getNodeName();\n+                if (nm.equals(node.getNodeName())) {\n                 count++;\n+                }\n             }\n             n \u003d n.getPreviousSibling();\n         }\n         return count;\n     }\n \n-    private boolean matchesQName(Node n) {\n-        if (getNamespaceURI() !\u003d null) {\n-            return equalStrings(getNamespaceURI(n), getNamespaceURI())\n-                    \u0026\u0026 equalStrings(node.getLocalName(), n.getLocalName());\n-        }\n-        return equalStrings(node.getNodeName(), n.getNodeName());\n-    }\n \n     /**\n      * Get relative position of this among all siblings.\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [19228,19426]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [19232,19268]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [19270,19426]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [19288,19316]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [19337,19366]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [19232,19287]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [19413,19721]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/jxpath/ri/model/jdom/JDOMNodePointer.java",
+        "src/java/org/apache/commons/jxpath/ri/model/jdom/JDOMNodePointer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.jxpath.ri.model.jdom.JDOMNodePointer:matchesQName:[Element element]:boolean",
+            "org.apache.commons.jxpath.ri.model.jdom.JDOMNodePointer:getRelativePositionByQName:[]:int"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.jxpath.ri.model.jdom.JDOMNodePointer:getRelativePositionByQName:[]:int"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "696",
+            "708",
+            "709",
+            "710",
+            "711",
+            "712",
+            "713",
+            "714",
+            "715",
+            "716"
+          ],
+          "num": 10
+        },
+        {
+          "qualified_names": [
+            "696",
+            "697",
+            "706"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/jxpath/ri/model/jdom/JDOMNodePointer.java b/src/java/org/apache/commons/jxpath/ri/model/jdom/JDOMNodePointer.java\nindex 4b40a39..7df3ace 100644\n--- a/src/java/org/apache/commons/jxpath/ri/model/jdom/JDOMNodePointer.java\n+++ b/src/java/org/apache/commons/jxpath/ri/model/jdom/JDOMNodePointer.java\n@@ -693,7 +693,8 @@\n             String name \u003d ((Element) node).getQualifiedName();\n             for (int i \u003d 0; i \u003c children.size(); i++) {\n                 Object child \u003d children.get(i);\n-                if (child instanceof Element \u0026\u0026 matchesQName(((Element) child))) {\n+                if ((child instanceof Element)\n+                    \u0026\u0026 ((Element) child).getQualifiedName().equals(name)) {\n                     count++;\n                 }\n                 if (child \u003d\u003d node) {\n@@ -705,15 +706,6 @@\n         return 1;\n     }\n \n-    private boolean matchesQName(Element element) {\n-        if (getNamespaceURI() !\u003d null) {\n-            String ns \u003d getNamespaceURI(element);\n-            if (ns \u003d\u003d null || !ns.equals(getNamespaceURI())) {\n-                return false;\n-            }\n-        }\n-        return element.getName().equals(((Element) node).getName());\n-    }\n \n     /**\n      * Get relative position of this among all siblings.\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ParenthesizedExpression [23368,23394]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [23418,23467]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [23418,23454]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: equals [23455,23461]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [23462,23466]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [23418,23435]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [23409,23426]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [23639,23969]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.apache.commons.jxpath.ri.model.jdom.JDOMNodePointer:matchesQName:[Element element]:boolean",
+        "org.apache.commons.jxpath.ri.model.dom.DOMNodePointer:matchesQName:[Node n]:boolean"
+      ],
+      "num": 2
+    }
+  }
+}

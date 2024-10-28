@@ -1,0 +1,142 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.node.TestConversions::testBase64Text",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.node.TreeTraversingParser",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "100",
+  "workingDir": "../bugs/JacksonDatabind_100_tmp",
+  "bug_name": "JacksonDatabind_100",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.node.TestConversions",
+      "test_function": "testBase64Text",
+      "assertion_line": "189",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Failed (variant MODIFIED-FOR-URL, data length 1): Cannot access contents of TextNode as binary due to broken Base64 encoding: Unexpected end-of-String in base64 content"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/node/TreeTraversingParser.java",
+        "src/main/java/com/fasterxml/jackson/databind/node/TreeTraversingParser.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.node.TreeTraversingParser:getBinaryValue:[Base64Variant b64variant]:byte[]"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.node.TreeTraversingParser:getBinaryValue:[Base64Variant b64variant]:byte[]"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "363",
+            "364",
+            "366"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "363",
+            "364",
+            "365",
+            "367",
+            "368",
+            "369",
+            "370",
+            "371",
+            "372"
+          ],
+          "num": 9
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/node/TreeTraversingParser.java b/src/main/java/com/fasterxml/jackson/databind/node/TreeTraversingParser.java\nindex 40bf3d3..9d2f74b 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/node/TreeTraversingParser.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/node/TreeTraversingParser.java\n@@ -360,10 +360,16 @@\n         if (n !\u003d null) {\n             // [databind#2096]: although `binaryValue()` works for real binary node\n             // and embedded \"POJO\" node, coercion from TextNode may require variant, so:\n-            if (n instanceof TextNode) {\n-                return ((TextNode) n).getBinaryValue(b64variant);\n+            byte[] data \u003d n.binaryValue();\n+            if (data !\u003d null) {\n+                return data;\n             }\n-            return n.binaryValue();\n+            if (n.isPojo()) {\n+                Object ob \u003d ((POJONode) n).getPojo();\n+                if (ob instanceof byte[]) {\n+                    return (byte[]) ob;\n+                }\n+            }\n         }\n         // otherwise return null to mark we have no binary content\n         return null;\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [10520,10550]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [10563,10625]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [10638,10825]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ArrayType [10520,10526]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [10527,10549]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: data [10527,10531]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [10520,10628]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ReturnStatement [10641,10664]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

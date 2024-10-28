@@ -1,0 +1,503 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Math",
+  "id": "64",
+  "workingDir": "../bugs/Math_64_buggy",
+  "inducingCommit": "615ca9a000c253575e6f62bed87db6110b750834",
+  "originalCommit": "103f12391b89112f030b921a7c4969f00ff23b44",
+  "bug_name": "Math_64",
+  "derive": "defects4j",
+  "original_fixing_commit": "7dadc2ab019f066a7a287376ad4c63193e8a0a9a",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/optimization/general/LevenbergMarquardtOptimizer.java",
+        "src/main/java/org/apache/commons/math/optimization/general/LevenbergMarquardtOptimizer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "setCostRelativeTolerance",
+            "LevenbergMarquardtOptimizer",
+            "setParRelativeTolerance",
+            "setOrthoTolerance",
+            "doOptimize"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "setParRelativeTolerance",
+            "doOptimize",
+            "LevenbergMarquardtOptimizer",
+            "setCostRelativeTolerance",
+            "setOrthoTolerance"
+          ],
+          "num": 5
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "37",
+            "38",
+            "145",
+            "152",
+            "159",
+            "182",
+            "191",
+            "201",
+            "237",
+            "294",
+            "335",
+            "404",
+            "405",
+            "406",
+            "408"
+          ],
+          "num": 15
+        },
+        {
+          "qualified_names": [
+            "37",
+            "38",
+            "39",
+            "147",
+            "155",
+            "156",
+            "157",
+            "158",
+            "166",
+            "189",
+            "190",
+            "199",
+            "200",
+            "210",
+            "211",
+            "248",
+            "254",
+            "306",
+            "348",
+            "417",
+            "418",
+            "419",
+            "420",
+            "421",
+            "422",
+            "423",
+            "424",
+            "425",
+            "426",
+            "428",
+            "429"
+          ],
+          "num": 31
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/optimization/general/LevenbergMarquardtOptimizer.java b/src/main/java/org/apache/commons/math/optimization/general/LevenbergMarquardtOptimizer.java\nindex ea0f20d..28aee43 100644\n--- a/src/main/java/org/apache/commons/math/optimization/general/LevenbergMarquardtOptimizer.java\n+++ b/src/main/java/org/apache/commons/math/optimization/general/LevenbergMarquardtOptimizer.java\n@@ -34,8 +34,9 @@\n  *\n  * \u003cp\u003eThe resolution engine is a simple translation of the MINPACK \u003ca\n  * href\u003d\"http://www.netlib.org/minpack/lmder.f\"\u003elmder\u003c/a\u003e routine with minor\n- * changes. The changes include the over-determined resolution and the Q.R.\n- * decomposition which has been rewritten following the algorithm described in the\n+ * changes. The changes include the over-determined resolution, the use of\n+ * inherited convergence checker and the Q.R. decomposition which has been\n+ * rewritten following the algorithm described in the\n  * P. Lascaux and R. Theodor book \u003ci\u003eAnalyse num\u0026eacute;rique matricielle\n  * appliqu\u0026eacute;e \u0026agrave; l\u0027art de l\u0027ing\u0026eacute;nieur\u003c/i\u003e, Masson 1986.\u003c/p\u003e\n  * \u003cp\u003eThe authors of the original fortran version are:\n@@ -143,6 +144,7 @@\n      * Build an optimizer for least squares problems.\n      * \u003cp\u003eThe default values for the algorithm settings are:\n      *   \u003cul\u003e\n+     *    \u003cli\u003e{@link #setConvergenceChecker vectorial convergence checker}: null\u003c/li\u003e\n      *    \u003cli\u003e{@link #setInitialStepBoundFactor initial step bound factor}: 100.0\u003c/li\u003e\n      *    \u003cli\u003e{@link #setMaxIterations maximal iterations}: 1000\u003c/li\u003e\n      *    \u003cli\u003e{@link #setCostRelativeTolerance cost relative tolerance}: 1.0e-10\u003c/li\u003e\n@@ -150,6 +152,10 @@\n      *    \u003cli\u003e{@link #setOrthoTolerance orthogonality tolerance}: 1.0e-10\u003c/li\u003e\n      *   \u003c/ul\u003e\n      * \u003c/p\u003e\n+     * \u003cp\u003eThese default values may be overridden after construction. If the {@link\n+     * #setConvergenceChecker vectorial convergence checker} is set to a non-null value, it\n+     * will be used instead of the {@link #setCostRelativeTolerance cost relative tolerance}\n+     * and {@link #setParRelativeTolerance parameters relative tolerance} settings.\n      */\n     public LevenbergMarquardtOptimizer() {\n \n@@ -157,6 +163,7 @@\n         setMaxIterations(1000);\n \n         // default values for the tuning parameters\n+        setConvergenceChecker(null);\n         setInitialStepBoundFactor(100.0);\n         setCostRelativeTolerance(1.0e-10);\n         setParRelativeTolerance(1.0e-10);\n@@ -179,7 +186,8 @@\n \n     /**\n      * Set the desired relative error in the sum of squares.\n-     *\n+     * \u003cp\u003eThis setting is used only if the {@link #setConvergenceChecker vectorial\n+     * convergence checker} is set to null.\u003c/p\u003e\n      * @param costRelativeTolerance desired relative error in the sum of squares\n      */\n     public void setCostRelativeTolerance(double costRelativeTolerance) {\n@@ -188,7 +196,8 @@\n \n     /**\n      * Set the desired relative error in the approximate solution parameters.\n-     *\n+     * \u003cp\u003eThis setting is used only if the {@link #setConvergenceChecker vectorial\n+     * convergence checker} is set to null.\u003c/p\u003e\n      * @param parRelativeTolerance desired relative error\n      * in the approximate solution parameters\n      */\n@@ -198,7 +207,8 @@\n \n     /**\n      * Set the desired max cosine on the orthogonality.\n-     *\n+     * \u003cp\u003eThis setting is always used, regardless of the {@link #setConvergenceChecker\n+     * vectorial convergence checker} being null or non-null.\u003c/p\u003e\n      * @param orthoTolerance desired max cosine on the orthogonality\n      * between the function vector and the columns of the jacobian\n      */\n@@ -235,11 +245,13 @@\n         // outer loop\n         lmPar \u003d 0;\n         boolean firstIteration \u003d true;\n+        VectorialPointValuePair current \u003d new VectorialPointValuePair(point, objective);\n         while (true) {\n \n             incrementIterationsCounter();\n \n             // compute the Q.R. decomposition of the jacobian matrix\n+            VectorialPointValuePair previous \u003d current;\n             updateJacobian();\n             qrDecomposition();\n \n@@ -291,7 +303,7 @@\n             }\n             if (maxCosine \u003c\u003d orthoTolerance) {\n                 // convergence has been reached\n-                return new VectorialPointValuePair(point, objective);\n+                return current;\n             }\n \n             // rescale if necessary\n@@ -333,6 +345,7 @@\n \n                 // evaluate the function at x + p and calculate its norm\n                 updateResidualsAndCost();\n+                current \u003d new VectorialPointValuePair(point, objective);\n \n                 // compute the scaled actual reduction\n                 double actRed \u003d -1.0;\n@@ -401,11 +414,19 @@\n                 }\n \n                 // tests for convergence.\n-                if (((Math.abs(actRed) \u003c\u003d costRelativeTolerance) \u0026\u0026\n-                        (preRed \u003c\u003d costRelativeTolerance) \u0026\u0026\n-                        (ratio \u003c\u003d 2.0)) ||\n+                if (checker !\u003d null) {\n+                    // we use the vectorial convergence checker\n+                    if (checker.converged(getIterations(), previous, current)) {\n+                        return current;                        \n+                    }\n+                } else {\n+                    // we use the Levenberg-Marquardt specific convergence parameters\n+                    if (((Math.abs(actRed) \u003c\u003d costRelativeTolerance) \u0026\u0026\n+                         (preRed \u003c\u003d costRelativeTolerance) \u0026\u0026\n+                         (ratio \u003c\u003d 2.0)) ||\n                         (delta \u003c\u003d parRelativeTolerance * xNorm)) {\n-                    return new VectorialPointValuePair(point, objective);\n+                        return current;\n+                    }\n                 }\n \n                 // tests for termination and stringent tolerances\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Javadoc [8397,8681]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: rewritten following the algorithm described in the [1832,1882]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [7604,7632]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TagElement [8408,8592]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [10798,10878]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003cli\u003e [6513,6517]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [6517,6577]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: : null\u003c/li\u003e [6577,6588]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003cp\u003eThese default values may be overridden after construction. If the  [7036,7105]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [7105,7172]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement:  is set to a non-null value, it [7172,7203]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: will be used instead of the  [7211,7239]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [7239,7296]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: and  [7304,7308]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [7308,7370]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement:  settings. [7370,7380]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003cp\u003eThis setting is used only if the  [8469,8505]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [8505,8572]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement:  is set to null.\u003c/p\u003e [8572,8592]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003cp\u003eThis setting is used only if the  [8915,8951]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [8951,9018]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement:  is set to null.\u003c/p\u003e [9018,9038]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003cp\u003eThis setting is always used, regardless of the  [9358,9408]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [9408,9475]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement:  being null or non-null.\u003c/p\u003e [9475,9503]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [10798,10821]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [10822,10877]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: current [10822,10829]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [11027,11070]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [12938,12953]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ExpressionStatement [14486,14542]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [17356,18045]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Assignment [14486,14541]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [17360,17375]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Block [17377,17627]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [17633,18045]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: current [14486,14493]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ASSIGNMENT_OPERATOR: \u003d [14494,14495]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [17990,18005]"
+        },
+        {
+          "type": "delete-node",
+          "from": "TagElement [7888,7941]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Javadoc [7877,8037]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ReturnStatement [11879,11932]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ReturnStatement [16505,16558]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/optimization/general/LevenbergMarquardtOptimizer.java",
+        "src/main/java/org/apache/commons/math/optimization/general/LevenbergMarquardtOptimizer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "doOptimize"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "doOptimize"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "348",
+            "403",
+            "417",
+            "418",
+            "419",
+            "420",
+            "421",
+            "422"
+          ],
+          "num": 8
+        },
+        {
+          "qualified_names": [
+            "347",
+            "403",
+            "404",
+            "405",
+            "406",
+            "407",
+            "408",
+            "409",
+            "410",
+            "424"
+          ],
+          "num": 10
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Math_64/properties/modified_classes/inducing/src/main/java/org/apache/commons/math/optimization/general/LevenbergMarquardtOptimizer.java data/changesInfo//Math_64/cleaned/fixing/src/main/java/org/apache/commons/math/optimization/general/LevenbergMarquardtOptimizer.java\n--- data/changesInfo//Math_64/properties/modified_classes/inducing/src/main/java/org/apache/commons/math/optimization/general/LevenbergMarquardtOptimizer.java\t2023-08-25 14:00:37.692386762 +0800\n+++ data/changesInfo//Math_64/cleaned/fixing/src/main/java/org/apache/commons/math/optimization/general/LevenbergMarquardtOptimizer.java\t2023-08-02 22:13:36.061428072 +0800\n@@ -345,7 +345,6 @@\n \n                 // evaluate the function at x + p and calculate its norm\n                 updateResidualsAndCost();\n-                current \u003d new VectorialPointValuePair(point, objective);\n \n                 // compute the scaled actual reduction\n                 double actRed \u003d -1.0;\n@@ -401,6 +400,14 @@\n                         xNorm    +\u003d xK * xK;\n                     }\n                     xNorm \u003d Math.sqrt(xNorm);\n+                    current \u003d new VectorialPointValuePair(point, objective);\n+                    // tests for convergence.\n+                    if (checker !\u003d null) {\n+                        // we use the vectorial convergence checker\n+                        if (checker.converged(getIterations(), previous, current)) {\n+                            return current;\n+                        }\n+                    }\n                 } else {\n                     // failed iteration, reset the previous values\n                     cost \u003d previousCost;\n@@ -414,12 +421,7 @@\n                 }\n \n                 // tests for convergence.\n-                if (checker !\u003d null) {\n-                    // we use the vectorial convergence checker\n-                    if (checker.converged(getIterations(), previous, current)) {\n-                        return current;                        \n-                    }\n-                } else {\n+                if (checker \u003d\u003d null)  {\n                     // we use the Levenberg-Marquardt specific convergence parameters\n                     if (((Math.abs(actRed) \u003c\u003d costRelativeTolerance) \u0026\u0026\n                          (preRed \u003c\u003d costRelativeTolerance) \u0026\u0026\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [17694,18128]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [17698,17713]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

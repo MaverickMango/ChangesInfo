@@ -1,0 +1,104 @@
+===
+insert-tree
+---
+MethodDeclaration [8739,9227]
+    Modifier: public [8739,8745]
+    PrimitiveType: void [8746,8750]
+    SimpleName: testCascadedRemovalOfUnlessUnconditonalJumps [8751,8795]
+    Block [8798,9227]
+        ExpressionStatement [8804,8934]
+            MethodInvocation [8804,8933]
+                SimpleName: test [8804,8808]
+                METHOD_INVOCATION_ARGUMENTS [8809,8932]
+                    StringLiteral: "switch (a) { case 'a': break; case 'b': break; case 'c': break }" [8809,8875]
+                    StringLiteral: "switch (a) { case 'a': case 'b': case 'c': }" [8886,8932]
+        ExpressionStatement [8939,9120]
+            MethodInvocation [8939,9119]
+                SimpleName: test [8939,8943]
+                METHOD_INVOCATION_ARGUMENTS [8944,9118]
+                    InfixExpression [8944,9043]
+                        StringLiteral: "function foo() {" [8944,8962]
+                        INFIX_EXPRESSION_OPERATOR: + [8963,8964]
+                        StringLiteral: "  switch (a) { case 'a':return; case 'b':return; case 'c':return }}" [8974,9043]
+                    StringLiteral: "function foo() { switch (a) { case 'a': case 'b': case 'c': }}" [9054,9118]
+        ExpressionStatement [9125,9223]
+            MethodInvocation [9125,9222]
+                SimpleName: testSame [9125,9133]
+                METHOD_INVOCATION_ARGUMENTS [9134,9221]
+                    InfixExpression [9134,9221]
+                        StringLiteral: "function foo() {" [9134,9152]
+                        INFIX_EXPRESSION_OPERATOR: + [9153,9154]
+                        StringLiteral: "switch (a) { case 'a':return 2; case 'b':return 1}}" [9168,9221]
+to
+TypeDeclaration [635,8743]
+at 23
+===
+move-tree
+---
+ExpressionStatement [8516,8660]
+    MethodInvocation [8516,8659]
+        SimpleName: test [8516,8520]
+        METHOD_INVOCATION_ARGUMENTS [8521,8658]
+            StringLiteral: "switch (a) { case 'a': break; case 'b': break; case 'c': break }" [8521,8587]
+            StringLiteral: "switch (a) { case 'a': break; case 'b': break; case 'c': }" [8598,8658]
+to
+Block [7822,8741]
+at 1
+===
+move-tree
+---
+ExpressionStatement [8019,8072]
+    MethodInvocation [8019,8071]
+        SimpleName: testSame [8019,8027]
+        METHOD_INVOCATION_ARGUMENTS [8028,8070]
+            StringLiteral: "switch (a) { case 'a': break; default: }" [8028,8070]
+to
+Block [7822,8741]
+at 2
+===
+update-node
+---
+SimpleName: testSame [8019,8027]
+replace testSame by test
+===
+update-node
+---
+StringLiteral: "function() {switch (a) { case 'a': return; case foo(): }}" [7150,7209]
+replace "function() {switch (a) { case 'a': return; case foo(): }}" by "function() {switch (a) { case 'a': case foo(): }}"
+===
+update-node
+---
+StringLiteral: "switch (a) { case 'a': break; case 'b': break; case 'c': break }" [8521,8587]
+replace "switch (a) { case 'a': break; case 'b': break; case 'c': break }" by "switch (a) { case 'a': break; case foo(): }"
+===
+update-node
+---
+StringLiteral: "switch (a) { case 'a': break; case 'b': break; case 'c': }" [8598,8658]
+replace "switch (a) { case 'a': break; case 'b': break; case 'c': }" by "switch (a) { case 'a':        case foo(): }"
+===
+update-node
+---
+StringLiteral: "switch (a) { case 'a': break; default: }" [8028,8070]
+replace "switch (a) { case 'a': break; default: }" by "switch (a) { default: break; case 'a': }"
+===
+insert-node
+---
+StringLiteral: "switch (a) { default:        case 'a': }" [8056,8098]
+to
+METHOD_INVOCATION_ARGUMENTS [8028,8070]
+at 1
+===
+update-node
+---
+StringLiteral: "switch (a) { case 'a': break; case foo(): }" [7909,7954]
+replace "switch (a) { case 'a': break; case foo(): }" by "switch (a) { case 'a': alert(a); break; default: alert(a); }"
+===
+update-node
+---
+StringLiteral: "switch (a) { default: break; case 'a': }" [7970,8012]
+replace "switch (a) { default: break; case 'a': }" by "switch (a) { default: alert(a); break; case 'a': alert(a); }"
+===
+update-node
+---
+StringLiteral: "case 2:{x=2;return}default:}}" [1349,1380]
+replace "case 2:{x=2;return}default:}}" by "case 2:{x=2}default:}}"

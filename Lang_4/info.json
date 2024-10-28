@@ -1,0 +1,370 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Lang",
+  "id": "4",
+  "workingDir": "../bugs/Lang_4_buggy",
+  "inducingCommit": "362fa778259f188a4bef82716478d9e288d3f303",
+  "originalCommit": "6c7501955b0eb65bf9233a093d0f5f4122a1273e",
+  "bug_name": "Lang_4",
+  "derive": "defects4j",
+  "original_fixing_commit": "fb47b96ab635d7cc6e9edefdddc46f1baf63b117",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/lang/text/translate/LookupTranslator.java",
+        "src/java/org/apache/commons/lang/text/translate/LookupTranslator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "translate",
+            "LookupTranslator"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "LookupTranslator",
+            "translate"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "28",
+            "36",
+            "43",
+            "44",
+            "45",
+            "46",
+            "47"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "21",
+            "27",
+            "30",
+            "31",
+            "32",
+            "40",
+            "41",
+            "42",
+            "43",
+            "44",
+            "45",
+            "46",
+            "47",
+            "48",
+            "49",
+            "50",
+            "57",
+            "58",
+            "59",
+            "60",
+            "61",
+            "62",
+            "63",
+            "64",
+            "65",
+            "66",
+            "67"
+          ],
+          "num": 27
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/lang/text/translate/LookupTranslator.java b/src/java/org/apache/commons/lang/text/translate/LookupTranslator.java\nindex ea45ab6..5e707cd 100644\n--- a/src/java/org/apache/commons/lang/text/translate/LookupTranslator.java\n+++ b/src/java/org/apache/commons/lang/text/translate/LookupTranslator.java\n@@ -18,14 +18,18 @@\n \n import java.io.IOException;\n import java.io.Writer;\n+import java.util.HashMap;\n \n /**\n  * Translates a value using a lookup table. \n  * @since 3.0\n  */\n+// TODO: Replace with a RegexLookup? Performance test.\n public class LookupTranslator extends CharSequenceTranslator {\n \n-    protected CharSequence[][] lookup;\n+    private HashMap\u003cCharSequence, CharSequence\u003e lookupMap;\n+    private int shortest \u003d Integer.MAX_VALUE;\n+    private int longest \u003d 0;\n \n     /**\n      * Define the lookup table to be used in translation\n@@ -33,18 +37,34 @@\n      * @param CharSequence[][] Lookup table of size [*][2]\n      */\n     public LookupTranslator(CharSequence[][] lookup) {\n-        this.lookup \u003d lookup;\n+        lookupMap \u003d new HashMap\u003cCharSequence, CharSequence\u003e();\n+        for(CharSequence[] seq : lookup) {\n+            this.lookupMap.put(seq[0], seq[1]);\n+            int sz \u003d seq[0].length();\n+            if(sz \u003c shortest) {\n+                shortest \u003d sz;\n+            }\n+            if(sz \u003e longest) {\n+                longest \u003d sz;\n+            }\n+        }\n     }\n \n     /**\n      * {@inheritDoc}\n      */\n     public int translate(CharSequence input, int index, Writer out) throws IOException {\n-        CharSequence subsequence \u003d input.subSequence(index, input.length());\n-        for(CharSequence[] seq : lookup) {\n-            if( subsequence.toString().startsWith(seq[0].toString()) ) {\n-                out.write(seq[1].toString());\n-                return seq[0].length();\n+        int max \u003d longest;\n+        if(index + longest \u003e input.length()) {\n+            max \u003d input.length() - index;\n+        }\n+        // descend so as to get a greedy algorithm\n+        for(int i\u003dmax; i \u003e\u003d shortest; i--) {\n+            CharSequence subSeq \u003d input.subSequence(index, index + i);\n+            CharSequence result \u003d lookupMap.get(subSeq);\n+            if(result !\u003d null) {\n+                out.write(result.toString());\n+                return i;\n             }\n         }\n         return 0;\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [905,930]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [1122,1176]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [1227,1251]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrimitiveType: int [1189,1192]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "QualifiedName: Integer.MAX_VALUE [1204,1221]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [1455,1509]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "EnhancedForStatement [1518,1800]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [1942,1960]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [1969,2059]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ForStatement [2119,2412]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [1522,1540]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: lookup [1543,1549]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [1551,1800]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationExpression [2123,2132]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [2134,2147]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PostfixExpression [2149,2152]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [1565,1600]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [1613,1638]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [1651,1715]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [1728,1790]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [2239,2283]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [2296,2402]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [1654,1667]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [1669,1715]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [2299,2313]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [2379,2388]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: sz [1698,1700]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [2215,2224]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: result [2343,2349]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ArrayType [1051,1067]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldAccess [1279,1290]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [1494,1508]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ArrayAccess [1653,1659]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [1689,1712]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [1570,1622]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [1566,1726]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [1523,1541]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: lookup [1544,1550]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "EnhancedForStatement [1519,1736]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [],
+  "fixing_changes": [],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

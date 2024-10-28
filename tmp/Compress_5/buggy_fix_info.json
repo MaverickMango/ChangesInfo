@@ -1,0 +1,133 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.compress.archivers.zip.Maven221MultiVolumeTest::testRead7ZipMultiVolumeArchiveForStream",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.compress.archivers.zip.ZipArchiveInputStream",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Compress",
+  "id": "5",
+  "workingDir": "../bugs/Compress_5_tmp",
+  "bug_name": "Compress_5",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.compress.archivers.zip.Maven221MultiVolumeTest",
+      "test_function": "testRead7ZipMultiVolumeArchiveForStream",
+      "assertion_line": "97",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "shouldn\u0027t be able to read from truncated entry"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveInputStream.java",
+        "src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveInputStream.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.zip.ZipArchiveInputStream:read:[byte[] buffer, int start, int length]:int"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.zip.ZipArchiveInputStream:read:[byte[] buffer, int start, int length]:int"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "239",
+            "240",
+            "241",
+            "242",
+            "243",
+            "244"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "239",
+            "240"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveInputStream.java b/src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveInputStream.java\nindex 5ee2eab..befee54 100644\n--- a/src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveInputStream.java\n+++ b/src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveInputStream.java\n@@ -236,12 +236,8 @@\n             } catch (DataFormatException e) {\n                 throw new ZipException(e.getMessage());\n             }\n-            if (read \u003d\u003d 0) {\n-                if (inf.finished()) {\n-                    return -1;\n-                } else if (lengthOfLastRead \u003d\u003d -1) {\n-                    throw new IOException(\"Truncated ZIP file\");\n-                }\n+            if (read \u003d\u003d 0 \u0026\u0026 inf.finished()) {\n+                return -1;\n             }\n             crc.update(buffer, start, read);\n             return read;\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [8236,8263]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [8246,8248]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [8341,8453]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [8247,8467]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [8232,8467]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

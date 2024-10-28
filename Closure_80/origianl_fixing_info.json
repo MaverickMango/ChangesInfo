@@ -1,0 +1,1167 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "/home/liumengjiao/Desktop/CI/Benchmark/data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.NodeUtilTest::testIsBooleanResult,com.google.javascript.jscomp.NodeUtilTest::testLocalValue1",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.NodeUtil",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "80",
+  "workingDir": "../bugs/Closure_80_buggy",
+  "buggyCommit": "a2153e7405e09c8fa413a01874c949b8b2bcd32b",
+  "inducingCommit": "6a2378d43d1f06344f6418388d45c66fe3466a07",
+  "originalCommit": "f95797059bdc7b6c4cfc4960081f0773ec85bbf8",
+  "bug_name": "Closure_80",
+  "derive": "defects4j",
+  "original_fixing_commit": "58786c3f717fa506280127265cd68fedf17de0a9",
+  "buildFiles_changed": false,
+  "regression": true,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/NodeUtil.java",
+        "src/com/google/javascript/jscomp/NodeUtil.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.NodeUtil:checkForStateChangeHelper:[Node n, boolean checkForNewObjects, AbstractCompiler compiler]:boolean",
+            "com.google.javascript.jscomp.NodeUtil:functionCallHasSideEffects:[Node callNode, @Nullable AbstractCompiler compiler]:boolean",
+            "com.google.javascript.jscomp.NodeUtil:newCallNode:[Node callTarget, Node... parameters]:Node"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.NodeUtil:functionCallHasSideEffects:[Node callNode, @Nullable AbstractCompiler compiler]:boolean",
+            "com.google.javascript.jscomp.NodeUtil:evaluatesToLocalValue:[Node value]:boolean",
+            "com.google.javascript.jscomp.NodeUtil:evaluatesToLocalValue:[Node value, Predicate\u003cNode\u003e locals]:boolean",
+            "com.google.javascript.jscomp.NodeUtil:checkForStateChangeHelper:[Node n, boolean checkForNewObjects, AbstractCompiler compiler]:boolean"
+          ],
+          "num": 4
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "532",
+            "544",
+            "545",
+            "546",
+            "547",
+            "548",
+            "550",
+            "639",
+            "2215"
+          ],
+          "num": 9
+        },
+        {
+          "qualified_names": [
+            "533",
+            "534",
+            "535",
+            "536",
+            "537",
+            "549",
+            "550",
+            "551",
+            "552",
+            "553",
+            "554",
+            "555",
+            "556",
+            "557",
+            "559",
+            "560",
+            "561",
+            "562",
+            "563",
+            "564",
+            "565",
+            "566",
+            "567",
+            "568",
+            "569",
+            "570",
+            "571",
+            "572",
+            "573",
+            "574",
+            "664",
+            "665",
+            "666",
+            "667",
+            "668",
+            "2245",
+            "2246",
+            "2247",
+            "2248",
+            "2249",
+            "2250",
+            "2251",
+            "2252",
+            "2253",
+            "2254",
+            "2255",
+            "2256",
+            "2257",
+            "2258",
+            "2259",
+            "2260",
+            "2261",
+            "2262",
+            "2263",
+            "2264",
+            "2265",
+            "2266",
+            "2267",
+            "2268",
+            "2269",
+            "2270",
+            "2271",
+            "2272",
+            "2273",
+            "2274",
+            "2275",
+            "2276",
+            "2277",
+            "2278",
+            "2279",
+            "2280",
+            "2281",
+            "2282",
+            "2283",
+            "2284",
+            "2285",
+            "2286",
+            "2287",
+            "2288",
+            "2289",
+            "2290",
+            "2291",
+            "2292",
+            "2293",
+            "2294",
+            "2295",
+            "2296",
+            "2297",
+            "2298",
+            "2299",
+            "2300",
+            "2301",
+            "2302",
+            "2303",
+            "2304",
+            "2305",
+            "2306",
+            "2307",
+            "2308",
+            "2309",
+            "2310",
+            "2311",
+            "2312",
+            "2313",
+            "2314",
+            "2315",
+            "2316",
+            "2317",
+            "2318",
+            "2319"
+          ],
+          "num": 110
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/NodeUtil.java b/src/com/google/javascript/jscomp/NodeUtil.java\nindex 470635f..cec8b2d 100644\n--- a/src/com/google/javascript/jscomp/NodeUtil.java\n+++ b/src/com/google/javascript/jscomp/NodeUtil.java\n@@ -530,6 +530,11 @@\n         }\n \n         if (isAssignmentOp(n)) {\n+          Node assignTarget \u003d n.getFirstChild();\n+          if (isName(assignTarget)) {\n+            return true;\n+          }\n+\n           // Assignments will have side effects if\n           // a) The RHS has side effects, or\n           // b) The LHS has side effects, or\n@@ -541,13 +546,32 @@\n             return true;\n           }\n \n-          Node current \u003d n.getFirstChild();\n-          for (;\n-               current.getType() \u003d\u003d Token.GETPROP ||\n-               current.getType() \u003d\u003d Token.GETELEM;\n-               current \u003d current.getFirstChild()) { }\n+          if (isGet(assignTarget)) {\n+            // If the object being assigned to is a local object, don\u0027t\n+            // consider this a side-effect as it can\u0027t be referenced\n+            // elsewhere.  Don\u0027t do this recursively as the property might\n+            // be an alias of another object, unlike a literal below.\n+            Node current \u003d assignTarget.getFirstChild();\n+            if (evaluatesToLocalValue(current)) {\n+              return false;\n+            }\n \n-          return !isLiteralValue(current, true);\n+            // A literal value as defined by \"isLiteralValue\" is guaranteed\n+            // not to be an alias, or any components which are aliases of\n+            // other objects.\n+            // If the root object is a literal don\u0027t consider this a\n+            // side-effect.\n+            while (isGet(current)) {\n+              current \u003d current.getFirstChild();\n+            }\n+\n+            return !isLiteralValue(current, true);\n+          } else {\n+            // TODO(johnlenz): remove this code and make this an exception. This\n+            // is here only for legacy reasons, the AST is not valid but\n+            // preserve existing behavior.\n+            return !isLiteralValue(assignTarget, true);\n+          }\n         }\n \n         return true;\n@@ -637,6 +661,11 @@\n         return false;\n       }\n     } else if (nameNode.getType() \u003d\u003d Token.GETPROP) {\n+      if (callNode.isOnlyModifiesThisCall()\n+          \u0026\u0026 evaluatesToLocalValue(nameNode.getFirstChild())) {\n+        return false;\n+      }\n+\n       // Functions in the \"Math\" namespace have no side effects.\n       if (nameNode.getFirstChild().getType() \u003d\u003d Token.NAME) {\n         String namespaceName \u003d nameNode.getFirstChild().getString();\n@@ -2213,4 +2242,79 @@\n     }\n     return call;\n   }\n+\n+  /**\n+   * @return Whether the node is known to be a value that is not referenced\n+   * elsewhere.\n+   */\n+  static boolean evaluatesToLocalValue(Node value) {\n+    return evaluatesToLocalValue(value, Predicates.\u003cNode\u003ealwaysFalse());\n+  }\n+\n+  /**\n+   * @param locals A predicate to apply to unknown local values.\n+   * @return Whether the node is known to be a value that is not a reference\n+   *     outside the expression scope.\n+   */\n+  static boolean evaluatesToLocalValue(Node value, Predicate\u003cNode\u003e locals) {\n+    switch (value.getType()) {\n+      case Token.ASSIGN:\n+        // A result that is aliased by a non-local name, is the effectively the\n+        // same as returning a non-local name, but this doesn\u0027t matter if the\n+        // value is immutable.\n+        return NodeUtil.isImmutableValue(value.getLastChild())\n+            || (locals.apply(value)\n+                \u0026\u0026 evaluatesToLocalValue(value.getLastChild(), locals));\n+      case Token.COMMA:\n+        return evaluatesToLocalValue(value.getLastChild(), locals);\n+      case Token.AND:\n+      case Token.OR:\n+        return evaluatesToLocalValue(value.getFirstChild(), locals)\n+           \u0026\u0026 evaluatesToLocalValue(value.getLastChild(), locals);\n+      case Token.HOOK:\n+        return evaluatesToLocalValue(value.getFirstChild().getNext(), locals)\n+           \u0026\u0026 evaluatesToLocalValue(value.getLastChild(), locals);\n+      case Token.INC:\n+      case Token.DEC:\n+        if (value.getBooleanProp(Node.INCRDECR_PROP)) {\n+          return evaluatesToLocalValue(value.getFirstChild(), locals);\n+        } else {\n+          return true;\n+        }\n+      case Token.THIS:\n+        return locals.apply(value);\n+      case Token.NAME:\n+        return isImmutableValue(value) || locals.apply(value);\n+      case Token.GETELEM:\n+      case Token.GETPROP:\n+        // There is no information about the locality of object properties.\n+        return locals.apply(value);\n+      case Token.CALL:\n+        return callHasLocalResult(value) || locals.apply(value);\n+      case Token.NEW:\n+        return true;\n+      case Token.FUNCTION:\n+      case Token.REGEXP:\n+      case Token.ARRAYLIT:\n+      case Token.OBJECTLIT:\n+        // Literals objects with non-literal children are allowed.\n+        return true;\n+      case Token.IN:\n+        // TODO(johnlenz): should IN operator be included in #isSimpleOperator?\n+        return true;\n+      default:\n+        // Other op force a local value:\n+        //  x \u003d \u0027\u0027 + g (x is now an local string)\n+        //  x -\u003d g (x is now an local number)\n+        if (isAssignmentOp(value)\n+            || isSimpleOperator(value)\n+            || isImmutableValue(value)) {\n+          return true;\n+        }\n+\n+        throw new IllegalStateException(\n+            \"Unexpected expression node\" + value +\n+            \"\\n parent:\" + value.getParent());\n+    }\n+  }\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [66941,67172]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [67176,69726]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [15840,15878]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [15889,15953]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [16445,17620]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [20377,20508]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [15840,15844]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [15845,15877]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [16449,16468]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [16470,17348]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Block [17354,17620]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: assignTarget [15845,15857]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [15860,15877]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [16827,16906]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "WhileStatement [17197,17284]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: getFirstChild [15862,15875]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [17204,17218]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [17220,17284]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ExpressionStatement [17236,17270]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [16386,16473]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [16525,16528]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ForStatement [16364,16528]",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/PureFunctionIdentifier.java",
+        "src/com/google/javascript/jscomp/PureFunctionIdentifier.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.PureFunctionIdentifier\\$SideEffectFlags:removeFlag:[int flag]:void",
+            "com.google.javascript.jscomp.PureFunctionIdentifier\\$SideEffectFlags:setAllFlags:[]:void",
+            "com.google.javascript.jscomp.PureFunctionIdentifier:isKnownLocalValue:[Node value]:boolean",
+            "com.google.javascript.jscomp.PureFunctionIdentifier\\$SideEffectPropagationCallback:traverseEdge:[FunctionInformation callee, Node callSite, FunctionInformation caller]:boolean",
+            "com.google.javascript.jscomp.PureFunctionIdentifier\\$SideEffectFlags:setReturnsTainted:[]:void",
+            "com.google.javascript.jscomp.PureFunctionIdentifier\\$FunctionAnalyzer:visit:[NodeTraversal traversal, Node node, Node parent]:void",
+            "com.google.javascript.jscomp.PureFunctionIdentifier\\$SideEffectFlags:valueOf:[]:int",
+            "com.google.javascript.jscomp.PureFunctionIdentifier\\$SideEffectFlags:setMutatesArguments:[]:void",
+            "com.google.javascript.jscomp.PureFunctionIdentifier:markPureFunctionCalls:[]:void",
+            "com.google.javascript.jscomp.PureFunctionIdentifier\\$FunctionAnalyzer:visitAssignmentOrUnaryOperator:[FunctionInformation sideEffectInfo, Scope scope, Node op, Node lhs, Node rhs]:void",
+            "com.google.javascript.jscomp.PureFunctionIdentifier\\$SideEffectFlags:setMutatesThis:[]:void",
+            "com.google.javascript.jscomp.PureFunctionIdentifier\\$SideEffectFlags:areAllFlagsSet:[]:boolean",
+            "com.google.javascript.jscomp.PureFunctionIdentifier\\$SideEffectFlags:clearAllFlags:[]:void",
+            "com.google.javascript.jscomp.PureFunctionIdentifier\\$SideEffectFlags:clearSideEffectFlags:[]:void",
+            "com.google.javascript.jscomp.PureFunctionIdentifier\\$SideEffectFlags:setMutatesGlobalState:[]:void",
+            "com.google.javascript.jscomp.PureFunctionIdentifier\\$SideEffectFlags:setThrows:[]:void",
+            "com.google.javascript.jscomp.PureFunctionIdentifier\\$FunctionAnalyzer:visitFunction:[NodeTraversal traversal, Node node, Node parent, Node gramp]:void"
+          ],
+          "num": 17
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.PureFunctionIdentifier:isKnownLocalValue:[Node value]:boolean",
+            "com.google.javascript.jscomp.PureFunctionIdentifier\\$SideEffectPropagationCallback:traverseEdge:[FunctionInformation callee, Node callSite, FunctionInformation caller]:boolean",
+            "com.google.javascript.jscomp.PureFunctionIdentifier\\$FunctionAnalyzer:visitFunction:[NodeTraversal traversal, Node node, Node parent, Node gramp]:void",
+            "com.google.javascript.jscomp.PureFunctionIdentifier:markPureFunctionCalls:[]:void",
+            "com.google.javascript.jscomp.PureFunctionIdentifier\\$FunctionAnalyzer:visit:[NodeTraversal traversal, Node node, Node parent]:void",
+            "com.google.javascript.jscomp.PureFunctionIdentifier\\$FunctionAnalyzer:visitAssignmentOrUnaryOperator:[FunctionInformation sideEffectInfo, Scope scope, Node op, Node lhs, Node rhs]:void"
+          ],
+          "num": 6
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "19",
+            "310",
+            "364",
+            "365",
+            "366",
+            "367",
+            "368",
+            "369",
+            "370",
+            "371",
+            "372",
+            "373",
+            "374",
+            "375",
+            "376",
+            "377",
+            "378",
+            "379",
+            "380",
+            "381",
+            "382",
+            "383",
+            "384",
+            "385",
+            "386",
+            "387",
+            "388",
+            "389",
+            "390",
+            "391",
+            "392",
+            "393",
+            "394",
+            "395",
+            "396",
+            "397",
+            "398",
+            "399",
+            "400",
+            "401",
+            "402",
+            "403",
+            "404",
+            "405",
+            "406",
+            "407",
+            "408",
+            "409",
+            "410",
+            "411",
+            "412",
+            "413",
+            "414",
+            "415",
+            "416",
+            "417",
+            "418",
+            "419",
+            "420",
+            "499",
+            "510",
+            "597",
+            "661",
+            "766",
+            "767",
+            "768",
+            "769",
+            "770",
+            "771",
+            "772",
+            "773",
+            "774",
+            "775",
+            "776",
+            "777",
+            "778",
+            "779",
+            "780",
+            "781",
+            "782",
+            "783",
+            "784",
+            "785",
+            "786",
+            "787",
+            "788",
+            "789",
+            "790",
+            "791",
+            "792",
+            "793",
+            "795",
+            "796",
+            "797",
+            "798",
+            "799",
+            "800",
+            "801",
+            "802",
+            "803",
+            "804",
+            "805",
+            "806",
+            "807",
+            "808",
+            "809",
+            "810",
+            "811",
+            "812",
+            "813",
+            "814",
+            "815",
+            "816",
+            "817",
+            "818",
+            "819",
+            "820",
+            "821",
+            "822",
+            "823",
+            "826",
+            "827",
+            "828",
+            "829",
+            "877"
+          ],
+          "num": 125
+        },
+        {
+          "qualified_names": [
+            "21",
+            "310",
+            "363",
+            "442",
+            "453",
+            "540",
+            "541",
+            "542",
+            "607",
+            "608",
+            "609",
+            "610",
+            "611",
+            "612",
+            "717",
+            "718",
+            "719",
+            "720",
+            "721",
+            "722",
+            "723",
+            "724",
+            "725",
+            "726",
+            "727",
+            "729",
+            "730",
+            "731",
+            "732",
+            "733",
+            "734",
+            "735",
+            "736",
+            "737",
+            "739",
+            "740",
+            "741",
+            "743",
+            "791",
+            "792"
+          ],
+          "num": 40
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/PureFunctionIdentifier.java b/src/com/google/javascript/jscomp/PureFunctionIdentifier.java\nindex f5e2d40..3facebe 100644\n--- a/src/com/google/javascript/jscomp/PureFunctionIdentifier.java\n+++ b/src/com/google/javascript/jscomp/PureFunctionIdentifier.java\n@@ -16,9 +16,9 @@\n \n package com.google.javascript.jscomp;\n \n-import com.google.common.annotations.VisibleForTesting;\n import com.google.common.base.Charsets;\n import com.google.common.base.Preconditions;\n+import com.google.common.base.Predicate;\n import com.google.common.collect.Lists;\n import com.google.common.collect.Maps;\n import com.google.common.collect.Sets;\n@@ -307,7 +307,7 @@\n       Collection\u003cDefinition\u003e defs \u003d\n           getCallableDefinitions(definitionProvider, name);\n       // Default to side effects, non-local results\n-      SideEffectFlags flags \u003d new SideEffectFlags();\n+      Node.SideEffectFlags flags \u003d new Node.SideEffectFlags();\n       if (defs \u003d\u003d null) {\n         flags.setMutatesGlobalState();\n         flags.setThrows();\n@@ -361,63 +361,6 @@\n     }\n   }\n \n-  private static class SideEffectFlags {\n-    private int value \u003d Node.SIDE_EFFECTS_ALL;\n-\n-    int valueOf() {\n-      return value;\n-    }\n-\n-    /** All side-effect occur and the returned results are non-local. */\n-    void setAllFlags() {\n-      value \u003d Node.SIDE_EFFECTS_ALL;\n-    }\n-\n-    /** No side-effects occur and the returned results are local. */\n-    void clearAllFlags() {\n-      value \u003d Node.NO_SIDE_EFFECTS | Node.FLAG_LOCAL_RESULTS;\n-    }\n-\n-    boolean areAllFlagsSet() {\n-      return value \u003d\u003d Node.SIDE_EFFECTS_ALL;\n-    }\n-\n-    /**\n-     * Preserve the return result flag, but clear the others:\n-     *   no global state change, no throws, no this change, no arguments change\n-     */\n-    void clearSideEffectFlags() {\n-      value |\u003d Node.NO_SIDE_EFFECTS;\n-    }\n-\n-    void setMutatesGlobalState() {\n-      // Modify global means everything must be assumed to be modified.\n-      removeFlag(Node.FLAG_GLOBAL_STATE_UNMODIFIED);\n-      removeFlag(Node.FLAG_ARGUMENTS_UNMODIFIED);\n-      removeFlag(Node.FLAG_THIS_UNMODIFIED);\n-    }\n-\n-    void setThrows() {\n-      removeFlag(Node.FLAG_NO_THROWS);\n-    }\n-\n-    void setMutatesThis() {\n-      removeFlag(Node.FLAG_THIS_UNMODIFIED);\n-    }\n-\n-    void setMutatesArguments() {\n-      removeFlag(Node.FLAG_ARGUMENTS_UNMODIFIED);\n-    }\n-\n-    void setReturnsTainted() {\n-      removeFlag(Node.FLAG_LOCAL_RESULTS);\n-    }\n-\n-    private void removeFlag(int flag) {\n-      value \u0026\u003d ~flag;\n-    }\n-  }\n-\n   /**\n    * Gather list of functions, functions with @nosideeffect\n    * annotations, call sites, and functions that may mutate variables\n@@ -496,7 +439,7 @@\n               // Assignment to local, if the value isn\u0027t a safe local value,\n               // new object creation or literal or known primitive result\n               // value, add it to the local blacklist.\n-              if (value !\u003d null \u0026\u0026 !isKnownLocalValue(value)) {\n+              if (value !\u003d null \u0026\u0026 !NodeUtil.evaluatesToLocalValue(value)) {\n                 Scope scope \u003d traversal.getScope();\n                 Var var \u003d scope.getVar(node.getString());\n                 sideEffectInfo.blacklistLocal(var);\n@@ -507,7 +450,7 @@\n               break;\n             case Token.RETURN:\n               if (node.hasChildren()\n-                  \u0026\u0026 !isKnownLocalValue(node.getFirstChild())) {\n+                  \u0026\u0026 !NodeUtil.evaluatesToLocalValue(node.getFirstChild())) {\n                 sideEffectInfo.setTaintsReturn();\n               }\n               break;\n@@ -594,7 +537,9 @@\n           Preconditions.checkState(\n               NodeUtil.isAssignmentOp(op)\n               || isIncDec(op) || op.getType() \u003d\u003d Token.DELPROP);\n-          if (rhs !\u003d null \u0026\u0026 NodeUtil.isAssign(op) \u0026\u0026 !isKnownLocalValue(rhs)) {\n+          if (rhs !\u003d null\n+              \u0026\u0026 NodeUtil.isAssign(op)\n+              \u0026\u0026 !NodeUtil.evaluatesToLocalValue(rhs)) {\n             sideEffectInfo.blacklistLocal(var);\n           }\n         }\n@@ -659,6 +604,12 @@\n       FunctionInformation sideEffectInfo \u003d new FunctionInformation(inExterns);\n       functionSideEffectMap.put(node, sideEffectInfo);\n \n+      if (inExterns) {\n+        // TODO(johnlenz): determine the locality of the results of extern\n+        // functions.\n+        sideEffectInfo.setTaintsReturn();\n+      }\n+\n       JSDocInfo info \u003d getJSDocInfoForFunction(node, parent, gramp);\n       if (info !\u003d null) {\n         boolean hasSpecificSideEffects \u003d false;\n@@ -763,70 +714,33 @@\n    * @return Whether the node is known to be a value that is not a reference\n    *     outside the local scope.\n    */\n-  @VisibleForTesting\n-  static boolean isKnownLocalValue(Node value) {\n-    // TODO(johnlenz): traverse into expression.\n-    // return NodeUtil.isNew(value) || NodeUtil.isLiteralValue(value, true);\n-    switch (value.getType()) {\n-      case Token.ASSIGN:\n-      case Token.COMMA:\n-        return isKnownLocalValue(value.getLastChild());\n-      case Token.AND:\n-      case Token.OR:\n-        return isKnownLocalValue(value.getFirstChild()) \u0026\u0026\n-           isKnownLocalValue(value.getLastChild());\n-      case Token.HOOK:\n-        return isKnownLocalValue(value.getFirstChild().getNext()) \u0026\u0026\n-           isKnownLocalValue(value.getLastChild());\n-      case Token.INC:\n-      case Token.DEC:\n-        if (value.getBooleanProp(Node.INCRDECR_PROP)) {\n-          return isKnownLocalValue(value.getFirstChild());\n-        } else {\n-          return true;\n-        }\n-      case Token.THIS:\n-        // TODO(johnlenz): maybe redirect this to be a tainting list for \u0027this\u0027.\n-        return false;\n-      case Token.NAME:\n-        // TODO(johnlenz): add to local tainting list, if the NAME\n-        // is known to be a local.\n+  private static boolean isKnownLocalValue(Node value) {\n+    Predicate\u003cNode\u003e taintingPredicate \u003d new Predicate\u003cNode\u003e() {\n+      @Override\n+      public boolean apply(Node value) {\n+        switch (value.getType()) {\n+          case Token.THIS:\n+            // TODO(johnlenz): maybe redirect this to be a tainting list for \u0027this\u0027.\n+            return false;\n+          case Token.NAME:\n+            // TODO(johnlenz): add to local tainting list, if the NAME\n+            // is known to be a local.\n \n-        // \"undefined\", \"NaN\" and \"Infinity\" are allowed.\n-        return NodeUtil.isImmutableValue(value);\n-      case Token.GETELEM:\n-      case Token.GETPROP:\n-        // There is no information about the locality of object properties.\n-        return false;\n-      case Token.CALL:\n-        // TODO(johnlenz): add to local tainting list, if the call result\n-        // is not known to be a local result.\n-        return false;\n-      case Token.NEW:\n-        return true;\n-      case Token.FUNCTION:\n-      case Token.REGEXP:\n-      case Token.ARRAYLIT:\n-      case Token.OBJECTLIT:\n-        // Literals objects with non-literal children are allowed.\n-        return true;\n-      case Token.IN:\n-        // The IN operator is not include in NodeUtil#isSimpleOperator.\n-        return true;\n-      default:\n-        // Other op force a local value:\n-        //  x \u003d \u0027\u0027 + g (x is now an local string)\n-        //  x -\u003d g (x is now an local number)\n-        if (NodeUtil.isAssignmentOp(value)\n-            || NodeUtil.isSimpleOperator(value)\n-            || NodeUtil.isImmutableValue(value)) {\n-          return true;\n+            return false;\n+          case Token.GETELEM:\n+          case Token.GETPROP:\n+            // There is no information about the locality of object properties.\n+            return false;\n+          case Token.CALL:\n+            // TODO(johnlenz): add to local tainting list, if the call result\n+            // is not known to be a local result.\n+            return false;\n         }\n+        return false;\n+      }\n+    };\n \n-        throw new IllegalStateException(\n-            \"Unexpected expression node\" + value +\n-            \"\\n parent:\" + value.getParent());\n-    }\n+    return NodeUtil.evaluatesToLocalValue(value, taintingPredicate);\n   }\n \n   /**\n@@ -874,7 +788,8 @@\n               caller.setTaintsThis();\n               changed \u003d true;\n             }\n-          } else if (objectNode !\u003d null \u0026\u0026 isKnownLocalValue(objectNode)\n+          } else if (objectNode !\u003d null\n+              \u0026\u0026 NodeUtil.evaluatesToLocalValue(objectNode)\n               \u0026\u0026 !isCallOrApply(callSite)) {\n             // Modifying \u0027this\u0027 on a known local object doesn\u0027t change any\n             // significant state.\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [720,760]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: private [24715,24722]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [24774,25621]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [21368,21531]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ParameterizedType [24774,24789]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [24790,25620]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: taintingPredicate [24790,24807]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ClassInstanceCreation [24810,25620]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ParameterizedType [24814,24829]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "AnonymousClassDeclaration [24832,25620]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: taintingPredicate [25672,25689]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "QualifiedName: Node.SideEffectFlags [11234,11254]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodDeclaration [24840,25614]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MarkerAnnotation [24840,24849]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: public [24856,24862]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrimitiveType: boolean [24863,24870]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: apply [24871,24876]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [24877,24887]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [24889,25614]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "QualifiedName: Node.SideEffectFlags [11267,11287]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [19134,19142]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [15611,15619]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [16034,16042]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [27664,27672]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [635,690]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: SideEffectFlags [11249,11264]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: SideEffectFlags [11277,11292]",
+          "to": ""
+        },
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MarkerAnnotation [25899,25917]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [26130,26148]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [26155,26172]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [26181,26228]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [26235,26250]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [26257,26271]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [26280,26382]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [26389,26405]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [26414,26526]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [26533,26548]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [26555,26570]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [26579,26735]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [27416,27431]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [27459,27479]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [27486,27504]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [27511,27531]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [27538,27559]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SwitchCase [27654,27668]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [27749,27761]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SwitchCase [27768,27776]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [27922,28088]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ThrowStatement [28098,28228]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/Node.java",
+        "src/com/google/javascript/rhino/Node.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.Node:isNoSideEffectsCall:[]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.Node\\$SideEffectFlags:setAllFlags:[]:void",
+            "com.google.javascript.rhino.Node\\$SideEffectFlags:SideEffectFlags:[int value]:null",
+            "com.google.javascript.rhino.Node\\$SideEffectFlags:clearSideEffectFlags:[]:void",
+            "com.google.javascript.rhino.Node\\$SideEffectFlags:setMutatesThis:[]:void",
+            "com.google.javascript.rhino.Node\\$SideEffectFlags:SideEffectFlags:[]:null",
+            "com.google.javascript.rhino.Node\\$SideEffectFlags:setMutatesGlobalState:[]:void",
+            "com.google.javascript.rhino.Node:isOnlyModifiesThisCall:[]:boolean",
+            "com.google.javascript.rhino.Node\\$SideEffectFlags:areAllFlagsSet:[]:boolean",
+            "com.google.javascript.rhino.Node:setSideEffectFlags:[SideEffectFlags flags]:void",
+            "com.google.javascript.rhino.Node\\$SideEffectFlags:setMutatesArguments:[]:void",
+            "com.google.javascript.rhino.Node:isNoSideEffectsCall:[]:boolean",
+            "com.google.javascript.rhino.Node\\$SideEffectFlags:removeFlag:[int flag]:void",
+            "com.google.javascript.rhino.Node\\$SideEffectFlags:valueOf:[]:int",
+            "com.google.javascript.rhino.Node\\$SideEffectFlags:clearAllFlags:[]:void",
+            "com.google.javascript.rhino.Node\\$SideEffectFlags:setReturnsTainted:[]:void",
+            "com.google.javascript.rhino.Node\\$SideEffectFlags:setThrows:[]:void"
+          ],
+          "num": 16
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "2089",
+            "2103",
+            "2111"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "2088",
+            "2103",
+            "2104",
+            "2105",
+            "2106",
+            "2115",
+            "2116",
+            "2117",
+            "2118",
+            "2119",
+            "2120",
+            "2121",
+            "2122",
+            "2123",
+            "2124",
+            "2125",
+            "2126",
+            "2127",
+            "2128",
+            "2129",
+            "2130",
+            "2131",
+            "2132",
+            "2133",
+            "2134",
+            "2135",
+            "2136",
+            "2137",
+            "2138",
+            "2139",
+            "2140",
+            "2141",
+            "2142",
+            "2143",
+            "2144",
+            "2145",
+            "2146",
+            "2147",
+            "2148",
+            "2149",
+            "2150",
+            "2151",
+            "2152",
+            "2153",
+            "2154",
+            "2155",
+            "2156",
+            "2157",
+            "2158",
+            "2159",
+            "2160",
+            "2161",
+            "2162",
+            "2163",
+            "2164",
+            "2165",
+            "2166",
+            "2167",
+            "2168",
+            "2169",
+            "2170",
+            "2171",
+            "2172",
+            "2173",
+            "2174",
+            "2175",
+            "2176",
+            "2177",
+            "2178",
+            "2179",
+            "2180",
+            "2181",
+            "2182",
+            "2183",
+            "2184",
+            "2185",
+            "2186",
+            "2187",
+            "2188",
+            "2189",
+            "2190",
+            "2191",
+            "2192",
+            "2193"
+          ],
+          "num": 84
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/Node.java b/src/com/google/javascript/rhino/Node.java\nindex 3042113..2c01b76 100644\n--- a/src/com/google/javascript/rhino/Node.java\n+++ b/src/com/google/javascript/rhino/Node.java\n@@ -2086,7 +2086,6 @@\n     | FLAG_ARGUMENTS_UNMODIFIED\n     | FLAG_NO_THROWS;\n \n-\n   /**\n    * Marks this function or constructor call\u0027s side effect flags.\n    * This property is only meaningful for {@link Token#CALL} and\n@@ -2101,6 +2100,10 @@\n     putIntProp(SIDE_EFFECT_FLAGS, flags);\n   }\n \n+  public void setSideEffectFlags(SideEffectFlags flags) {\n+    setSideEffectFlags(flags.valueOf());\n+  }\n+\n   /**\n    * Returns the side effects flags for this node.\n    */\n@@ -2109,6 +2112,85 @@\n   }\n \n   /**\n+   * A helper class for getting and setting the side-effect flags.\n+   * @author johnlenz@google.com (John Lenz)\n+   */\n+  public static class SideEffectFlags {\n+    private int value \u003d Node.SIDE_EFFECTS_ALL;\n+\n+    public SideEffectFlags() {\n+    }\n+\n+    public SideEffectFlags(int value) {\n+      this.value \u003d value;\n+    }\n+\n+    public int valueOf() {\n+      return value;\n+    }\n+\n+    /** All side-effect occur and the returned results are non-local. */\n+    public void setAllFlags() {\n+      value \u003d Node.SIDE_EFFECTS_ALL;\n+    }\n+\n+    /** No side-effects occur and the returned results are local. */\n+    public void clearAllFlags() {\n+      value \u003d Node.NO_SIDE_EFFECTS | Node.FLAG_LOCAL_RESULTS;\n+    }\n+\n+    public boolean areAllFlagsSet() {\n+      return value \u003d\u003d Node.SIDE_EFFECTS_ALL;\n+    }\n+\n+    /**\n+     * Preserve the return result flag, but clear the others:\n+     *   no global state change, no throws, no this change, no arguments change\n+     */\n+    public void clearSideEffectFlags() {\n+      value |\u003d Node.NO_SIDE_EFFECTS;\n+    }\n+\n+    public void setMutatesGlobalState() {\n+      // Modify global means everything must be assumed to be modified.\n+      removeFlag(Node.FLAG_GLOBAL_STATE_UNMODIFIED);\n+      removeFlag(Node.FLAG_ARGUMENTS_UNMODIFIED);\n+      removeFlag(Node.FLAG_THIS_UNMODIFIED);\n+    }\n+\n+    public void setThrows() {\n+      removeFlag(Node.FLAG_NO_THROWS);\n+    }\n+\n+    public void setMutatesThis() {\n+      removeFlag(Node.FLAG_THIS_UNMODIFIED);\n+    }\n+\n+    public void setMutatesArguments() {\n+      removeFlag(Node.FLAG_ARGUMENTS_UNMODIFIED);\n+    }\n+\n+    public void setReturnsTainted() {\n+      removeFlag(Node.FLAG_LOCAL_RESULTS);\n+    }\n+\n+    private void removeFlag(int flag) {\n+      value \u0026\u003d ~flag;\n+    }\n+  }\n+\n+  /**\n+   * @return Whether the only side-effect is \"modifies this\"\n+   */\n+  public boolean isOnlyModifiesThisCall() {\n+    return areBitFlagsSet(\n+        getSideEffectFlags() \u0026 Node.NO_SIDE_EFFECTS,\n+        Node.FLAG_GLOBAL_STATE_UNMODIFIED\n+            | Node.FLAG_ARGUMENTS_UNMODIFIED\n+            | Node.FLAG_NO_THROWS);\n+  }\n+\n+  /**\n    * Returns true if this node is a function or constructor call that\n    * has no side effects.\n    */\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [64029,64129]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TypeDeclaration [64279,65996]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [66000,66321]"
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.google.javascript.rhino.Node\\$SideEffectFlags:setMutatesArguments:[]:void",
+        "com.google.javascript.jscomp.NodeUtil:evaluatesToLocalValue:[Node value, Predicate\u003cNode\u003e locals]:boolean",
+        "com.google.javascript.rhino.Node\\$SideEffectFlags:clearAllFlags:[]:void",
+        "com.google.javascript.rhino.Node:setSideEffectFlags:[SideEffectFlags flags]:void",
+        "com.google.javascript.rhino.Node\\$SideEffectFlags:setMutatesGlobalState:[]:void",
+        "com.google.javascript.rhino.Node\\$SideEffectFlags:valueOf:[]:int",
+        "com.google.javascript.rhino.Node\\$SideEffectFlags:areAllFlagsSet:[]:boolean",
+        "com.google.javascript.rhino.Node:isOnlyModifiesThisCall:[]:boolean",
+        "com.google.javascript.rhino.Node\\$SideEffectFlags:SideEffectFlags:[int value]:null",
+        "com.google.javascript.rhino.Node\\$SideEffectFlags:setMutatesThis:[]:void",
+        "com.google.javascript.rhino.Node\\$SideEffectFlags:clearSideEffectFlags:[]:void",
+        "com.google.javascript.rhino.Node\\$SideEffectFlags:removeFlag:[int flag]:void",
+        "com.google.javascript.rhino.Node\\$SideEffectFlags:setAllFlags:[]:void",
+        "com.google.javascript.rhino.Node\\$SideEffectFlags:setReturnsTainted:[]:void",
+        "com.google.javascript.rhino.Node\\$SideEffectFlags:setThrows:[]:void",
+        "com.google.javascript.jscomp.NodeUtil:evaluatesToLocalValue:[Node value]:boolean",
+        "com.google.javascript.rhino.Node\\$SideEffectFlags:SideEffectFlags:[]:null"
+      ],
+      "num": 17
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.NodeUtil:newCallNode:[Node callTarget, Node... parameters]:Node",
+        "com.google.javascript.jscomp.PureFunctionIdentifier\\$SideEffectFlags:setMutatesThis:[]:void",
+        "com.google.javascript.jscomp.PureFunctionIdentifier\\$SideEffectFlags:areAllFlagsSet:[]:boolean",
+        "com.google.javascript.jscomp.PureFunctionIdentifier\\$SideEffectFlags:clearAllFlags:[]:void",
+        "com.google.javascript.jscomp.PureFunctionIdentifier\\$SideEffectFlags:valueOf:[]:int",
+        "com.google.javascript.jscomp.PureFunctionIdentifier\\$SideEffectFlags:clearSideEffectFlags:[]:void",
+        "com.google.javascript.jscomp.PureFunctionIdentifier\\$SideEffectFlags:setAllFlags:[]:void",
+        "com.google.javascript.jscomp.PureFunctionIdentifier\\$SideEffectFlags:setMutatesGlobalState:[]:void",
+        "com.google.javascript.jscomp.PureFunctionIdentifier\\$SideEffectFlags:setReturnsTainted:[]:void",
+        "com.google.javascript.jscomp.PureFunctionIdentifier\\$SideEffectFlags:setThrows:[]:void",
+        "com.google.javascript.jscomp.PureFunctionIdentifier\\$SideEffectFlags:removeFlag:[int flag]:void",
+        "com.google.javascript.jscomp.PureFunctionIdentifier\\$SideEffectFlags:setMutatesArguments:[]:void"
+      ],
+      "num": 12
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.NodeUtilTest",
+      "test_function": "testIsBooleanResult",
+      "assertion_line": "1504",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.NodeUtilTest",
+      "test_function": "testLocalValue1",
+      "assertion_line": "1169",
+      "exception": "java.lang.IllegalStateException",
+      "message": "Unexpected expression nodeDELPROP 1 [sourcename:  [testcode] ] [parenthesized: true]"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/NodeUtil.java",
+        "src/com/google/javascript/jscomp/NodeUtil.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.NodeUtil:isBooleanResultHelper:[Node n]:boolean",
+            "com.google.javascript.jscomp.NodeUtil:evaluatesToLocalValue:[Node value, Predicate\u003cNode\u003e locals]:boolean"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.NodeUtil:isBooleanResultHelper:[Node n]:boolean",
+            "com.google.javascript.jscomp.NodeUtil:evaluatesToLocalValue:[Node value, Predicate\u003cNode\u003e locals]:boolean"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1260",
+            "2908"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "1261",
+            "1262",
+            "2911"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/NodeUtil.java b/src/com/google/javascript/jscomp/NodeUtil.java\nindex 477d444..dfcd3eb 100644\n--- a/src/com/google/javascript/jscomp/NodeUtil.java\n+++ b/src/com/google/javascript/jscomp/NodeUtil.java\n@@ -1258,6 +1258,8 @@\n       case Token.INSTANCEOF:\n       // Inversion\n       case Token.NOT:\n+      // delete operator returns a boolean.\n+      case Token.DELPROP:\n         return true;\n       default:\n         return false;\n@@ -2906,6 +2908,7 @@\n       case Token.OBJECTLIT:\n         // Literals objects with non-literal children are allowed.\n         return true;\n+      case Token.DELPROP:\n       case Token.IN:\n         // TODO(johnlenz): should IN operator be included in #isSimpleOperator?\n         return true;\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SwitchCase [37267,37286]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SwitchCase [86078,86097]"
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "patch_changed_mths": {
+    "qualified_names": [
+      "com.google.javascript.jscomp.NodeUtil:evaluatesToLocalValue(Lcom/google/javascript/rhino/Node;Lcom/google/common/base/Predicate;)Z:regression"
+    ],
+    "num": 1
+  }
+}

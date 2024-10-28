@@ -1,0 +1,155 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math.linear.ArrayRealVectorTest::testBasicFunctions,org.apache.commons.math.linear.SparseRealVectorTest::testBasicFunctions",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math.linear.ArrayRealVector,org.apache.commons.math.linear.OpenMapRealVector",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "77",
+  "workingDir": "../bugs/Math_77_tmp",
+  "bug_name": "Math_77",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math.linear.ArrayRealVectorTest",
+      "test_function": "testBasicFunctions",
+      "assertion_line": "1098",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "compare values   expected:\u003c6.0\u003e but was:\u003c128.0\u003e"
+    },
+    {
+      "test_class": "org.apache.commons.math.linear.SparseRealVectorTest",
+      "test_function": "testBasicFunctions",
+      "assertion_line": "968",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "compare values   expected:\u003c6.0\u003e but was:\u003c-3.0\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/linear/ArrayRealVector.java",
+        "src/main/java/org/apache/commons/math/linear/ArrayRealVector.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.linear.ArrayRealVector:getLInfNorm:[]:double"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.linear.ArrayRealVector:getLInfNorm:[]:double"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "721"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "721"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/linear/ArrayRealVector.java b/src/main/java/org/apache/commons/math/linear/ArrayRealVector.java\nindex 22d0a28..37c4417 100644\n--- a/src/main/java/org/apache/commons/math/linear/ArrayRealVector.java\n+++ b/src/main/java/org/apache/commons/math/linear/ArrayRealVector.java\n@@ -718,7 +718,7 @@\n     public double getLInfNorm() {\n         double max \u003d 0;\n         for (double a : data) {\n-            max \u003d Math.max(max, Math.abs(a));\n+            max +\u003d Math.max(max, Math.abs(a));\n         }\n         return max;\n     }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [21921,21955]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [21921,21954]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/linear/OpenMapRealVector.java",
+        "src/main/java/org/apache/commons/math/linear/OpenMapRealVector.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.linear.OpenMapRealVector:getLInfNorm:[]:double"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "497"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "498",
+            "499",
+            "500",
+            "501",
+            "502",
+            "503",
+            "504",
+            "505",
+            "506"
+          ],
+          "num": 9
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/linear/OpenMapRealVector.java b/src/main/java/org/apache/commons/math/linear/OpenMapRealVector.java\nindex eb5be1b..e025960 100644\n--- a/src/main/java/org/apache/commons/math/linear/OpenMapRealVector.java\n+++ b/src/main/java/org/apache/commons/math/linear/OpenMapRealVector.java\n@@ -495,6 +495,15 @@\n         return max;\n     }\n \n+    public double getLInfNorm() {\n+        double max \u003d 0;\n+        Iterator iter \u003d entries.iterator();\n+        while (iter.hasNext()) {\n+            iter.advance();\n+            max +\u003d iter.value();\n+        }\n+        return max;\n+    }\n     /**\n      * Optimized method to compute LInfDistance.\n      * @param v The vector to compute from\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [17076,17303]"
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.apache.commons.math.linear.OpenMapRealVector:getLInfNorm:[]:double"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

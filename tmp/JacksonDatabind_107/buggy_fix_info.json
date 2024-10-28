@@ -1,0 +1,97 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.deser.filter.ProblemHandlerUnknownTypeId2221Test::testWithDeserializationProblemHandler",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.jsontype.impl.TypeDeserializerBase",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "107",
+  "workingDir": "../bugs/JacksonDatabind_107_tmp",
+  "bug_name": "JacksonDatabind_107",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.deser.filter.ProblemHandlerUnknownTypeId2221Test",
+      "test_function": "testWithDeserializationProblemHandler",
+      "assertion_line": "95",
+      "exception": "com.fasterxml.jackson.databind.JsonMappingException",
+      "message": "(was java.lang.NullPointerException) (through reference chain: com.fasterxml.jackson.databind.deser.filter.ProblemHandlerUnknownTypeId2221Test$GenericContent[\"innerObjects\"]-\u003ejava.util.ArrayList[1])"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/jsontype/impl/TypeDeserializerBase.java",
+        "src/main/java/com/fasterxml/jackson/databind/jsontype/impl/TypeDeserializerBase.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.jsontype.impl.TypeDeserializerBase:_findDeserializer:[DeserializationContext ctxt, String typeId]:JsonDeserializer\u003cObject\u003e"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.jsontype.impl.TypeDeserializerBase:_findDeserializer:[DeserializationContext ctxt, String typeId]:JsonDeserializer\u003cObject\u003e"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "165"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "165"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/TypeDeserializerBase.java b/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/TypeDeserializerBase.java\nindex 58f1a5f..dfef458 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/TypeDeserializerBase.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/jsontype/impl/TypeDeserializerBase.java\n@@ -162,7 +162,7 @@\n                     JavaType actual \u003d _handleUnknownTypeId(ctxt, typeId);\n                     if (actual \u003d\u003d null) { // what should this be taken to mean?\n                         // 17-Jan-2019, tatu: As per [databind#2221], better NOT return `null` but...\n-                        return NullifyingDeserializer.instance;\n+                        return null;\n                     }\n                     // ... would this actually work?\n                     deser \u003d ctxt.findContextualValueDeserializer(actual, _property);\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NullLiteral [5814,5818]"
+        },
+        {
+          "type": "delete-node",
+          "from": "QualifiedName: NullifyingDeserializer.instance [5814,5845]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

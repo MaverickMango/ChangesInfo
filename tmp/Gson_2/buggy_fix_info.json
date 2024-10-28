@@ -1,0 +1,109 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.gson.functional.DefaultTypeAdaptersTest::testJsonElementTypeMismatch",
+    "test.dir": "gson/src/test/java",
+    "clz.modified": "com.google.gson.internal.bind.TypeAdapters",
+    "src.dir": "gson/src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Gson",
+  "id": "2",
+  "workingDir": "../bugs/Gson_2_tmp",
+  "bug_name": "Gson_2",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.gson.functional.DefaultTypeAdaptersTest",
+      "test_function": "testJsonElementTypeMismatch",
+      "assertion_line": "623",
+      "exception": "java.lang.ClassCastException",
+      "message": "Cannot cast com.google.gson.JsonPrimitive to com.google.gson.JsonObject"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "gson/src/main/java/com/google/gson/internal/bind/TypeAdapters.java",
+        "gson/src/main/java/com/google/gson/internal/bind/TypeAdapters.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.gson.internal.bind.TypeAdapters:newTypeHierarchyFactory:[final Class\u003cT1\u003e clazz, final TypeAdapter\u003cT1\u003e typeAdapter]:TypeAdapterFactory"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.gson.internal.bind.TypeAdapters:newTypeHierarchyFactory:[final Class\u003cT1\u003e clazz, final TypeAdapter\u003cT1\u003e typeAdapter]:TypeAdapterFactory"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "833",
+            "834",
+            "835",
+            "836",
+            "838",
+            "839",
+            "840",
+            "841",
+            "842",
+            "843",
+            "844",
+            "845",
+            "846"
+          ],
+          "num": 13
+        },
+        {
+          "qualified_names": [
+            "833"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/gson/src/main/java/com/google/gson/internal/bind/TypeAdapters.java b/gson/src/main/java/com/google/gson/internal/bind/TypeAdapters.java\nindex 0268aa8..dea7af7 100644\n--- a/gson/src/main/java/com/google/gson/internal/bind/TypeAdapters.java\n+++ b/gson/src/main/java/com/google/gson/internal/bind/TypeAdapters.java\n@@ -830,20 +830,8 @@\n         if (!clazz.isAssignableFrom(requestedType)) {\n           return null;\n         }\n-        return (TypeAdapter\u003cT2\u003e) new TypeAdapter\u003cT1\u003e() {\n-          @Override public void write(JsonWriter out, T1 value) throws IOException {\n-            typeAdapter.write(out, value);\n-          }\n+        return (TypeAdapter\u003cT2\u003e) typeAdapter;\n \n-          @Override public T1 read(JsonReader in) throws IOException {\n-            T1 result \u003d typeAdapter.read(in);\n-            if (result !\u003d null \u0026\u0026 !requestedType.isInstance(result)) {\n-              throw new JsonSyntaxException(\"Expected a \" + requestedType.getName()\n-                  + \" but was \" + result.getClass().getName());\n-            }\n-            return result;\n-          }\n-        };\n       }\n       @Override public String toString() {\n         return \"Factory[typeHierarchy\u003d\" + clazz.getName() + \",adapter\u003d\" + typeAdapter + \"]\";\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [27317,27354]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [27317,27906]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

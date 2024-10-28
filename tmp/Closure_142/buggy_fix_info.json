@@ -1,0 +1,187 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.CoalesceVariableNamesTest::testParameter4,com.google.javascript.jscomp.parsing.JsDocInfoParserTest::testParseLicenseWithAnnotation",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.CoalesceVariableNames,com.google.javascript.jscomp.parsing.JsDocInfoParser",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "142",
+  "workingDir": "../bugs/Closure_142_tmp",
+  "bug_name": "Closure_142",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.CoalesceVariableNamesTest",
+      "test_function": "testParameter4",
+      "assertion_line": "191",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function FUNC(x,y){var a;y;a\u003d0;a;x;a\u003d0;a}\nResult: function FUNC(x,y){y;y\u003d0;y;x;x\u003d0;x}"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.parsing.JsDocInfoParserTest",
+      "test_function": "testParseLicenseWithAnnotation",
+      "assertion_line": "1078",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c Foo"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CoalesceVariableNames.java",
+        "src/com/google/javascript/jscomp/CoalesceVariableNames.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CoalesceVariableNames:enterScope:[NodeTraversal t]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CoalesceVariableNames:enterScope:[NodeTraversal t]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "108",
+            "109",
+            "110"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "107"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/CoalesceVariableNames.java b/src/com/google/javascript/jscomp/CoalesceVariableNames.java\nindex e990c82..78c27b3 100644\n--- a/src/com/google/javascript/jscomp/CoalesceVariableNames.java\n+++ b/src/com/google/javascript/jscomp/CoalesceVariableNames.java\n@@ -105,9 +105,6 @@\n     // a work-around for an IE bug where it throws an exception if you\n     // write to the parameters of the callback in a sort(). See:\n     // http://code.google.com/p/closure-compiler/issues/detail?id\u003d58\n-    if (scope.getRootNode().getFirstChild().getNext().getChildCount() \u003d\u003d 2) {\n-      liveness.markAllParametersEscaped();\n-    }\n     liveness.analyze();\n \n     UndiGraph\u003cVar, Void\u003e interferenceGraph \u003d\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [4232,4354]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java",
+        "src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.parsing.JsDocInfoParser:extractMultilineTextualBlock:[JsDocToken token, WhitespaceOption option]:ExtractionInfo"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.parsing.JsDocInfoParser:extractMultilineTextualBlock:[JsDocToken token, WhitespaceOption option]:ExtractionInfo"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1168",
+            "1169",
+            "1185"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "1167",
+            "1186"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java b/src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java\nindex 216740b..cdcd2ff 100644\n--- a/src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java\n+++ b/src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java\n@@ -1165,8 +1165,6 @@\n         case EOF:\n           // When we\u0027re capturing a license block, annotations\n           // in the block are ok.\n-          if (!(option \u003d\u003d WhitespaceOption.PRESERVE \u0026\u0026\n-                token \u003d\u003d JsDocToken.ANNOTATION)) {\n             String multilineText \u003d builder.toString();\n \n             if (option !\u003d WhitespaceOption.PRESERVE) {\n@@ -1182,7 +1180,6 @@\n             }\n \n             return new ExtractionInfo(multilineText, token);\n-          }\n \n           // FALL THROUGH\n \n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "PrefixExpression [40556,40644]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [40646,41174]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [40552,41174]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

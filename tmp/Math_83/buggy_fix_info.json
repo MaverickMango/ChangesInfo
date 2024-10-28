@@ -1,0 +1,123 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math.optimization.linear.SimplexSolverTest::testMath286",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math.optimization.linear.SimplexTableau",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "83",
+  "workingDir": "../bugs/Math_83_tmp",
+  "bug_name": "Math_83",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math.optimization.linear.SimplexSolverTest",
+      "test_function": "testMath286",
+      "assertion_line": "58",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c6.9\u003e but was:\u003c4.6000000000000005\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/optimization/linear/SimplexTableau.java",
+        "src/main/java/org/apache/commons/math/optimization/linear/SimplexTableau.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.optimization.linear.SimplexTableau:getSolution:[]:RealPointValuePair",
+            "org.apache.commons.math.optimization.linear.SimplexTableau:getBasicRow:[final int col, boolean ignoreObjectiveRows]:Integer"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.optimization.linear.SimplexTableau:getBasicRow:[final int col, boolean ignoreObjectiveRows]:Integer",
+            "org.apache.commons.math.optimization.linear.SimplexTableau:getSolution:[]:RealPointValuePair"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "292",
+            "341",
+            "345"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "292",
+            "341",
+            "345"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/optimization/linear/SimplexTableau.java b/src/main/java/org/apache/commons/math/optimization/linear/SimplexTableau.java\nindex b387767..0cf01af 100644\n--- a/src/main/java/org/apache/commons/math/optimization/linear/SimplexTableau.java\n+++ b/src/main/java/org/apache/commons/math/optimization/linear/SimplexTableau.java\n@@ -289,7 +289,7 @@\n      */\n     private Integer getBasicRow(final int col, boolean ignoreObjectiveRows) {\n         Integer row \u003d null;\n-        int start \u003d ignoreObjectiveRows ? getNumObjectiveFunctions() : 0;\n+        int start \u003d getNumObjectiveFunctions();\n         for (int i \u003d start; i \u003c getHeight(); i++) {\n             if (MathUtils.equals(getEntry(i, col), 1.0, epsilon) \u0026\u0026 (row \u003d\u003d null)) {\n                 row \u003d i;\n@@ -338,11 +338,11 @@\n      */\n     protected RealPointValuePair getSolution() {\n       double[] coefficients \u003d new double[getOriginalNumDecisionVariables()];\n-      Integer negativeVarBasicRow \u003d getBasicRowForSolution(getNegativeDecisionVariableOffset());\n+      Integer negativeVarBasicRow \u003d getBasicRow(getNegativeDecisionVariableOffset());\n       double mostNegative \u003d negativeVarBasicRow \u003d\u003d null ? 0 : getEntry(negativeVarBasicRow, getRhsOffset());\n       Set\u003cInteger\u003e basicRows \u003d new HashSet\u003cInteger\u003e();\n       for (int i \u003d 0; i \u003c coefficients.length; i++) {\n-          Integer basicRow \u003d getBasicRowForSolution(getNumObjectiveFunctions() + i);\n+          Integer basicRow \u003d getBasicRow(getNumObjectiveFunctions() + i);\n           if (basicRows.contains(basicRow)) {\n               // if multiple variables can take a given value \n               // then we choose the first and set the rest equal to 0\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: ignoreObjectiveRows [11699,11718]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NumberLiteral: 0 [11750,11751]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ConditionalExpression [11699,11751]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

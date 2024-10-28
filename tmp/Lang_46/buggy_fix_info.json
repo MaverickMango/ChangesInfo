@@ -1,0 +1,174 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.lang.StringEscapeUtilsTest::testEscapeJavaWithSlash",
+    "test.dir": "src/test",
+    "clz.modified": "org.apache.commons.lang.StringEscapeUtils",
+    "src.dir": "src/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Lang",
+  "id": "46",
+  "workingDir": "../bugs/Lang_46_tmp",
+  "bug_name": "Lang_46",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.lang.StringEscapeUtilsTest",
+      "test_function": "testEscapeJavaWithSlash",
+      "assertion_line": "113",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c...tring with a slash ([]/) in it\u003e but was:\u003c...tring with a slash ([\\]/) in it\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/lang/StringEscapeUtils.java",
+        "src/java/org/apache/commons/lang/StringEscapeUtils.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.lang.StringEscapeUtils:escapeJavaScript:[Writer out, String str]:void",
+            "org.apache.commons.lang.StringEscapeUtils:escapeJava:[String str]:String",
+            "org.apache.commons.lang.StringEscapeUtils:escapeJava:[Writer out, String str]:void",
+            "org.apache.commons.lang.StringEscapeUtils:escapeJavaStyleString:[Writer out, String str, boolean escapeSingleQuote, boolean escapeForwardSlash]:void",
+            "org.apache.commons.lang.StringEscapeUtils:escapeJavaScript:[String str]:String",
+            "org.apache.commons.lang.StringEscapeUtils:escapeJavaStyleString:[String str, boolean escapeSingleQuotes, boolean escapeForwardSlash]:String"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.lang.StringEscapeUtils:escapeJavaScript:[String str]:String",
+            "org.apache.commons.lang.StringEscapeUtils:escapeJavaStyleString:[Writer out, String str, boolean escapeSingleQuote]:void",
+            "org.apache.commons.lang.StringEscapeUtils:escapeJavaScript:[Writer out, String str]:void",
+            "org.apache.commons.lang.StringEscapeUtils:escapeJava:[Writer out, String str]:void",
+            "org.apache.commons.lang.StringEscapeUtils:escapeJava:[String str]:String",
+            "org.apache.commons.lang.StringEscapeUtils:escapeJavaStyleString:[String str, boolean escapeSingleQuotes]:String"
+          ],
+          "num": 6
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "86",
+            "102",
+            "127",
+            "143",
+            "154",
+            "160",
+            "178",
+            "179",
+            "245",
+            "247"
+          ],
+          "num": 10
+        },
+        {
+          "qualified_names": [
+            "86",
+            "102",
+            "127",
+            "143",
+            "154",
+            "160",
+            "178",
+            "245"
+          ],
+          "num": 8
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/lang/StringEscapeUtils.java b/src/java/org/apache/commons/lang/StringEscapeUtils.java\nindex d4f98ec..7b22e21 100644\n--- a/src/java/org/apache/commons/lang/StringEscapeUtils.java\n+++ b/src/java/org/apache/commons/lang/StringEscapeUtils.java\n@@ -83,7 +83,7 @@\n      * @return String with escaped values, \u003ccode\u003enull\u003c/code\u003e if null string input\n      */\n     public static String escapeJava(String str) {\n-        return escapeJavaStyleString(str, false, false);\n+        return escapeJavaStyleString(str, false);\n     }\n \n     /**\n@@ -99,7 +99,7 @@\n      * @throws IOException if error occurs on underlying Writer\n      */\n     public static void escapeJava(Writer out, String str) throws IOException {\n-        escapeJavaStyleString(out, str, false, false);\n+        escapeJavaStyleString(out, str, false);\n     }\n \n     /**\n@@ -124,7 +124,7 @@\n      * @return String with escaped values, \u003ccode\u003enull\u003c/code\u003e if null string input\n      */\n     public static String escapeJavaScript(String str) {\n-        return escapeJavaStyleString(str, true, true);\n+        return escapeJavaStyleString(str, true);\n     }\n \n     /**\n@@ -140,7 +140,7 @@\n      * @throws IOException if error occurs on underlying Writer\n      **/\n     public static void escapeJavaScript(Writer out, String str) throws IOException {\n-        escapeJavaStyleString(out, str, true, true);\n+        escapeJavaStyleString(out, str, true);\n     }\n \n     /**\n@@ -151,13 +151,13 @@\n      * @param escapeForwardSlash TODO\n      * @return the escaped string\n      */\n-    private static String escapeJavaStyleString(String str, boolean escapeSingleQuotes, boolean escapeForwardSlash) {\n+    private static String escapeJavaStyleString(String str, boolean escapeSingleQuotes) {\n         if (str \u003d\u003d null) {\n             return null;\n         }\n         try {\n             StringWriter writer \u003d new StringWriter(str.length() * 2);\n-            escapeJavaStyleString(writer, str, escapeSingleQuotes, escapeForwardSlash);\n+            escapeJavaStyleString(writer, str, escapeSingleQuotes);\n             return writer.toString();\n         } catch (IOException ioe) {\n             // this should never ever happen while writing to a StringWriter\n@@ -175,8 +175,7 @@\n      * @param escapeForwardSlash TODO\n      * @throws IOException if an IOException occurs\n      */\n-    private static void escapeJavaStyleString(Writer out, String str, boolean escapeSingleQuote,\n-            boolean escapeForwardSlash) throws IOException {\n+    private static void escapeJavaStyleString(Writer out, String str, boolean escapeSingleQuote) throws IOException {\n         if (out \u003d\u003d null) {\n             throw new IllegalArgumentException(\"The Writer must not be null\");\n         }\n@@ -242,9 +241,7 @@\n                         out.write(\u0027\\\\\u0027);\n                         break;\n                     case \u0027/\u0027 :\n-                        if (escapeForwardSlash) {\n                             out.write(\u0027\\\\\u0027);\n-                        }\n                         out.write(\u0027/\u0027);\n                         break;\n                     default :\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "BooleanLiteral: false [3175,3180]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "BooleanLiteral: false [3824,3829]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "BooleanLiteral: true [4767,4771]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "BooleanLiteral: true [5433,5437]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [5849,5875]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: escapeForwardSlash [6092,6110]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [6830,6856]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: escapeForwardSlash [9140,9158]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [9160,9232]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [9136,9232]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.apache.commons.lang.StringEscapeUtils:escapeJavaStyleString:[Writer out, String str, boolean escapeSingleQuote]:void",
+        "org.apache.commons.lang.StringEscapeUtils:escapeJavaStyleString:[String str, boolean escapeSingleQuotes]:String"
+      ],
+      "num": 2
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.apache.commons.lang.StringEscapeUtils:escapeJavaStyleString:[Writer out, String str, boolean escapeSingleQuote, boolean escapeForwardSlash]:void",
+        "org.apache.commons.lang.StringEscapeUtils:escapeJavaStyleString:[String str, boolean escapeSingleQuotes, boolean escapeForwardSlash]:String"
+      ],
+      "num": 2
+    }
+  }
+}

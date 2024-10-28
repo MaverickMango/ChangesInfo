@@ -1,0 +1,139 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.struct.EnumFormatShapeTest::testEnumPropertyAsNumber",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.ser.std.EnumSerializer",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "75",
+  "workingDir": "../bugs/JacksonDatabind_75_tmp",
+  "bug_name": "JacksonDatabind_75",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.struct.EnumFormatShapeTest",
+      "test_function": "testEnumPropertyAsNumber",
+      "assertion_line": "113",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c{\"color\":[2]}\u003e but was:\u003c{\"color\":[\"GREEN\"]}\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/ser/std/EnumSerializer.java",
+        "src/main/java/com/fasterxml/jackson/databind/ser/std/EnumSerializer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.std.EnumSerializer:createContextual:[SerializerProvider serializers, BeanProperty property]:JsonSerializer\u003c?\u003e",
+            "com.fasterxml.jackson.databind.ser.std.EnumSerializer:_isShapeWrittenUsingIndex:[Class\u003c?\u003e enumClass, JsonFormat.Value format, boolean fromClass, Boolean defaultValue]:Boolean",
+            "com.fasterxml.jackson.databind.ser.std.EnumSerializer:construct:[Class\u003c?\u003e enumClass, SerializationConfig config, BeanDescription beanDesc, JsonFormat.Value format]:EnumSerializer"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.std.EnumSerializer:construct:[Class\u003c?\u003e enumClass, SerializationConfig config, BeanDescription beanDesc, JsonFormat.Value format]:EnumSerializer",
+            "com.fasterxml.jackson.databind.ser.std.EnumSerializer:createContextual:[SerializerProvider serializers, BeanProperty property]:JsonSerializer\u003c?\u003e",
+            "com.fasterxml.jackson.databind.ser.std.EnumSerializer:_isShapeWrittenUsingIndex:[Class\u003c?\u003e enumClass, JsonFormat.Value format, boolean fromClass]:Boolean"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "86",
+            "104",
+            "217",
+            "218",
+            "222",
+            "226"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "86",
+            "104",
+            "217",
+            "221",
+            "225"
+          ],
+          "num": 5
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/ser/std/EnumSerializer.java b/src/main/java/com/fasterxml/jackson/databind/ser/std/EnumSerializer.java\nindex dae384a..75c12b5 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/ser/std/EnumSerializer.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/ser/std/EnumSerializer.java\n@@ -83,7 +83,7 @@\n          *   handle toString() case dynamically (for example)\n          */\n         EnumValues v \u003d EnumValues.constructFromName(config, (Class\u003cEnum\u003c?\u003e\u003e) enumClass);\n-        Boolean serializeAsIndex \u003d _isShapeWrittenUsingIndex(enumClass, format, true, null);\n+        Boolean serializeAsIndex \u003d _isShapeWrittenUsingIndex(enumClass, format, true);\n         return new EnumSerializer(v, serializeAsIndex);\n     }\n \n@@ -101,7 +101,7 @@\n                     property, handledType());\n             if (format !\u003d null) {\n                 Boolean serializeAsIndex \u003d _isShapeWrittenUsingIndex(property.getType().getRawClass(),\n-                        format, false, _serializeAsIndex);\n+                        format, false);\n                 if (serializeAsIndex !\u003d _serializeAsIndex) {\n                     return new EnumSerializer(_values, serializeAsIndex);\n                 }\n@@ -214,16 +214,15 @@\n      * index (number) or not.\n      */\n     protected static Boolean _isShapeWrittenUsingIndex(Class\u003c?\u003e enumClass,\n-            JsonFormat.Value format, boolean fromClass,\n-            Boolean defaultValue)\n+            JsonFormat.Value format, boolean fromClass)\n     {\n         JsonFormat.Shape shape \u003d (format \u003d\u003d null) ? null : format.getShape();\n         if (shape \u003d\u003d null) {\n-            return defaultValue;\n+            return null;\n         }\n         // i.e. \"default\", check dynamically\n         if (shape \u003d\u003d Shape.ANY || shape \u003d\u003d Shape.SCALAR) {\n-            return defaultValue;\n+            return null;\n         }\n         // 19-May-2016, tatu: also consider \"natural\" shape\n         if (shape \u003d\u003d Shape.STRING || shape \u003d\u003d Shape.NATURAL) {\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NullLiteral [7652,7656]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NullLiteral [7791,7795]"
+        },
+        {
+          "type": "delete-node",
+          "from": "NullLiteral [2890,2894]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: _serializeAsIndex [3635,3652]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [7557,7577]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: defaultValue [7711,7723]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: defaultValue [7858,7870]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.ser.std.EnumSerializer:_isShapeWrittenUsingIndex:[Class\u003c?\u003e enumClass, JsonFormat.Value format, boolean fromClass]:Boolean"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.ser.std.EnumSerializer:_isShapeWrittenUsingIndex:[Class\u003c?\u003e enumClass, JsonFormat.Value format, boolean fromClass, Boolean defaultValue]:Boolean"
+      ],
+      "num": 1
+    }
+  }
+}

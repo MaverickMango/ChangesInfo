@@ -1,0 +1,115 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.lang3.math.FractionTest::testReducedFactory_int_int,org.apache.commons.lang3.math.FractionTest::testReduce",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.lang3.math.Fraction",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Lang",
+  "id": "22",
+  "workingDir": "../bugs/Lang_22_tmp",
+  "bug_name": "Lang_22",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.lang3.math.FractionTest",
+      "test_function": "testReducedFactory_int_int",
+      "assertion_line": "336",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c-1073741824\u003e but was:\u003c-2147483648\u003e"
+    },
+    {
+      "test_class": "org.apache.commons.lang3.math.FractionTest",
+      "test_function": "testReduce",
+      "assertion_line": "654",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c-1073741824\u003e but was:\u003c-2147483648\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/lang3/math/Fraction.java",
+        "src/main/java/org/apache/commons/lang3/math/Fraction.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.lang3.math.Fraction:greatestCommonDivisor:[int u, int v]:int"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.lang3.math.Fraction:greatestCommonDivisor:[int u, int v]:int"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "583",
+            "584",
+            "585",
+            "586",
+            "587",
+            "588",
+            "590"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "584"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/lang3/math/Fraction.java b/src/main/java/org/apache/commons/lang3/math/Fraction.java\nindex bf15a49..b36a156 100644\n--- a/src/main/java/org/apache/commons/lang3/math/Fraction.java\n+++ b/src/main/java/org/apache/commons/lang3/math/Fraction.java\n@@ -580,14 +580,8 @@\n      */\n     private static int greatestCommonDivisor(int u, int v) {\n         // From Commons Math:\n-        if ((u \u003d\u003d 0) || (v \u003d\u003d 0)) {\n-            if ((u \u003d\u003d Integer.MIN_VALUE) || (v \u003d\u003d Integer.MIN_VALUE)) {\n-                throw new ArithmeticException(\"overflow: gcd is 2^31\");\n-            }\n-            return Math.abs(u) + Math.abs(v);\n-        }\n         //if either operand is abs 1, return 1:\n-        if (Math.abs(u) \u003d\u003d 1 || Math.abs(v) \u003d\u003d 1) {\n+        if (Math.abs(u) \u003c\u003d 1 || Math.abs(v) \u003c\u003d 1) {\n             return 1;\n         }\n         // keep u and v negative, as negative integers range down to\n",
+      "operations": [
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [20880,21121]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

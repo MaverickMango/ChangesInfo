@@ -1,0 +1,246 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math.stat.descriptive.SummaryStatisticsTest::testOverrideMeanWithMathClass,org.apache.commons.math.stat.descriptive.SummaryStatisticsTest::testOverrideGeoMeanWithMathClass,org.apache.commons.math.stat.descriptive.SummaryStatisticsTest::testOverrideVarianceWithMathClass,org.apache.commons.math.stat.descriptive.SynchronizedSummaryStatisticsTest::testOverrideMeanWithMathClass,org.apache.commons.math.stat.descriptive.SynchronizedSummaryStatisticsTest::testOverrideGeoMeanWithMathClass,org.apache.commons.math.stat.descriptive.SynchronizedSummaryStatisticsTest::testOverrideVarianceWithMathClass",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math.stat.descriptive.SummaryStatistics",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "43",
+  "workingDir": "../bugs/Math_43_tmp",
+  "bug_name": "Math_43",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math.stat.descriptive.SummaryStatisticsTest",
+      "test_function": "testOverrideMeanWithMathClass",
+      "assertion_line": "335",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c2.5\u003e but was:\u003cNaN\u003e"
+    },
+    {
+      "test_class": "org.apache.commons.math.stat.descriptive.SummaryStatisticsTest",
+      "test_function": "testOverrideGeoMeanWithMathClass",
+      "assertion_line": "346",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c2.213363839400643\u003e but was:\u003cNaN\u003e"
+    },
+    {
+      "test_class": "org.apache.commons.math.stat.descriptive.SummaryStatisticsTest",
+      "test_function": "testOverrideVarianceWithMathClass",
+      "assertion_line": "324",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c1.25\u003e but was:\u003cNaN\u003e"
+    },
+    {
+      "test_class": "org.apache.commons.math.stat.descriptive.SynchronizedSummaryStatisticsTest",
+      "test_function": "testOverrideMeanWithMathClass",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c2.5\u003e but was:\u003cNaN\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/stat/descriptive/SummaryStatistics.java",
+        "src/main/java/org/apache/commons/math/stat/descriptive/SummaryStatistics.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.stat.descriptive.SummaryStatistics:addValue:[double value]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.stat.descriptive.SummaryStatistics:addValue:[double value]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "158",
+            "161",
+            "164"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "158",
+            "161",
+            "164"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/stat/descriptive/SummaryStatistics.java b/src/main/java/org/apache/commons/math/stat/descriptive/SummaryStatistics.java\nindex da987cd..1203d51 100644\n--- a/src/main/java/org/apache/commons/math/stat/descriptive/SummaryStatistics.java\n+++ b/src/main/java/org/apache/commons/math/stat/descriptive/SummaryStatistics.java\n@@ -155,13 +155,13 @@\n         secondMoment.increment(value);\n         // If mean, variance or geomean have been overridden,\n         // need to increment these\n-        if (meanImpl !\u003d mean) {\n+        if (!(meanImpl instanceof Mean)) {\n             meanImpl.increment(value);\n         }\n-        if (varianceImpl !\u003d variance) {\n+        if (!(varianceImpl instanceof Variance)) {\n             varianceImpl.increment(value);\n         }\n-        if (geoMeanImpl !\u003d geoMean) {\n+        if (!(geoMeanImpl instanceof GeometricMean)) {\n             geoMeanImpl.increment(value);\n         }\n         n++;\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrefixExpression [6203,6230]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrefixExpression [6295,6330]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrefixExpression [6399,6438]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PREFIX_EXPRESSION_OPERATOR: ! [6203,6204]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ParenthesizedExpression [6204,6230]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PREFIX_EXPRESSION_OPERATOR: ! [6295,6296]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ParenthesizedExpression [6296,6330]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PREFIX_EXPRESSION_OPERATOR: ! [6399,6400]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ParenthesizedExpression [6400,6438]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InstanceofExpression [6205,6229]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InstanceofExpression [6297,6329]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InstanceofExpression [6401,6437]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [6225,6229]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [6321,6329]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [6424,6437]"
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: !\u003d [6212,6214]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: mean [6215,6219]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [6203,6219]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: !\u003d [6297,6299]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: variance [6300,6308]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [6284,6308]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: !\u003d [6389,6391]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: geoMean [6392,6399]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [6377,6399]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

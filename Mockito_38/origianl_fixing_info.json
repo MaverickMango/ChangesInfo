@@ -1,0 +1,484 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "/home/liumengjiao/Desktop/CI/Benchmark/data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.mockito.internal.verification.argumentmatching.ArgumentMatchingToolTest::shouldWorkFineWhenGivenArgIsNull,org.mockitousage.bugs.ActualInvocationHasNullArgumentNPEBugTest::shouldAllowPassingNullArgument",
+    "test.dir": "test",
+    "clz.modified": "org.mockito.internal.verification.argumentmatching.ArgumentMatchingTool",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Mockito",
+  "id": "38",
+  "workingDir": "../bugs/Mockito_38_buggy",
+  "buggyCommit": "a663d2fe76bf1ff54bbe59bddcb52f9badec3f2a",
+  "inducingCommit": "66d928dcbb23f24349f10066d0dc54b6a4925f1b",
+  "originalCommit": "a10d9c323124ca47f7d57d4545f4d9f5587f7da5",
+  "bug_name": "Mockito_38",
+  "derive": "defects4j",
+  "original_fixing_commit": "c1f2c4e6b5bab4cfc004f22999e11e8ac140d377",
+  "buildFiles_changed": false,
+  "regression": true,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/org/mockito/internal/matchers/MatchersPrinter.java",
+        "src/org/mockito/internal/matchers/MatchersPrinter.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.mockito.internal.matchers.MatchersPrinter:applyPrintSettings:[List\u003cMatcher\u003e matchers, PrintSettings printSettings]:List\u003cSelfDescribing\u003e"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.mockito.internal.matchers.MatchersPrinter:applyPrintSettings:[List\u003cMatcher\u003e matchers, PrintSettings printSettings]:List\u003cSelfDescribing\u003e"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "30"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "29",
+            "31",
+            "36"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/org/mockito/internal/matchers/MatchersPrinter.java b/src/org/mockito/internal/matchers/MatchersPrinter.java\nindex cca4561..62f21a8 100644\n--- a/src/org/mockito/internal/matchers/MatchersPrinter.java\n+++ b/src/org/mockito/internal/matchers/MatchersPrinter.java\n@@ -26,12 +26,14 @@\n \r\n     private List\u003cSelfDescribing\u003e applyPrintSettings(List\u003cMatcher\u003e matchers, PrintSettings printSettings) {\r\n         List\u003cSelfDescribing\u003e withPrintSettings \u003d new LinkedList\u003cSelfDescribing\u003e();\r\n+        int i \u003d 0;\r\n         for (final Matcher matcher : matchers) {\r\n-            if (matcher instanceof CanPrintArgumentVerbosely \u0026\u0026 printSettings.printsVerbosely(matcher)) {\r\n+            if (matcher instanceof CanPrintArgumentVerbosely \u0026\u0026 printSettings.printsVerbosely(i)) {\r\n                 withPrintSettings.add(((CanPrintArgumentVerbosely) matcher).getVerboseSelfDescribing());\r\n             } else {\r\n                 withPrintSettings.add(matcher);\r\n             }\r\n+            i++;\r\n         }\r\n         return withPrintSettings;\r\n     }\r\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [1139,1149]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [1506,1510]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/org/mockito/internal/reporting/PrintSettings.java",
+        "src/org/mockito/internal/reporting/PrintSettings.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.mockito.internal.reporting.PrintSettings:verboseMatchers:[Matcher... verboselyPrinted]:PrintSettings",
+            "org.mockito.internal.reporting.PrintSettings:printsVerbosely:[Matcher matcher]:boolean",
+            "org.mockito.internal.reporting.PrintSettings:setMatchersToBePrintedVerbosely:[Matcher[] toBePrintedVerbosely]:void"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "org.mockito.internal.reporting.PrintSettings:printsVerbosely:[int argumentIndex]:boolean",
+            "org.mockito.internal.reporting.PrintSettings:verboseMatchers:[Integer... verboselyPrinted]:PrintSettings",
+            "org.mockito.internal.reporting.PrintSettings:setMatchersToBePrintedVerbosely:[Integer[] toBePrintedVerbosely]:void"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "7",
+            "8",
+            "13",
+            "23",
+            "29",
+            "30",
+            "31",
+            "32",
+            "33",
+            "34",
+            "35",
+            "38"
+          ],
+          "num": 12
+        },
+        {
+          "qualified_names": [
+            "11",
+            "21",
+            "27",
+            "28",
+            "31"
+          ],
+          "num": 5
+        }
+      ],
+      "diff": "diff --git a/src/org/mockito/internal/reporting/PrintSettings.java b/src/org/mockito/internal/reporting/PrintSettings.java\nindex ae8326d..9d9ccb7 100644\n--- a/src/org/mockito/internal/reporting/PrintSettings.java\n+++ b/src/org/mockito/internal/reporting/PrintSettings.java\n@@ -4,13 +4,11 @@\n import java.util.LinkedList;\r\n import java.util.List;\r\n \r\n-import org.hamcrest.Matcher;\r\n-\r\n @SuppressWarnings(\"unchecked\")\r\n public class PrintSettings {\r\n \r\n     private boolean multiline;\r\n-    private List\u003cMatcher\u003e verboseMatchers \u003d new LinkedList\u003cMatcher\u003e();\r\n+    private List\u003cInteger\u003e verboseMatchers \u003d new LinkedList\u003cInteger\u003e();\r\n \r\n     public void setMultiline(boolean multiline) {\r\n         this.multiline \u003d multiline;\r\n@@ -20,22 +18,17 @@\n         return multiline;\r\n     }\r\n \r\n-    public static PrintSettings verboseMatchers(Matcher ... verboselyPrinted) {\r\n+    public static PrintSettings verboseMatchers(Integer ... verboselyPrinted) {\r\n         PrintSettings settings \u003d new PrintSettings();\r\n         settings.setMatchersToBePrintedVerbosely(verboselyPrinted);\r\n         return settings;\r\n     }\r\n \r\n-    public boolean printsVerbosely(Matcher matcher) {\r\n-        for (Matcher m : verboseMatchers) {\r\n-            if (m \u003d\u003d matcher) {\r\n-                return true;\r\n-            }\r\n-        }\r\n-        return false;\r\n+    public boolean printsVerbosely(int argumentIndex) {\r\n+        return verboseMatchers.contains(argumentIndex);\r\n     }\r\n \r\n-    public void setMatchersToBePrintedVerbosely(Matcher[] toBePrintedVerbosely) {\r\n+    public void setMatchersToBePrintedVerbosely(Integer[] toBePrintedVerbosely) {\r\n         this.verboseMatchers \u003d Arrays.asList(toBePrintedVerbosely);\r\n     }\r\n }\n\\ No newline at end of file\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [708,823]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [125,153]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [740,953]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/org/mockito/internal/reporting/SmartPrinter.java",
+        "src/org/mockito/internal/reporting/SmartPrinter.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.mockito.internal.reporting.SmartPrinter:SmartPrinter:[PrintingFriendlyInocation wanted, PrintingFriendlyInocation actual, Matcher... toBePrintedVerbosely]:null"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.mockito.internal.reporting.SmartPrinter:SmartPrinter:[PrintingFriendlyInocation wanted, PrintingFriendlyInocation actual, Integer... toBePrintedVerbosely]:null"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "7",
+            "20"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "6",
+            "19"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/org/mockito/internal/reporting/SmartPrinter.java b/src/org/mockito/internal/reporting/SmartPrinter.java\nindex 10724e7..76f9ca5 100644\n--- a/src/org/mockito/internal/reporting/SmartPrinter.java\n+++ b/src/org/mockito/internal/reporting/SmartPrinter.java\n@@ -4,7 +4,6 @@\n  */\r\n package org.mockito.internal.reporting;\r\n \r\n-import org.hamcrest.Matcher;\r\n \r\n /**\r\n  * Makes sure both wanted and actual are printed consistently (single line or multiline)\r\n@@ -17,7 +16,7 @@\n     private final String wanted;\r\n     private final String actual;\r\n \r\n-    public SmartPrinter(PrintingFriendlyInocation wanted, PrintingFriendlyInocation actual, Matcher ... toBePrintedVerbosely) {\r\n+    public SmartPrinter(PrintingFriendlyInocation wanted, PrintingFriendlyInocation actual, Integer ... toBePrintedVerbosely) {\r\n         PrintSettings printSettings \u003d new PrintSettings();\r\n         printSettings.setMultiline(wanted.toString().contains(\"\\n\") || actual.toString().contains(\"\\n\"));\r\n         printSettings.setMatchersToBePrintedVerbosely(toBePrintedVerbosely);\r\n",
+      "operations": [
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [167,195]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/org/mockito/internal/verification/argumentmatching/ArgumentMatchingTool.java",
+        "src/org/mockito/internal/verification/argumentmatching/ArgumentMatchingTool.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.mockito.internal.verification.argumentmatching.ArgumentMatchingTool:getSuspiciouslyNotMatchingArgs:[List\u003cMatcher\u003e matchers, Object[] arguments]:Matcher[]"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.mockito.internal.verification.argumentmatching.ArgumentMatchingTool:getSuspiciouslyNotMatchingArgsIndexes:[List\u003cMatcher\u003e matchers, Object[] arguments]:Integer[]"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "19",
+            "21",
+            "24",
+            "28",
+            "32"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "19",
+            "21",
+            "24",
+            "28",
+            "32"
+          ],
+          "num": 5
+        }
+      ],
+      "diff": "diff --git a/src/org/mockito/internal/verification/argumentmatching/ArgumentMatchingTool.java b/src/org/mockito/internal/verification/argumentmatching/ArgumentMatchingTool.java\nindex 3e4bf91..f2161b4 100644\n--- a/src/org/mockito/internal/verification/argumentmatching/ArgumentMatchingTool.java\n+++ b/src/org/mockito/internal/verification/argumentmatching/ArgumentMatchingTool.java\n@@ -16,20 +16,20 @@\n      * @param arguments\r\n      * @return\r\n      */\r\n-    public Matcher[] getSuspiciouslyNotMatchingArgs(List\u003cMatcher\u003e matchers, Object[] arguments) {\r\n+    public Integer[] getSuspiciouslyNotMatchingArgsIndexes(List\u003cMatcher\u003e matchers, Object[] arguments) {\r\n         if (matchers.size() !\u003d arguments.length) {\r\n-            return new Matcher[0];\r\n+            return new Integer[0];\r\n         }\r\n         \r\n-        List\u003cMatcher\u003e suspicious \u003d new LinkedList\u003cMatcher\u003e();\r\n+        List\u003cInteger\u003e suspicious \u003d new LinkedList\u003cInteger\u003e();\r\n         int i \u003d 0;\r\n         for (Matcher m : matchers) {\r\n             if (!safelyMatches(m, arguments[i]) \u0026\u0026 toStringEquals(m, arguments[i])) {\r\n-                suspicious.add(m);\r\n+                suspicious.add(i);\r\n             }\r\n             i++;\r\n         }\r\n-        return suspicious.toArray(new Matcher[0]);\r\n+        return suspicious.toArray(new Integer[0]);\r\n     }\r\n \r\n     private boolean safelyMatches(Matcher m, Object arg) {\r\n",
+      "operations": [
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/org/mockito/internal/verification/checkers/MissingInvocationChecker.java",
+        "src/org/mockito/internal/verification/checkers/MissingInvocationChecker.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.mockito.internal.verification.checkers.MissingInvocationChecker:check:[List\u003cInvocation\u003e invocations, InvocationMatcher wanted]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.mockito.internal.verification.checkers.MissingInvocationChecker:check:[List\u003cInvocation\u003e invocations, InvocationMatcher wanted]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "39"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "39"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/org/mockito/internal/verification/checkers/MissingInvocationChecker.java b/src/org/mockito/internal/verification/checkers/MissingInvocationChecker.java\nindex fa882f9..5c0d52c 100644\n--- a/src/org/mockito/internal/verification/checkers/MissingInvocationChecker.java\n+++ b/src/org/mockito/internal/verification/checkers/MissingInvocationChecker.java\n@@ -36,7 +36,7 @@\n             Invocation similar \u003d finder.findSimilarInvocation(invocations, wanted);\n             if (similar !\u003d null) {\n                 ArgumentMatchingTool argumentMatchingTool \u003d new ArgumentMatchingTool();\n-                Matcher[] toBePrintedVerbosely \u003d argumentMatchingTool.getSuspiciouslyNotMatchingArgs(wanted.getMatchers(), similar.getArguments());\n+                Integer[] toBePrintedVerbosely \u003d argumentMatchingTool.getSuspiciouslyNotMatchingArgsIndexes(wanted.getMatchers(), similar.getArguments());\n                 SmartPrinter smartPrinter \u003d new SmartPrinter(wanted, similar, toBePrintedVerbosely);\n                 reporter.argumentsAreDifferent(smartPrinter.getWanted(), smartPrinter.getActual(), similar.getLocation());\n             } else {\n",
+      "operations": [
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.mockito.internal.reporting.PrintSettings:setMatchersToBePrintedVerbosely:[Integer[] toBePrintedVerbosely]:void",
+        "org.mockito.internal.reporting.PrintSettings:verboseMatchers:[Integer... verboselyPrinted]:PrintSettings",
+        "org.mockito.internal.reporting.PrintSettings:printsVerbosely:[int argumentIndex]:boolean",
+        "org.mockito.internal.verification.argumentmatching.ArgumentMatchingTool:getSuspiciouslyNotMatchingArgsIndexes:[List\u003cMatcher\u003e matchers, Object[] arguments]:Integer[]",
+        "org.mockito.internal.reporting.SmartPrinter:SmartPrinter:[PrintingFriendlyInocation wanted, PrintingFriendlyInocation actual, Integer... toBePrintedVerbosely]:null"
+      ],
+      "num": 5
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.mockito.internal.reporting.PrintSettings:verboseMatchers:[Matcher... verboselyPrinted]:PrintSettings",
+        "org.mockito.internal.reporting.PrintSettings:setMatchersToBePrintedVerbosely:[Matcher[] toBePrintedVerbosely]:void",
+        "org.mockito.internal.verification.argumentmatching.ArgumentMatchingTool:getSuspiciouslyNotMatchingArgs:[List\u003cMatcher\u003e matchers, Object[] arguments]:Matcher[]",
+        "org.mockito.internal.reporting.SmartPrinter:SmartPrinter:[PrintingFriendlyInocation wanted, PrintingFriendlyInocation actual, Matcher... toBePrintedVerbosely]:null",
+        "org.mockito.internal.reporting.PrintSettings:printsVerbosely:[Matcher matcher]:boolean"
+      ],
+      "num": 5
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "org.mockito.internal.verification.argumentmatching.ArgumentMatchingToolTest",
+      "test_function": "shouldWorkFineWhenGivenArgIsNull",
+      "assertion_line": "82",
+      "exception": "java.lang.NullPointerException",
+      "message": ""
+    },
+    {
+      "test_class": "org.mockitousage.bugs.ActualInvocationHasNullArgumentNPEBugTest",
+      "test_function": "shouldAllowPassingNullArgument",
+      "assertion_line": "30",
+      "exception": "java.lang.NullPointerException",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/org/mockito/internal/verification/argumentmatching/ArgumentMatchingTool.java",
+        "src/org/mockito/internal/verification/argumentmatching/ArgumentMatchingTool.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.mockito.internal.verification.argumentmatching.ArgumentMatchingTool:toStringEquals:[Matcher m, Object arg]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.mockito.internal.verification.argumentmatching.ArgumentMatchingTool:toStringEquals:[Matcher m, Object arg]:boolean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "48"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "48"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/org/mockito/internal/verification/argumentmatching/ArgumentMatchingTool.java b/src/org/mockito/internal/verification/argumentmatching/ArgumentMatchingTool.java\nindex 671fbc5..9d4f834 100644\n--- a/src/org/mockito/internal/verification/argumentmatching/ArgumentMatchingTool.java\n+++ b/src/org/mockito/internal/verification/argumentmatching/ArgumentMatchingTool.java\n@@ -45,6 +45,6 @@\n     }\r\n \r\n     private boolean toStringEquals(Matcher m, Object arg) {\r\n-        return StringDescription.toString(m).equals(arg.toString());\r\n+        return StringDescription.toString(m).equals(arg \u003d\u003d null? \"null\" : arg.toString());\r\n     }\r\n }\r\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ConditionalExpression [1653,1689]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [1653,1664]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "StringLiteral: \"null\" [1666,1672]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "patch_changed_mths": {
+    "qualified_names": [
+      "org.mockito.internal.verification.argumentmatching.ArgumentMatchingTool:toStringEquals(Lorg/hamcrest/Matcher;Ljava/lang/Object;)Z:regression"
+    ],
+    "num": 1
+  }
+}

@@ -1,0 +1,196 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.CommandLineRunnerTest::testDefineFlag3,com.google.javascript.jscomp.RemoveConstantExpressionsTest::testCall1,com.google.javascript.jscomp.RemoveConstantExpressionsTest::testNew1",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.AbstractCommandLineRunner,com.google.javascript.jscomp.RemoveConstantExpressions",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "143",
+  "workingDir": "../bugs/Closure_143_tmp",
+  "bug_name": "Closure_143",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.CommandLineRunnerTest",
+      "test_function": "testDefineFlag3",
+      "assertion_line": "143",
+      "exception": "java.lang.RuntimeException",
+      "message": "--define flag syntax invalid: FOO\u003d\"x\u0027\""
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.RemoveConstantExpressionsTest",
+      "test_function": "testCall1",
+      "assertion_line": "282",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: \nResult: Math.sin(0)"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.RemoveConstantExpressionsTest",
+      "test_function": "testNew1",
+      "assertion_line": "290",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: \nResult: new Date"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/AbstractCommandLineRunner.java",
+        "src/com/google/javascript/jscomp/AbstractCommandLineRunner.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.AbstractCommandLineRunner:createDefineReplacements:[List\u003cString\u003e definitions, CompilerOptions options]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.AbstractCommandLineRunner:createDefineReplacements:[List\u003cString\u003e definitions, CompilerOptions options]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "871",
+            "872"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "871"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/AbstractCommandLineRunner.java b/src/com/google/javascript/jscomp/AbstractCommandLineRunner.java\nindex aa29e5f..13cb626 100644\n--- a/src/com/google/javascript/jscomp/AbstractCommandLineRunner.java\n+++ b/src/com/google/javascript/jscomp/AbstractCommandLineRunner.java\n@@ -868,8 +868,7 @@\n           } else if (defValue.length() \u003e 1\n               \u0026\u0026 ((defValue.charAt(0) \u003d\u003d \u0027\\\u0027\u0027 \u0026\u0026\n                   defValue.charAt(defValue.length() - 1) \u003d\u003d \u0027\\\u0027\u0027)\n-                  || (defValue.charAt(0) \u003d\u003d \u0027\\\"\u0027 \u0026\u0026\n-                      defValue.charAt(defValue.length() - 1) \u003d\u003d \u0027\\\"\u0027))) {\n+            )) {\n             // If the value starts and ends with a single quote,\n             // we assume that it\u0027s a string.\n             String maybeStringVal \u003d\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: || [27440,27442]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ParenthesizedExpression [27443,27543]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [27325,27543]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/RemoveConstantExpressions.java",
+        "src/com/google/javascript/jscomp/RemoveConstantExpressions.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.RemoveConstantExpressions\\$RemoveConstantRValuesCallback:trySimplify:[Node parent, Node node]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.RemoveConstantExpressions\\$RemoveConstantRValuesCallback:trySimplify:[Node parent, Node node]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "91",
+            "92"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "91"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/RemoveConstantExpressions.java b/src/com/google/javascript/jscomp/RemoveConstantExpressions.java\nindex 17d55c9..fee9c28 100644\n--- a/src/com/google/javascript/jscomp/RemoveConstantExpressions.java\n+++ b/src/com/google/javascript/jscomp/RemoveConstantExpressions.java\n@@ -88,8 +88,7 @@\n \n       Node exprBody \u003d node.getFirstChild();\n       if (!NodeUtil.nodeTypeMayHaveSideEffects(exprBody)\n-          || exprBody.getType() \u003d\u003d Token.NEW\n-          || exprBody.getType() \u003d\u003d Token.CALL) {\n+      ) {\n         changeProxy.replaceWith(parent, node, getSideEffectNodes(exprBody));\n       }\n     }\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: || [2747,2749]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [2750,2781]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [2690,2781]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: || [2792,2794]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [2795,2827]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [2690,2827]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

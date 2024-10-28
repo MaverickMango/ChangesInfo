@@ -1,0 +1,592 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.CollapseVariableDeclarationsTest::testIssue820",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.CollapseVariableDeclarations",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 300,
+  "proj": "Closure",
+  "id": "8",
+  "workingDir": "../bugs/Closure_8_buggy",
+  "buggyCommit": "e237d2643b102fbea616717806391f48e2ce506a",
+  "inducingCommit": "80ee905775eded2256972f3e762862fcf66f0095",
+  "originalCommit": "0ace02f4d582988b228fcc313ba03c6861e77693",
+  "bug_name": "Closure_8",
+  "derive": "defects4j",
+  "original_fixing_commit": "6300a43566d4adcf8828128267808a8740edc835",
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CollapseVariableDeclarations.java",
+        "src/com/google/javascript/jscomp/CollapseVariableDeclarations.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CollapseVariableDeclarations:applyCollapses:[]:void",
+            "com.google.javascript.jscomp.CollapseVariableDeclarations\\$GatherCollapses:visit:[NodeTraversal t, Node n, Node parent]:void",
+            "com.google.javascript.jscomp.CollapseVariableDeclarations\\$Collapse:Collapse:[Node firstVarNode, Node parent]:null"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CollapseVariableDeclarations\\$Collapse:Collapse:[Node startNode, Node endNode, Node parent]:null",
+            "com.google.javascript.jscomp.CollapseVariableDeclarations\\$GatherCollapses:visit:[NodeTraversal t, Node n, Node parent]:void",
+            "com.google.javascript.jscomp.CollapseVariableDeclarations:applyCollapses:[]:void",
+            "com.google.javascript.jscomp.CollapseVariableDeclarations:canBeRedeclared:[Node n, Scope s]:boolean"
+          ],
+          "num": 4
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "22",
+            "72",
+            "77",
+            "78",
+            "113",
+            "121",
+            "136",
+            "143",
+            "145",
+            "147",
+            "153",
+            "154",
+            "155",
+            "156",
+            "158",
+            "159",
+            "163"
+          ],
+          "num": 17
+        },
+        {
+          "qualified_names": [
+            "23",
+            "73",
+            "74",
+            "75",
+            "76",
+            "77",
+            "78",
+            "83",
+            "84",
+            "85",
+            "120",
+            "121",
+            "122",
+            "128",
+            "129",
+            "130",
+            "133",
+            "144",
+            "145",
+            "150",
+            "151",
+            "152",
+            "153",
+            "154",
+            "155",
+            "156",
+            "157",
+            "164",
+            "166",
+            "171",
+            "172",
+            "173",
+            "174",
+            "175",
+            "176",
+            "177",
+            "178",
+            "179",
+            "180",
+            "181",
+            "182",
+            "183",
+            "184",
+            "188",
+            "189",
+            "190",
+            "191",
+            "192",
+            "193",
+            "194",
+            "195",
+            "196",
+            "197",
+            "198",
+            "199",
+            "200",
+            "201",
+            "202",
+            "203",
+            "204",
+            "205",
+            "206",
+            "207",
+            "208",
+            "209",
+            "210",
+            "211",
+            "212",
+            "213",
+            "214",
+            "215",
+            "216",
+            "217",
+            "218"
+          ],
+          "num": 74
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/CollapseVariableDeclarations.java b/src/com/google/javascript/jscomp/CollapseVariableDeclarations.java\nindex 76361f5..6728a35 100644\n--- a/src/com/google/javascript/jscomp/CollapseVariableDeclarations.java\n+++ b/src/com/google/javascript/jscomp/CollapseVariableDeclarations.java\n@@ -20,6 +20,7 @@\n import com.google.common.collect.Lists;\n import com.google.common.collect.Sets;\n import com.google.javascript.jscomp.NodeTraversal.AbstractPostOrderCallback;\n+import com.google.javascript.rhino.JSDocInfo;\n import com.google.javascript.rhino.Node;\n import com.google.javascript.rhino.Token;\n \n@@ -69,13 +70,19 @@\n      * Variable declaration that any following var nodes should be\n      * collapsed into\n      */\n-    final Node firstVarNode;\n+    final Node startNode;\n+\n+    /**\n+     * Last node (non-inclusive) of the chain of nodes to collapse.\n+     */\n+    final Node endNode;\n \n     /** Parent of the nodes to the collapse */\n     final Node parent;\n \n-    Collapse(Node firstVarNode, Node parent) {\n-      this.firstVarNode \u003d firstVarNode;\n+    Collapse(Node startNode, Node endNode, Node parent) {\n+      this.startNode \u003d startNode;\n+      this.endNode \u003d endNode;\n       this.parent \u003d parent;\n     }\n   }\n@@ -110,15 +117,20 @@\n   }\n \n   /**\n-   * Gathers all of the variable declarations that should be collapsed into one.\n+   * Gathers all of the variable declarations / assignments that should be\n+   * collapsed into one.\n+   *\n    * We do not do the collapsing as we go since node traversal would be affected\n    * by the changes we are making to the parse tree.\n    */\n   private class GatherCollapses extends AbstractPostOrderCallback {\n \n+    // TODO(user): This is purely a subtree peep hole optimization. We\n+    // can rewrite this so it no longer have a sperate gather and merge stage.\n+\n     public void visit(NodeTraversal t, Node n, Node parent) {\n       // Only care about var nodes\n-      if (n.getType() !\u003d Token.VAR) return;\n+      if (n.getType() !\u003d Token.VAR \u0026\u0026 !canBeRedeclared(n, t.getScope())) return;\n \n       // If we\u0027ve already looked at this node, skip it\n       if (nodesToCollapse.contains(n)) return;\n@@ -129,36 +141,82 @@\n \n       Node varNode \u003d n;\n \n+      boolean hasVar \u003d n.getType() \u003d\u003d Token.VAR;\n+\n       // Find variable declarations that follow this one (if any)\n       n \u003d n.getNext();\n \n       boolean hasNodesToCollapse \u003d false;\n-      while (n !\u003d null \u0026\u0026 n.getType() \u003d\u003d Token.VAR) {\n+\n+      while (n !\u003d null \u0026\u0026\n+          (n.getType() \u003d\u003d Token.VAR || canBeRedeclared(n, t.getScope()))) {\n+\n+        if (NodeUtil.isVar(n)) {\n+          hasVar \u003d true;\n+        }\n+\n         nodesToCollapse.add(n);\n         hasNodesToCollapse \u003d true;\n \n         n \u003d n.getNext();\n       }\n \n-      if (hasNodesToCollapse) {\n+      if (hasNodesToCollapse \u0026\u0026 hasVar) {\n         nodesToCollapse.add(varNode);\n-        collapses.add(new Collapse(varNode, parent));\n+        collapses.add(new Collapse(varNode, n, parent));\n       }\n-\n     }\n   }\n \n+  private boolean canBeRedeclared(Node n, Scope s) {\n+    if (!NodeUtil.isExprAssign(n)) {\n+      return false;\n+    }\n+    Node assign \u003d n.getFirstChild();\n+    Node lhs \u003d assign.getFirstChild();\n+\n+    if (!NodeUtil.isName(lhs)) {\n+      return false;\n+    }\n+\n+    return s.isDeclared(lhs.getString(), false);\n+  }\n+\n   private void applyCollapses() {\n     for (Collapse collapse : collapses) {\n-      Node first \u003d collapse.firstVarNode;\n-      while (first.getNext() !\u003d null \u0026\u0026\n-          first.getNext().getType() \u003d\u003d Token.VAR) {\n-        Node next \u003d collapse.parent.removeChildAfter(first);\n \n-        // Move all children of the next var node into the first one.\n-        first.addChildrenToBack(next.removeChildren());\n+      Node var \u003d new Node(Token.VAR);\n+      var.copyInformationFrom(collapse.startNode);\n+      collapse.parent.addChildBefore(var, collapse.startNode);\n+\n+      boolean redeclaration \u003d false;\n+      for (Node n \u003d collapse.startNode; n !\u003d collapse.endNode;) {\n+        Node next \u003d n.getNext();\n+\n+        Preconditions.checkState(var.getNext() \u003d\u003d n);\n+        collapse.parent.removeChildAfter(var);\n+\n+        if (NodeUtil.isVar(n)) {\n+          while(n.hasChildren()) {\n+            var.addChildToBack(n.removeFirstChild());\n+          }\n+        } else {\n+          Node assign \u003d n.getFirstChild();\n+          Node lhs \u003d assign.getFirstChild();\n+          Preconditions.checkState(NodeUtil.isName(lhs));\n+          Node rhs \u003d assign.getLastChild();\n+          lhs.addChildToBack(rhs.detachFromParent());\n+          var.addChildToBack(lhs.detachFromParent());\n+          redeclaration \u003d true;\n+        }\n+        n \u003d next;\n+      }\n+\n+      if (redeclaration) {\n+        JSDocInfo info \u003d new JSDocInfo();\n+        info.addSuppression(\"duplicate\");\n+        var.setJSDocInfo(info);\n       }\n     }\n   }\n-\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [854,899]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [4803,5106]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [1951,2077]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [2083,2186]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [2288,2300]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [2357,2380]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: collapsed into one. [3344,3363]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [4194,4236]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [3836,3897]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrimitiveType: boolean [4194,4201]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [4202,4235]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [4655,4683]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [5191,5222]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [5229,5273]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [5280,5336]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [5344,5374]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ForStatement [5381,6093]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [6101,6245]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [3861,3863]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PrefixExpression [3864,3897]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: hasVar [4202,4208]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ParenthesizedExpression [4407,4469]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [4482,4541]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [4674,4676]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: hasVar [4677,4683]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationExpression [5386,5413]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [5415,5436]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [5449,5473]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [5483,5528]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ExpressionStatement [5537,5575]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [5585,6067]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [6076,6085]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: n [4769,4770]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [1905,2034]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [4439,4443]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: next [4444,4448]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [4444,4490]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [4439,4491]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [4571,4618]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [4303,4338]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [4352,4427]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "WhileStatement [4345,4626]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/JSDocInfo.java",
+        "src/com/google/javascript/rhino/JSDocInfo.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.JSDocInfo:addSuppression:[String suppression]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.JSDocInfo:addSuppression:[String suppression]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "544"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "544"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/JSDocInfo.java b/src/com/google/javascript/rhino/JSDocInfo.java\nindex 517d9c3..74ae292 100644\n--- a/src/com/google/javascript/rhino/JSDocInfo.java\n+++ b/src/com/google/javascript/rhino/JSDocInfo.java\n@@ -541,7 +541,7 @@\n   /**\n    * Add a suppressed warning.\n    */\n-  void addSuppression(String suppression) {\n+  public void addSuppression(String suppression) {\n     lazyInitInfo();\n \n     if (info.suppressions \u003d\u003d null) {\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: public [15658,15664]"
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.CollapseVariableDeclarations\\$Collapse:Collapse:[Node startNode, Node endNode, Node parent]:null",
+        "com.google.javascript.jscomp.CollapseVariableDeclarations:canBeRedeclared:[Node n, Scope s]:boolean"
+      ],
+      "num": 2
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.CollapseVariableDeclarations\\$Collapse:Collapse:[Node firstVarNode, Node parent]:null"
+      ],
+      "num": 1
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.CollapseVariableDeclarationsTest",
+      "test_function": "testIssue820",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function f(a){var b\u003d1;a\u003d2;var c}\nResult: function f(a){var b\u003d1,a\u003d2,c}"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CollapseVariableDeclarations.java",
+        "src/com/google/javascript/jscomp/CollapseVariableDeclarations.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CollapseVariableDeclarations\\$GatherCollapses:canBeRedeclared:[Node n, Scope s]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CollapseVariableDeclarations:isNamedParameter:[Var v]:boolean",
+            "com.google.javascript.jscomp.CollapseVariableDeclarations\\$GatherCollapses:canBeRedeclared:[Node n, Scope s]:boolean"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "202",
+            "203"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "202",
+            "203",
+            "204",
+            "205",
+            "209",
+            "210",
+            "211",
+            "212"
+          ],
+          "num": 8
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/CollapseVariableDeclarations.java b/src/com/google/javascript/jscomp/CollapseVariableDeclarations.java\nindex 47c2c4f..e0466ea 100644\n--- a/src/com/google/javascript/jscomp/CollapseVariableDeclarations.java\n+++ b/src/com/google/javascript/jscomp/CollapseVariableDeclarations.java\n@@ -199,11 +199,17 @@\n       }\n \n       Var var \u003d s.getVar(lhs.getString());\n-      return var !\u003d null \u0026\u0026\n-          var.getScope() \u003d\u003d s \u0026\u0026 !blacklistedVars.contains(var);\n+      return var !\u003d null\n+          \u0026\u0026 var.getScope() \u003d\u003d s\n+          \u0026\u0026 !isNamedParameter(var)\n+          \u0026\u0026 !blacklistedVars.contains(var);\n     }\n   }\n \n+  private boolean isNamedParameter(Var v) {\n+    return v.getParentNode().isParamList();\n+  }\n+\n   private void applyCollapses() {\n     for (Collapse collapse : collapses) {\n \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [5756,5845]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [5617,5697]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [5672,5674]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PrefixExpression [5675,5697]"
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.CollapseVariableDeclarations:isNamedParameter:[Var v]:boolean"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "patch_changed_mths": {
+    "qualified_names": [
+      "com.google.javascript.jscomp.CollapseVariableDeclarations\\$GatherCollapses:canBeRedeclared(Lcom/google/javascript/rhino/Node;Lcom/google/javascript/jscomp/Scope;)Z"
+    ],
+    "num": 1
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math.linear.CholeskyDecompositionImplTest::testMath274,org.apache.commons.math.linear.CholeskyDecompositionImplTest::testNotPositiveDefinite",
+    "test.dir": "src/test",
+    "clz.modified": "org.apache.commons.math.linear.CholeskyDecompositionImpl",
+    "src.dir": "src/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "86",
+  "workingDir": "../bugs/Math_86_tmp",
+  "bug_name": "Math_86",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math.linear.CholeskyDecompositionImplTest",
+      "test_function": "testMath274",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected exception: org.apache.commons.math.linear.NotPositiveDefiniteMatrixException"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/math/linear/CholeskyDecompositionImpl.java",
+        "src/java/org/apache/commons/math/linear/CholeskyDecompositionImpl.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.linear.CholeskyDecompositionImpl:CholeskyDecompositionImpl:[final RealMatrix matrix, final double relativeSymmetryThreshold, final double absolutePositivityThreshold]:null"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.linear.CholeskyDecompositionImpl:CholeskyDecompositionImpl:[final RealMatrix matrix, final double relativeSymmetryThreshold, final double absolutePositivityThreshold]:null"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "113",
+            "134",
+            "135",
+            "136"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "114",
+            "115",
+            "116",
+            "130"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/math/linear/CholeskyDecompositionImpl.java b/src/java/org/apache/commons/math/linear/CholeskyDecompositionImpl.java\nindex 67e372f..acd9222 100644\n--- a/src/java/org/apache/commons/math/linear/CholeskyDecompositionImpl.java\n+++ b/src/java/org/apache/commons/math/linear/CholeskyDecompositionImpl.java\n@@ -111,6 +111,9 @@\n \n             final double[] lI \u003d lTData[i];\n \n+            if (lTData[i][i] \u003c absolutePositivityThreshold) {\n+                throw new NotPositiveDefiniteMatrixException();\n+            }\n             // check off-diagonal elements (and reset them to 0)\n             for (int j \u003d i + 1; j \u003c order; ++j) {\n                 final double[] lJ \u003d lTData[j];\n@@ -131,9 +134,6 @@\n             final double[] ltI \u003d lTData[i];\n \n             // check diagonal element\n-            if (ltI[i] \u003c absolutePositivityThreshold) {\n-                throw new NotPositiveDefiniteMatrixException();\n-            }\n \n             ltI[i] \u003d Math.sqrt(ltI[i]);\n             final double inverse \u003d 1.0 / ltI[i];\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ArrayAccess [4907,4916]"
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: ltI [5623,5626]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

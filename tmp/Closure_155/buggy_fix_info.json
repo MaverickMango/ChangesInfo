@@ -1,0 +1,457 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.InlineVariablesTest::testArgumentsModifiedInInnerFunction,com.google.javascript.jscomp.InlineVariablesTest::testArgumentsModifiedInOuterFunction,com.google.javascript.jscomp.InlineVariablesTest::testIssue378ModifiedArguments1,com.google.javascript.jscomp.InlineVariablesTest::testIssue378ModifiedArguments2,com.google.javascript.jscomp.InlineVariablesTest::testIssue378EscapedArguments1,com.google.javascript.jscomp.InlineVariablesTest::testIssue378EscapedArguments2,com.google.javascript.jscomp.InlineVariablesTest::testIssue378EscapedArguments4",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.InlineVariables,com.google.javascript.jscomp.ReferenceCollectingCallback,com.google.javascript.jscomp.Scope",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "155",
+  "workingDir": "../bugs/Closure_155_tmp",
+  "bug_name": "Closure_155",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.InlineVariablesTest",
+      "test_function": "testArgumentsModifiedInInnerFunction",
+      "assertion_line": "1035",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function g(callback){function inner(callback$$1){var x\u003dcallback$$1;arguments[0]\u003dthis;x.apply(this)}callback.apply(this,arguments)}\nResult: function g(callback){function inner(callback$$1){arguments[0]\u003dthis;callback$$1.apply(this)}callback.apply(this,arguments)}"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.InlineVariablesTest",
+      "test_function": "testArgumentsModifiedInOuterFunction",
+      "assertion_line": "1014",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function g(callback){function inner(callback$$1){callback$$1.apply(this)}var f\u003dcallback;arguments[0]\u003dthis;f.apply(this,arguments)}\nResult: function g(callback){function inner(callback$$1){callback$$1.apply(this)}arguments[0]\u003dthis;callback.apply(this,arguments)}"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.InlineVariablesTest",
+      "test_function": "testIssue378ModifiedArguments1",
+      "assertion_line": "915",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function g(callback){var f\u003dcallback;arguments[0]\u003dthis;f.apply(this,arguments)}\nResult: function g(callback){arguments[0]\u003dthis;callback.apply(this,arguments)}"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.InlineVariablesTest",
+      "test_function": "testIssue378ModifiedArguments2",
+      "assertion_line": "924",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function g(callback){var f\u003dcallback;arguments[0]\u003dthis;f.apply(this,arguments)}\nResult: function g(callback){arguments[0]\u003dthis;callback.apply(this,arguments)}"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.InlineVariablesTest",
+      "test_function": "testIssue378EscapedArguments1",
+      "assertion_line": "934",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function g(callback){var f\u003dcallback;h(arguments,this);f.apply(this,arguments)}function h(a,b){a[0]\u003db}\nResult: function g(callback){h(arguments,this);callback.apply(this,arguments)}function h(a,b){a[0]\u003db}"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.InlineVariablesTest",
+      "test_function": "testIssue378EscapedArguments2",
+      "assertion_line": "946",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function g(callback){var f\u003dcallback;h(arguments,this);f.apply(this)}function h(a,b){a[0]\u003db}\nResult: function g(callback){h(arguments,this);callback.apply(this)}function h(a,b){a[0]\u003db}"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.InlineVariablesTest",
+      "test_function": "testIssue378EscapedArguments4",
+      "assertion_line": "970",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function g(callback){var f\u003dcallback;h(arguments[0],this);f.apply(this,arguments)}function h(a,b){a[0]\u003db}\nResult: function g(callback){h(arguments[0],this);callback.apply(this,arguments)}function h(a,b){a[0]\u003db}"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/InlineVariables.java",
+        "src/com/google/javascript/jscomp/InlineVariables.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.InlineVariables\\$InliningBehavior:inlineNonConstants:[Var v, ReferenceCollection referenceInfo, boolean maybeModifiedArguments]:void",
+            "com.google.javascript.jscomp.InlineVariables\\$InliningBehavior:maybeEscapedOrModifiedArguments:[Scope scope, Map\u003cVar,ReferenceCollection\u003e referenceMap]:boolean",
+            "com.google.javascript.jscomp.InlineVariables\\$InliningBehavior:isLValue:[Node n]:boolean",
+            "com.google.javascript.jscomp.InlineVariables\\$InliningBehavior:doInlinesForScope:[NodeTraversal t, Map\u003cVar,ReferenceCollection\u003e referenceMap]:void"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.InlineVariables\\$InliningBehavior:doInlinesForScope:[NodeTraversal t, Map\u003cVar,ReferenceCollection\u003e referenceMap]:void",
+            "com.google.javascript.jscomp.InlineVariables\\$InliningBehavior:inlineNonConstants:[Var v, ReferenceCollection referenceInfo]:void"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "199",
+            "200",
+            "222",
+            "227",
+            "228",
+            "229",
+            "230",
+            "231",
+            "232",
+            "233",
+            "234",
+            "235",
+            "238",
+            "239",
+            "240",
+            "241",
+            "242",
+            "243",
+            "244",
+            "245",
+            "246",
+            "247",
+            "249",
+            "250",
+            "251",
+            "252",
+            "253",
+            "254",
+            "255",
+            "258",
+            "259",
+            "304"
+          ],
+          "num": 32
+        },
+        {
+          "qualified_names": [
+            "198",
+            "220",
+            "230",
+            "275"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/InlineVariables.java b/src/com/google/javascript/jscomp/InlineVariables.java\nindex 7d99778..18c9fbe 100644\n--- a/src/com/google/javascript/jscomp/InlineVariables.java\n+++ b/src/com/google/javascript/jscomp/InlineVariables.java\n@@ -196,8 +196,6 @@\n     private void doInlinesForScope(NodeTraversal t,\n         Map\u003cVar, ReferenceCollection\u003e referenceMap) {\n \n-      boolean maybeModifiedArguments \u003d\n-          maybeEscapedOrModifiedArguments(t.getScope(), referenceMap);\n       for (Iterator\u003cVar\u003e it \u003d t.getScope().getVars(); it.hasNext();) {\n         Var v \u003d it.next();\n \n@@ -219,44 +217,17 @@\n           // inlining heuristics. See InlineConstantsTest.\n           continue;\n         } else {\n-          inlineNonConstants(v, referenceInfo, maybeModifiedArguments);\n+          inlineNonConstants(v, referenceInfo);\n         }\n       }\n     }\n \n-    private boolean maybeEscapedOrModifiedArguments(\n-        Scope scope, Map\u003cVar, ReferenceCollection\u003e referenceMap) {\n-      if (scope.isLocal()) {\n-        Var arguments \u003d scope.getArgumentsVar();\n-        ReferenceCollection refs \u003d referenceMap.get(arguments);\n-        if (refs !\u003d null \u0026\u0026 !refs.references.isEmpty()) {\n-          for (Reference ref : refs.references) {\n-            Node refNode \u003d ref.getNameNode();\n-            Node refParent \u003d ref.getParent();\n             // Any reference that is not a read of the arguments property\n             // consider a escape of the arguments object.\n-            if (!(NodeUtil.isGet(refParent)\n-                \u0026\u0026 refNode \u003d\u003d ref.getParent().getFirstChild()\n-                \u0026\u0026 !isLValue(refParent))) {\n-              return true;\n-            }\n-          }\n-        }\n-      }\n-      return false;\n-    }\n \n-    private boolean isLValue(Node n) {\n-      Node parent \u003d n.getParent();\n-      return (parent.getType() \u003d\u003d Token.INC\n-          || parent.getType() \u003d\u003d Token.DEC\n-          || (NodeUtil.isAssignmentOp(parent)\n-          \u0026\u0026 parent.getFirstChild() \u003d\u003d n));\n-    }\n \n     private void inlineNonConstants(\n-        Var v, ReferenceCollection referenceInfo,\n-        boolean maybeModifiedArguments) {\n+        Var v, ReferenceCollection referenceInfo) {\n       int refCount \u003d referenceInfo.references.size();\n       Reference declaration \u003d referenceInfo.references.get(0);\n       Reference init \u003d referenceInfo.getInitializingReference();\n@@ -301,7 +272,7 @@\n       // inline an alias of it. (If the variable was inlined, then the\n       // reference data is out of sync. We\u0027re better off just waiting for\n       // the next pass.)\n-      if (!maybeModifiedArguments \u0026\u0026\n+      if (\n           !staleVars.contains(v) \u0026\u0026 referenceInfo.isWellDefined() \u0026\u0026\n           referenceInfo.isAssignedOnceInLifetime()) {\n         List\u003cReference\u003e refs \u003d referenceInfo.references;\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [6636,6739]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: maybeModifiedArguments [7814,7836]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [7868,8704]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [8710,8962]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [9059,9089]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "PrefixExpression [11123,11146]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/ReferenceCollectingCallback.java",
+        "src/com/google/javascript/jscomp/ReferenceCollectingCallback.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.ReferenceCollectingCallback:visit:[NodeTraversal t, Node n, Node parent]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.ReferenceCollectingCallback:visit:[NodeTraversal t, Node n, Node parent]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "123",
+            "124",
+            "125",
+            "126",
+            "127",
+            "128"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "123"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/ReferenceCollectingCallback.java b/src/com/google/javascript/jscomp/ReferenceCollectingCallback.java\nindex 4c00d60..e3edbb4 100644\n--- a/src/com/google/javascript/jscomp/ReferenceCollectingCallback.java\n+++ b/src/com/google/javascript/jscomp/ReferenceCollectingCallback.java\n@@ -120,12 +120,7 @@\n    */\n   public void visit(NodeTraversal t, Node n, Node parent) {\n     if (n.getType() \u003d\u003d Token.NAME) {\n-      Var v;\n-      if (n.getString().equals(\"arguments\")) {\n-        v \u003d t.getScope().getArgumentsVar();\n-      } else {\n-        v \u003d t.getScope().getVar(n.getString());\n-      }\n+      Var v \u003d t.getScope().getVar(n.getString());\n       if (v !\u003d null \u0026\u0026 varFilter.apply(v)) {\n         addReference(t, v,\n             new Reference(n, parent, t, blockStack.peek()));\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [3801,3844]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [3801,3804]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [3805,3843]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [3801,3807]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [3818,3851]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ASSIGNMENT_OPERATOR: \u003d [3865,3866]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Assignment [3863,3897]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ExpressionStatement [3863,3898]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [3853,3906]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ASSIGNMENT_OPERATOR: \u003d [3924,3925]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Assignment [3922,3960]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ExpressionStatement [3922,3961]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [3912,3969]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [3814,3969]",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/Scope.java",
+        "src/com/google/javascript/jscomp/Scope.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.Scope\\$Arguments:Arguments:[Scope scope]:null",
+            "com.google.javascript.jscomp.Scope\\$Arguments:equals:[Object other]:boolean",
+            "com.google.javascript.jscomp.Scope:getArgumentsVar:[]:Var",
+            "com.google.javascript.jscomp.Scope\\$Arguments:hashCode:[]:int"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "63",
+            "291",
+            "292",
+            "293",
+            "294",
+            "295",
+            "296",
+            "298",
+            "299",
+            "300",
+            "301",
+            "302",
+            "303",
+            "304",
+            "305",
+            "307",
+            "308",
+            "309",
+            "310",
+            "312",
+            "313",
+            "314",
+            "316",
+            "317",
+            "318",
+            "319",
+            "485",
+            "486",
+            "487",
+            "488",
+            "489",
+            "490"
+          ],
+          "num": 32
+        },
+        {
+          "qualified_names": [
+            "62",
+            "291",
+            "510"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/Scope.java b/src/com/google/javascript/jscomp/Scope.java\nindex 19ac9d2..806ca27 100644\n--- a/src/com/google/javascript/jscomp/Scope.java\n+++ b/src/com/google/javascript/jscomp/Scope.java\n@@ -60,7 +60,6 @@\n   /** Whether this is a bottom scope for the purposes of type inference. */\n   private final boolean isBottom;\n \n-  private Var arguments;\n \n   /** Stores info about a variable */\n   public static class Var implements StaticSlot\u003cJSType\u003e {\n@@ -288,35 +287,10 @@\n    * scope.\n    */\n   // TODO(johnlenz): Include this the list of Vars for the scope.\n-  public static class Arguments extends Var {\n-    Arguments(Scope scope) {\n-      super(\n-        false, // no inferred\n-        \"arguments\", // always arguments\n-        null,  // no declaration node\n         // TODO(johnlenz): provide the type of \"Arguments\".\n-        null,  // no type info\n-        scope,\n-        -1,    // no variable index\n-        null,  // input,\n-        false, // not a define\n-        null   // no jsdoc\n-        );\n-    }\n \n-    @Override public boolean equals(Object other) {\n-      if (!(other instanceof Arguments)) {\n-        return false;\n-      }\n \n-      Arguments otherVar \u003d (Arguments) other;\n-      return otherVar.scope.getRootNode() \u003d\u003d scope.getRootNode();\n-    }\n \n-    @Override public int hashCode() {\n-      return System.identityHashCode(this);\n-    }\n-  }\n \n   /**\n    * Creates a Scope given the parent Scope and the root node of the scope.\n@@ -482,12 +456,6 @@\n   /**\n    * Get a unique VAR object to represents \"arguments\" within this scope\n    */\n-  public Var getArgumentsVar() {\n-    if (arguments \u003d\u003d null) {\n-      arguments \u003d new Arguments(this);\n-    }\n-    return arguments;\n-  }\n \n   /**\n    * Returns true if a variable is declared.\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [2358,2380]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TypeDeclaration [7553,8495]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [12825,13040]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.InlineVariables\\$InliningBehavior:inlineNonConstants:[Var v, ReferenceCollection referenceInfo]:void"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.Scope\\$Arguments:Arguments:[Scope scope]:null",
+        "com.google.javascript.jscomp.Scope\\$Arguments:equals:[Object other]:boolean",
+        "com.google.javascript.jscomp.InlineVariables\\$InliningBehavior:inlineNonConstants:[Var v, ReferenceCollection referenceInfo, boolean maybeModifiedArguments]:void",
+        "com.google.javascript.jscomp.Scope:getArgumentsVar:[]:Var",
+        "com.google.javascript.jscomp.Scope\\$Arguments:hashCode:[]:int",
+        "com.google.javascript.jscomp.InlineVariables\\$InliningBehavior:isLValue:[Node n]:boolean",
+        "com.google.javascript.jscomp.InlineVariables\\$InliningBehavior:maybeEscapedOrModifiedArguments:[Scope scope, Map\u003cVar,ReferenceCollection\u003e referenceMap]:boolean"
+      ],
+      "num": 7
+    }
+  }
+}

@@ -1,0 +1,33 @@
+Only in data/changesInfo//Closure_12/properties/modified_classes/inducing/src/com/google/javascript/jscomp: FlowSensitiveInlineVariables.java
+diff -u -r data/changesInfo//Closure_12/properties/modified_classes/inducing/src/com/google/javascript/jscomp/MaybeReachingVariableUse.java data/changesInfo//Closure_12/cleaned/fixing/src/com/google/javascript/jscomp/MaybeReachingVariableUse.java
+--- data/changesInfo//Closure_12/properties/modified_classes/inducing/src/com/google/javascript/jscomp/MaybeReachingVariableUse.java	2023-06-27 05:20:04.802191905 -0700
++++ data/changesInfo//Closure_12/cleaned/fixing/src/com/google/javascript/jscomp/MaybeReachingVariableUse.java	2023-06-27 05:25:17.979672284 -0700
+@@ -22,6 +22,7 @@
+ import com.google.common.collect.Sets;
+ import com.google.javascript.jscomp.ControlFlowGraph.Branch;
+ import com.google.javascript.jscomp.Scope.Var;
++import com.google.javascript.jscomp.graph.DiGraph.DiGraphEdge;
+ import com.google.javascript.jscomp.graph.GraphNode;
+ import com.google.javascript.rhino.Node;
+ import com.google.javascript.rhino.Token;
+@@ -144,7 +145,18 @@
+   @Override
+   ReachingUses flowThrough(Node n, ReachingUses input) {
+     ReachingUses output = new ReachingUses(input);
+-    computeMayUse(n, n, output, false);
++
++    // If there's an ON_EX edge, this cfgNode may or may not get executed.
++    // We can express this concisely by just pretending this happens in
++    // a conditional.
++    boolean conditional = false;
++    List<DiGraphEdge<Node, Branch>> branchEdges = getCfg().getOutEdges(n);
++    for (DiGraphEdge<Node, Branch> edge : branchEdges) {
++      if (edge.getValue() == Branch.ON_EX) {
++        conditional = true;
++      }
++    }
++    computeMayUse(n, n, output, conditional);
+     return output;
+   }
+ 
+Only in data/changesInfo//Closure_12/properties/modified_classes/inducing/: test

@@ -1,0 +1,1305 @@
+diff -r -u original/src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java buggy/src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java
+--- original/src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java	2023-06-13 15:31:41.991094135 +0800
++++ buggy/src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java	2023-06-12 11:40:24.750794095 +0800
+@@ -18,6 +18,7 @@
+ 
+ import com.google.common.base.Preconditions;
+ import com.google.common.collect.ImmutableSet;
++import com.google.common.collect.Lists;
+ import com.google.common.collect.Sets;
+ import com.google.javascript.jscomp.mozilla.rhino.ErrorReporter;
+ import com.google.javascript.jscomp.mozilla.rhino.ast.Comment;
+@@ -33,6 +34,7 @@
+ import java.util.HashSet;
+ import java.util.Map;
+ import java.util.Set;
++import java.util.List;
+ 
+ /**
+  * A parser for JSDoc comments.
+@@ -53,15 +55,31 @@
+   private final Node templateNode;
+ 
+   private class ErrorReporterParser {
+-    void addWarning(String messageId, String messageArg, int lineno,
+-                    int charno) {
++    void addParserWarning(String messageId, String messageArg, int lineno,
++        int charno) {
+       errorReporter.warning(ScriptRuntime.getMessage1(messageId, messageArg),
+           sourceName, lineno, null, charno);
+     }
+-    void addWarning(String messageId, int lineno, int charno) {
++
++    void addParserWarning(String messageId, int lineno, int charno) {
+       errorReporter.warning(ScriptRuntime.getMessage0(messageId),
+           sourceName, lineno, null, charno);
+     }
++
++    void addTypeWarning(String messageId, String messageArg, int lineno,
++                    int charno) {
++      errorReporter.warning(
++          "Bad type annotation. " +
++          ScriptRuntime.getMessage1(messageId, messageArg),
++          sourceName, lineno, null, charno);
++    }
++
++    void addTypeWarning(String messageId, int lineno, int charno) {
++      errorReporter.warning(
++          "Bad type annotation. " +
++          ScriptRuntime.getMessage0(messageId),
++          sourceName, lineno, null, charno);
++    }
+   }
+ 
+   // The DocInfo with the fileoverview tag for the whole file.
+@@ -160,6 +178,8 @@
+ 
+     JsDocToken token = next();
+ 
++    List<ExtendedTypeInfo> extendedTypes = Lists.newArrayList();
++
+     // Always record that we have a comment.
+     if (jsdocBuilder.shouldParseDocumentation()) {
+       ExtractionInfo blockInfo = extractBlockComment(token);
+@@ -188,7 +208,7 @@
+             String annotationName = stream.getString();
+             Annotation annotation = annotationNames.get(annotationName);
+             if (annotation == null) {
+-              parser.addWarning("msg.bad.jsdoc.tag", annotationName,
++              parser.addParserWarning("msg.bad.jsdoc.tag", annotationName,
+                   stream.getLineno(), stream.getCharno());
+             } else {
+               // Mark the beginning of the annotation.
+@@ -201,7 +221,7 @@
+                     String author = authorInfo.string;
+ 
+                     if (author.length() == 0) {
+-                      parser.addWarning("msg.jsdoc.authormissing",
++                      parser.addParserWarning("msg.jsdoc.authormissing",
+                           stream.getLineno(), stream.getCharno());
+                     } else {
+                       jsdocBuilder.addAuthor(author);
+@@ -214,7 +234,7 @@
+ 
+                 case CONSTANT:
+                   if (!jsdocBuilder.recordConstancy()) {
+-                    parser.addWarning("msg.jsdoc.const",
++                    parser.addParserWarning("msg.jsdoc.const",
+                         stream.getLineno(), stream.getCharno());
+                   }
+                   token = eatTokensUntilEOL();
+@@ -223,10 +243,10 @@
+                 case CONSTRUCTOR:
+                   if (!jsdocBuilder.recordConstructor()) {
+                     if (jsdocBuilder.isInterfaceRecorded()) {
+-                      parser.addWarning("msg.jsdoc.interface.constructor",
++                      parser.addTypeWarning("msg.jsdoc.interface.constructor",
+                           stream.getLineno(), stream.getCharno());
+                     } else {
+-                      parser.addWarning("msg.jsdoc.incompat.type",
++                      parser.addTypeWarning("msg.jsdoc.incompat.type",
+                           stream.getLineno(), stream.getCharno());
+                     }
+                   }
+@@ -235,7 +255,7 @@
+ 
+                 case DEPRECATED:
+                   if (!jsdocBuilder.recordDeprecated()) {
+-                    parser.addWarning("msg.jsdoc.deprecated",
++                    parser.addParserWarning("msg.jsdoc.deprecated",
+                         stream.getLineno(), stream.getCharno());
+                   }
+ 
+@@ -255,10 +275,10 @@
+                 case INTERFACE:
+                   if (!jsdocBuilder.recordInterface()) {
+                     if (jsdocBuilder.isConstructorRecorded()) {
+-                      parser.addWarning("msg.jsdoc.interface.constructor",
++                      parser.addTypeWarning("msg.jsdoc.interface.constructor",
+                           stream.getLineno(), stream.getCharno());
+                     } else {
+-                      parser.addWarning("msg.jsdoc.incompat.type",
++                      parser.addTypeWarning("msg.jsdoc.incompat.type",
+                           stream.getLineno(), stream.getCharno());
+                     }
+                   }
+@@ -267,7 +287,7 @@
+ 
+                 case DESC:
+                   if (jsdocBuilder.isDescriptionRecorded()) {
+-                    parser.addWarning("msg.jsdoc.desc.extra",
++                    parser.addParserWarning("msg.jsdoc.desc.extra",
+                         stream.getLineno(), stream.getCharno());
+                     token = eatTokensUntilEOL();
+                     continue retry;
+@@ -298,7 +318,7 @@
+ 
+                   if (!jsdocBuilder.recordFileOverview(fileOverview) ||
+                       fileOverviewJSDocInfo != null) {
+-                    parser.addWarning("msg.jsdoc.fileoverview.extra",
++                    parser.addParserWarning("msg.jsdoc.fileoverview.extra",
+                         stream.getLineno(), stream.getCharno());
+                   }
+                   continue retry;
+@@ -335,7 +355,7 @@
+                     type = createJSTypeExpression(newStringNode("number"));
+                   }
+                   if (!jsdocBuilder.recordEnumParameterType(type)) {
+-                    parser.addWarning(
++                    parser.addTypeWarning(
+                         "msg.jsdoc.incompat.type", lineno, charno);
+                   }
+                   token = eatTokensUntilEOL(token);
+@@ -343,7 +363,7 @@
+ 
+                 case EXPORT:
+                   if (!jsdocBuilder.recordExport()) {
+-                    parser.addWarning("msg.jsdoc.export",
++                    parser.addParserWarning("msg.jsdoc.export",
+                         stream.getLineno(), stream.getCharno());
+                   }
+                   token = eatTokensUntilEOL();
+@@ -351,7 +371,7 @@
+ 
+                 case EXTERNS:
+                   if (!jsdocBuilder.recordExterns()) {
+-                    parser.addWarning("msg.jsdoc.externs",
++                    parser.addParserWarning("msg.jsdoc.externs",
+                         stream.getLineno(), stream.getCharno());
+                   }
+                   token = eatTokensUntilEOL();
+@@ -359,7 +379,7 @@
+ 
+                 case JAVA_DISPATCH:
+                   if (!jsdocBuilder.recordJavaDispatch()) {
+-                    parser.addWarning("msg.jsdoc.javadispatch",
++                    parser.addParserWarning("msg.jsdoc.javadispatch",
+                         stream.getLineno(), stream.getCharno());
+                   }
+                   token = eatTokensUntilEOL();
+@@ -392,38 +412,37 @@
+                     type = createJSTypeExpression(typeNode);
+ 
+                     if (annotation == Annotation.EXTENDS) {
+-                      if (!jsdocBuilder.recordBaseType(type)) {
+-                        parser.addWarning(
+-                            "msg.jsdoc.incompat.type", lineno, charno);
+-                      }
++                      // record the extended type, check later
++                      extendedTypes.add(new ExtendedTypeInfo(
++                          type, stream.getLineno(), stream.getCharno()));
+                     } else {
+                       Preconditions.checkState(
+                           annotation == Annotation.IMPLEMENTS);
+                       if (!jsdocBuilder.recordImplementedInterface(type)) {
+-                        parser.addWarning("msg.jsdoc.implements.duplicate",
++                        parser.addTypeWarning("msg.jsdoc.implements.duplicate",
+                             lineno, charno);
+                       }
+                     }
+                     token = next();
+                     if (matchingRc) {
+                       if (token != JsDocToken.RC) {
+-                        parser.addWarning("msg.jsdoc.missing.rc",
++                        parser.addTypeWarning("msg.jsdoc.missing.rc",
+                             stream.getLineno(), stream.getCharno());
+                       }
+                     } else if (token != JsDocToken.EOL &&
+                         token != JsDocToken.EOF && token != JsDocToken.EOC) {
+-                      parser.addWarning("msg.end.annotation.expected",
++                      parser.addTypeWarning("msg.end.annotation.expected",
+                           stream.getLineno(), stream.getCharno());
+                     }
+                   } else {
+-                    parser.addWarning("msg.no.type.name", lineno, charno);
++                    parser.addTypeWarning("msg.no.type.name", lineno, charno);
+                   }
+                   token = eatTokensUntilEOL(token);
+                   continue retry;
+ 
+                 case HIDDEN:
+                   if (!jsdocBuilder.recordHiddenness()) {
+-                    parser.addWarning("msg.jsdoc.hidden",
++                    parser.addParserWarning("msg.jsdoc.hidden",
+                         stream.getLineno(), stream.getCharno());
+                   }
+                   token = eatTokensUntilEOL();
+@@ -441,16 +460,16 @@
+                   if (match(JsDocToken.STRING)) {
+                     token = next();
+                     if (!jsdocBuilder.recordLends(stream.getString())) {
+-                      parser.addWarning("msg.jsdoc.lends.incompatible",
++                      parser.addTypeWarning("msg.jsdoc.lends.incompatible",
+                           stream.getLineno(), stream.getCharno());
+                     }
+                   } else {
+-                    parser.addWarning("msg.jsdoc.lends.missing",
++                    parser.addTypeWarning("msg.jsdoc.lends.missing",
+                         stream.getLineno(), stream.getCharno());
+                   }
+ 
+                   if (matchingRc && !match(JsDocToken.RC)) {
+-                    parser.addWarning("msg.jsdoc.missing.rc",
++                    parser.addTypeWarning("msg.jsdoc.missing.rc",
+                         stream.getLineno(), stream.getCharno());
+                   }
+                   token = eatTokensUntilEOL();
+@@ -462,14 +481,14 @@
+                   String meaning = meaningInfo.string;
+                   token = meaningInfo.token;
+                   if (!jsdocBuilder.recordMeaning(meaning)) {
+-                    parser.addWarning("msg.jsdoc.meaning.extra",
++                    parser.addParserWarning("msg.jsdoc.meaning.extra",
+                         stream.getLineno(), stream.getCharno());
+                   }
+                   continue retry;
+ 
+                 case NO_ALIAS:
+                   if (!jsdocBuilder.recordNoAlias()) {
+-                    parser.addWarning("msg.jsdoc.noalias",
++                    parser.addParserWarning("msg.jsdoc.noalias",
+                         stream.getLineno(), stream.getCharno());
+                   }
+                   token = eatTokensUntilEOL();
+@@ -477,7 +496,7 @@
+ 
+                 case NO_COMPILE:
+                   if (!jsdocBuilder.recordNoCompile()) {
+-                    parser.addWarning("msg.jsdoc.nocompile",
++                    parser.addParserWarning("msg.jsdoc.nocompile",
+                         stream.getLineno(), stream.getCharno());
+                   }
+                   token = eatTokensUntilEOL();
+@@ -485,7 +504,7 @@
+ 
+                 case NO_TYPE_CHECK:
+                   if (!jsdocBuilder.recordNoTypeCheck()) {
+-                    parser.addWarning("msg.jsdoc.nocheck",
++                    parser.addParserWarning("msg.jsdoc.nocheck",
+                         stream.getLineno(), stream.getCharno());
+                   }
+                   token = eatTokensUntilEOL();
+@@ -498,7 +517,7 @@
+                 case INHERIT_DOC:
+                 case OVERRIDE:
+                   if (!jsdocBuilder.recordOverride()) {
+-                    parser.addWarning("msg.jsdoc.override",
++                    parser.addTypeWarning("msg.jsdoc.override",
+                         stream.getLineno(), stream.getCharno());
+                   }
+                   token = eatTokensUntilEOL();
+@@ -576,7 +595,7 @@
+                   }
+ 
+                   if (JsDocToken.STRING != token) {
+-                    parser.addWarning("msg.missing.variable.name",
++                    parser.addTypeWarning("msg.missing.variable.name",
+                         lineno, charno);
+                   } else {
+                     name = stream.getString();
+@@ -610,10 +629,10 @@
+                       name = null;
+                     } else if (!jsdocBuilder.recordParameter(name, type)) {
+                       if (jsdocBuilder.hasParameter(name)) {
+-                        parser.addWarning("msg.dup.variable.name", name,
++                        parser.addTypeWarning("msg.dup.variable.name", name,
+                             lineno, charno);
+                       } else {
+-                        parser.addWarning("msg.jsdoc.incompat.type", name,
++                        parser.addTypeWarning("msg.jsdoc.incompat.type", name,
+                             lineno, charno);
+                       }
+                     }
+@@ -646,7 +665,7 @@
+ 
+                 case PRESERVE_TRY:
+                   if (!jsdocBuilder.recordPreserveTry()) {
+-                    parser.addWarning("msg.jsdoc.preservertry",
++                    parser.addParserWarning("msg.jsdoc.preservertry",
+                         stream.getLineno(), stream.getCharno());
+                   }
+                   token = eatTokensUntilEOL();
+@@ -654,7 +673,7 @@
+ 
+                 case PRIVATE:
+                   if (!jsdocBuilder.recordVisibility(Visibility.PRIVATE)) {
+-                    parser.addWarning("msg.jsdoc.visibility.private",
++                    parser.addParserWarning("msg.jsdoc.visibility.private",
+                         stream.getLineno(), stream.getCharno());
+                   }
+                   token = eatTokensUntilEOL();
+@@ -662,7 +681,7 @@
+ 
+                 case PROTECTED:
+                   if (!jsdocBuilder.recordVisibility(Visibility.PROTECTED)) {
+-                    parser.addWarning("msg.jsdoc.visibility.protected",
++                    parser.addParserWarning("msg.jsdoc.visibility.protected",
+                         stream.getLineno(), stream.getCharno());
+                   }
+                   token = eatTokensUntilEOL();
+@@ -670,7 +689,7 @@
+ 
+                 case PUBLIC:
+                   if (!jsdocBuilder.recordVisibility(Visibility.PUBLIC)) {
+-                    parser.addWarning("msg.jsdoc.visibility.public",
++                    parser.addParserWarning("msg.jsdoc.visibility.public",
+                         stream.getLineno(), stream.getCharno());
+                   }
+                   token = eatTokensUntilEOL();
+@@ -678,7 +697,7 @@
+ 
+                 case NO_SHADOW:
+                   if (!jsdocBuilder.recordNoShadow()) {
+-                    parser.addWarning("msg.jsdoc.noshadow",
++                    parser.addParserWarning("msg.jsdoc.noshadow",
+                         stream.getLineno(), stream.getCharno());
+                   }
+                   token = eatTokensUntilEOL();
+@@ -686,7 +705,7 @@
+ 
+                 case NO_SIDE_EFFECTS:
+                   if (!jsdocBuilder.recordNoSideEffects()) {
+-                    parser.addWarning("msg.jsdoc.nosideeffects",
++                    parser.addParserWarning("msg.jsdoc.nosideeffects",
+                         stream.getLineno(), stream.getCharno());
+                   }
+                   token = eatTokensUntilEOL();
+@@ -698,7 +717,7 @@
+ 
+                 case IMPLICIT_CAST:
+                   if (!jsdocBuilder.recordImplicitCast()) {
+-                    parser.addWarning("msg.jsdoc.implicitcast",
++                    parser.addTypeWarning("msg.jsdoc.implicitcast",
+                         stream.getLineno(), stream.getCharno());
+                   }
+                   token = eatTokensUntilEOL();
+@@ -710,7 +729,7 @@
+                     String reference = referenceInfo.string;
+ 
+                     if (reference.length() == 0) {
+-                      parser.addWarning("msg.jsdoc.seemissing",
++                      parser.addParserWarning("msg.jsdoc.seemissing",
+                           stream.getLineno(), stream.getCharno());
+                     } else {
+                       jsdocBuilder.addReference(reference);
+@@ -731,11 +750,11 @@
+                   String templateTypeName = templateInfo.string;
+ 
+                   if (templateTypeName.length() == 0) {
+-                    parser.addWarning("msg.jsdoc.templatemissing",
++                    parser.addTypeWarning("msg.jsdoc.templatemissing",
+                           stream.getLineno(), stream.getCharno());
+                   } else if (!jsdocBuilder.recordTemplateTypeName(
+                       templateTypeName)) {
+-                    parser.addWarning("msg.jsdoc.template.at.most.once",
++                    parser.addTypeWarning("msg.jsdoc.template.at.most.once",
+                         stream.getLineno(), stream.getCharno());
+                   }
+ 
+@@ -747,11 +766,11 @@
+                   String version = versionInfo.string;
+ 
+                   if (version.length() == 0) {
+-                    parser.addWarning("msg.jsdoc.versionmissing",
++                    parser.addParserWarning("msg.jsdoc.versionmissing",
+                           stream.getLineno(), stream.getCharno());
+                   } else {
+                     if (!jsdocBuilder.recordVersion(version)) {
+-                       parser.addWarning("msg.jsdoc.extraversion",
++                       parser.addParserWarning("msg.jsdoc.extraversion",
+                           stream.getLineno(), stream.getCharno());
+                     }
+                   }
+@@ -764,13 +783,20 @@
+                 case THIS:
+                 case TYPE:
+                 case TYPEDEF:
+-                  skipEOLs();
+                   lineno = stream.getLineno();
+                   charno = stream.getCharno();
+ 
+-                  token = next();
+-
+-                  Node typeNode = parseAndRecordTypeNode(token, lineno, charno);
++                  Node typeNode = null;
++                  if (!lookAheadForTypeAnnotation() &&
++                      annotation == Annotation.RETURN) {
++                    // If RETURN doesn't have a type annotation, record
++                    // it as the unknown type.
++                    typeNode = newNode(Token.QMARK);
++                  } else {
++                    skipEOLs();
++                    token = next();
++                    typeNode = parseAndRecordTypeNode(token, lineno, charno);
++                  }
+ 
+                   if (annotation == Annotation.THIS) {
+                     typeNode = wrapNode(Token.BANG, typeNode);
+@@ -787,21 +813,18 @@
+                     switch (annotation) {
+                       case DEFINE:
+                         if (!jsdocBuilder.recordDefineType(type)) {
+-                          parser.addWarning("msg.jsdoc.define",
++                          parser.addParserWarning("msg.jsdoc.define",
+                               lineno, charno);
+                         }
+                         break;
+ 
+                       case RETURN:
+                         if (!jsdocBuilder.recordReturnType(type)) {
+-                          parser.addWarning(
++                          parser.addTypeWarning(
+                               "msg.jsdoc.incompat.type", lineno, charno);
+                           break;
+                         }
+ 
+-                        // *Update* the token to that after the type annotation.
+-                        token = current();
+-
+                         // Find the return's description (if applicable).
+                         if (jsdocBuilder.shouldParseDocumentation()) {
+                           ExtractionInfo returnDescriptionInfo =
+@@ -823,21 +846,21 @@
+ 
+                       case THIS:
+                         if (!jsdocBuilder.recordThisType(type)) {
+-                          parser.addWarning(
++                          parser.addTypeWarning(
+                               "msg.jsdoc.incompat.type", lineno, charno);
+                         }
+                         break;
+ 
+                       case TYPE:
+                         if (!jsdocBuilder.recordType(type)) {
+-                          parser.addWarning(
++                          parser.addTypeWarning(
+                               "msg.jsdoc.incompat.type", lineno, charno);
+                         }
+                         break;
+ 
+                       case TYPEDEF:
+                         if (!jsdocBuilder.recordTypedef(type)) {
+-                          parser.addWarning(
++                          parser.addTypeWarning(
+                               "msg.jsdoc.incompat.type", lineno, charno);
+                         }
+                         break;
+@@ -855,14 +878,15 @@
+           if (hasParsedFileOverviewDocInfo()) {
+             fileOverviewJSDocInfo = retrieveAndResetParsedJSDocInfo();
+           }
+-
++          checkExtendedTypes(extendedTypes);
+           return true;
+ 
+         case EOF:
+           // discard any accumulated information
+           jsdocBuilder.build(null);
+-          parser.addWarning("msg.unexpected.eof",
++          parser.addParserWarning("msg.unexpected.eof",
+               stream.getLineno(), stream.getCharno());
++          checkExtendedTypes(extendedTypes);
+           return false;
+ 
+         case EOL:
+@@ -888,6 +912,23 @@
+     }
+   }
+ 
++  private void checkExtendedTypes(List<ExtendedTypeInfo> extendedTypes) {
++    for (ExtendedTypeInfo typeInfo : extendedTypes) {
++      // If interface, record the multiple extended interfaces
++      if (jsdocBuilder.isInterfaceRecorded()) {
++        if (!jsdocBuilder.recordExtendedInterface(typeInfo.type)) {
++          parser.addParserWarning("msg.jsdoc.extends.duplicate",
++              typeInfo.lineno, typeInfo.charno);
++        }
++      } else {
++        if (!jsdocBuilder.recordBaseType(typeInfo.type)) {
++          parser.addTypeWarning("msg.jsdoc.incompat.type",
++              typeInfo.lineno, typeInfo.charno);
++        }
++      }
++    }
++  }
++
+   /**
+    * Parse a {@code @suppress} tag of the form
+    * {@code @suppress&#123;warning1|warning2&#125;}.
+@@ -901,14 +942,14 @@
+         if (match(JsDocToken.STRING)) {
+           String name = stream.getString();
+           if (!suppressionNames.contains(name)) {
+-            parser.addWarning("msg.jsdoc.suppress.unknown", name,
++            parser.addParserWarning("msg.jsdoc.suppress.unknown", name,
+                 stream.getLineno(), stream.getCharno());
+           }
+ 
+           suppressions.add(stream.getString());
+           token = next();
+         } else {
+-          parser.addWarning("msg.jsdoc.suppress",
++          parser.addParserWarning("msg.jsdoc.suppress",
+               stream.getLineno(), stream.getCharno());
+           return token;
+         }
+@@ -921,12 +962,12 @@
+       }
+ 
+       if (!match(JsDocToken.RC)) {
+-        parser.addWarning("msg.jsdoc.suppress",
++        parser.addParserWarning("msg.jsdoc.suppress",
+             stream.getLineno(), stream.getCharno());
+       } else {
+         token = next();
+         if (!jsdocBuilder.recordSuppressions(suppressions)) {
+-          parser.addWarning("msg.jsdoc.suppress.duplicate",
++          parser.addParserWarning("msg.jsdoc.suppress.duplicate",
+               stream.getLineno(), stream.getCharno());
+         }
+       }
+@@ -948,14 +989,14 @@
+           String name = stream.getString();
+           if (!modifiesAnnotationKeywords.contains(name)
+               && !jsdocBuilder.hasParameter(name)) {
+-              parser.addWarning("msg.jsdoc.modifies.unknown", name,
++              parser.addParserWarning("msg.jsdoc.modifies.unknown", name,
+                   stream.getLineno(), stream.getCharno());
+           }
+ 
+           modifies.add(stream.getString());
+           token = next();
+         } else {
+-          parser.addWarning("msg.jsdoc.modifies",
++          parser.addParserWarning("msg.jsdoc.modifies",
+               stream.getLineno(), stream.getCharno());
+           return token;
+         }
+@@ -968,12 +1009,12 @@
+       }
+ 
+       if (!match(JsDocToken.RC)) {
+-        parser.addWarning("msg.jsdoc.modifies",
++        parser.addParserWarning("msg.jsdoc.modifies",
+             stream.getLineno(), stream.getCharno());
+       } else {
+         token = next();
+         if (!jsdocBuilder.recordModifies(modifies)) {
+-          parser.addWarning("msg.jsdoc.modifies.duplicate",
++          parser.addParserWarning("msg.jsdoc.modifies.duplicate",
+               stream.getLineno(), stream.getCharno());
+         }
+       }
+@@ -1187,6 +1228,21 @@
+   }
+ 
+   /**
++   * Tuple for recording extended types
++   */
++  private static class ExtendedTypeInfo {
++    final JSTypeExpression type;
++    final int lineno;
++    final int charno;
++
++    public ExtendedTypeInfo(JSTypeExpression type, int lineno, int charno) {
++      this.type = type;
++      this.lineno = lineno;
++      this.charno = charno;
++    }
++  }
++
++  /**
+    * Extracts the text found on the current line starting at token. Note that
+    * token = token.info; should be called after this method is used to update
+    * the token properly in the parser.
+@@ -1257,7 +1313,6 @@
+ 
+     // Read the content from the first line.
+     String line = stream.getRemainingJSDocLine();
+-
+     if (option != WhitespaceOption.PRESERVE) {
+       line = line.trim();
+     }
+@@ -2100,7 +2155,7 @@
+   }
+ 
+   private Node reportTypeSyntaxWarning(String warning) {
+-    parser.addWarning(warning, stream.getLineno(), stream.getCharno());
++    parser.addTypeWarning(warning, stream.getLineno(), stream.getCharno());
+     return null;
+   }
+ 
+@@ -2220,4 +2275,30 @@
+   JSDocInfo getFileOverviewJSDocInfo() {
+     return fileOverviewJSDocInfo;
+   }
++
++  /**
++   * Look ahead for a type annotation by advancing the character stream.
++   * Does not modify the token stream.
++   * This is kind of a hack, and is only necessary because we use the token
++   * stream to parse types, but need the underlying character stream to get
++   * JsDoc descriptions.
++   * @return Whether we found a type annotation.
++   */
++  private boolean lookAheadForTypeAnnotation() {
++    boolean matchedLc = false;
++    int c;
++    while (true) {
++      c = stream.getChar();
++      if (c == ' ') {
++        continue;
++      } else if (c == '{') {
++        matchedLc = true;
++        break;
++      } else {
++        break;
++      }
++    }
++    stream.ungetChar(c);
++    return matchedLc;
++  }
+ }
+diff -r -u original/test/com/google/javascript/jscomp/parsing/JsDocInfoParserTest.java buggy/test/com/google/javascript/jscomp/parsing/JsDocInfoParserTest.java
+--- original/test/com/google/javascript/jscomp/parsing/JsDocInfoParserTest.java	2023-06-13 15:31:41.991094135 +0800
++++ buggy/test/com/google/javascript/jscomp/parsing/JsDocInfoParserTest.java	2023-06-12 11:40:24.750794095 +0800
+@@ -127,11 +127,13 @@
+   public void testParseNamedTypeError1() throws Exception {
+     // To avoid parsing ambiguities, type names must end in a '.' to
+     // get the continuation behavior.
+-    parse("@type {!goog\n * .Bar} */", "expected closing }");
++    parse("@type {!goog\n * .Bar} */",
++        "Bad type annotation. expected closing }");
+   }
+ 
+   public void testParseNamedTypeError2() throws Exception {
+-    parse("@type {!goog.\n * Bar\n * .Baz} */", "expected closing }");
++    parse("@type {!goog.\n * Bar\n * .Baz} */",
++        "Bad type annotation. expected closing }");
+   }
+ 
+   public void testTypedefType1() throws Exception {
+@@ -347,15 +349,18 @@
+   }
+ 
+   public void testParseUnionType10() throws Exception {
+-    parse("@type {string|}*/", "type not recognized due to syntax error");
++    parse("@type {string|}*/",
++        "Bad type annotation. type not recognized due to syntax error");
+   }
+ 
+   public void testParseUnionType11() throws Exception {
+-    parse("@type {(string,)}*/", "type not recognized due to syntax error");
++    parse("@type {(string,)}*/",
++        "Bad type annotation. type not recognized due to syntax error");
+   }
+ 
+   public void testParseUnionType12() throws Exception {
+-    parse("@type {()}*/", "type not recognized due to syntax error");
++    parse("@type {()}*/",
++        "Bad type annotation. type not recognized due to syntax error");
+   }
+ 
+   public void testParseUnionType13() throws Exception {
+@@ -390,7 +395,7 @@
+ 
+   public void testParseUnionTypeError1() throws Exception {
+     parse("@type {(string,|number)} */",
+-        "type not recognized due to syntax error");
++        "Bad type annotation. type not recognized due to syntax error");
+   }
+ 
+   public void testParseUnknownType1() throws Exception {
+@@ -501,25 +506,28 @@
+   }
+ 
+   public void testParseFunctionalTypeError1() throws Exception {
+-    parse("@type {function number):string}*/", "missing opening (");
++    parse("@type {function number):string}*/",
++        "Bad type annotation. missing opening (");
+   }
+ 
+   public void testParseFunctionalTypeError2() throws Exception {
+-    parse("@type {function( number}*/", "missing closing )");
++    parse("@type {function( number}*/",
++        "Bad type annotation. missing closing )");
+   }
+ 
+   public void testParseFunctionalTypeError3() throws Exception {
+     parse("@type {function(...[number], string)}*/",
+-        "variable length argument must be last");
++        "Bad type annotation. variable length argument must be last");
+   }
+ 
+   public void testParseFunctionalTypeError4() throws Exception {
+     parse("@type {function(string, ...[number], boolean):string}*/",
+-        "variable length argument must be last");
++        "Bad type annotation. variable length argument must be last");
+   }
+ 
+   public void testParseFunctionalTypeError5() throws Exception {
+-    parse("@type {function (thi:Array)}*/", "missing closing )");
++    parse("@type {function (thi:Array)}*/",
++        "Bad type annotation. missing closing )");
+   }
+ 
+   public void testParseFunctionalTypeError6() throws Exception {
+@@ -528,23 +536,28 @@
+   }
+ 
+   public void testParseFunctionalTypeError7() throws Exception {
+-    parse("@type {function(...[number)}*/", "missing closing ]");
++    parse("@type {function(...[number)}*/",
++        "Bad type annotation. missing closing ]");
+   }
+ 
+   public void testParseFunctionalTypeError8() throws Exception {
+-    parse("@type {function(...number])}*/", "missing opening [");
++    parse("@type {function(...number])}*/",
++        "Bad type annotation. missing opening [");
+   }
+ 
+   public void testParseFunctionalTypeError9() throws Exception {
+-    parse("@type {function (new:Array, this:Object)} */", "missing closing )");
++    parse("@type {function (new:Array, this:Object)} */",
++        "Bad type annotation. missing closing )");
+   }
+ 
+   public void testParseFunctionalTypeError10() throws Exception {
+-    parse("@type {function (this:Array, new:Object)} */", "missing closing )");
++    parse("@type {function (this:Array, new:Object)} */",
++        "Bad type annotation. missing closing )");
+   }
+ 
+   public void testParseFunctionalTypeError11() throws Exception {
+-    parse("@type {function (Array, new:Object)} */", "missing closing )");
++    parse("@type {function (Array, new:Object)} */",
++        "Bad type annotation. missing closing )");
+   }
+ 
+   public void testParseFunctionalTypeError12() throws Exception {
+@@ -565,20 +578,23 @@
+   }
+ 
+   public void testParseArrayTypeError1() throws Exception {
+-    parse("@type {[number}*/", "missing closing ]");
++    parse("@type {[number}*/",
++        "Bad type annotation. missing closing ]");
+   }
+ 
+   public void testParseArrayTypeError2() throws Exception {
+-    parse("@type {number]}*/", "expected closing }");
++    parse("@type {number]}*/",
++        "Bad type annotation. expected closing }");
+   }
+ 
+   public void testParseArrayTypeError3() throws Exception {
+-    parse("@type {[(number,boolean,Object?])]}*/", "missing closing )");
++    parse("@type {[(number,boolean,Object?])]}*/",
++        "Bad type annotation. missing closing )");
+   }
+ 
+   public void testParseArrayTypeError4() throws Exception {
+     parse("@type {(number,boolean,[Object?)]}*/",
+-        "missing closing ]");
++        "Bad type annotation. missing closing ]");
+   }
+ 
+   private void testParseType(String type) throws Exception {
+@@ -728,7 +744,8 @@
+ 
+   public void testParseThisType3() throws Exception {
+     parse("@type {number}\n@this goog.foo.Bar*/",
+-        "type annotation incompatible with other annotations");
++        "Bad type annotation. type annotation incompatible " +
++        "with other annotations");
+   }
+ 
+   public void testParseThisType4() throws Exception {
+@@ -801,15 +818,18 @@
+ 
+   public void testParseParam9() throws Exception {
+     parse("@param {...number=} index */",
+-        "expected closing }", "expecting a variable name in a @param tag");
++        "Bad type annotation. expected closing }",
++        "Bad type annotation. expecting a variable name in a @param tag");
+   }
+ 
+   public void testParseParam10() throws Exception {
+-    parse("@param {...number index */", "expected closing }");
++    parse("@param {...number index */",
++        "Bad type annotation. expected closing }");
+   }
+ 
+   public void testParseParam11() throws Exception {
+-    parse("@param {number= index */", "expected closing }");
++    parse("@param {number= index */",
++        "Bad type annotation. expected closing }");
+   }
+ 
+   public void testParseParam12() throws Exception {
+@@ -837,7 +857,8 @@
+   }
+ 
+   public void testParseParam15() throws Exception {
+-    JSDocInfo info = parse("@param {string} [index */", "missing closing ]");
++    JSDocInfo info = parse("@param {string} [index */",
++        "Bad type annotation. missing closing ]");
+     assertEquals(1, info.getParameterCount());
+     assertTypeEquals(STRING_TYPE, info.getParameterType("index"));
+   }
+@@ -943,12 +964,12 @@
+ 
+   public void testParseRecordType11() throws Exception {
+     parseFull("/** @param {{a : b} n\n*/",
+-              "expected closing }");
++              "Bad type annotation. expected closing }");
+   }
+ 
+   public void testParseRecordType12() throws Exception {
+     parseFull("/** @param {{!hello : hey}} n\n*/",
+-              "type not recognized due to syntax error");
++              "Bad type annotation. type not recognized due to syntax error");
+   }
+ 
+   public void testParseRecordType13() throws Exception {
+@@ -997,27 +1018,27 @@
+ 
+   public void testParseParamError1() throws Exception {
+     parseFull("/** @param\n*/",
+-        "expecting a variable name in a @param tag");
++        "Bad type annotation. expecting a variable name in a @param tag");
+   }
+ 
+   public void testParseParamError2() throws Exception {
+     parseFull("/** @param {Number}*/",
+-        "expecting a variable name in a @param tag");
++        "Bad type annotation. expecting a variable name in a @param tag");
+   }
+ 
+   public void testParseParamError3() throws Exception {
+     parseFull("/** @param {Number}\n*/",
+-        "expecting a variable name in a @param tag");
++        "Bad type annotation. expecting a variable name in a @param tag");
+   }
+ 
+   public void testParseParamError4() throws Exception {
+     parseFull("/** @param {Number}\n* * num */",
+-        "expecting a variable name in a @param tag");
++        "Bad type annotation. expecting a variable name in a @param tag");
+   }
+ 
+   public void testParseParamError5() throws Exception {
+     parse("@param {number} x \n * @param {string} x */",
+-        "duplicate variable name \"x\"");
++        "Bad type annotation. duplicate variable name \"x\"");
+   }
+ 
+   public void testParseExtends1() throws Exception {
+@@ -1059,7 +1080,8 @@
+ 
+   public void testParseExtends5() throws Exception {
+     assertTypeEquals(STRING_OBJECT_TYPE,
+-        parse("@extends {String*/", "expected closing }").getBaseType());
++        parse("@extends {String*/",
++              "Bad type annotation. expected closing }").getBaseType());
+   }
+ 
+   public void testParseExtends6() throws Exception {
+@@ -1079,11 +1101,12 @@
+   }
+ 
+   public void testParseExtendsNullable1() throws Exception {
+-    parse("@extends {Base?} */", "expected closing }");
++    parse("@extends {Base?} */", "Bad type annotation. expected closing }");
+   }
+ 
+   public void testParseExtendsNullable2() throws Exception {
+-    parse("@extends Base? */", "expected end of line or comment");
++    parse("@extends Base? */",
++        "Bad type annotation. expected end of line or comment");
+   }
+ 
+   public void testParseEnum1() throws Exception {
+@@ -1195,25 +1218,27 @@
+   }
+ 
+   public void testParseLends3() throws Exception {
+-    parse("@lends {name */", "expected closing }");
++    parse("@lends {name */", "Bad type annotation. expected closing }");
+   }
+ 
+   public void testParseLends4() throws Exception {
+-    parse("@lends {} */", "missing object name in @lends tag");
++    parse("@lends {} */",
++        "Bad type annotation. missing object name in @lends tag");
+   }
+ 
+   public void testParseLends5() throws Exception {
+-    parse("@lends } */", "missing object name in @lends tag");
++    parse("@lends } */",
++        "Bad type annotation. missing object name in @lends tag");
+   }
+ 
+   public void testParseLends6() throws Exception {
+     parse("@lends {string} \n * @lends {string} */",
+-        "@lends tag incompatible with other annotations");
++        "Bad type annotation. @lends tag incompatible with other annotations");
+   }
+ 
+   public void testParseLends7() throws Exception {
+     parse("@type {string} \n * @lends {string} */",
+-        "@lends tag incompatible with other annotations");
++        "Bad type annotation. @lends tag incompatible with other annotations");
+   }
+ 
+   public void testParsePreserve() throws Exception {
+@@ -1248,7 +1273,8 @@
+ 
+   public void testParseDefine2() throws Exception {
+     assertTypeEquals(STRING_TYPE,
+-        parse("@define {string*/", "expected closing }").getType());
++        parse("@define {string*/",
++              "Bad type annotation. expected closing }").getType());
+   }
+ 
+   public void testParseDefine3() throws Exception {
+@@ -1273,6 +1299,7 @@
+ 
+   public void testParseDefineErrors2() throws Exception {
+     parse("@define {string}\n @enum {string} */",
++        "Bad type annotation. " +
+         "type annotation incompatible with other annotations");
+   }
+ 
+@@ -1294,6 +1321,7 @@
+ 
+   public void testParseDefineErrors8() throws Exception {
+     parse("@define {string}\n @type string */",
++        "Bad type annotation. " +
+         "type annotation incompatible with other annotations");
+   }
+ 
+@@ -1310,7 +1338,8 @@
+   }
+ 
+   public void testParseOverride2() throws Exception {
+-    parse("@override\n@override*/", "extra @override/@inheritDoc tag");
++    parse("@override\n@override*/",
++        "Bad type annotation. extra @override/@inheritDoc tag");
+   }
+ 
+   public void testParseInheritDoc1() throws Exception {
+@@ -1318,11 +1347,13 @@
+   }
+ 
+   public void testParseInheritDoc2() throws Exception {
+-    parse("@override\n@inheritDoc*/", "extra @override/@inheritDoc tag");
++    parse("@override\n@inheritDoc*/",
++        "Bad type annotation. extra @override/@inheritDoc tag");
+   }
+ 
+   public void testParseInheritDoc3() throws Exception {
+-    parse("@inheritDoc\n@inheritDoc*/", "extra @override/@inheritDoc tag");
++    parse("@inheritDoc\n@inheritDoc*/",
++        "Bad type annotation. extra @override/@inheritDoc tag");
+   }
+ 
+   public void testParseNoAlias1() throws Exception {
+@@ -1650,13 +1681,13 @@
+ 
+   public void testFullRegression1() throws Exception {
+     parseFull("/** @param (string,number) foo*/function bar(foo){}",
+-        "expecting a variable name in a @param tag");
++        "Bad type annotation. expecting a variable name in a @param tag");
+   }
+ 
+   public void testFullRegression2() throws Exception {
+     parseFull("/** @param {string,number) foo*/function bar(foo){}",
+-        "expected closing }",
+-        "expecting a variable name in a @param tag");
++        "Bad type annotation. expected closing }",
++        "Bad type annotation. expecting a variable name in a @param tag");
+   }
+ 
+   public void testFullRegression3() throws Exception {
+@@ -1665,17 +1696,17 @@
+ 
+   public void testBug907488() throws Exception {
+     parse("@type {number,null} */",
+-        "expected closing }");
++        "Bad type annotation. expected closing }");
+   }
+ 
+   public void testBug907494() throws Exception {
+     parse("@return {Object,undefined} */",
+-        "expected closing }");
++        "Bad type annotation. expected closing }");
+   }
+ 
+   public void testBug909468() throws Exception {
+     parse("@extends {(x)}*/",
+-        "expecting a type name");
++        "Bad type annotation. expecting a type name");
+   }
+ 
+   public void testParseInterface() throws Exception {
+@@ -1692,7 +1723,7 @@
+ 
+   public void testParseDuplicateImplicitCast() throws Exception {
+     parse("@type {string} \n * @implicitCast \n * @implicitCast*/",
+-          "extra @implicitCast tag");
++          "Bad type annotation. extra @implicitCast tag");
+   }
+ 
+   public void testParseInterfaceDoubled() throws Exception {
+@@ -1700,6 +1731,7 @@
+         "* @interface\n" +
+         "* @interface\n" +
+         "*/",
++        "Bad type annotation. " +
+         "type annotation incompatible with other annotations");
+   }
+ 
+@@ -1730,25 +1762,26 @@
+         "* @implements {Smth}\n" +
+         "* @implements {Smth}\n" +
+         "*/",
+-        "duplicate @implements tag");
++        "Bad type annotation. duplicate @implements tag");
+   }
+ 
+   public void testParseImplementsNoName() throws Exception {
+     parse("* @implements {} */",
+-        "expecting a type name");
++        "Bad type annotation. expecting a type name");
+   }
+ 
+   public void testParseImplementsMissingRC() throws Exception {
+     parse("* @implements {Smth */",
+-        "expected closing }");
++        "Bad type annotation. expected closing }");
+   }
+ 
+   public void testParseImplementsNullable1() throws Exception {
+-    parse("@implements {Base?} */", "expected closing }");
++    parse("@implements {Base?} */", "Bad type annotation. expected closing }");
+   }
+ 
+   public void testParseImplementsNullable2() throws Exception {
+-    parse("@implements Base? */", "expected end of line or comment");
++    parse("@implements Base? */",
++        "Bad type annotation. expected end of line or comment");
+   }
+ 
+   public void testInterfaceExtends() throws Exception {
+@@ -1756,20 +1789,63 @@
+          " * @interface \n" +
+          " * @extends {Extended} */");
+     assertTrue(jsdoc.isInterface());
++    assertEquals(1, jsdoc.getExtendedInterfacesCount());
++    List<JSTypeExpression> types = jsdoc.getExtendedInterfaces();
+     assertTypeEquals(registry.createNamedType("Extended", null, -1, -1),
+-        jsdoc.getBaseType());
++        types.get(0));
++  }
++
++  public void testInterfaceMultiExtends1() throws Exception {
++    JSDocInfo jsdoc = parse(
++        " * @interface \n" +
++        " * @extends {Extended1} \n" +
++        " * @extends {Extended2} */");
++    assertTrue(jsdoc.isInterface());
++    assertNull(jsdoc.getBaseType());
++    assertEquals(2, jsdoc.getExtendedInterfacesCount());
++    List<JSTypeExpression> types = jsdoc.getExtendedInterfaces();
++    assertTypeEquals(registry.createNamedType("Extended1", null, -1, -1),
++       types.get(0));
++    assertTypeEquals(registry.createNamedType("Extended2", null, -1, -1),
++        types.get(1));
++  }
++
++  public void testInterfaceMultiExtends2() throws Exception {
++    JSDocInfo jsdoc = parse(
++        " * @extends {Extended1} \n" +
++        " * @interface \n" +
++        " * @extends {Extended2} \n" +
++        " * @extends {Extended3} */");
++    assertTrue(jsdoc.isInterface());
++    assertNull(jsdoc.getBaseType());
++    assertEquals(3, jsdoc.getExtendedInterfacesCount());
++    List<JSTypeExpression> types = jsdoc.getExtendedInterfaces();
++    assertTypeEquals(registry.createNamedType("Extended1", null, -1, -1),
++       types.get(0));
++    assertTypeEquals(registry.createNamedType("Extended2", null, -1, -1),
++        types.get(1));
++    assertTypeEquals(registry.createNamedType("Extended3", null, -1, -1),
++        types.get(2));
++  }
++
++  public void testBadClassMultiExtends() throws Exception {
++    parse(" * @extends {Extended1} \n" +
++        " * @constructor \n" +
++        " * @extends {Extended2} */",
++        "Bad type annotation. type annotation incompatible with other " +
++        "annotations");
+   }
+ 
+   public void testBadExtendsWithNullable() throws Exception {
+     JSDocInfo jsdoc = parse("@constructor\n * @extends {Object?} */",
+-        "expected closing }");
++        "Bad type annotation. expected closing }");
+     assertTrue(jsdoc.isConstructor());
+     assertTypeEquals(OBJECT_TYPE, jsdoc.getBaseType());
+   }
+ 
+   public void testBadImplementsWithNullable() throws Exception {
+   JSDocInfo jsdoc = parse("@implements {Disposable?}\n * @constructor */",
+-      "expected closing }");
++      "Bad type annotation. expected closing }");
+     assertTrue(jsdoc.isConstructor());
+     assertTypeEquals(registry.createNamedType("Disposable", null, -1, -1),
+         jsdoc.getImplementedInterfaces().get(0));
+@@ -1777,13 +1853,13 @@
+ 
+   public void testBadTypeDefInterfaceAndConstructor1() throws Exception {
+     JSDocInfo jsdoc = parse("@interface\n@constructor*/",
+-        "cannot be both an interface and a constructor");
++        "Bad type annotation. cannot be both an interface and a constructor");
+     assertTrue(jsdoc.isInterface());
+   }
+ 
+   public void testBadTypeDefInterfaceAndConstructor2() throws Exception {
+     JSDocInfo jsdoc = parse("@constructor\n@interface*/",
+-        "cannot be both an interface and a constructor");
++        "Bad type annotation. cannot be both an interface and a constructor");
+     assertTrue(jsdoc.isConstructor());
+   }
+ 
+@@ -2133,6 +2209,26 @@
+     assertAnnotationMarker(jsdoc, "param", 1, 3);
+   }
+ 
++  public void testParseWithMarkers5() throws Exception {
++    JSDocInfo jsdoc =
++        parse("@return some long \n * multiline" +
++              " \n * description */", true);
++
++    assertDocumentationInMarker(
++        assertAnnotationMarker(jsdoc, "return", 0, 0),
++        "some long multiline description", 8, 2, 15);
++  }
++
++  public void testParseWithMarkers6() throws Exception {
++    JSDocInfo jsdoc =
++        parse("@param x some long \n * multiline" +
++              " \n * description */", true);
++
++    assertDocumentationInMarker(
++        assertAnnotationMarker(jsdoc, "param", 0, 0),
++        "some long multiline description", 8, 2, 15);
++  }
++
+   public void testParseWithMarkerNames1() throws Exception {
+     JSDocInfo jsdoc = parse("@param {SomeType} name somedescription */", true);
+ 
+@@ -2181,75 +2277,94 @@
+ 
+   public void testTypeTagConflict1() throws Exception {
+     parse("@constructor \n * @constructor */",
++        "Bad type annotation. " +
+         "type annotation incompatible with other annotations");
+   }
+ 
+   public void testTypeTagConflict2() throws Exception {
+     parse("@interface \n * @interface */",
++        "Bad type annotation. " +
+         "type annotation incompatible with other annotations");
+   }
+ 
+   public void testTypeTagConflict3() throws Exception {
+     parse("@constructor \n * @interface */",
+-        "cannot be both an interface and a constructor");
++        "Bad type annotation. cannot be both an interface and a constructor");
+   }
+ 
+   public void testTypeTagConflict4() throws Exception {
+     parse("@interface \n * @constructor */",
+-        "cannot be both an interface and a constructor");
++        "Bad type annotation. cannot be both an interface and a constructor");
+   }
+ 
+   public void testTypeTagConflict5() throws Exception {
+     parse("@interface \n * @type {string} */",
++        "Bad type annotation. " +
+         "type annotation incompatible with other annotations");
+   }
+ 
+   public void testTypeTagConflict6() throws Exception {
+     parse("@typedef {string} \n * @type {string} */",
++        "Bad type annotation. " +
+         "type annotation incompatible with other annotations");
+   }
+ 
+   public void testTypeTagConflict7() throws Exception {
+     parse("@typedef {string} \n * @constructor */",
++        "Bad type annotation. " +
+         "type annotation incompatible with other annotations");
+   }
+ 
+   public void testTypeTagConflict8() throws Exception {
+     parse("@typedef {string} \n * @return {boolean} */",
++        "Bad type annotation. " +
+         "type annotation incompatible with other annotations");
+   }
+ 
+   public void testTypeTagConflict9() throws Exception {
+     parse("@enum {string} \n * @return {boolean} */",
++        "Bad type annotation. " +
+         "type annotation incompatible with other annotations");
+   }
+ 
+   public void testTypeTagConflict10() throws Exception {
+     parse("@this {Object} \n * @enum {boolean} */",
++        "Bad type annotation. " +
+         "type annotation incompatible with other annotations");
+   }
+ 
+   public void testTypeTagConflict11() throws Exception {
+     parse("@param {Object} x \n * @type {boolean} */",
++        "Bad type annotation. " +
+         "type annotation incompatible with other annotations");
+   }
+ 
+   public void testTypeTagConflict12() throws Exception {
+     parse("@typedef {boolean} \n * @param {Object} x */",
++        "Bad type annotation. " +
+         "type annotation incompatible with other annotations");
+   }
+ 
+   public void testTypeTagConflict13() throws Exception {
+     parse("@typedef {boolean} \n * @extends {Object} */",
++        "Bad type annotation. " +
+         "type annotation incompatible with other annotations");
+   }
+ 
+-  public void testParserWithTemplateTypeNameMisisng() {
+-    parse("@template */", "@template tag missing type name");
++  public void testTypeTagConflict14() throws Exception {
++    parse("@return x \n * @return y */",
++        "Bad type annotation. " +
++        "type annotation incompatible with other annotations");
+   }
+ 
+   public void testParserWithTemplateTypeNameMissing() {
+-    parse("@template T\n@template V */", "@template tag at most once");
++    parse("@template */",
++        "Bad type annotation. @template tag missing type name");
++  }
++
++  public void testParserWithTemplateDuplicated() {
++    parse("@template T\n@template V */",
++        "Bad type annotation. @template tag at most once");
+   }
+ 
+   public void testWhitelistedNewAnnotations() {

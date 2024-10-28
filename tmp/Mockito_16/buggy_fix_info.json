@@ -1,0 +1,220 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.mockitousage.bugs.StubbingMocksThatAreConfiguredToReturnMocksTest::shouldAllowStubbingMocksConfiguredWithRETURNS_MOCKS",
+    "test.dir": "test",
+    "clz.modified": "org.mockito.internal.MockitoCore,org.mockito.Mockito",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Mockito",
+  "id": "16",
+  "workingDir": "../bugs/Mockito_16_tmp",
+  "bug_name": "Mockito_16",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.mockitousage.bugs.StubbingMocksThatAreConfiguredToReturnMocksTest",
+      "test_function": "shouldAllowStubbingMocksConfiguredWithRETURNS_MOCKS",
+      "assertion_line": "19",
+      "exception": "org.mockito.exceptions.misusing.MissingMethodInvocationException",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/org/mockito/Mockito.java",
+        "src/org/mockito/Mockito.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.mockito.Mockito:spy:[T object]:T",
+            "org.mockito.Mockito:mock:[Class\u003cT\u003e classToMock, MockSettings mockSettings]:T"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.mockito.Mockito:mock:[Class\u003cT\u003e classToMock, MockSettings mockSettings]:T",
+            "org.mockito.Mockito:spy:[T object]:T"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "827",
+            "899"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "827",
+            "899"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/org/mockito/Mockito.java b/src/org/mockito/Mockito.java\nindex 980587d..5eb16aa 100644\n--- a/src/org/mockito/Mockito.java\n+++ b/src/org/mockito/Mockito.java\n@@ -824,7 +824,7 @@\n      * @return mock object\r\n      */\r\n     public static \u003cT\u003e T mock(Class\u003cT\u003e classToMock, MockSettings mockSettings) {\r\n-        return MOCKITO_CORE.mock(classToMock, mockSettings, true);\r\n+        return MOCKITO_CORE.mock(classToMock, mockSettings);\r\n     }\r\n     \r\n     /**\r\n@@ -896,7 +896,7 @@\n     public static \u003cT\u003e T spy(T object) {\r\n         return MOCKITO_CORE.mock((Class\u003cT\u003e) object.getClass(), withSettings()\r\n                 .spiedInstance(object)\r\n-                .defaultAnswer(CALLS_REAL_METHODS), true); \r\n+                .defaultAnswer(CALLS_REAL_METHODS)); \r\n     }\r\n \r\n     /**\r\n",
+      "operations": [
+        {
+          "type": "delete-node",
+          "from": "BooleanLiteral: true [36141,36145]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "BooleanLiteral: true [39257,39261]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/org/mockito/internal/MockitoCore.java",
+        "src/org/mockito/internal/MockitoCore.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.mockito.internal.MockitoCore:mock:[Class\u003cT\u003e classToMock, MockSettings mockSettings, boolean shouldResetOngoingStubbing]:T"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.mockito.internal.MockitoCore:mock:[Class\u003cT\u003e classToMock, MockSettings mockSettings, boolean shouldResetOngoingStubbing]:T",
+            "org.mockito.internal.MockitoCore:mock:[Class\u003cT\u003e classToMock, MockSettings mockSettings]:T"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "32",
+            "34",
+            "36"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "32",
+            "33"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/org/mockito/internal/MockitoCore.java b/src/org/mockito/internal/MockitoCore.java\nindex 61acce8..5321566 100755\n--- a/src/org/mockito/internal/MockitoCore.java\n+++ b/src/org/mockito/internal/MockitoCore.java\n@@ -29,11 +29,10 @@\n     private final MockUtil mockUtil \u003d new MockUtil();\r\n     private final MockingProgress mockingProgress \u003d new ThreadSafeMockingProgress();\r\n     \r\n-    public \u003cT\u003e T mock(Class\u003cT\u003e classToMock, MockSettings mockSettings, boolean shouldResetOngoingStubbing) {\r\n+    public \u003cT\u003e T mock(Class\u003cT\u003e classToMock, MockSettings mockSettings, boolean shouldResetOngoingStubbing) { return mock(classToMock, mockSettings); }\r\n+    public \u003cT\u003e T mock(Class\u003cT\u003e classToMock, MockSettings mockSettings) {\r\n         mockingProgress.validateState();\r\n-        if (shouldResetOngoingStubbing) {\r\n             mockingProgress.resetOngoingStubbing();\r\n-        }\r\n         return mockUtil.createMock(classToMock, (MockSettingsImpl) mockSettings);\r\n     }\r\n     \r\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodDeclaration [1328,1581]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: public [1328,1334]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TypeParameter [1336,1337]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [1339,1340]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: mock [1341,1345]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [1346,1366]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [1368,1393]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [1395,1581]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [1281,1320]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: shouldResetOngoingStubbing [1336,1362]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [1364,1429]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [1332,1429]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.mockito.internal.MockitoCore:mock:[Class\u003cT\u003e classToMock, MockSettings mockSettings]:T"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

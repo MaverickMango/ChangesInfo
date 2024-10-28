@@ -1,0 +1,114 @@
+diff --git a/src/org/mockito/internal/creation/DelegatingMethod.java b/src/org/mockito/internal/creation/DelegatingMethod.java
+index 87d4d3f..034694f 100644
+--- a/src/org/mockito/internal/creation/DelegatingMethod.java
++++ b/src/org/mockito/internal/creation/DelegatingMethod.java
+@@ -4,11 +4,11 @@
+  */
+ package org.mockito.internal.creation;
+ 
++import org.mockito.internal.invocation.MockitoMethod;
++
+ import java.lang.reflect.Method;
+ import java.lang.reflect.Modifier;
+ 
+-import org.mockito.internal.invocation.MockitoMethod;
+-
+ public class DelegatingMethod implements MockitoMethod {
+ 
+     private final Method method;
+@@ -45,14 +45,26 @@
+     public boolean isAbstract() {
+         return (method.getModifiers() & Modifier.ABSTRACT) != 0;
+     }
+-    
++
++    /**
++     * @return True if the input object is a DelegatingMethod which has an internal Method which is equal to the internal Method of this DelegatingMethod,
++     * or if the input object is a Method which is equal to the internal Method of this DelegatingMethod.
++     */
++    @Override
++    public boolean equals(Object o) {
++        if (this == o) {
++            return true;
++        }
++        if (o instanceof DelegatingMethod) {
++            DelegatingMethod that = (DelegatingMethod) o;
++            return method.equals(that.method);
++        } else {
++            return method.equals(o);
++        }
++    }
++
+     @Override
+     public int hashCode() {
+-        return 1;
+-    }
+-    
+-    @Override
+-    public boolean equals(Object obj) {
+-        return method.equals(obj);
++        return method.hashCode();
+     }
+ }
+\ No newline at end of file
+diff --git a/test/org/mockito/internal/creation/DelegatingMethodTest.java b/test/org/mockito/internal/creation/DelegatingMethodTest.java
+new file mode 100644
+index 0000000..1c09a89
+--- /dev/null
++++ b/test/org/mockito/internal/creation/DelegatingMethodTest.java
+@@ -0,0 +1,54 @@
++package org.mockito.internal.creation;
++
++import org.junit.Before;
++import org.junit.Test;
++import org.mockitoutil.TestBase;
++
++import java.lang.reflect.Method;
++
++public class DelegatingMethodTest extends TestBase {
++
++    private Method someMethod, otherMethod;
++    private DelegatingMethod delegatingMethod;
++
++    @Before
++    public void setup() throws Exception {
++        someMethod = Something.class.getMethod("someMethod", Object.class);
++        otherMethod = Something.class.getMethod("otherMethod", Object.class);
++        delegatingMethod = new DelegatingMethod(someMethod);
++    }
++
++    @Test
++    public void equals_should_return_false_when_not_equal() throws Exception {
++        DelegatingMethod notEqual = new DelegatingMethod(otherMethod);
++        assertFalse(delegatingMethod.equals(notEqual));
++    }
++
++    @Test
++    public void equals_should_return_true_when_equal() throws Exception {
++        DelegatingMethod equal = new DelegatingMethod(someMethod);
++        assertTrue(delegatingMethod.equals(equal));
++    }
++
++    @Test
++    public void equals_should_return_true_when_self() throws Exception {
++        assertTrue(delegatingMethod.equals(delegatingMethod));
++    }
++
++    @Test
++    public void equals_should_return_false_when_not_equal_to_method() throws Exception {
++        assertFalse(delegatingMethod.equals(otherMethod));
++    }
++
++    @Test
++    public void equals_should_return_true_when_equal_to_method() throws Exception {
++        assertTrue(delegatingMethod.equals(someMethod));
++    }
++
++    private interface Something {
++
++        public Object someMethod(Object param);
++
++        public Object otherMethod(Object param);
++    }
++}
+\ No newline at end of file

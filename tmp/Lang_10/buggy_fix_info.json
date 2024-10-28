@@ -1,0 +1,109 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.lang3.time.FastDateFormat_ParserTest::testLANG_831,org.apache.commons.lang3.time.FastDateParserTest::testLANG_831",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.lang3.time.FastDateParser",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Lang",
+  "id": "10",
+  "workingDir": "../bugs/Lang_10_tmp",
+  "bug_name": "Lang_10",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.lang3.time.FastDateFormat_ParserTest",
+      "test_function": "testLANG_831",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Parsed dates should be equal expected:\u003cnull\u003e but was:\u003cMon Mar 02 21:00:00 PST 1970\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/lang3/time/FastDateParser.java",
+        "src/main/java/org/apache/commons/lang3/time/FastDateParser.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.lang3.time.FastDateParser:escapeRegex:[StringBuilder regex, String value, boolean unquote]:StringBuilder"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.lang3.time.FastDateParser:escapeRegex:[StringBuilder regex, String value, boolean unquote]:StringBuilder"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "303"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "304",
+            "307",
+            "308",
+            "309",
+            "310",
+            "311",
+            "312",
+            "313",
+            "314"
+          ],
+          "num": 9
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/lang3/time/FastDateParser.java b/src/main/java/org/apache/commons/lang3/time/FastDateParser.java\nindex 8df302f..a01159b 100644\n--- a/src/main/java/org/apache/commons/lang3/time/FastDateParser.java\n+++ b/src/main/java/org/apache/commons/lang3/time/FastDateParser.java\n@@ -301,8 +301,17 @@\n      * @return The \u003ccode\u003eStringBuilder\u003c/code\u003e\n      */\n     private static StringBuilder escapeRegex(StringBuilder regex, String value, boolean unquote) {\n+        boolean wasWhite\u003d false;\n         for(int i\u003d 0; i\u003cvalue.length(); ++i) {\n             char c\u003d value.charAt(i);\n+            if(Character.isWhitespace(c)) {\n+                if(!wasWhite) {\n+                    wasWhite\u003d true;\n+                    regex.append(\"\\\\s*+\");\n+                }\n+                continue;\n+            }\n+            wasWhite\u003d false;\n             switch(c) {\n             case \u0027\\\u0027\u0027:\n                 if(unquote) {\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [10495,10519]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [10616,10816]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [10829,10845]"
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

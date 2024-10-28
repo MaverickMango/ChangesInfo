@@ -1,0 +1,137 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.FlowSensitiveInlineVariablesTest::testVarAssinInsideHookIssue965",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.FlowSensitiveInlineVariables",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "170",
+  "workingDir": "../bugs/Closure_170_tmp",
+  "bug_name": "Closure_170",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.FlowSensitiveInlineVariablesTest",
+      "test_function": "testVarAssinInsideHookIssue965",
+      "assertion_line": "578",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function _func(){var i\u003d0;return 1?i\u003d5:0,i}\nResult: function _func(){var i;return 1?i\u003d5:0,0}"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java",
+        "src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.FlowSensitiveInlineVariables\\$Candidate:getNumUseInUseCfgNode:[final Node cfgNode]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.FlowSensitiveInlineVariables\\$Candidate:getNumUseInUseCfgNode:[final Node cfgNode]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "482",
+            "488",
+            "489",
+            "491",
+            "492",
+            "494",
+            "498",
+            "499",
+            "500",
+            "501",
+            "502",
+            "503",
+            "504",
+            "505"
+          ],
+          "num": 14
+        },
+        {
+          "qualified_names": [
+            "482",
+            "488",
+            "489"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java b/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java\nindex d58f80c..ecba09b 100644\n--- a/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java\n+++ b/src/com/google/javascript/jscomp/FlowSensitiveInlineVariables.java\n@@ -479,30 +479,19 @@\n \n         @Override\n         public void visit(NodeTraversal t, Node n, Node parent) {\n-          if (n.isName() \u0026\u0026 n.getString().equals(varName)) {\n+          if (n.isName() \u0026\u0026 n.getString().equals(varName) \u0026\u0026\n             // We make a special exception when the entire cfgNode is a chain\n             // of assignments, since in that case the assignment statements\n             // will happen after the inlining of the right hand side.\n             // TODO(blickly): Make the SIDE_EFFECT_PREDICATE check more exact\n             //   and remove this special case.\n-            if (parent.isAssign() \u0026\u0026 (parent.getFirstChild() \u003d\u003d n)\n-                \u0026\u0026 isAssignChain(parent, cfgNode)) {\n+              !(parent.isAssign() \u0026\u0026\n+               (parent.getFirstChild() \u003d\u003d n))) {\n               // Don\u0027t count lhs of top-level assignment chain\n-              return;\n-            } else {\n               numUsesWithinCfgNode++;\n-            }\n           }\n         }\n \n-        private boolean isAssignChain(Node child, Node ancestor) {\n-          for (Node n \u003d child; n !\u003d ancestor; n \u003d n.getParent()) {\n-            if (!n.isAssign()) {\n-              return false;\n-            }\n-          }\n-          return true;\n-        }\n       };\n \n       NodeTraversal.traverse(compiler, cfgNode, gatherCb);\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PrefixExpression [17113,17181]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [17115,17215]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [17217,17317]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [17323,17376]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [17111,17376]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [17408,17653]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

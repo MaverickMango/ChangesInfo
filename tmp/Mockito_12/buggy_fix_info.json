@@ -1,0 +1,121 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.mockito.internal.util.reflection.GenericMasterTest::shouldDealWithNestedGenerics,org.mockitousage.annotation.CaptorAnnotationBasicTest::shouldUseAnnotatedCaptor,org.mockitousage.annotation.CaptorAnnotationBasicTest::shouldUseCaptorInOrdinaryWay,org.mockitousage.annotation.CaptorAnnotationBasicTest::shouldCaptureGenericList,org.mockitousage.annotation.CaptorAnnotationBasicTest::shouldUseGenericlessAnnotatedCaptor,org.mockitousage.annotation.CaptorAnnotationTest::shouldScreamWhenWrongTypeForCaptor,org.mockitousage.annotation.CaptorAnnotationTest::testNormalUsage,org.mockitousage.annotation.CaptorAnnotationTest::shouldScreamWhenMoreThanOneMockitoAnnotaton,org.mockitousage.annotation.CaptorAnnotationTest::shouldScreamWhenInitializingCaptorsForNullClass,org.mockitousage.annotation.CaptorAnnotationTest::shouldLookForAnnotatedCaptorsInSuperClasses",
+    "test.dir": "test",
+    "clz.modified": "org.mockito.internal.util.reflection.GenericMaster",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Mockito",
+  "id": "12",
+  "workingDir": "../bugs/Mockito_12_tmp",
+  "bug_name": "Mockito_12",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.mockito.internal.util.reflection.GenericMasterTest",
+      "test_function": "shouldDealWithNestedGenerics",
+      "assertion_line": "38",
+      "exception": "java.lang.ClassCastException",
+      "message": "sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl cannot be cast to java.lang.Class"
+    },
+    {
+      "test_class": "org.mockitousage.annotation.CaptorAnnotationBasicTest",
+      "test_function": "shouldUseAnnotatedCaptor",
+      "exception": "java.lang.ClassCastException",
+      "message": "sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl cannot be cast to java.lang.Class"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/org/mockito/internal/util/reflection/GenericMaster.java",
+        "src/org/mockito/internal/util/reflection/GenericMaster.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.mockito.internal.util.reflection.GenericMaster:getGenericType:[Field field]:Class"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.mockito.internal.util.reflection.GenericMaster:getGenericType:[Field field]:Class"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "20",
+            "22",
+            "24",
+            "25"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "19"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/org/mockito/internal/util/reflection/GenericMaster.java b/src/org/mockito/internal/util/reflection/GenericMaster.java\nindex 4df9f7a..64bf154 100644\n--- a/src/org/mockito/internal/util/reflection/GenericMaster.java\n+++ b/src/org/mockito/internal/util/reflection/GenericMaster.java\n@@ -17,12 +17,8 @@\n         Type generic \u003d field.getGenericType();\r\n         if (generic !\u003d null \u0026\u0026 generic instanceof ParameterizedType) {\r\n             Type actual \u003d ((ParameterizedType) generic).getActualTypeArguments()[0];\r\n-            if (actual instanceof Class) {\r\n                 return (Class) actual;\r\n-            } else if (actual instanceof ParameterizedType) {\r\n                 //in case of nested generics we don\u0027t go deep\r\n-                return (Class) ((ParameterizedType) actual).getRawType();\r\n-            }\r\n         }\r\n         \r\n         return Object.class;\r\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InstanceofExpression [686,709]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [711,767]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [773,968]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [682,968]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

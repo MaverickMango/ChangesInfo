@@ -1,0 +1,163 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.CheckSideEffectsTest::testUselessCode",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.CheckSideEffects",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "22",
+  "workingDir": "../bugs/Closure_22_tmp",
+  "bug_name": "Closure_22",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.CheckSideEffectsTest",
+      "test_function": "testUselessCode",
+      "assertion_line": "71",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "There should be one warning, repeated 1 time(s). expected:\u003c1\u003e but was:\u003c0\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CheckSideEffects.java",
+        "src/com/google/javascript/jscomp/CheckSideEffects.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CheckSideEffects:visit:[NodeTraversal t, Node n, Node parent]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CheckSideEffects:visit:[NodeTraversal t, Node n, Node parent]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "101",
+            "107"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "101",
+            "102",
+            "103",
+            "104",
+            "106",
+            "111",
+            "112",
+            "113",
+            "114",
+            "115",
+            "116",
+            "117",
+            "118",
+            "119",
+            "120",
+            "121",
+            "122",
+            "123",
+            "124",
+            "125",
+            "127",
+            "134",
+            "135",
+            "136",
+            "137",
+            "138"
+          ],
+          "num": 26
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/CheckSideEffects.java b/src/com/google/javascript/jscomp/CheckSideEffects.java\nindex 722d225..b9aa412 100644\n--- a/src/com/google/javascript/jscomp/CheckSideEffects.java\n+++ b/src/com/google/javascript/jscomp/CheckSideEffects.java\n@@ -98,20 +98,44 @@\n     // Do not try to remove a block or an expr result. We already handle\n     // these cases when we visit the child, and the peephole passes will\n     // fix up the tree in more clever ways when these are removed.\n-    if (n.isExprResult() || n.isBlock()) {\n+    if (parent.getType() \u003d\u003d Token.COMMA) {\n+      Node gramps \u003d parent.getParent();\n+      if (gramps.isCall() \u0026\u0026 parent \u003d\u003d gramps.getFirstChild()) {\n+        if (n \u003d\u003d parent.getFirstChild() \u0026\u0026 parent.getChildCount() \u003d\u003d 2 \u0026\u0026 n.getNext().isName() \u0026\u0026 \"eval\".equals(n.getNext().getString())) {\n       return;\n+        }\n     }\n \n     // This no-op statement was there so that JSDoc information could\n     // be attached to the name. This check should not complain about it.\n-    if (n.isQualifiedName() \u0026\u0026 n.getJSDocInfo() !\u003d null) {\n+      if (n \u003d\u003d parent.getLastChild()) {\n+        for (Node an : parent.getAncestors()) {\n+          int ancestorType \u003d an.getType();\n+          if (ancestorType \u003d\u003d Token.COMMA)\n+            continue;\n+          if (ancestorType !\u003d Token.EXPR_RESULT \u0026\u0026 ancestorType !\u003d Token.BLOCK)\n+            return;\n+          else\n+            break;\n+        }\n+      }\n+    } else if (parent.getType() !\u003d Token.EXPR_RESULT \u0026\u0026 parent.getType() !\u003d Token.BLOCK) {\n+      if (parent.getType() \u003d\u003d Token.FOR \u0026\u0026 parent.getChildCount() \u003d\u003d 4 \u0026\u0026 (n \u003d\u003d parent.getFirstChild() ||\n+           n \u003d\u003d parent.getFirstChild().getNext().getNext())) {\n+      } else {\n       return;\n+      }\n     }\n \n     boolean isResultUsed \u003d NodeUtil.isExpressionResultUsed(n);\n     boolean isSimpleOp \u003d NodeUtil.isSimpleOperatorType(n.getType());\n     if (!isResultUsed \u0026\u0026\n         (isSimpleOp || !NodeUtil.mayHaveSideEffects(n, t.getCompiler()))) {\n+      if (n.isQualifiedName() \u0026\u0026 n.getJSDocInfo() !\u003d null) {\n+        return;\n+      } else if (n.isExprResult()) {\n+        return;\n+      }\n       String msg \u003d \"This code lacks side-effects. Is there a bug?\";\n       if (n.isString()) {\n         msg \u003d \"Is there a missing \u0027+\u0027 on the previous line?\";\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [3301,4409]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [4734,4781]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [4738,4754]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [4756,4781]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [3305,3336]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [3338,3359]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [3301,3359]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

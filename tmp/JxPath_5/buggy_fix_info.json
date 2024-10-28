@@ -1,0 +1,99 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.jxpath.ri.compiler.VariableTest::testUnionOfVariableAndNode",
+    "test.dir": "src/test",
+    "clz.modified": "org.apache.commons.jxpath.ri.model.NodePointer",
+    "src.dir": "src/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JxPath",
+  "id": "5",
+  "workingDir": "../bugs/JxPath_5_tmp",
+  "bug_name": "JxPath_5",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.jxpath.ri.compiler.VariableTest",
+      "test_function": "testUnionOfVariableAndNode",
+      "assertion_line": "286",
+      "exception": "org.apache.commons.jxpath.JXPathException",
+      "message": "Cannot compare pointers that do not belong to the same tree: \u0027\u0027 and \u0027$var\u0027"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/jxpath/ri/model/NodePointer.java",
+        "src/java/org/apache/commons/jxpath/ri/model/NodePointer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.jxpath.ri.model.NodePointer:compareNodePointers:[NodePointer p1, int depth1, NodePointer p2, int depth2]:int"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.jxpath.ri.model.NodePointer:compareNodePointers:[NodePointer p1, int depth1, NodePointer p2, int depth2]:int"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "665"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "665",
+            "666",
+            "667"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/jxpath/ri/model/NodePointer.java b/src/java/org/apache/commons/jxpath/ri/model/NodePointer.java\nindex 8ba1c04..6ff8d5f 100644\n--- a/src/java/org/apache/commons/jxpath/ri/model/NodePointer.java\n+++ b/src/java/org/apache/commons/jxpath/ri/model/NodePointer.java\n@@ -662,7 +662,9 @@\n         }\n \n         if (depth1 \u003d\u003d 1) {\n-            return 0;\n+            throw new JXPathException(\n+                    \"Cannot compare pointers that do not belong to the same tree: \u0027\"\n+                            + p1 + \"\u0027 and \u0027\" + p2 + \"\u0027\");\n         }\n         int r \u003d compareNodePointers(p1.parent, depth1 - 1, p2.parent, depth2 - 1);\n         if (r !\u003d 0) {\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ThrowStatement [21368,21537]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [21368,21377]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

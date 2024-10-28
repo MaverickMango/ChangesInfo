@@ -1,0 +1,160 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.lang.time.FastDateFormatTest::test_changeDefault_Locale_DateInstance,org.apache.commons.lang.time.FastDateFormatTest::test_changeDefault_Locale_DateTimeInstance",
+    "test.dir": "src/test",
+    "clz.modified": "org.apache.commons.lang.time.FastDateFormat",
+    "src.dir": "src/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Lang",
+  "id": "50",
+  "workingDir": "../bugs/Lang_50_tmp",
+  "bug_name": "Lang_50",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.lang.time.FastDateFormatTest",
+      "test_function": "test_changeDefault_Locale_DateInstance",
+      "assertion_line": "146",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected same:\u003cde_DE\u003e was not:\u003cen_US\u003e"
+    },
+    {
+      "test_class": "org.apache.commons.lang.time.FastDateFormatTest",
+      "test_function": "test_changeDefault_Locale_DateTimeInstance",
+      "assertion_line": "166",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected same:\u003cde_DE\u003e was not:\u003cen_US\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/lang/time/FastDateFormat.java",
+        "src/java/org/apache/commons/lang/time/FastDateFormat.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.lang.time.FastDateFormat:getDateInstance:[int style, TimeZone timeZone, Locale locale]:FastDateFormat",
+            "org.apache.commons.lang.time.FastDateFormat:getDateTimeInstance:[int dateStyle, int timeStyle, TimeZone timeZone, Locale locale]:FastDateFormat"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.lang.time.FastDateFormat:getDateTimeInstance:[int dateStyle, int timeStyle, TimeZone timeZone, Locale locale]:FastDateFormat",
+            "org.apache.commons.lang.time.FastDateFormat:getDateInstance:[int style, TimeZone timeZone, Locale locale]:FastDateFormat"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "285",
+            "286",
+            "289",
+            "463",
+            "464",
+            "466"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "285",
+            "286",
+            "292",
+            "293",
+            "294",
+            "465",
+            "466",
+            "471",
+            "472",
+            "473"
+          ],
+          "num": 10
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/lang/time/FastDateFormat.java b/src/java/org/apache/commons/lang/time/FastDateFormat.java\nindex d1caaa8..8a26f28 100644\n--- a/src/java/org/apache/commons/lang/time/FastDateFormat.java\n+++ b/src/java/org/apache/commons/lang/time/FastDateFormat.java\n@@ -282,14 +282,16 @@\n             key \u003d new Pair(key, timeZone);\n         }\n \n-        if (locale \u003d\u003d null) {\n-            locale \u003d Locale.getDefault();\n+        if (locale !\u003d null) {\n+            key \u003d new Pair(key, locale);\n         }\n \n-        key \u003d new Pair(key, locale);\n \n         FastDateFormat format \u003d (FastDateFormat) cDateInstanceCache.get(key);\n         if (format \u003d\u003d null) {\n+            if (locale \u003d\u003d null) {\n+                locale \u003d Locale.getDefault();\n+            }\n             try {\n                 SimpleDateFormat formatter \u003d (SimpleDateFormat) DateFormat.getDateInstance(style, locale);\n                 String pattern \u003d formatter.toPattern();\n@@ -460,13 +462,15 @@\n         if (timeZone !\u003d null) {\n             key \u003d new Pair(key, timeZone);\n         }\n-        if (locale \u003d\u003d null) {\n-            locale \u003d Locale.getDefault();\n+        if (locale !\u003d null) {\n+            key \u003d new Pair(key, locale);\n         }\n-        key \u003d new Pair(key, locale);\n \n         FastDateFormat format \u003d (FastDateFormat) cDateTimeInstanceCache.get(key);\n         if (format \u003d\u003d null) {\n+            if (locale \u003d\u003d null) {\n+                locale \u003d Locale.getDefault();\n+            }\n             try {\n                 SimpleDateFormat formatter \u003d (SimpleDateFormat) DateFormat.getDateTimeInstance(dateStyle, timeStyle,\n                         locale);\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [10175,10247]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [17211,17283]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [10179,10193]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [10195,10247]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [17215,17229]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [17231,17283]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,85 @@
+diff -r -u original/src/com/google/javascript/jscomp/Compiler.java buggy/src/com/google/javascript/jscomp/Compiler.java
+--- original/src/com/google/javascript/jscomp/Compiler.java	2023-06-13 15:31:41.435091400 +0800
++++ buggy/src/com/google/javascript/jscomp/Compiler.java	2023-06-12 11:40:23.458853956 +0800
+@@ -24,6 +24,9 @@
+ import com.google.javascript.jscomp.CompilerOptions.DevMode;
+ import com.google.javascript.jscomp.CompilerOptions.LanguageMode;
+ import com.google.javascript.jscomp.CompilerOptions.TracerMode;
++import com.google.javascript.jscomp.ReferenceCollectingCallback.ReferenceCollection;
++import com.google.javascript.jscomp.ReferenceCollectingCallback.ReferenceMap;
++import com.google.javascript.jscomp.Scope.Var;
+ import com.google.javascript.jscomp.deps.SortedDependencies.CircularDependencyException;
+ import com.google.javascript.jscomp.deps.SortedDependencies.MissingProvideException;
+ import com.google.javascript.jscomp.mozilla.rhino.ErrorReporter;
+@@ -170,6 +173,8 @@
+ 
+   private final PrintStream outStream;
+ 
++  private GlobalVarReferenceMap globalRefMap = null;
++
+   /**
+    * Creates a Compiler that reports errors and warnings to its logger.
+    */
+@@ -260,19 +265,20 @@
+             getDiagnosticGroups().getRegisteredGroups()));
+     guards.add(options.getWarningsGuard());
+ 
++    ComposeWarningsGuard composedGuards = new ComposeWarningsGuard(guards);
++
+     // All passes must run the variable check. This synthesizes
+     // variables later so that the compiler doesn't crash. It also
+     // checks the externs file for validity. If you don't want to warn
+     // about missing variable declarations, we shut that specific
+     // error off.
+     if (!options.checkSymbols &&
+-        (warningsGuard == null || !warningsGuard.disables(
+-            DiagnosticGroups.CHECK_VARIABLES))) {
+-      guards.add(new DiagnosticGroupWarningsGuard(
++        !composedGuards.enables(DiagnosticGroups.CHECK_VARIABLES)) {
++      composedGuards.addGuard(new DiagnosticGroupWarningsGuard(
+           DiagnosticGroups.CHECK_VARIABLES, CheckLevel.OFF));
+     }
+ 
+-    this.warningsGuard = new ComposeWarningsGuard(guards);
++    this.warningsGuard = composedGuards;
+   }
+ 
+   /**
+@@ -1983,4 +1989,21 @@
+   void setHasRegExpGlobalReferences(boolean references) {
+     hasRegExpGlobalReferences = references;
+   }
++
++  @Override
++  void updateGlobalVarReferences(Map<Var, ReferenceCollection> refMapPatch,
++      Node collectionRoot) {
++    Preconditions.checkState(collectionRoot.getType() == Token.SCRIPT
++        || collectionRoot.getType() == Token.BLOCK);
++    if (globalRefMap == null) {
++      globalRefMap = new GlobalVarReferenceMap(getInputsInOrder());
++    }
++    globalRefMap.updateGlobalVarReferences(refMapPatch, collectionRoot);
++  }
++
++  @Override
++  ReferenceMap getGlobalVarReferences() {
++    return globalRefMap;
++  }
++
+ }
+diff -r -u original/test/com/google/javascript/jscomp/CommandLineRunnerTest.java buggy/test/com/google/javascript/jscomp/CommandLineRunnerTest.java
+--- original/test/com/google/javascript/jscomp/CommandLineRunnerTest.java	2023-06-13 15:31:41.435091400 +0800
++++ buggy/test/com/google/javascript/jscomp/CommandLineRunnerTest.java	2023-06-12 11:40:23.458853956 +0800
+@@ -224,6 +224,12 @@
+     testSame("x = 3;");
+   }
+ 
++  public void testCheckSymbolsOverrideForQuiet() {
++    args.add("--warning_level=QUIET");
++    args.add("--jscomp_error=undefinedVars");
++    test("x = 3;", VarCheck.UNDEFINED_VAR_ERROR);
++  }
++
+   public void testCheckUndefinedProperties1() {
+     args.add("--warning_level=VERBOSE");
+     args.add("--jscomp_error=missingProperties");

@@ -1,0 +1,181 @@
+Only in data/changesInfo//Closure_64/properties/modified_classes/inducing/: src
+Only in data/changesInfo//Closure_64/properties/modified_classes/inducing/test/com/google/javascript/jscomp: AmbiguatePropertiesTest.java
+Only in data/changesInfo//Closure_64/properties/modified_classes/inducing/test/com/google/javascript/jscomp: CodePrinterTest.java
+diff -u -r data/changesInfo//Closure_64/properties/modified_classes/inducing/test/com/google/javascript/jscomp/CommandLineRunnerTest.java data/changesInfo//Closure_64/cleaned/inducing/test/com/google/javascript/jscomp/CommandLineRunnerTest.java
+--- data/changesInfo//Closure_64/properties/modified_classes/inducing/test/com/google/javascript/jscomp/CommandLineRunnerTest.java	2023-08-10 04:24:03.397238655 -0700
++++ data/changesInfo//Closure_64/cleaned/inducing/test/com/google/javascript/jscomp/CommandLineRunnerTest.java	2023-08-02 01:55:42.043000000 -0700
+@@ -18,12 +18,10 @@
+ 
+ import com.google.common.base.Function;
+ import com.google.common.base.Joiner;
+-import com.google.common.base.Preconditions;
+ import com.google.common.base.Supplier;
+ import com.google.common.base.Suppliers;
+ import com.google.common.collect.ImmutableList;
+ import com.google.common.collect.Lists;
+-import com.google.javascript.jscomp.CompilerOptions.LanguageMode;
+ import com.google.javascript.rhino.Node;
+ 
+ import junit.framework.TestCase;
+@@ -116,65 +114,11 @@
+     super.tearDown();
+   }
+ 
+-  public void testWarningGuardOrdering1() {
+-    args.add("--jscomp_error=globalThis");
+-    args.add("--jscomp_off=globalThis");
+-    testSame("function f() { this.a = 3; }");
+-  }
+-
+-  public void testWarningGuardOrdering2() {
+-    args.add("--jscomp_off=globalThis");
+-    args.add("--jscomp_error=globalThis");
+-    test("function f() { this.a = 3; }", CheckGlobalThis.GLOBAL_THIS);
+-  }
+-
+-  public void testWarningGuardOrdering3() {
+-    args.add("--jscomp_warning=globalThis");
+-    args.add("--jscomp_off=globalThis");
+-    testSame("function f() { this.a = 3; }");
+-  }
+-
+-  public void testWarningGuardOrdering4() {
+-    args.add("--jscomp_off=globalThis");
+-    args.add("--jscomp_warning=globalThis");
+-    test("function f() { this.a = 3; }", CheckGlobalThis.GLOBAL_THIS);
+-  }
+-
+-  public void testCheckGlobalThisOffByDefault() {
+-    testSame("function f() { this.a = 3; }");
+-  }
+-
+-  public void testCheckGlobalThisOnWithAdvancedMode() {
+-    args.add("--compilation_level=ADVANCED_OPTIMIZATIONS");
+-    test("function f() { this.a = 3; }", CheckGlobalThis.GLOBAL_THIS);
+-  }
+-
+-  public void testCheckGlobalThisOnWithErrorFlag() {
+-    args.add("--jscomp_error=globalThis");
+-    test("function f() { this.a = 3; }", CheckGlobalThis.GLOBAL_THIS);
+-  }
+-
+   public void testTypeCheckingOffByDefault() {
+     test("function f(x) { return x; } f();",
+          "function f(a) { return a; } f();");
+   }
+ 
+-  public void testReflectedMethods() {
+-    args.add("--compilation_level=ADVANCED_OPTIMIZATIONS");
+-    test(
+-        "/** @constructor */" +
+-        "function Foo() {}" +
+-        "Foo.prototype.handle = function(x, y) { alert(y); };" +
+-        "var x = goog.reflect.object(Foo, {handle: 1});" +
+-        "for (var i in x) { x[i].call(x); }" +
+-        "window['Foo'] = Foo;",
+-        "function a() {}" +
+-        "a.prototype.a = function(e, d) { alert(d); };" +
+-        "var b = goog.c.b(a, {a: 1}),c;" +
+-        "for (c in b) { b[c].call(b); }" +
+-        "window.Foo = a;");
+-  }
+-
+   public void testTypeCheckingOnWithVerbose() {
+     args.add("--warning_level=VERBOSE");
+     test("function f(x) { return x; } f();", TypeCheck.WRONG_ARGUMENT_COUNT);
+@@ -292,22 +236,22 @@
+ 
+   public void testProcessClosurePrimitives() {
+     test("var goog = {}; goog.provide('goog.dom');",
+-         "var goog = {dom:{}};");
++         "var goog = {}; goog.dom = {};");
+     args.add("--process_closure_primitives=false");
+     testSame("var goog = {}; goog.provide('goog.dom');");
+   }
+ 
+   public void testCssNameWiring() throws Exception {
+-    test("var goog = {}; goog.getCssName = function() {};" +
+-         "goog.setCssNameMapping = function() {};" +
+-         "goog.setCssNameMapping({'goog': 'a', 'button': 'b'});" +
++    String prefix =
++        "var goog = {}; goog.getCssName = function() {};" +
++         "goog.setCssNameMapping = function() {};";
++    test(prefix + "goog.setCssNameMapping({'goog': 'a', 'button': 'b'});" +
+          "var a = goog.getCssName('goog-button');" +
+          "var b = goog.getCssName('css-button');" +
+          "var c = goog.getCssName('goog-menu');" +
+          "var d = goog.getCssName('css-menu');",
+-         "var goog = { getCssName: function() {}," +
+-         "             setCssNameMapping: function() {} }," +
+-         "    a = 'a-b'," +
++         prefix +
++         "var a = 'a-b'," +
+          "    b = 'css-b'," +
+          "    c = 'a-menu'," +
+          "    d = 'css-menu';");
+@@ -614,7 +558,7 @@
+     args.add("--js_output_file");
+     args.add("/path/to/out.js");
+     testSame("var x = 3;");
+-    assertEquals(SourceMap.Format.DEFAULT,
++    assertEquals(SourceMap.Format.LEGACY,
+         lastCompiler.getOptions().sourceMapFormat);
+   }
+ 
+@@ -755,30 +699,13 @@
+        CheckAccessControls.DEPRECATED_NAME);
+   }
+ 
+-  public void testTwoParseErrors() {
+-    // If parse errors are reported in different files, make
+-    // sure all of them are reported.
+-    Compiler compiler = compile(new String[] {
+-      "var a b;",
+-      "var b c;"
+-    });
+-    assertEquals(2, compiler.getErrors().length);
+-  }
+-
+-  public void testES3ByDefault() {
+-    test("var x = f.function", RhinoErrorReporter.PARSE_ERROR);
+-  }
+-
+-  public void testES5() {
+-    args.add("--language_in=ECMASCRIPT5");
+-    test("var x = f.function", "var x = f.function");
+-    test("var let", "var let");
+-  }
+-
+-  public void testES5Strict() {
++  public void testES5StrictUseStrictMultipleInputs() {
+     args.add("--language_in=ECMASCRIPT5_STRICT");
+-    test("var x = f.function", "'use strict';var x = f.function");
+-    test("var let", RhinoErrorReporter.PARSE_ERROR);
++    Compiler compiler = compile(new String[] {"var x = f.function",
++            "var y = f.function", "var z = f.function"});
++    String outputSource = compiler.toSource();
++    assertEquals("'use strict'", outputSource.substring(0, 12));
++    assertEquals(outputSource.substring(13).indexOf("'use strict'"), -1);
+   }
+ 
+   /* Helper functions */
+@@ -938,13 +865,8 @@
+     for (int i = 0; i < original.length; i++) {
+       inputs.add(JSSourceFile.fromCode("input" + i, original[i]));
+     }
+-    CompilerOptions options = new CompilerOptions();
+-    // ECMASCRIPT5 is the most forgiving.
+-    options.setLanguageIn(LanguageMode.ECMASCRIPT5);
+-    compiler.init(externs, inputs, options);
++    compiler.init(externs, inputs, new CompilerOptions());
+     Node all = compiler.parseInputs();
+-    Preconditions.checkState(compiler.getErrorCount() == 0);
+-    Preconditions.checkNotNull(all);
+     Node n = all.getLastChild();
+     return n;
+   }
+Only in data/changesInfo//Closure_64/properties/modified_classes/inducing/test/com/google/javascript/jscomp: CompilerTestCase.java
+Only in data/changesInfo//Closure_64/properties/modified_classes/inducing/test/com/google/javascript/jscomp: CompilerTypeTestCase.java
+Only in data/changesInfo//Closure_64/properties/modified_classes/inducing/test/com/google/javascript/jscomp: ExpressionDecomposerTest.java
+Only in data/changesInfo//Closure_64/properties/modified_classes/inducing/test/com/google/javascript/jscomp: NodeUtilTest.java
+Only in data/changesInfo//Closure_64/properties/modified_classes/inducing/test/com/google/javascript/jscomp: TypeInferenceTest.java

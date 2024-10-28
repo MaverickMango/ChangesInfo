@@ -1,0 +1,141 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.InlineFunctionsTest::testBug4944818,com.google.javascript.jscomp.InlineFunctionsTest::testDoubleInlining1,com.google.javascript.jscomp.InlineFunctionsTest::testNoInlineIfParametersModified8,com.google.javascript.jscomp.InlineFunctionsTest::testNoInlineIfParametersModified9,com.google.javascript.jscomp.InlineFunctionsTest::testInlineFunctions6",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.FunctionInjector",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "115",
+  "workingDir": "../bugs/Closure_115_tmp",
+  "bug_name": "Closure_115",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.InlineFunctionsTest",
+      "test_function": "testBug4944818",
+      "assertion_line": "2060",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: HangoutStarter.prototype.launchHangout\u003dfunction(){var self$$2\u003da.b;var JSCompiler_temp_const$$0\u003dgoog.Uri;var JSCompiler_inline_result$$1;var self$$inline_2\u003dself$$2;if(!self$$inline_2.domServices_)self$$inline_2.domServices_\u003dgoog$component$DomServices.get(self$$inline_2.appContext_);JSCompiler_inline_result$$1\u003dself$$inline_2.domServices_;var myUrl\u003dnew JSCompiler_temp_const$$0(JSCompiler_inline_result$$1.getDomHelper().getWindow().location.href)}\nResult: HangoutStarter.prototype.launchHangout\u003dfunction(){var self$$2\u003da.b;var JSCompiler_temp_const$$0\u003dgoog.Uri;var JSCompiler_inline_result$$1;var JSCompiler_inline_result$$0;var self$$inline_1\u003dself$$2;if(!self$$inline_1.domServices_)self$$inline_1.domServices_\u003dgoog$component$DomServices.get(self$$inline_1.appContext_);JSCompiler_inline_result$$0\u003dself$$inline_1.domServices_;JSCompiler_inline_result$$1\u003dJSCompiler_inline_result$$0.getDomHelper().getWindow();var myUrl\u003dnew JSCompiler_temp_const$$0(JSCompiler_inline_result$$1.location.href)}"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.InlineFunctionsTest",
+      "test_function": "testDoubleInlining1",
+      "assertion_line": "1099",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: getWindow(x)\nResult: var foo\u003dfunction(a){return getWindow(a)};foo(x)"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.InlineFunctionsTest",
+      "test_function": "testNoInlineIfParametersModified8",
+      "assertion_line": "598",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: o.x\u003d2\nResult: o.x\u003d2"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.InlineFunctionsTest",
+      "test_function": "testNoInlineIfParametersModified9",
+      "assertion_line": "603",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: o[2]\u003d2\nResult: o[2]\u003d2"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.InlineFunctionsTest",
+      "test_function": "testInlineFunctions6",
+      "assertion_line": "152",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: alert(baz(foo(1+2)))\nResult: var JSCompiler_temp_const$$0\u003dalert;var JSCompiler_inline_result$$1;JSCompiler_inline_result$$1\u003dbaz(foo(1+2));JSCompiler_temp_const$$0(JSCompiler_inline_result$$1)"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/FunctionInjector.java",
+        "src/com/google/javascript/jscomp/FunctionInjector.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.FunctionInjector:canInlineReferenceDirectly:[Node callNode, Node fnNode]:CanInlineResult"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.FunctionInjector:canInlineReferenceDirectly:[Node callNode, Node fnNode]:CanInlineResult"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "696",
+            "721"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "697",
+            "698",
+            "699",
+            "700",
+            "701",
+            "702",
+            "703",
+            "704",
+            "730",
+            "731",
+            "732"
+          ],
+          "num": 11
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/FunctionInjector.java b/src/com/google/javascript/jscomp/FunctionInjector.java\nindex 5b38600..73d6a4b 100644\n--- a/src/com/google/javascript/jscomp/FunctionInjector.java\n+++ b/src/com/google/javascript/jscomp/FunctionInjector.java\n@@ -694,6 +694,14 @@\n \n     Node block \u003d fnNode.getLastChild();\n \n+    boolean hasSideEffects \u003d false;\n+    if (block.hasChildren()) {\n+      Preconditions.checkState(block.hasOneChild());\n+      Node stmt \u003d block.getFirstChild();\n+      if (stmt.isReturn()) {\n+        hasSideEffects \u003d NodeUtil.mayHaveSideEffects(stmt.getFirstChild(), compiler);\n+      }\n+    }\n     // CALL NODE: [ NAME, ARG1, ARG2, ... ]\n     Node cArg \u003d callNode.getFirstChild().getNext();\n \n@@ -719,6 +727,9 @@\n       // For each named parameter check if a mutable argument use more than one.\n       if (fnParam !\u003d null) {\n         if (cArg !\u003d null) {\n+          if (hasSideEffects \u0026\u0026 NodeUtil.canBeSideEffected(cArg)) {\n+            return CanInlineResult.NO;\n+          }\n           // Check for arguments that are evaluated more than once.\n           // Note: Unlike block inlining, there it is not possible that a\n           // parameter reference will be in a loop.\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [23700,23731]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [23736,23985]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [25020,25128]"
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

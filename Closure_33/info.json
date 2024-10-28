@@ -1,0 +1,431 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Closure",
+  "id": "33",
+  "workingDir": "../bugs/Closure_33_buggy",
+  "inducingCommit": "22784dc96c391b01692ce686eb93b9aa0ef74ede",
+  "originalCommit": "7e3e1a667c866458cca12b7ade9965b4e6ddf3c0",
+  "bug_name": "Closure_33",
+  "derive": "defects4j",
+  "original_fixing_commit": "382422adae8e9f07fc23c94089c0ebe08a2174bc",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/TypeInference.java",
+        "src/com/google/javascript/jscomp/TypeInference.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "inferPropertyTypesToMatchConstraint"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "inferPropertyTypesToMatchConstraint"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1121",
+            "1122",
+            "1123",
+            "1124",
+            "1125",
+            "1126",
+            "1127",
+            "1128",
+            "1129",
+            "1130",
+            "1131",
+            "1132",
+            "1133",
+            "1134",
+            "1135"
+          ],
+          "num": 15
+        },
+        {
+          "qualified_names": [
+            "1121",
+            "1122"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/TypeInference.java b/src/com/google/javascript/jscomp/TypeInference.java\nindex 13e1092..fb6be1e 100644\n--- a/src/com/google/javascript/jscomp/TypeInference.java\n+++ b/src/com/google/javascript/jscomp/TypeInference.java\n@@ -1118,21 +1118,8 @@\n \n     ObjectType constraintObj \u003d\n         ObjectType.cast(constraint.restrictByNotNullOrUndefined());\n-    if (constraintObj !\u003d null \u0026\u0026 constraintObj.isRecordType()) {\n-      ObjectType objType \u003d ObjectType.cast(type.restrictByNotNullOrUndefined());\n-      if (objType !\u003d null) {\n-        for (String prop : constraintObj.getOwnPropertyNames()) {\n-          JSType propType \u003d constraintObj.getPropertyType(prop);\n-          if (!objType.isPropertyTypeDeclared(prop)) {\n-            JSType typeToInfer \u003d propType;\n-            if (!objType.hasProperty(prop)) {\n-              typeToInfer \u003d\n-                  getNativeType(VOID_TYPE).getLeastSupertype(propType);\n-            }\n-            objType.defineInferredProperty(prop, typeToInfer, null);\n-          }\n-        }\n-      }\n+    if (constraintObj !\u003d null) {\n+      type.matchConstraint(constraintObj);\n     }\n   }\n \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [39850,39927]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [39850,40514]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/JSType.java",
+        "src/com/google/javascript/rhino/jstype/JSType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "toStringHelper"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "matchConstraint"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1172"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "1173",
+            "1174",
+            "1175",
+            "1176",
+            "1177",
+            "1178",
+            "1179",
+            "1180",
+            "1181"
+          ],
+          "num": 9
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/JSType.java b/src/com/google/javascript/rhino/jstype/JSType.java\nindex 8592ca6..7317e94 100644\n--- a/src/com/google/javascript/rhino/jstype/JSType.java\n+++ b/src/com/google/javascript/rhino/jstype/JSType.java\n@@ -1170,4 +1170,13 @@\n    *     annotations. Otherwise, it\u0027s for warnings.\n    */\n   abstract String toStringHelper(boolean forAnnotations);\n+\n+  /**\n+   * Modify this type so that it matches the specified type.\n+   *\n+   * This is useful for reverse type-inference, where we want to\n+   * infer that an object literal matches its contraint (much like\n+   * how the java compiler does reverse-inference to figure out generics).\n+   */\n+  public void matchConstraint(ObjectType contraint) {}\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [36508,36845]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/PrototypeObjectType.java",
+        "src/com/google/javascript/rhino/jstype/PrototypeObjectType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "resolveInternal"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "matchConstraint"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "552"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "553",
+            "554",
+            "555",
+            "556",
+            "557",
+            "558",
+            "559",
+            "560",
+            "561",
+            "562",
+            "563",
+            "564",
+            "565",
+            "566",
+            "567",
+            "568",
+            "569",
+            "570",
+            "571",
+            "572",
+            "573",
+            "574",
+            "575",
+            "576",
+            "577",
+            "578"
+          ],
+          "num": 26
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/PrototypeObjectType.java b/src/com/google/javascript/rhino/jstype/PrototypeObjectType.java\nindex f4b537d..1a51afb 100644\n--- a/src/com/google/javascript/rhino/jstype/PrototypeObjectType.java\n+++ b/src/com/google/javascript/rhino/jstype/PrototypeObjectType.java\n@@ -550,4 +550,30 @@\n     }\n     return this;\n   }\n+\n+  @Override\n+  public void matchConstraint(ObjectType constraintObj) {\n+    // Handle the case where the constraint object is a record type.\n+    //\n+    // param constraintObj {{prop: (number|undefined)}}\n+    // function f(constraintObj) {}\n+    // f({});\n+    //\n+    // We want to modify the object literal to match the constraint, by\n+    // taking any each property on the record and trying to match\n+    // properties on this object.\n+    if (constraintObj.isRecordType()) {\n+      for (String prop : constraintObj.getOwnPropertyNames()) {\n+        JSType propType \u003d constraintObj.getPropertyType(prop);\n+        if (!isPropertyTypeDeclared(prop)) {\n+          JSType typeToInfer \u003d propType;\n+          if (!hasProperty(prop)) {\n+            typeToInfer \u003d getNativeType(JSTypeNative.VOID_TYPE)\n+                .getLeastSupertype(propType);\n+          }\n+          defineInferredProperty(prop, typeToInfer, null);\n+        }\n+      }\n+    }\n+  }\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [16689,17615]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/ProxyObjectType.java",
+        "src/com/google/javascript/rhino/jstype/ProxyObjectType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "collapseUnion"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "matchConstraint"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "421"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "422",
+            "423",
+            "424",
+            "425",
+            "426"
+          ],
+          "num": 5
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/ProxyObjectType.java b/src/com/google/javascript/rhino/jstype/ProxyObjectType.java\nindex e025d51..66898e2 100644\n--- a/src/com/google/javascript/rhino/jstype/ProxyObjectType.java\n+++ b/src/com/google/javascript/rhino/jstype/ProxyObjectType.java\n@@ -419,4 +419,9 @@\n     }\n     return this;\n   }\n+\n+  @Override\n+  public void matchConstraint(ObjectType contraint) {\n+    referencedType.matchConstraint(contraint);\n+  }\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [10784,10898]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/UnionType.java",
+        "src/com/google/javascript/rhino/jstype/UnionType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "collapseUnion"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "matchConstraint"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "588"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "589",
+            "590",
+            "591",
+            "592",
+            "593",
+            "594",
+            "595"
+          ],
+          "num": 7
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/UnionType.java b/src/com/google/javascript/rhino/jstype/UnionType.java\nindex f54d8d4..fcb0172 100644\n--- a/src/com/google/javascript/rhino/jstype/UnionType.java\n+++ b/src/com/google/javascript/rhino/jstype/UnionType.java\n@@ -586,4 +586,11 @@\n     }\n     return currentCommonSuper;\n   }\n+\n+  @Override\n+  public void matchConstraint(ObjectType constraintObj) {\n+    for (JSType alternate : alternates) {\n+      alternate.matchConstraint(constraintObj);\n+    }\n+  }\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [16872,17039]"
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "matchConstraint"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "collapseUnion",
+        "resolveInternal",
+        "toStringHelper"
+      ],
+      "num": 3
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testDuplicateStaticPropertyDecl4",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c[variable goog.foo redefined with type string, original definition at [testcode]:1 with type] Foo\u003e but was:\u003c[assignment to property foo of goog"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testDuplicateStaticPropertyDecl5",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c[variable goog.foo redefined with type string, original definition at [testcode]:1 with type] Foo\u003e but was:\u003c[assignment to property foo of goog"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testBug2335992",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003cassignment[ to property y of x]"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testOverriddenParams4",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "unexpected warnings(s):"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testErrorMismatchingPropertyOnInterface6",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c[interface members can only be empty property declarations, empty functions, or goog.abstractMethod]\u003e but was:\u003c[assignment to property x of T.prototype"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testDirectPrototypeAssign",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected a warning"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testDuplicateLocalVarDecl",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c...ginal definition at [ [testcode] ]:2 with type number\u003e but was:\u003c...ginal definition at [[testcode]]:2 with type number\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/PrototypeObjectType.java",
+        "src/com/google/javascript/rhino/jstype/PrototypeObjectType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "matchConstraint"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "matchConstraint"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "555"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "556",
+            "557",
+            "558"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Closure_33/properties/modified_classes/inducing/src/com/google/javascript/rhino/jstype/PrototypeObjectType.java data/changesInfo//Closure_33/cleaned/fixing/src/com/google/javascript/rhino/jstype/PrototypeObjectType.java\n--- data/changesInfo//Closure_33/properties/modified_classes/inducing/src/com/google/javascript/rhino/jstype/PrototypeObjectType.java\t2023-08-25 13:09:41.862863342 +0800\n+++ data/changesInfo//Closure_33/cleaned/fixing/src/com/google/javascript/rhino/jstype/PrototypeObjectType.java\t2023-07-24 21:11:32.632080395 +0800\n@@ -553,6 +553,9 @@\n \n   @Override\n   public void matchConstraint(ObjectType constraintObj) {\n+    if (hasReferenceName()) {\n+      return;\n+    }\n     // Handle the case where the constraint object is a record type.\n     //\n     // param constraintObj {{prop: (number|undefined)}}\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [16761,16806]"
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

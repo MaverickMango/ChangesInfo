@@ -1,0 +1,192 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.ser.TestJsonSerialize2::testEmptyInclusionScalars",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.ser.std.NumberSerializers",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "23",
+  "workingDir": "../bugs/JacksonDatabind_23_tmp",
+  "bug_name": "JacksonDatabind_23",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.ser.TestJsonSerialize2",
+      "test_function": "testEmptyInclusionScalars",
+      "assertion_line": "237",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c{[]}\u003e but was:\u003c{[\"value\":0]}\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/ser/std/NumberSerializers.java",
+        "src/main/java/com/fasterxml/jackson/databind/ser/std/NumberSerializers.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.std.NumberSerializers\\$IntLikeSerializer:isEmpty:[SerializerProvider prov, Number value]:boolean",
+            "com.fasterxml.jackson.databind.ser.std.NumberSerializers\\$ShortSerializer:isEmpty:[SerializerProvider prov, Short value]:boolean",
+            "com.fasterxml.jackson.databind.ser.std.NumberSerializers\\$IntegerSerializer:isEmpty:[SerializerProvider prov, Object value]:boolean",
+            "com.fasterxml.jackson.databind.ser.std.NumberSerializers\\$LongSerializer:isEmpty:[SerializerProvider prov, Object value]:boolean",
+            "com.fasterxml.jackson.databind.ser.std.NumberSerializers\\$FloatSerializer:isEmpty:[SerializerProvider prov, Object value]:boolean",
+            "com.fasterxml.jackson.databind.ser.std.NumberSerializers\\$DoubleSerializer:isEmpty:[SerializerProvider prov, Object value]:boolean"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.std.NumberSerializers\\$LongSerializer:serialize:[Object value, JsonGenerator gen, SerializerProvider provider]:void",
+            "com.fasterxml.jackson.databind.ser.std.NumberSerializers\\$DoubleSerializer:serializeWithType:[Object value, JsonGenerator gen, SerializerProvider provider, TypeSerializer typeSer]:void"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "54",
+            "121",
+            "126",
+            "127",
+            "128",
+            "129",
+            "165",
+            "166",
+            "167",
+            "168",
+            "185",
+            "186",
+            "187",
+            "188",
+            "199",
+            "205",
+            "206",
+            "207",
+            "208",
+            "219",
+            "225",
+            "226",
+            "227",
+            "228",
+            "246",
+            "252",
+            "253",
+            "254",
+            "255"
+          ],
+          "num": 29
+        },
+        {
+          "qualified_names": [
+            "53",
+            "121",
+            "170",
+            "194",
+            "212",
+            "237",
+            "269"
+          ],
+          "num": 7
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/ser/std/NumberSerializers.java b/src/main/java/com/fasterxml/jackson/databind/ser/std/NumberSerializers.java\nindex 05f7b78..c11155e 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/ser/std/NumberSerializers.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/ser/std/NumberSerializers.java\n@@ -51,7 +51,6 @@\n     protected abstract static class Base\u003cT\u003e extends StdScalarSerializer\u003cT\u003e\n         implements ContextualSerializer\n     {\n-        protected final static Integer EMPTY_INTEGER \u003d Integer.valueOf(0);\n \n         protected final JsonParser.NumberType _numberType;\n         protected final String _schemaType;\n@@ -118,15 +117,10 @@\n     @JacksonStdImpl\n     public final static class ShortSerializer extends Base\u003cShort\u003e\n     {\n-        private final static Short EMPTY \u003d (short) 0;\n         final static ShortSerializer instance \u003d new ShortSerializer();\n \n         public ShortSerializer() { super(Short.class, JsonParser.NumberType.INT, \"number\"); }\n \n-        @Override\n-        public boolean isEmpty(SerializerProvider prov, Short value) {\n-            return EMPTY.equals(value);\n-        }\n \n         @Override\n         public void serialize(Short value, JsonGenerator gen, SerializerProvider provider) throws IOException {\n@@ -162,10 +156,6 @@\n             serialize(value, gen, provider);            \n         }\n \n-        @Override\n-        public boolean isEmpty(SerializerProvider prov, Object value) {\n-            return EMPTY_INTEGER.equals(value);\n-        }\n     }\n \n     /**\n@@ -182,10 +172,6 @@\n             super(Number.class, JsonParser.NumberType.INT, \"integer\");\n         }\n \n-        @Override\n-        public boolean isEmpty(SerializerProvider prov, Number value) {\n-            return value.intValue() \u003d\u003d 0;\n-        }\n \n         @Override\n         public void serialize(Number value, JsonGenerator gen, SerializerProvider provider) throws IOException {\n@@ -196,16 +182,11 @@\n     @JacksonStdImpl\n     public final static class LongSerializer extends Base\u003cObject\u003e\n     {\n-        private final static Long EMPTY \u003d 0L;\n \n         final static LongSerializer instance \u003d new LongSerializer();\n     \n         public LongSerializer() { super(Long.class, JsonParser.NumberType.LONG, \"number\"); }\n \n-        @Override\n-        public boolean isEmpty(SerializerProvider prov, Object value) {\n-            return EMPTY.equals(value);\n-        }\n \n         @Override\n         public void serialize(Object value, JsonGenerator gen, SerializerProvider provider) throws IOException {\n@@ -216,16 +197,11 @@\n     @JacksonStdImpl\n     public final static class FloatSerializer extends Base\u003cObject\u003e\n     {\n-        private final static Float EMPTY \u003d 0f;\n \n         final static FloatSerializer instance \u003d new FloatSerializer();\n \n         public FloatSerializer() { super(Float.class, JsonParser.NumberType.FLOAT, \"number\"); }\n \n-        @Override\n-        public boolean isEmpty(SerializerProvider prov, Object value) {\n-            return EMPTY.equals(value);\n-        }\n \n         @Override\n         public void serialize(Object value, JsonGenerator gen, SerializerProvider provider) throws IOException {\n@@ -243,16 +219,11 @@\n     @JacksonStdImpl\n     public final static class DoubleSerializer extends Base\u003cObject\u003e\n     {\n-        private final static Double EMPTY \u003d 0d;\n \n         final static DoubleSerializer instance \u003d new DoubleSerializer();\n     \n         public DoubleSerializer() { super(Double.class, JsonParser.NumberType.DOUBLE, \"number\"); }\n \n-        @Override\n-        public boolean isEmpty(SerializerProvider prov, Object value) {\n-            return EMPTY.equals(value);\n-        }\n \n         @Override\n         public void serialize(Object value, JsonGenerator gen, SerializerProvider provider) throws IOException {\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [2371,2437]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [4803,4848]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [5024,5154]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [6520,6659]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [7180,7313]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [7610,7647]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [7825,7956]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [8264,8302]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [8481,8612]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [9202,9241]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [9429,9560]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.ser.std.NumberSerializers\\$LongSerializer:serialize:[Object value, JsonGenerator gen, SerializerProvider provider]:void",
+        "com.fasterxml.jackson.databind.ser.std.NumberSerializers\\$DoubleSerializer:serializeWithType:[Object value, JsonGenerator gen, SerializerProvider provider, TypeSerializer typeSer]:void"
+      ],
+      "num": 2
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.ser.std.NumberSerializers\\$LongSerializer:isEmpty:[SerializerProvider prov, Object value]:boolean",
+        "com.fasterxml.jackson.databind.ser.std.NumberSerializers\\$IntLikeSerializer:isEmpty:[SerializerProvider prov, Number value]:boolean",
+        "com.fasterxml.jackson.databind.ser.std.NumberSerializers\\$FloatSerializer:isEmpty:[SerializerProvider prov, Object value]:boolean",
+        "com.fasterxml.jackson.databind.ser.std.NumberSerializers\\$DoubleSerializer:isEmpty:[SerializerProvider prov, Object value]:boolean",
+        "com.fasterxml.jackson.databind.ser.std.NumberSerializers\\$IntegerSerializer:isEmpty:[SerializerProvider prov, Object value]:boolean",
+        "com.fasterxml.jackson.databind.ser.std.NumberSerializers\\$ShortSerializer:isEmpty:[SerializerProvider prov, Short value]:boolean"
+      ],
+      "num": 6
+    }
+  }
+}

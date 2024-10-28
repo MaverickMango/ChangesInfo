@@ -1,0 +1,360 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math.linear.SingularValueSolverTest::testMath320A,org.apache.commons.math.linear.SingularValueSolverTest::testMath320B",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math.linear.SingularValueDecompositionImpl",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "76",
+  "workingDir": "../bugs/Math_76_tmp",
+  "bug_name": "Math_76",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math.linear.SingularValueSolverTest",
+      "test_function": "testMath320A",
+      "assertion_line": "188",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c0.0\u003e but was:\u003c0.09336767546650937\u003e"
+    },
+    {
+      "test_class": "org.apache.commons.math.linear.SingularValueSolverTest",
+      "test_function": "testMath320B",
+      "assertion_line": "219",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c0.0\u003e but was:\u003c3.2\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/linear/SingularValueDecompositionImpl.java",
+        "src/main/java/org/apache/commons/math/linear/SingularValueDecompositionImpl.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.linear.SingularValueDecompositionImpl:getV:[]:RealMatrix",
+            "org.apache.commons.math.linear.SingularValueDecompositionImpl:getU:[]:RealMatrix"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.linear.SingularValueDecompositionImpl:getU:[]:RealMatrix",
+            "org.apache.commons.math.linear.SingularValueDecompositionImpl:getV:[]:RealMatrix"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "162",
+            "166",
+            "171",
+            "177",
+            "178",
+            "179",
+            "180",
+            "181",
+            "251",
+            "255",
+            "259",
+            "265",
+            "266",
+            "267",
+            "268",
+            "269"
+          ],
+          "num": 16
+        },
+        {
+          "qualified_names": [
+            "162",
+            "166",
+            "177",
+            "178",
+            "179",
+            "248",
+            "252",
+            "262",
+            "263",
+            "264"
+          ],
+          "num": 10
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/linear/SingularValueDecompositionImpl.java b/src/main/java/org/apache/commons/math/linear/SingularValueDecompositionImpl.java\nindex e418c08..1436881 100644\n--- a/src/main/java/org/apache/commons/math/linear/SingularValueDecompositionImpl.java\n+++ b/src/main/java/org/apache/commons/math/linear/SingularValueDecompositionImpl.java\n@@ -159,27 +159,24 @@\n             if (m \u003e\u003d n) {\n                 // the tridiagonal matrix is Bt.B, where B is upper bidiagonal\n                 final RealMatrix e \u003d\n-                    eigenDecomposition.getV().getSubMatrix(0, n - 1, 0, p - 1);\n+                    eigenDecomposition.getV().getSubMatrix(0, p - 1, 0, p - 1);\n                 final double[][] eData \u003d e.getData();\n                 final double[][] wData \u003d new double[m][p];\n                 double[] ei1 \u003d eData[0];\n-                for (int i \u003d 0; i \u003c p; ++i) {\n+                for (int i \u003d 0; i \u003c p - 1; ++i) {\n                     // compute W \u003d B.E.S^(-1) where E is the eigenvectors matrix\n                     final double mi \u003d mainBidiagonal[i];\n                     final double[] ei0 \u003d ei1;\n                     final double[] wi  \u003d wData[i];\n-                    if (i \u003c n - 1) {\n                         ei1 \u003d eData[i + 1];\n                         final double si \u003d secondaryBidiagonal[i];\n                         for (int j \u003d 0; j \u003c p; ++j) {\n                             wi[j] \u003d (mi * ei0[j] + si * ei1[j]) / singularValues[j];\n                         }\n-                    } else {\n-                        for (int j \u003d 0; j \u003c p; ++j) {\n-                            wi[j] \u003d mi * ei0[j] / singularValues[j];\n-                        }\n-                    }\n                 }\n+                        for (int j \u003d 0; j \u003c p; ++j) {\n+                            wData[p - 1][j] \u003d ei1[j] * mainBidiagonal[p - 1] / singularValues[j];\n+                        }\n \n                 for (int i \u003d p; i \u003c m; ++i) {\n                     wData[i] \u003d new double[p];\n@@ -248,26 +245,23 @@\n                 // the tridiagonal matrix is B.Bt, where B is lower bidiagonal\n                 // compute W \u003d Bt.E.S^(-1) where E is the eigenvectors matrix\n                 final RealMatrix e \u003d\n-                    eigenDecomposition.getV().getSubMatrix(0, m - 1, 0, p - 1);\n+                    eigenDecomposition.getV().getSubMatrix(0, p - 1, 0, p - 1);\n                 final double[][] eData \u003d e.getData();\n                 final double[][] wData \u003d new double[n][p];\n                 double[] ei1 \u003d eData[0];\n-                for (int i \u003d 0; i \u003c p; ++i) {\n+                for (int i \u003d 0; i \u003c p - 1; ++i) {\n                     final double mi \u003d mainBidiagonal[i];\n                     final double[] ei0 \u003d ei1;\n                     final double[] wi  \u003d wData[i];\n-                    if (i \u003c m - 1) {\n                         ei1 \u003d eData[i + 1];\n                         final double si \u003d secondaryBidiagonal[i];\n                         for (int j \u003d 0; j \u003c p; ++j) {\n                             wi[j] \u003d (mi * ei0[j] + si * ei1[j]) / singularValues[j];\n                         }\n-                    } else {\n-                        for (int j \u003d 0; j \u003c p; ++j) {\n-                            wi[j] \u003d mi * ei0[j] / singularValues[j];\n-                        }\n-                    }\n                 }\n+                        for (int j \u003d 0; j \u003c p; ++j) {\n+                            wData[p - 1][j] \u003d ei1[j] * mainBidiagonal[p - 1] / singularValues[j];\n+                        }\n                 for (int i \u003d p; i \u003c n; ++i) {\n                     wData[i] \u003d new double[p];\n                 }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ForStatement [6856,7009]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ForStatement [9728,9881]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [6290,6295]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [9243,9248]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: - [6292,6293]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NumberLiteral: 1 [6294,6295]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: - [9245,9246]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NumberLiteral: 1 [9247,9248]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [6559,6568]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [6570,6868]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [6958,6998]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [6874,7046]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [6555,7046]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [9486,9495]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [9497,9795]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [9885,9925]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [9801,9973]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [9482,9973]",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

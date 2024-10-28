@@ -1,0 +1,817 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Closure",
+  "id": "91",
+  "workingDir": "../bugs/Closure_91_buggy",
+  "inducingCommit": "82a9956c6337d2f5d4a94ebe624d64faa54d9182",
+  "originalCommit": "91d0d35fba40aac9316db9e2f8aa94cd3a3b6c2e",
+  "bug_name": "Closure_91",
+  "derive": "defects4j",
+  "original_fixing_commit": "7eb2d84de101a125d41d3a1157f4eed789ca4a0d",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/AbstractCommandLineRunner.java",
+        "src/com/google/javascript/jscomp/AbstractCommandLineRunner.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "doRun",
+            "outputBestPhaseOrdering",
+            "outputManifest",
+            "toPrintStream",
+            "toPrintStream",
+            "processResults",
+            "outputSourceMap",
+            "writeOutput",
+            "openExternExportsStream"
+          ],
+          "num": 9
+        },
+        {
+          "qualified_names": [
+            "openExternExportsStream",
+            "toWriter",
+            "toWriter",
+            "doRun",
+            "processResults",
+            "outputBestPhaseOrdering",
+            "outputManifest",
+            "outputSourceMap",
+            "writeOutput"
+          ],
+          "num": 9
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "30",
+            "83",
+            "423",
+            "424",
+            "431",
+            "434",
+            "437",
+            "438",
+            "439",
+            "440",
+            "441",
+            "442",
+            "452",
+            "504",
+            "522",
+            "541",
+            "552",
+            "559",
+            "563",
+            "584",
+            "587",
+            "592",
+            "595",
+            "602",
+            "609",
+            "624",
+            "682",
+            "695",
+            "744",
+            "747",
+            "751",
+            "752",
+            "753",
+            "757",
+            "760",
+            "765",
+            "766",
+            "767",
+            "783",
+            "972",
+            "978",
+            "1058",
+            "1059",
+            "1061",
+            "1062",
+            "1063",
+            "1064"
+          ],
+          "num": 47
+        },
+        {
+          "qualified_names": [
+            "30",
+            "33",
+            "35",
+            "37",
+            "86",
+            "426",
+            "427",
+            "434",
+            "437",
+            "440",
+            "441",
+            "442",
+            "444",
+            "445",
+            "454",
+            "455",
+            "507",
+            "525",
+            "544",
+            "555",
+            "562",
+            "566",
+            "587",
+            "590",
+            "595",
+            "598",
+            "605",
+            "612",
+            "627",
+            "685",
+            "698",
+            "747",
+            "750",
+            "754",
+            "755",
+            "759",
+            "762",
+            "767",
+            "768",
+            "769",
+            "785",
+            "974",
+            "980",
+            "1060",
+            "1061",
+            "1062",
+            "1064",
+            "1065",
+            "1066",
+            "1067",
+            "1068",
+            "1069",
+            "1070"
+          ],
+          "num": 53
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/AbstractCommandLineRunner.java b/src/com/google/javascript/jscomp/AbstractCommandLineRunner.java\nindex 852da8d..c4b4710 100644\n--- a/src/com/google/javascript/jscomp/AbstractCommandLineRunner.java\n+++ b/src/com/google/javascript/jscomp/AbstractCommandLineRunner.java\n@@ -27,11 +27,14 @@\n import com.google.javascript.rhino.TokenStream;\n import com.google.protobuf.CodedOutputStream;\n \n-import java.io.BufferedOutputStream;\n+import java.io.BufferedWriter;\n import java.io.File;\n import java.io.FileOutputStream;\n+import java.io.FileWriter;\n import java.io.IOException;\n+import java.io.OutputStreamWriter;\n import java.io.PrintStream;\n+import java.io.Writer;\n import java.nio.charset.Charset;\n import java.util.ArrayList;\n import java.util.Collections;\n@@ -80,7 +83,7 @@\n \n   private final CommandLineConfig config;\n \n-  private PrintStream out;\n+  private Appendable out;\n   private final PrintStream err;\n   private A compiler;\n \n@@ -420,27 +423,26 @@\n    * Writes code to an output stream, optionally wrapping it in an arbitrary\n    * wrapper that contains a placeholder where the code should be inserted.\n    */\n-  static void writeOutput(PrintStream out, Compiler compiler, String code,\n-      String wrapper, String codePlaceholder) {\n+  static void writeOutput(Appendable out, Compiler compiler, String code,\n+      String wrapper, String codePlaceholder) throws IOException {\n     int pos \u003d wrapper.indexOf(codePlaceholder);\n     if (pos !\u003d -1) {\n       String prefix \u003d \"\";\n \n       if (pos \u003e 0) {\n         prefix \u003d wrapper.substring(0, pos);\n-        out.print(prefix);\n+        out.append(prefix);\n       }\n \n-      out.print(code);\n+      out.append(code);\n \n       int suffixStart \u003d pos + codePlaceholder.length();\n-      if (suffixStart \u003d\u003d wrapper.length()) {\n-        // Nothing after placeholder?\n-        // Make sure we always end output with a line feed.\n-        out.println();\n-      } else {\n-        out.println(wrapper.substring(suffixStart));\n+      if (suffixStart !\u003d wrapper.length()) {\n+        // Something after placeholder?\n+        out.append(wrapper.substring(suffixStart));\n       }\n+      // Make sure we always end output with a line feed.\n+      out.append(\u0027\\n\u0027);\n \n       // If we have a source map, adjust its offsets to match\n       // the code WITHIN the wrapper.\n@@ -449,7 +451,8 @@\n       }\n \n     } else {\n-      out.println(code);\n+      out.append(code);\n+      out.append(\u0027\\n\u0027);\n     }\n   }\n \n@@ -501,7 +504,7 @@\n \n     boolean writeOutputToFile \u003d !options.jsOutputFile.isEmpty();\n     if (writeOutputToFile) {\n-      out \u003d toPrintStream(options.jsOutputFile, inputCharset.name());\n+      out \u003d toWriter(options.jsOutputFile, inputCharset.name());\n     }\n \n     List\u003cString\u003e jsFiles \u003d config.js;\n@@ -519,7 +522,7 @@\n     int errCode \u003d processResults(result, modules, options);\n     // Close the output if we are writing to a file.\n     if (writeOutputToFile) {\n-      out.close();\n+      ((Writer)out).close();\n     }\n     return errCode;\n   }\n@@ -538,7 +541,7 @@\n         return 1;\n       } else {\n         out.append(DotFormatter.toDot(compiler.getPassConfig().getPassGraph()));\n-        out.println();\n+        out.append(\u0027\\n\u0027);\n         return 0;\n       }\n     }\n@@ -549,18 +552,18 @@\n       } else {\n         ControlFlowGraph\u003cNode\u003e cfg \u003d compiler.computeCFG();\n         DotFormatter.appendDot(compiler.getRoot(), cfg, out);\n-        out.println();\n+        out.append(\u0027\\n\u0027);\n         return 0;\n       }\n     }\n \n     if (config.printTree) {\n       if (compiler.getRoot() \u003d\u003d null) {\n-        out.println(\"Code contains errors; no tree was generated.\");\n+        out.append(\"Code contains errors; no tree was generated.\\n\");\n         return 1;\n       } else {\n         compiler.getRoot().appendStringTree(out);\n-        out.println(\"\");\n+        out.append(\"\\n\");\n         return 0;\n       }\n     }\n@@ -581,32 +584,32 @@\n         // If the source map path is in fact a pattern for each\n         // module, create a stream per-module. Otherwise, create\n         // a single source map.\n-        PrintStream mapOut \u003d null;\n+        Writer mapOut \u003d null;\n \n         if (!shouldGenerateMapPerModule(options)) {\n-          mapOut \u003d toPrintStream(expandSourceMapPath(options, null));\n+          mapOut \u003d toWriter(expandSourceMapPath(options, null));\n         }\n \n         for (JSModule m : modules) {\n           if (shouldGenerateMapPerModule(options)) {\n-            mapOut \u003d toPrintStream(expandSourceMapPath(options, m));\n+            mapOut \u003d toWriter(expandSourceMapPath(options, m));\n           }\n \n-          PrintStream ps \u003d toPrintStream(\n+          Writer writer \u003d toWriter(\n               moduleFilePrefix + m.getName() + \".js\");\n \n           if (options.sourceMapOutputPath !\u003d null) {\n             compiler.getSourceMap().reset();\n           }\n \n-          writeOutput(ps, compiler, compiler.toSource(m), moduleWrappers.get(\n+          writeOutput(writer, compiler, compiler.toSource(m), moduleWrappers.get(\n               m.getName()), \"%s\");\n \n           if (options.sourceMapOutputPath !\u003d null) {\n             compiler.getSourceMap().appendTo(mapOut, m.getName());\n           }\n \n-          ps.close();\n+          writer.close();\n \n           if (shouldGenerateMapPerModule(options) \u0026\u0026 mapOut !\u003d null) {\n             mapOut.close();\n@@ -621,7 +624,7 @@\n \n       // Output the externs if required.\n       if (options.externExportsPath !\u003d null) {\n-        PrintStream eeOut \u003d\n+        Writer eeOut \u003d\n             openExternExportsStream(options, options.jsOutputFile);\n         eeOut.append(result.externExport);\n         eeOut.close();\n@@ -679,7 +682,7 @@\n    *\n    * @return The stream or null if no extern-ed exports are being generated.\n    */\n-  private PrintStream openExternExportsStream(B options,\n+  private Writer openExternExportsStream(B options,\n       String path) throws IOException {\n     if (options.externExportsPath \u003d\u003d null) {\n       return null;\n@@ -692,7 +695,7 @@\n       exPath \u003d outputFile.getParent() + File.separatorChar + exPath;\n     }\n \n-    return toPrintStream(exPath);\n+    return toWriter(exPath);\n   }\n \n   /**\n@@ -741,30 +744,29 @@\n   }\n \n   /**\n-   * Converts a file name into a print stream.\n+   * Converts a file name into a Writer.\n    * Returns null if the file name is null.\n    */\n-  private PrintStream toPrintStream(String fileName) throws IOException {\n+  private Writer toWriter(String fileName) throws IOException {\n     if (fileName \u003d\u003d null) {\n       return null;\n     }\n-    return new PrintStream(\n-        new BufferedOutputStream(\n-            new FileOutputStream(fileName)), false);\n+    // Use a FileWriter if the charset translation isn\u0027t required.\n+    return new BufferedWriter(new FileWriter(fileName));\n   }\n \n   /**\n-   * Coverts a file name into a print stream.\n+   * Converts a file name into a Writer.\n    * Returns null if the file name is null.\n    */\n-  private PrintStream toPrintStream(String fileName, String charSet)\n+  private Writer toWriter(String fileName, String charSet)\n       throws IOException {\n     if (fileName \u003d\u003d null) {\n       return null;\n     }\n-    return new PrintStream(\n-        new BufferedOutputStream(\n-            new FileOutputStream(fileName)), false, charSet);\n+    // Use a FileOutputStream for a non-default charset.\n+    return new BufferedWriter(\n+        new OutputStreamWriter(new FileOutputStream(fileName), charSet));\n   }\n \n   /**\n@@ -780,7 +782,7 @@\n     }\n \n     String outName \u003d expandSourceMapPath(options, null);\n-    PrintStream out \u003d toPrintStream(outName);\n+    Writer out \u003d toWriter(outName);\n     compiler.getSourceMap().appendTo(out, outName);\n     out.close();\n   }\n@@ -969,13 +971,13 @@\n       // Generate per-module manifests.\n       Iterable\u003cJSModule\u003e modules \u003d graph.getAllModules();\n       for (JSModule module : modules) {\n-        PrintStream out \u003d toPrintStream(expandManifest(module));\n+        Writer out \u003d toWriter(expandManifest(module));\n         printManifestTo(module.getInputs(), out);\n         out.close();\n       }\n     } else {\n       // Generate a single file manifest.\n-      PrintStream out \u003d toPrintStream(expandManifest(null));\n+      Writer out \u003d toWriter(expandManifest(null));\n       if (graph \u003d\u003d null) {\n         printManifestTo(compiler.getInputsInOrder(), out);\n       } else {\n@@ -1055,13 +1057,17 @@\n      * Print the best phase loop to stderr.\n      */\n     private void outputBestPhaseOrdering() {\n-      out.println(\"Best time: \" + bestRunTime);\n-      out.println(\"Worst time: \" + worstRunTime);\n+      try {\n+        out.append(\"Best time: \" + bestRunTime + \"\\n\");\n+        out.append(\"Worst time: \" + worstRunTime + \"\\n\");\n \n-      int i \u003d 1;\n-      for (List\u003cString\u003e loop : loopedPassesInBestRun) {\n-        out.println(\"\\nLoop \" + i + \":\\n\" + Joiner.on(\"\\n\").join(loop));\n-        i++;\n+        int i \u003d 1;\n+        for (List\u003cString\u003e loop : loopedPassesInBestRun) {\n+          out.append(\"\\nLoop \" + i + \":\\n\" + Joiner.on(\"\\n\").join(loop)+ \"\\n\");\n+          i++;\n+        }\n+      } catch (IOException e) {\n+        throw new RuntimeException(\"unexpected exception\", e);\n       }\n     }\n   }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [1077,1107]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [1162,1188]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [1217,1251]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [1280,1302]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [13565,13576]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [21744,21768]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [23650,23702]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [24005,24105]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TryStatement [33320,33725]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [14067,14084]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [14361,14378]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [16632,16654]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [33324,33630]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "CatchClause [33631,33725]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [33334,33381]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [33390,33439]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [17144,17161]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [17425,17442]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [17552,17613]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [17705,17722]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [33528,33597]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1077,1113]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [13803,13933]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [16531,16543]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [17033,17047]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [17311,17325]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [17435,17495]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [17587,17603]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [21648,21677]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [23508,23618]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [23879,23998]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [33417,33481]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [33243,33284]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [33291,33334]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CheckGlobalThis.java",
+        "src/com/google/javascript/jscomp/CheckGlobalThis.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "shouldTraverse"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "shouldTraverse"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "102",
+            "107"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "102",
+            "103",
+            "108",
+            "109"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/CheckGlobalThis.java b/src/com/google/javascript/jscomp/CheckGlobalThis.java\nindex 514f19e..604526e 100644\n--- a/src/com/google/javascript/jscomp/CheckGlobalThis.java\n+++ b/src/com/google/javascript/jscomp/CheckGlobalThis.java\n@@ -99,12 +99,14 @@\n       // be able to have a @this annotation associated with them. e.g.,\n       // var a \u003d function() { }; // or\n       // function a() {} // or\n-      // a.x \u003d function() {};\n+      // a.x \u003d function() {}; // or\n+      // var a \u003d {x: function() {}};\n       int pType \u003d parent.getType();\n       if (!(pType \u003d\u003d Token.BLOCK ||\n             pType \u003d\u003d Token.SCRIPT ||\n             pType \u003d\u003d Token.NAME ||\n-            pType \u003d\u003d Token.ASSIGN)) {\n+            pType \u003d\u003d Token.ASSIGN ||\n+            pType \u003d\u003d Token.OBJECTLIT)) {\n         return false;\n       }\n     }\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [3412,3581]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: || [3542,3544]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [3557,3581]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/DefaultPassConfig.java",
+        "src/com/google/javascript/jscomp/DefaultPassConfig.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "865"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "865"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/DefaultPassConfig.java b/src/com/google/javascript/jscomp/DefaultPassConfig.java\nindex 22b15c9..622fad0 100644\n--- a/src/com/google/javascript/jscomp/DefaultPassConfig.java\n+++ b/src/com/google/javascript/jscomp/DefaultPassConfig.java\n@@ -862,7 +862,7 @@\n   };\n \n   /** Various peephole optimizations. */\n-  static final PassFactory peepholeOptimizations \u003d\n+  private final PassFactory peepholeOptimizations \u003d\n       new PassFactory(\"peepholeOptimizations\", false) {\n     @Override\n     protected CompilerPass createInternal(AbstractCompiler compiler) {\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: private [28581,28588]"
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: static [28581,28587]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/RuntimeTypeCheck.java",
+        "src/com/google/javascript/jscomp/RuntimeTypeCheck.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "visitFunction"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "visitFunction"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "243",
+            "260",
+            "263",
+            "268"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "243",
+            "244",
+            "245",
+            "246",
+            "247",
+            "248",
+            "249",
+            "250",
+            "251",
+            "252",
+            "269",
+            "272",
+            "277"
+          ],
+          "num": 13
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/RuntimeTypeCheck.java b/src/com/google/javascript/jscomp/RuntimeTypeCheck.java\nindex 509453c..5cedf1e 100644\n--- a/src/com/google/javascript/jscomp/RuntimeTypeCheck.java\n+++ b/src/com/google/javascript/jscomp/RuntimeTypeCheck.java\n@@ -240,7 +240,16 @@\n       FunctionType funType \u003d (FunctionType) n.getJSType();\n       Node block \u003d n.getLastChild();\n       Node paramName \u003d NodeUtil.getFnParameters(n).getFirstChild();\n-      Node prev \u003d null;\n+      Node insertionPoint \u003d null;\n+\n+      // To satisfy normalization constraints, the type checking must be\n+      // added after any inner function declarations.\n+      for (Node next \u003d block.getFirstChild();\n+           next !\u003d null \u0026\u0026 NodeUtil.isFunctionDeclaration(next);\n+           next \u003d next.getNext()) {\n+        insertionPoint \u003d next;\n+      }\n+\n       for (Node paramType : funType.getParameters()) {\n         // Can this ever happen?\n         if (paramName \u003d\u003d null) {\n@@ -257,15 +266,15 @@\n         }\n \n         checkNode \u003d new Node(Token.EXPR_RESULT, checkNode);\n-        if (prev \u003d\u003d null) {\n+        if (insertionPoint \u003d\u003d null) {\n           block.addChildToFront(checkNode);\n         } else {\n-          block.addChildAfter(checkNode, prev);\n+          block.addChildAfter(checkNode, insertionPoint);\n         }\n \n         compiler.reportCodeChange();\n         paramName \u003d paramName.getNext();\n-        prev \u003d checkNode;\n+        insertionPoint \u003d checkNode;\n       }\n     }\n \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ForStatement [8087,8266]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "toWriter"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "toPrintStream"
+      ],
+      "num": 1
+    }
+  },
+  "trigger_tests": [],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CheckGlobalThis.java",
+        "src/com/google/javascript/jscomp/CheckGlobalThis.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "shouldTraverse"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "shouldTraverse"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "109"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "109",
+            "110",
+            "113",
+            "114",
+            "115",
+            "116",
+            "117",
+            "118",
+            "119",
+            "120",
+            "121"
+          ],
+          "num": 11
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Closure_91/properties/modified_classes/inducing/src/com/google/javascript/jscomp/CheckGlobalThis.java data/changesInfo//Closure_91/cleaned/fixing/src/com/google/javascript/jscomp/CheckGlobalThis.java\n--- data/changesInfo//Closure_91/properties/modified_classes/inducing/src/com/google/javascript/jscomp/CheckGlobalThis.java\t2023-08-25 13:24:18.983474433 +0800\n+++ data/changesInfo//Closure_91/cleaned/fixing/src/com/google/javascript/jscomp/CheckGlobalThis.java\t2023-06-20 20:49:51.109868557 +0800\n@@ -106,9 +106,19 @@\n             pType \u003d\u003d Token.SCRIPT ||\n             pType \u003d\u003d Token.NAME ||\n             pType \u003d\u003d Token.ASSIGN ||\n-            pType \u003d\u003d Token.OBJECTLIT)) {\n+            pType \u003d\u003d Token.STRING ||\n+            pType \u003d\u003d Token.NUMBER)) {\n         return false;\n       }\n+\n+      // Don\u0027t traverse functions that are getting lent to a prototype.\n+      Node gramps \u003d parent.getParent();\n+      if (NodeUtil.isObjectLitKey(parent, gramps)) {\n+        if (gramps.getType() \u003d\u003d Token.GETPROP \u0026\u0026\n+                gramps.getLastChild().getString().equals(\"prototype\")) {\n+          return false;\n+        }\n+      }\n     }\n \n     if (parent !\u003d null \u0026\u0026 parent.getType() \u003d\u003d Token.ASSIGN) {\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [3729,3762]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [3769,3979]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [3412,3578]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: || [3579,3581]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [3557,3578]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

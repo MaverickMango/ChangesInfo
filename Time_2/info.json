@@ -1,0 +1,157 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Time",
+  "id": "2",
+  "workingDir": "../bugs/Time_2_buggy",
+  "inducingCommit": "3ba9ba799b3261b7332a467a88be142c83b298fd",
+  "originalCommit": "bcb044669b4d1f8d334861ccbd169924d6ef3b54",
+  "bug_name": "Time_2",
+  "derive": "defects4j",
+  "original_fixing_commit": "8612f9e5b88c1bea933ef9ab1e431f5db3006b48",
+  "buildFiles_changed": true,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/joda/time/Partial.java",
+        "src/main/java/org/joda/time/Partial.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "with"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "with"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "2",
+            "462",
+            "463"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "2",
+            "462",
+            "463",
+            "464"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/joda/time/Partial.java b/src/main/java/org/joda/time/Partial.java\nindex aaf0a0f..8e8e603 100644\n--- a/src/main/java/org/joda/time/Partial.java\n+++ b/src/main/java/org/joda/time/Partial.java\n@@ -1,5 +1,5 @@\n /*\n- *  Copyright 2001-2009 Stephen Colebourne\n+ *  Copyright 2001-2013 Stephen Colebourne\n  *\n  *  Licensed under the Apache License, Version 2.0 (the \"License\");\n  *  you may not use this file except in compliance with the License.\n@@ -459,8 +459,9 @@\n             newValues[i] \u003d value;\n             System.arraycopy(iTypes, i, newTypes, i + 1, newTypes.length - i - 1);\n             System.arraycopy(iValues, i, newValues, i + 1, newValues.length - i - 1);\n-            \n-            Partial newPartial \u003d new Partial(iChronology, newTypes, newValues);\n+            // use public constructor to ensure full validation\n+            // this isn\u0027t overly efficient, but is safe\n+            Partial newPartial \u003d new Partial(newTypes, newValues, iChronology);\n             iChronology.validate(newPartial, newValues);\n             return newPartial;\n         }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [18532,18599]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [18425,18492]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/joda/time/field/UnsupportedDurationField.java",
+        "src/main/java/org/joda/time/field/UnsupportedDurationField.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "compareTo"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "compareTo"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "226"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "227",
+            "228",
+            "229"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Time_2/properties/modified_classes/inducing/src/main/java/org/joda/time/field/UnsupportedDurationField.java data/changesInfo//Time_2/cleaned/fixing/src/main/java/org/joda/time/field/UnsupportedDurationField.java\n--- data/changesInfo//Time_2/properties/modified_classes/inducing/src/main/java/org/joda/time/field/UnsupportedDurationField.java\t2023-06-24 17:53:25.593520483 +0800\n+++ data/changesInfo//Time_2/cleaned/fixing/src/main/java/org/joda/time/field/UnsupportedDurationField.java\t2023-06-24 17:54:24.242032465 +0800\n@@ -224,6 +224,9 @@\n      * @return zero always\n      */\n     public int compareTo(DurationField durationField) {\n+        if (durationField.isSupported()) {\n+            return 1;\n+        }\n         return 0;\n     }\n \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [5773,5839]"
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

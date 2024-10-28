@@ -1,0 +1,256 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.core.json.TestParserErrorHandling::testMangledNumbersBytes,com.fasterxml.jackson.core.json.TestParserErrorHandling::testMangledNumbersChars",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.core.json.ReaderBasedJsonParser,com.fasterxml.jackson.core.json.UTF8StreamJsonParser",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonCore",
+  "id": "2",
+  "workingDir": "../bugs/JacksonCore_2_tmp",
+  "bug_name": "JacksonCore_2",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.core.json.TestParserErrorHandling",
+      "test_function": "testMangledNumbersBytes",
+      "assertion_line": "22",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Should have gotten an exception; instead got token: VALUE_NUMBER_INT"
+    },
+    {
+      "test_class": "com.fasterxml.jackson.core.json.TestParserErrorHandling",
+      "test_function": "testMangledNumbersChars",
+      "assertion_line": "26",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Should have gotten an exception; instead got token: VALUE_NUMBER_INT"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java",
+        "src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.json.ReaderBasedJsonParser:_parseNumber2:[boolean negative]:JsonToken",
+            "com.fasterxml.jackson.core.json.ReaderBasedJsonParser:_parseNumber:[int ch]:JsonToken",
+            "com.fasterxml.jackson.core.json.ReaderBasedJsonParser:_verifyRootSpace:[int ch]:void"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.json.ReaderBasedJsonParser:_parseName:[int i]:String",
+            "com.fasterxml.jackson.core.json.ReaderBasedJsonParser:_parseNumber:[int ch]:JsonToken"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "952",
+            "953",
+            "954",
+            "1084",
+            "1085",
+            "1086",
+            "1168",
+            "1169",
+            "1171",
+            "1172",
+            "1173",
+            "1174",
+            "1175",
+            "1176",
+            "1177",
+            "1178",
+            "1179",
+            "1180",
+            "1181",
+            "1182",
+            "1183",
+            "1184",
+            "1185"
+          ],
+          "num": 23
+        },
+        {
+          "qualified_names": [
+            "951",
+            "1086",
+            "1173"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java b/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java\nindex 98b5630..12af5fb 100644\n--- a/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java\n+++ b/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java\n@@ -949,9 +949,6 @@\n             --ptr; // need to push back following separator\n             _inputPtr \u003d ptr;\n             // As per #105, need separating space between root values; check here\n-            if (_parsingContext.inRoot()) {\n-                _verifyRootSpace(ch);\n-            }\n             int len \u003d ptr-startPtr;\n             _textBuffer.resetWithShared(_inputBuffer, startPtr, len);\n             return reset(negative, intLen, fractLen, expLen);\n@@ -1081,9 +1078,6 @@\n         // Ok; unless we hit end-of-input, need to push last char read back\n         if (!eof) {\n             --_inputPtr;\n-            if (_parsingContext.inRoot()) {\n-                _verifyRootSpace(c);\n-            }\n         }\n         _textBuffer.setCurrentLength(outPtr);\n         // And there we have it!\n@@ -1165,24 +1159,7 @@\n      * NOTE: caller MUST ensure there is at least one character available;\n      * and that input pointer is AT given char (not past)\n      */\n-    private final void _verifyRootSpace(int ch) throws IOException\n-    {\n         // caller had pushed it back, before calling; reset\n-        ++_inputPtr;\n-        switch (ch) {\n-        case \u0027 \u0027:\n-        case \u0027\\t\u0027:\n-            return;\n-        case \u0027\\r\u0027:\n-            _skipCR();\n-            return;\n-        case \u0027\\n\u0027:\n-            ++_currInputRow;\n-            _currInputRowStart \u003d _inputPtr;\n-            return;\n-        }\n-        _reportMissingRootWS(ch);\n-    }\n     \n     /*\n     /**********************************************************\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [40825,41065]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [33183,33266]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [37963,38045]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [41016,41713]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/core/json/UTF8StreamJsonParser.java",
+        "src/main/java/com/fasterxml/jackson/core/json/UTF8StreamJsonParser.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.json.UTF8StreamJsonParser:_parserNumber2:[char[] outBuf, int outPtr, boolean negative, int intPartLength]:JsonToken",
+            "com.fasterxml.jackson.core.json.UTF8StreamJsonParser:_parseNumber:[int c]:JsonToken",
+            "com.fasterxml.jackson.core.json.UTF8StreamJsonParser:_skipWSOrEnd:[]:int",
+            "com.fasterxml.jackson.core.json.UTF8StreamJsonParser:_parseFloat:[char[] outBuf, int outPtr, int c, boolean negative, int integerPartLength]:JsonToken",
+            "com.fasterxml.jackson.core.json.UTF8StreamJsonParser:_verifyRootSpace:[int ch]:void"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.json.UTF8StreamJsonParser:_skipWSOrEnd:[]:int",
+            "com.fasterxml.jackson.core.json.UTF8StreamJsonParser:_parseFieldName:[int i]:Name",
+            "com.fasterxml.jackson.core.json.UTF8StreamJsonParser:_parseNumber:[int c]:JsonToken"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1244",
+            "1245",
+            "1246",
+            "1283",
+            "1284",
+            "1285",
+            "1413",
+            "1414",
+            "1415",
+            "1430",
+            "1431",
+            "1433",
+            "1435",
+            "1436",
+            "1437",
+            "1438",
+            "1439",
+            "1440",
+            "1441",
+            "1442",
+            "1443",
+            "1444",
+            "1445",
+            "1446",
+            "1447",
+            "1448",
+            "2600"
+          ],
+          "num": 27
+        },
+        {
+          "qualified_names": [
+            "1243",
+            "1285",
+            "1418",
+            "1438",
+            "2575",
+            "2576",
+            "2577"
+          ],
+          "num": 7
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/core/json/UTF8StreamJsonParser.java b/src/main/java/com/fasterxml/jackson/core/json/UTF8StreamJsonParser.java\nindex 83ae5b7..15faeb8 100644\n--- a/src/main/java/com/fasterxml/jackson/core/json/UTF8StreamJsonParser.java\n+++ b/src/main/java/com/fasterxml/jackson/core/json/UTF8StreamJsonParser.java\n@@ -1241,9 +1241,6 @@\n         --_inputPtr; // to push back trailing char (comma etc)\n         _textBuffer.setCurrentLength(outPtr);\n         // As per #105, need separating space between root values; check here\n-        if (_parsingContext.inRoot()) {\n-            _verifyRootSpace(c);\n-        }\n \n         // And there we have it!\n         return resetInt(negative, intLen);\n@@ -1280,9 +1277,6 @@\n         --_inputPtr; // to push back trailing char (comma etc)\n         _textBuffer.setCurrentLength(outPtr);\n         // As per #105, need separating space between root values; check here\n-        if (_parsingContext.inRoot()) {\n-            _verifyRootSpace(_inputBuffer[_inputPtr++] \u0026 0xFF);\n-        }\n \n         // And there we have it!\n         return resetInt(negative, intPartLength);\n@@ -1410,9 +1404,6 @@\n         if (!eof) {\n             --_inputPtr;\n             // As per #105, need separating space between root values; check here\n-            if (_parsingContext.inRoot()) {\n-                _verifyRootSpace(c);\n-            }\n         }\n         _textBuffer.setCurrentLength(outPtr);\n \n@@ -1427,25 +1418,8 @@\n      * NOTE: caller MUST ensure there is at least one character available;\n      * and that input pointer is AT given char (not past)\n      */\n-    private final void _verifyRootSpace(int ch) throws IOException\n-    {\n         // caller had pushed it back, before calling; reset\n-        ++_inputPtr;\n         // TODO? Handle UTF-8 char decoding for error reporting\n-        switch (ch) {\n-        case \u0027 \u0027:\n-        case \u0027\\t\u0027:\n-            return;\n-        case \u0027\\r\u0027:\n-            _skipCR();\n-            return;\n-        case \u0027\\n\u0027:\n-            ++_currInputRow;\n-            _currInputRowStart \u003d _inputPtr;\n-            return;\n-        }\n-        _reportMissingRootWS(ch);\n-    }\n \n     /*\n     /**********************************************************\n@@ -2598,6 +2572,9 @@\n                 }\n                 break;\n             default: // e.g. -1\n+                if (i \u003c 32) {\n+                    _throwInvalidSpace(i);\n+                }\n                 _reportInvalidChar(i);\n             }\n         }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [48602,48842]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [90698,90772]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [42456,42530]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [43896,44001]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [48636,48718]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [48894,49655]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.core.json.ReaderBasedJsonParser:_parseName:[int i]:String",
+        "com.fasterxml.jackson.core.json.UTF8StreamJsonParser:_parseFieldName:[int i]:Name"
+      ],
+      "num": 2
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.core.json.ReaderBasedJsonParser:_parseNumber2:[boolean negative]:JsonToken",
+        "com.fasterxml.jackson.core.json.ReaderBasedJsonParser:_verifyRootSpace:[int ch]:void",
+        "com.fasterxml.jackson.core.json.UTF8StreamJsonParser:_parseFloat:[char[] outBuf, int outPtr, int c, boolean negative, int integerPartLength]:JsonToken",
+        "com.fasterxml.jackson.core.json.UTF8StreamJsonParser:_verifyRootSpace:[int ch]:void",
+        "com.fasterxml.jackson.core.json.UTF8StreamJsonParser:_parserNumber2:[char[] outBuf, int outPtr, boolean negative, int intPartLength]:JsonToken"
+      ],
+      "num": 5
+    }
+  }
+}

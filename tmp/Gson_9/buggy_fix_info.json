@@ -1,0 +1,190 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.gson.stream.JsonWriterTest::testBoxedBooleans",
+    "test.dir": "gson/src/test/java",
+    "clz.modified": "com.google.gson.internal.bind.JsonTreeWriter,com.google.gson.internal.bind.TypeAdapters,com.google.gson.stream.JsonWriter",
+    "src.dir": "gson/src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Gson",
+  "id": "9",
+  "workingDir": "../bugs/Gson_9_tmp",
+  "bug_name": "Gson_9",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.gson.stream.JsonWriterTest",
+      "test_function": "testBoxedBooleans",
+      "assertion_line": "292",
+      "exception": "java.lang.NullPointerException",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "gson/src/main/java/com/google/gson/internal/bind/JsonTreeWriter.java",
+        "gson/src/main/java/com/google/gson/internal/bind/JsonTreeWriter.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.gson.internal.bind.JsonTreeWriter:value:[Boolean value]:JsonWriter"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "162",
+            "163",
+            "164",
+            "165",
+            "166",
+            "167",
+            "168"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "161"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/gson/src/main/java/com/google/gson/internal/bind/JsonTreeWriter.java b/gson/src/main/java/com/google/gson/internal/bind/JsonTreeWriter.java\nindex 51dc1f3..502d5ab 100644\n--- a/gson/src/main/java/com/google/gson/internal/bind/JsonTreeWriter.java\n+++ b/gson/src/main/java/com/google/gson/internal/bind/JsonTreeWriter.java\n@@ -159,13 +159,6 @@\n     return this;\n   }\n \n-  @Override public JsonWriter value(Boolean value) throws IOException {\n-    if (value \u003d\u003d null) {\n-      return nullValue();\n-    }\n-    put(new JsonPrimitive(value));\n-    return this;\n-  }\n \n   @Override public JsonWriter value(double value) throws IOException {\n     if (!isLenient() \u0026\u0026 (Double.isNaN(value) || Double.isInfinite(value))) {\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [4734,4916]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "gson/src/main/java/com/google/gson/internal/bind/TypeAdapters.java",
+        "gson/src/main/java/com/google/gson/internal/bind/TypeAdapters.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "164"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "165",
+            "166",
+            "167",
+            "168"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/gson/src/main/java/com/google/gson/internal/bind/TypeAdapters.java b/gson/src/main/java/com/google/gson/internal/bind/TypeAdapters.java\nindex 23ab8a1..0d6d013 100644\n--- a/gson/src/main/java/com/google/gson/internal/bind/TypeAdapters.java\n+++ b/gson/src/main/java/com/google/gson/internal/bind/TypeAdapters.java\n@@ -162,6 +162,10 @@\n     }\n     @Override\n     public void write(JsonWriter out, Boolean value) throws IOException {\n+      if (value \u003d\u003d null) {\n+        out.nullValue();\n+        return;\n+      }\n       out.value(value);\n     }\n   };\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [5183,5252]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "gson/src/main/java/com/google/gson/stream/JsonWriter.java",
+        "gson/src/main/java/com/google/gson/stream/JsonWriter.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.gson.stream.JsonWriter:value:[Boolean value]:JsonWriter"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "476",
+            "477",
+            "478",
+            "479",
+            "480",
+            "481",
+            "482",
+            "483",
+            "484"
+          ],
+          "num": 9
+        },
+        {
+          "qualified_names": [
+            "475"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/gson/src/main/java/com/google/gson/stream/JsonWriter.java b/gson/src/main/java/com/google/gson/stream/JsonWriter.java\nindex e2fc196..a4178ee 100644\n--- a/gson/src/main/java/com/google/gson/stream/JsonWriter.java\n+++ b/gson/src/main/java/com/google/gson/stream/JsonWriter.java\n@@ -473,15 +473,6 @@\n    *\n    * @return this writer.\n    */\n-  public JsonWriter value(Boolean value) throws IOException {\n-    if (value \u003d\u003d null) {\n-      return nullValue();\n-    }\n-    writeDeferredName();\n-    beforeValue();\n-    out.write(value ? \"true\" : \"false\");\n-    return this;\n-  }\n \n   /**\n    * Encodes {@code value}.\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [14039,14332]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.gson.internal.bind.JsonTreeWriter:value:[Boolean value]:JsonWriter",
+        "com.google.gson.stream.JsonWriter:value:[Boolean value]:JsonWriter"
+      ],
+      "num": 2
+    }
+  }
+}

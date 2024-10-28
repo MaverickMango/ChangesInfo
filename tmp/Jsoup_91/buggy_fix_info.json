@@ -1,0 +1,183 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.jsoup.integration.ConnectTest::testBinaryThrowsExceptionWhenTypeIgnored,org.jsoup.integration.ConnectTest::testBinaryResultThrows,org.jsoup.integration.ParseTest::testBinaryThrowsException",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.jsoup.UncheckedIOException,org.jsoup.parser.CharacterReader",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Jsoup",
+  "id": "91",
+  "workingDir": "../bugs/Jsoup_91_tmp",
+  "bug_name": "Jsoup_91",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.jsoup.integration.ConnectTest",
+      "test_function": "testBinaryThrowsExceptionWhenTypeIgnored",
+      "assertion_line": "509",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    },
+    {
+      "test_class": "org.jsoup.integration.ConnectTest",
+      "test_function": "testBinaryResultThrows",
+      "assertion_line": "526",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    },
+    {
+      "test_class": "org.jsoup.integration.ParseTest",
+      "test_function": "testBinaryThrowsException",
+      "assertion_line": "79",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/UncheckedIOException.java",
+        "src/main/java/org/jsoup/UncheckedIOException.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.UncheckedIOException:UncheckedIOException:[String message]:null"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "10",
+            "11",
+            "12"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "9"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/UncheckedIOException.java b/src/main/java/org/jsoup/UncheckedIOException.java\nindex e7a9cc3..4cab9f4 100644\n--- a/src/main/java/org/jsoup/UncheckedIOException.java\n+++ b/src/main/java/org/jsoup/UncheckedIOException.java\n@@ -7,9 +7,6 @@\n         super(cause);\n     }\n \n-    public UncheckedIOException(String message) {\n-        super(new IOException(message));\n-    }\n \n     public IOException ioException() {\n         return (IOException) getCause();\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [196,288]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/parser/CharacterReader.java",
+        "src/main/java/org/jsoup/parser/CharacterReader.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.parser.CharacterReader:CharacterReader:[Reader input, int sz]:null",
+            "org.jsoup.parser.CharacterReader:isBinary:[]:boolean"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.jsoup.parser.CharacterReader:CharacterReader:[Reader input, int sz]:null",
+            "org.jsoup.parser.CharacterReader:toString:[]:String"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "37",
+            "38",
+            "39",
+            "455",
+            "461",
+            "462",
+            "464",
+            "465",
+            "466",
+            "467",
+            "469",
+            "470"
+          ],
+          "num": 12
+        },
+        {
+          "qualified_names": [
+            "36",
+            "457"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/parser/CharacterReader.java b/src/main/java/org/jsoup/parser/CharacterReader.java\nindex 7f163dd..187f9e9 100644\n--- a/src/main/java/org/jsoup/parser/CharacterReader.java\n+++ b/src/main/java/org/jsoup/parser/CharacterReader.java\n@@ -34,9 +34,6 @@\n         charBuf \u003d new char[sz \u003e maxBufferLen ? maxBufferLen : sz];\n         bufferUp();\n \n-        if (isBinary()) {\n-            throw new UncheckedIOException(\"Input is binary and unsupported\");\n-        }\n     }\n \n     public CharacterReader(Reader input) {\n@@ -452,22 +449,13 @@\n         return (nextIndexOf(loScan) \u003e -1) || (nextIndexOf(hiScan) \u003e -1);\n     }\n \n-    private static final int numNullsConsideredBinary \u003d 10; // conservative\n \n     /**\n      *  Heuristic to determine if the current buffer looks like binary content. Reader will already hopefully be\n      *  decoded correctly, so a bunch of NULLs indicates a binary file\n      */\n-    boolean isBinary() {\n-        int nullsSeen \u003d 0;\n \n-        for (int i \u003d bufPos; i \u003c bufLength; i++) {\n-            if (charBuf[i] \u003d\u003d \u0027\\0\u0027)\n-                nullsSeen++;\n-        }\n \n-        return nullsSeen \u003e\u003d numNullsConsideredBinary;\n-    }\n \n     @Override\n     public String toString() {\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [12858,13053]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [1184,1290]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [12972,13027]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [13049,13484]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.jsoup.parser.CharacterReader:toString:[]:String"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.jsoup.UncheckedIOException:UncheckedIOException:[String message]:null",
+        "org.jsoup.parser.CharacterReader:isBinary:[]:boolean"
+      ],
+      "num": 2
+    }
+  }
+}

@@ -1,0 +1,132 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.lang3.time.FastDateFormat_PrinterTest::testCalendarTimezoneRespected,org.apache.commons.lang3.time.FastDatePrinterTest::testCalendarTimezoneRespected",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.lang3.time.FastDatePrinter",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Lang",
+  "id": "8",
+  "workingDir": "../bugs/Lang_8_tmp",
+  "bug_name": "Lang_8",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.lang3.time.FastDateFormat_PrinterTest",
+      "test_function": "testCalendarTimezoneRespected",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c2:43PM [IC]T\u003e but was:\u003c2:43PM [PS]T\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/lang3/time/FastDatePrinter.java",
+        "src/main/java/org/apache/commons/lang3/time/FastDatePrinter.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.lang3.time.FastDatePrinter\\$TimeZoneNameRule:TimeZoneNameRule:[TimeZone timeZone, Locale locale, int style]:null",
+            "org.apache.commons.lang3.time.FastDatePrinter\\$TimeZoneNameRule:appendTo:[StringBuffer buffer, Calendar calendar]:void"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.lang3.time.FastDatePrinter\\$TimeZoneNameRule:TimeZoneNameRule:[TimeZone timeZone, Locale locale, int style]:null",
+            "org.apache.commons.lang3.time.FastDatePrinter\\$TimeZoneNameRule:appendTo:[StringBuffer buffer, Calendar calendar]:void"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1097",
+            "1110",
+            "1132"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "1098",
+            "1112",
+            "1129"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/lang3/time/FastDatePrinter.java b/src/main/java/org/apache/commons/lang3/time/FastDatePrinter.java\nindex c952309..5c0edda 100644\n--- a/src/main/java/org/apache/commons/lang3/time/FastDatePrinter.java\n+++ b/src/main/java/org/apache/commons/lang3/time/FastDatePrinter.java\n@@ -1095,6 +1095,7 @@\n     private static class TimeZoneNameRule implements Rule {\n         private final Locale mLocale;\n         private final int mStyle;\n+        private final TimeZone zone;\n         private final String mStandard;\n         private final String mDaylight;\n \n@@ -1108,6 +1109,7 @@\n         TimeZoneNameRule(TimeZone timeZone, Locale locale, int style) {\n             mLocale \u003d locale;\n             mStyle \u003d style;\n+            zone \u003d timeZone;\n             \n             mStandard \u003d getTimeZoneDisplay(timeZone, false, style, locale);\n             mDaylight \u003d getTimeZoneDisplay(timeZone, true, style, locale);\n@@ -1129,7 +1131,6 @@\n          */\n         @Override\n         public void appendTo(StringBuffer buffer, Calendar calendar) {\n-            TimeZone zone \u003d calendar.getTimeZone();\n             if (zone.useDaylightTime()\n                     \u0026\u0026 calendar.get(Calendar.DST_OFFSET) !\u003d 0) {\n                 buffer.append(getTimeZoneDisplay(zone, true, mStyle, mLocale));\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "FieldDeclaration [33589,33617]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: private [33589,33596]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: final [33597,33602]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [34080,34096]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [34734,34756]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [34718,34757]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

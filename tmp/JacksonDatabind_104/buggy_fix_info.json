@@ -1,0 +1,183 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.ser.jdk.DateSerializationTest::testDateISO8601_10k,com.fasterxml.jackson.databind.ser.jdk.DateSerializationTest::testDateISO8601_BCE",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.util.StdDateFormat",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "104",
+  "workingDir": "../bugs/JacksonDatabind_104_tmp",
+  "bug_name": "JacksonDatabind_104",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.ser.jdk.DateSerializationTest",
+      "test_function": "testDateISO8601_10k",
+      "assertion_line": "134",
+      "exception": "org.junit.ComparisonFailure",
+      "message": "expected:\u003c\"[+10]204-01-01T00:00:00.0...\u003e but was:\u003c\"[:]204-01-01T00:00:00.0...\u003e"
+    },
+    {
+      "test_class": "com.fasterxml.jackson.databind.ser.jdk.DateSerializationTest",
+      "test_function": "testDateISO8601_BCE",
+      "assertion_line": "148",
+      "exception": "org.junit.ComparisonFailure",
+      "message": "expected:\u003c\"[+0000]-01-01T00:00:00.000+...\u003e but was:\u003c\"[0001]-01-01T00:00:00.000+...\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/util/StdDateFormat.java",
+        "src/main/java/com/fasterxml/jackson/databind/util/StdDateFormat.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.util.StdDateFormat:_format:[TimeZone tz, Locale loc, Date date, StringBuffer buffer]:void",
+            "com.fasterxml.jackson.databind.util.StdDateFormat:_formatBCEYear:[StringBuffer buffer, int bceYearNoSign]:void",
+            "com.fasterxml.jackson.databind.util.StdDateFormat:pad4:[StringBuffer buffer, int value]:void"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.util.StdDateFormat:pad2:[StringBuffer buffer, int value]:void",
+            "com.fasterxml.jackson.databind.util.StdDateFormat:_format:[TimeZone tz, Locale loc, Date date, StringBuffer buffer]:void"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "441",
+            "442",
+            "443",
+            "444",
+            "450",
+            "451",
+            "453",
+            "490",
+            "493",
+            "494",
+            "495",
+            "496",
+            "497",
+            "498",
+            "502",
+            "503",
+            "532",
+            "533",
+            "534",
+            "536"
+          ],
+          "num": 20
+        },
+        {
+          "qualified_names": [
+            "440",
+            "496",
+            "547"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/util/StdDateFormat.java b/src/main/java/com/fasterxml/jackson/databind/util/StdDateFormat.java\nindex 02afe5f..5ea467d 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/util/StdDateFormat.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/util/StdDateFormat.java\n@@ -438,19 +438,12 @@\n         final int year \u003d cal.get(Calendar.YEAR);\n \n         // Assuming GregorianCalendar, special handling needed for BCE (aka BC)\n-        if (cal.get(Calendar.ERA) \u003d\u003d GregorianCalendar.BC) {\n-            _formatBCEYear(buffer, year);\n-        } else {\n-            if (year \u003e 9999) {\n                 // 22-Nov-2018, tatu: Handling beyond 4-digits is not well specified wrt ISO-8601, but\n                 //   it seems that plus prefix IS mandated. Padding is an open question, but since agreeement\n                 //   for max length would be needed, we ewould need to limit to arbitrary length\n                 //   like five digits (erroring out if beyond or padding to that as minimum).\n                 //   Instead, let\u0027s just print number out as is and let decoder try to make sense of it.\n-                buffer.append(\u0027+\u0027);\n-            }\n             pad4(buffer, year);\n-        }\n         buffer.append(\u0027-\u0027);\n         pad2(buffer, cal.get(Calendar.MONTH) + 1);\n         buffer.append(\u0027-\u0027);\n@@ -487,20 +480,11 @@\n         }\n     }\n \n-    protected void _formatBCEYear(StringBuffer buffer, int bceYearNoSign) {\n         // Ok. First of all, BCE 1 output (given as value `1` in era BCE) needs to become\n         // \"+0000\", but rest (from `2` up, in that era) need minus sign.\n-        if (bceYearNoSign \u003d\u003d 1) {\n-            buffer.append(\"+0000\");\n-            return;\n-        }\n-        final int isoYear \u003d bceYearNoSign - 1;\n-        buffer.append(\u0027-\u0027);\n         // as with CE, 4 digit variant needs padding; beyond that not (although that part is\n         // open to debate, needs agreement with receiver)\n         // But `pad4()` deals with \"big\" numbers now so:\n-        pad4(buffer, isoYear);\n-    }\n \n     private static void pad2(StringBuffer buffer, int value) {\n         int tens \u003d value / 10;\n@@ -529,11 +513,7 @@\n         if (h \u003d\u003d 0) {\n             buffer.append(\u00270\u0027).append(\u00270\u0027);\n         } else {\n-            if (h \u003e 99) { // [databind#2167]: handle above 9999 correctly\n-                buffer.append(h);\n-            } else {\n                 pad2(buffer, h);\n-            }\n             value -\u003d (100 * h);\n         }\n         pad2(buffer, value);\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [14674,14719]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [14721,14774]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [14794,15371]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [14780,15413]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [14670,15413]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [16673,17327]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [18116,18122]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [18124,18221]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [18227,18275]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [18112,18275]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.util.StdDateFormat:pad2:[StringBuffer buffer, int value]:void"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.util.StdDateFormat:pad4:[StringBuffer buffer, int value]:void",
+        "com.fasterxml.jackson.databind.util.StdDateFormat:_formatBCEYear:[StringBuffer buffer, int bceYearNoSign]:void"
+      ],
+      "num": 2
+    }
+  }
+}

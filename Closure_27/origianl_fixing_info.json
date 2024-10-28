@@ -1,0 +1,175 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "/home/liumengjiao/Desktop/CI/Benchmark/data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.rhino.IRTest::testIssue727_1,com.google.javascript.rhino.IRTest::testIssue727_2,com.google.javascript.rhino.IRTest::testIssue727_3",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.rhino.IR",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "27",
+  "workingDir": "../bugs/Closure_27_buggy",
+  "buggyCommit": "1d9ecb5328bbde5ee84dbfe2d74bbd318b89b6d7",
+  "inducingCommit": "2f28243f97f468e92316a2c7ea209c857689ab43",
+  "originalCommit": "925a8f78c8c6a407435e6fb4513ad96d617643a3",
+  "bug_name": "Closure_27",
+  "derive": "defects4j",
+  "original_fixing_commit": "7a8983042131c5a9c2b5421ae42075cbb8ef1aeb",
+  "buildFiles_changed": false,
+  "regression": true,
+  "inducing_changes": [],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [
+        "src/com/google/javascript/rhino/IR.java"
+      ],
+      "num": 1
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.rhino.IRTest",
+      "test_function": "testIssue727_1",
+      "assertion_line": "48",
+      "exception": "java.lang.IllegalStateException",
+      "message": ""
+    },
+    {
+      "test_class": "com.google.javascript.rhino.IRTest",
+      "test_function": "testIssue727_2",
+      "assertion_line": "59",
+      "exception": "java.lang.IllegalStateException",
+      "message": ""
+    },
+    {
+      "test_class": "com.google.javascript.rhino.IRTest",
+      "test_function": "testIssue727_3",
+      "assertion_line": "74",
+      "exception": "java.lang.IllegalStateException",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/IR.java",
+        "src/com/google/javascript/rhino/IR.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.IR:tryCatchFinally:[Node tryBody, Node catchNode, Node finallyBody]:Node",
+            "com.google.javascript.rhino.IR:tryFinally:[Node tryBody, Node finallyBody]:Node",
+            "com.google.javascript.rhino.IR:tryCatch:[Node tryBody, Node catchNode]:Node"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.IR:blockUnchecked:[Node stmt]:Node",
+            "com.google.javascript.rhino.IR:tryCatchFinally:[Node tryBody, Node catchNode, Node finallyBody]:Node",
+            "com.google.javascript.rhino.IR:tryFinally:[Node tryBody, Node finallyBody]:Node",
+            "com.google.javascript.rhino.IR:tryCatch:[Node tryBody, Node catchNode]:Node"
+          ],
+          "num": 4
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "110",
+            "223",
+            "224",
+            "232",
+            "236"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "111",
+            "112",
+            "113",
+            "114",
+            "227",
+            "228",
+            "236",
+            "240",
+            "241"
+          ],
+          "num": 9
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/IR.java b/src/com/google/javascript/rhino/IR.java\nindex 6ffc95f..002acd6 100644\n--- a/src/com/google/javascript/rhino/IR.java\n+++ b/src/com/google/javascript/rhino/IR.java\n@@ -108,6 +108,10 @@\n     return block;\n   }\n \n+  private static Node blockUnchecked(Node stmt) {\n+    return new Node(Token.BLOCK, stmt);\n+  }\n+\n   public static Node script(Node ... stmts) {\n     // TODO(johnlenz): finish setting up the SCRIPT node\n     Node block \u003d new Node(Token.SCRIPT);\n@@ -220,8 +224,8 @@\n   }\n \n   public static Node tryFinally(Node tryBody, Node finallyBody) {\n-    Preconditions.checkState(tryBody.isLabelName());\n-    Preconditions.checkState(finallyBody.isLabelName());\n+    Preconditions.checkState(tryBody.isBlock());\n+    Preconditions.checkState(finallyBody.isBlock());\n     Node catchBody \u003d block().copyInformationFrom(tryBody);\n     return new Node(Token.TRY, tryBody, catchBody, finallyBody);\n   }\n@@ -229,11 +233,12 @@\n   public static Node tryCatch(Node tryBody, Node catchNode) {\n     Preconditions.checkState(tryBody.isBlock());\n     Preconditions.checkState(catchNode.isCatch());\n-    Node catchBody \u003d block(catchNode).copyInformationFrom(catchNode);\n+    Node catchBody \u003d blockUnchecked(catchNode).copyInformationFrom(catchNode);\n     return new Node(Token.TRY, tryBody, catchBody);\n   }\n \n-  public static Node tryCatchFinally(Node tryBody, Node catchNode, Node finallyBody) {\n+  public static Node tryCatchFinally(\n+      Node tryBody, Node catchNode, Node finallyBody) {\n     Preconditions.checkState(finallyBody.isBlock());\n     Node tryNode \u003d tryCatch(tryBody, catchNode);\n     tryNode.addChildToBack(finallyBody);\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [3324,3415]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.google.javascript.rhino.IR:blockUnchecked:[Node stmt]:Node"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "patch_changed_mths": {
+    "qualified_names": [
+      "com.google.javascript.rhino.IR:tryFinally(Lcom/google/javascript/rhino/Node;Lcom/google/javascript/rhino/Node;)Lcom/google/javascript/rhino/Node;:regression",
+      "com.google.javascript.rhino.IR:tryCatch(Lcom/google/javascript/rhino/Node;Lcom/google/javascript/rhino/Node;)Lcom/google/javascript/rhino/Node;:regression",
+      "com.google.javascript.rhino.IR:tryCatchFinally(Lcom/google/javascript/rhino/Node;Lcom/google/javascript/rhino/Node;Lcom/google/javascript/rhino/Node;)Lcom/google/javascript/rhino/Node;:regression"
+    ],
+    "num": 3
+  }
+}

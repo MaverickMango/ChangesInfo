@@ -1,0 +1,384 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Math",
+  "id": "26",
+  "workingDir": "../bugs/Math_26_buggy",
+  "inducingCommit": "0b59d70b7948a22e770b8dd81e6eca20be2c71f4",
+  "originalCommit": "932ebf87acd81162cc7b1751c18b0e0ca760c8bf",
+  "bug_name": "Math_26",
+  "derive": "defects4j",
+  "original_fixing_commit": "1566dd339f6efc2347b0962fac7fce22adbc31ff",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/math/fraction/Fraction.java",
+        "src/java/org/apache/commons/math/fraction/Fraction.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "Fraction"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "Fraction",
+            "Fraction",
+            "maxDenominator",
+            "Fraction"
+          ],
+          "num": 4
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "37",
+            "38",
+            "57",
+            "74",
+            "104",
+            "120",
+            "121"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "35",
+            "36",
+            "37",
+            "38",
+            "39",
+            "40",
+            "41",
+            "42",
+            "43",
+            "44",
+            "45",
+            "46",
+            "47",
+            "48",
+            "51",
+            "70",
+            "88",
+            "89",
+            "90",
+            "91",
+            "92",
+            "93",
+            "94",
+            "95",
+            "96",
+            "97",
+            "98",
+            "99",
+            "100",
+            "101",
+            "102",
+            "103",
+            "104",
+            "105",
+            "106",
+            "107",
+            "108",
+            "109",
+            "110",
+            "111",
+            "112",
+            "113",
+            "114",
+            "115",
+            "116",
+            "117",
+            "118",
+            "119",
+            "120",
+            "121",
+            "122",
+            "123",
+            "124",
+            "125",
+            "126",
+            "127",
+            "128",
+            "129",
+            "130",
+            "131",
+            "132",
+            "133",
+            "134",
+            "135",
+            "136",
+            "137",
+            "138",
+            "139",
+            "140",
+            "141",
+            "142",
+            "143",
+            "144",
+            "145",
+            "146",
+            "147",
+            "148",
+            "149",
+            "150",
+            "151",
+            "152",
+            "153",
+            "154",
+            "155",
+            "156",
+            "157",
+            "158",
+            "159",
+            "160",
+            "161",
+            "162",
+            "163",
+            "193",
+            "209",
+            "210",
+            "211",
+            "212",
+            "213",
+            "214",
+            "215"
+          ],
+          "num": 100
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/math/fraction/Fraction.java b/src/java/org/apache/commons/math/fraction/Fraction.java\nindex 302cde6..952b507 100644\n--- a/src/java/org/apache/commons/math/fraction/Fraction.java\n+++ b/src/java/org/apache/commons/math/fraction/Fraction.java\n@@ -32,10 +32,23 @@\n \n     /** A fraction representing \"0 / 1\". */\n     public static final Fraction ZERO \u003d new Fraction(0, 1);\n+\n+    /**\n+     * The maximal number of denominator digits that can be requested for double to fraction\n+     * conversion.\n+     * \u003cp\u003e\n+     * When \u003ccode\u003ed\u003c/code\u003e digits are requested, an integer threshold is\n+     * initialized with the value 10\u003csup\u003ed\u003c/sup\u003e. Therefore, \u003ccode\u003ed\u003c/code\u003e\n+     * cannot be larger than this constant. Since the java language uses 32 bits\n+     * signed integers, the value for this constant is 9.\n+     * \u003c/p\u003e\n+     * \n+     * @see #Fraction(double,int)\n+     */\n+    public static final int MAX_DENOMINATOR_DIGITS \u003d 9;\n     \n     /** Serializable version identifier */\n-    private static final long serialVersionUID \u003d 6222990762865980424L;\n-\n+    private static final long serialVersionUID \u003d 5463066929751300926L;\n     \n     /** The denominator. */\n     private int denominator;\n@@ -54,7 +67,7 @@\n     }\n \n     /**\n-     * Create a fraction given the double value.\n+     * Create a fraction given the double value and maximum error allowed.\n      * \u003cp\u003e\n      * References:\n      * \u003cul\u003e\n@@ -72,6 +85,82 @@\n     public Fraction(double value, double epsilon, int maxIterations)\n         throws FractionConversionException\n     {\n+        this(value, epsilon, Integer.MAX_VALUE, maxIterations);\n+    }\n+\n+    /**\n+     * Convert a number of denominator digits to a denominator max value.\n+     * @param denominatorDigits The maximum number of denominator digits.\n+     * @return the maximal value for denominator\n+     * @throws IllegalArgumentException if more than {@link #MAX_DENOMINATOR_DIGITS}\n+     *         are requested\n+     */\n+    private static int maxDenominator(int denominatorDigits)\n+        throws IllegalArgumentException\n+    {\n+        if (denominatorDigits \u003e MAX_DENOMINATOR_DIGITS) {\n+            throw new IllegalArgumentException(\"too many digits requested\");\n+        }\n+        return (int)Math.pow(10, denominatorDigits);\n+    }\n+\n+    /**\n+     * Create a fraction given the double value and maximum number of\n+     * denominator digits.\n+     * \u003cp\u003e\n+     * References:\n+     * \u003cul\u003e\n+     * \u003cli\u003e\u003ca href\u003d\"http://mathworld.wolfram.com/ContinuedFraction.html\"\u003e\n+     * Continued Fraction\u003c/a\u003e equations (11) and (22)-(26)\u003c/li\u003e\n+     * \u003c/ul\u003e\n+     * \u003c/p\u003e\n+     * @param value the double value to convert to a fraction.\n+     * @param denominatorDigits The maximum number of denominator digits.\n+     * @throws FractionConversionException if the continued fraction failed to\n+     *         converge\n+     * @throws IllegalArgumentException if more than {@link #MAX_DENOMINATOR_DIGITS}\n+     *         are requested\n+     */\n+    public Fraction(double value, int denominatorDigits)\n+        throws FractionConversionException, IllegalArgumentException\n+    {\n+       this(value, 0, maxDenominator(denominatorDigits), 100);\n+    }\n+\n+    /**\n+     * Create a fraction given the double value and either the maximum error\n+     * allowed or the maximum number of denominator digits.\n+     * \u003cp\u003e\n+     *\n+     * NOTE: This constructor is called with EITHER\n+     *   - a valid epsilon value and the maxDenominator set to Integer.MAX_VALUE\n+     *     (that way the maxDenominator has no effect).\n+     * OR\n+     *   - a valid maxDenominator value and the epsilon value set to zero\n+     *     (that way epsilon only has effect if there is an exact match before\n+     *     the maxDenominator value is reached).\n+     * \u003cp\u003e\n+     *\n+     * It has been done this way so that the same code can be (re)used for both\n+     * scenarios. However this could be confusing to users if it were part of\n+     * the public API and this constructor should therefore remain PRIVATE.\n+     * \u003c/p\u003e\n+     *\n+     * See JIRA issue ticket MATH-181 for more details:\n+     *\n+     *     https://issues.apache.org/jira/browse/MATH-181\n+     *\n+     * @param value the double value to convert to a fraction.\n+     * @param epsilon maximum error allowed.  The resulting fraction is within\n+     *        \u003ccode\u003eepsilon\u003c/code\u003e of \u003ccode\u003evalue\u003c/code\u003e, in absolute terms.\n+     * @param maxDenominator maximum denominator value allowed.\n+     * @param maxIterations maximum number of convergents\n+     * @throws FractionConversionException if the continued fraction failed to\n+     *         converge.\n+     */\n+    private Fraction(double value, double epsilon, int maxDenominator, int maxIterations)\n+        throws FractionConversionException\n+    {\n         double r0 \u003d value;\n         int a0 \u003d (int)Math.floor(r0);\n \n@@ -101,7 +190,7 @@\n             q2 \u003d (a1 * q1) + q0;\n             \n             double convergent \u003d (double)p2 / (double)q2;\n-            if (n \u003c maxIterations \u0026\u0026 Math.abs(convergent - value) \u003e epsilon) {\n+            if (n \u003c maxIterations \u0026\u0026 Math.abs(convergent - value) \u003e epsilon \u0026\u0026 q2 \u003c maxDenominator) {\n                 p0 \u003d p1;\n                 p1 \u003d p2;\n                 q0 \u003d q1;\n@@ -117,8 +206,13 @@\n             throw new FractionConversionException(value, maxIterations);\n         }\n         \n-        this.numerator \u003d p2;\n-        this.denominator \u003d q2;\n+        if (q2 \u003c maxDenominator) {\n+            this.numerator \u003d p2;\n+            this.denominator \u003d q2;\n+        } else {\n+            this.numerator \u003d p1;\n+            this.denominator \u003d q1;\n+        }\n         reduce();\n     }\n     \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [1293,1825]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [3280,3913]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [3919,4787]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [4793,7767]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ConstructorInvocation [3213,3268]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [2650,2668]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [2677,2706]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [2811,2945]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [2963,2974]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [2983,2994]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [3003,3015]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [3024,3035]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [3045,3056]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [3065,3076]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [3086,3096]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [3105,3126]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "DoStatement [3135,3693]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [3703,3811]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [3829,3849]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [3858,3880]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [3889,3898]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "maxDenominator"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math.fraction.FractionTest",
+      "test_function": "testIntegerOverflow",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "an exception should have been thrown"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/math/fraction/Fraction.java",
+        "src/java/org/apache/commons/math/fraction/Fraction.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "Fraction"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "Fraction"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "165",
+            "191"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "166",
+            "167",
+            "168",
+            "194",
+            "195",
+            "196",
+            "197"
+          ],
+          "num": 7
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Math_26/properties/modified_classes/inducing/src/java/org/apache/commons/math/fraction/Fraction.java data/changesInfo//Math_26/cleaned/fixing/src/java/org/apache/commons/math/fraction/Fraction.java\n--- data/changesInfo//Math_26/properties/modified_classes/inducing/src/java/org/apache/commons/math/fraction/Fraction.java\t2023-08-25 13:44:26.107338946 +0800\n+++ data/changesInfo//Math_26/cleaned/fixing/src/java/org/apache/commons/math/fraction/Fraction.java\t2023-07-25 22:39:00.281470916 +0800\n@@ -163,6 +163,9 @@\n     {\n         double r0 \u003d value;\n         int a0 \u003d (int)Math.floor(r0);\n+        if (Math.abs(a0) \u003e Integer.MAX_VALUE) {\n+            throw new FractionConversionException(value, a0);\n+        }\n \n         // check for (almost) integer arguments, which should not go\n         // to iterations.\n@@ -188,7 +191,10 @@\n             int a1 \u003d (int)Math.floor(r1);\n             p2 \u003d (a1 * p1) + p0;\n             q2 \u003d (a1 * q1) + q0;\n-            \n+            if ((Math.abs(p2) \u003e Integer.MAX_VALUE) || (Math.abs(q2) \u003e Integer.MAX_VALUE)) {\n+                throw new FractionConversionException(p2, q2);\n+            }\n+\n             double convergent \u003d (double)p2 / (double)q2;\n             if (n \u003c maxIterations \u0026\u0026 Math.abs(convergent - value) \u003e epsilon \u0026\u0026 q2 \u003c maxDenominator) {\n                 p0 \u003d p1;\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [6417,6528]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [7140,7296]"
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

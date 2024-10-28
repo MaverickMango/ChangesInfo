@@ -1,0 +1,804 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.jxpath.ri.model.ExternalXMLNamespaceTest::testCreateAndSetAttributeDOM",
+    "test.dir": "src/test",
+    "clz.modified": "org.apache.commons.jxpath.ri.NamespaceResolver,org.apache.commons.jxpath.ri.model.dom.DOMNodePointer",
+    "src.dir": "src/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JxPath",
+  "id": "13",
+  "workingDir": "../bugs/JxPath_13_tmp",
+  "bug_name": "JxPath_13",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.jxpath.ri.model.ExternalXMLNamespaceTest",
+      "test_function": "testCreateAndSetAttributeDOM",
+      "assertion_line": "83",
+      "exception": "org.apache.commons.jxpath.JXPathException",
+      "message": "Unknown namespace prefix: A"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/jxpath/ri/NamespaceResolver.java",
+        "src/java/org/apache/commons/jxpath/ri/NamespaceResolver.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.jxpath.ri.NamespaceResolver:getNamespaceURI:[String prefix]:String",
+            "org.apache.commons.jxpath.ri.NamespaceResolver:getExternallyRegisteredNamespaceURI:[String prefix]:String",
+            "org.apache.commons.jxpath.ri.NamespaceResolver:getPrefix:[String namespaceURI]:String",
+            "org.apache.commons.jxpath.ri.NamespaceResolver:getExternallyRegisteredPrefix:[String namespaceURI]:String",
+            "org.apache.commons.jxpath.ri.NamespaceResolver:getPrefix:[NodePointer pointer, String namespaceURI]:String"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.jxpath.ri.NamespaceResolver:getPrefix:[String namespaceURI]:String",
+            "org.apache.commons.jxpath.ri.NamespaceResolver:isSealed:[]:boolean",
+            "org.apache.commons.jxpath.ri.NamespaceResolver:getNamespaceURI:[String prefix]:String"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "47",
+            "48",
+            "49",
+            "50",
+            "51",
+            "52",
+            "53",
+            "54",
+            "55",
+            "56",
+            "57",
+            "58",
+            "59",
+            "60",
+            "61",
+            "62",
+            "63",
+            "64",
+            "126",
+            "127",
+            "128",
+            "129",
+            "138",
+            "139",
+            "141",
+            "142",
+            "151",
+            "152",
+            "153",
+            "154",
+            "162",
+            "172",
+            "173",
+            "211"
+          ],
+          "num": 34
+        },
+        {
+          "qualified_names": [
+            "46",
+            "117",
+            "118",
+            "119",
+            "120",
+            "121",
+            "122",
+            "123",
+            "141",
+            "142",
+            "143",
+            "144",
+            "145",
+            "146",
+            "147",
+            "148",
+            "149",
+            "150",
+            "151",
+            "159",
+            "160",
+            "161",
+            "162",
+            "169",
+            "221"
+          ],
+          "num": 25
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/jxpath/ri/NamespaceResolver.java b/src/java/org/apache/commons/jxpath/ri/NamespaceResolver.java\nindex 4d4a90a..d182676 100644\n--- a/src/java/org/apache/commons/jxpath/ri/NamespaceResolver.java\n+++ b/src/java/org/apache/commons/jxpath/ri/NamespaceResolver.java\n@@ -44,24 +44,6 @@\n      * @return prefix if found\n      * @since JXPath 1.3\n      */\n-    protected static String getPrefix(NodePointer pointer, String namespaceURI) {\n-        NodePointer currentPointer \u003d pointer;\n-        while (currentPointer !\u003d null) {\n-            NodeIterator ni \u003d currentPointer.namespaceIterator();\n-            for (int position \u003d 1; ni !\u003d null \u0026\u0026 ni.setPosition(position); position++) {\n-                NodePointer nsPointer \u003d ni.getNodePointer();\n-                String uri \u003d nsPointer.getNamespaceURI();\n-                if (uri.equals(namespaceURI)) {\n-                    String prefix \u003d nsPointer.getName().getName();\n-                    if (!\"\".equals(prefix)) {\n-                        return prefix;\n-                    }\n-                }\n-            }\n-            currentPointer \u003d pointer.getParent();\n-        }\n-        return null;\n-    }\n \n     /**\n      * Create a new NamespaceResolver.\n@@ -123,10 +105,6 @@\n      * @return namespace URI or null if the prefix is undefined.\n      */\n     public synchronized String getNamespaceURI(String prefix) {\n-        String uri \u003d getExternallyRegisteredNamespaceURI(prefix);\n-        return uri \u003d\u003d null \u0026\u0026 pointer !\u003d null ? pointer.getNamespaceURI(prefix)\n-                : uri;\n-    }\n \n     /**\n      * Given a prefix, returns an externally registered namespace URI.\n@@ -135,11 +113,14 @@\n      * @return namespace URI or null if the prefix is undefined.\n      * @since JXPath 1.3\n      */\n-     protected synchronized String getExternallyRegisteredNamespaceURI(\n-            String prefix) {\n         String uri \u003d (String) namespaceMap.get(prefix);\n-        return uri \u003d\u003d null \u0026\u0026 parent !\u003d null ? parent\n-                .getExternallyRegisteredNamespaceURI(prefix) : uri;\n+        if (uri \u003d\u003d null \u0026\u0026 pointer !\u003d null) {\n+            uri \u003d pointer.getNamespaceURI(prefix);\n+        }\n+        if (uri \u003d\u003d null \u0026\u0026 parent !\u003d null) {\n+            return parent.getNamespaceURI(prefix);\n+        }\n+        return uri;\n     }\n \n     /**\n@@ -148,10 +129,6 @@\n      * @return String prefix\n      */\n     public synchronized String getPrefix(String namespaceURI) {\n-        String prefix \u003d getExternallyRegisteredPrefix(namespaceURI);\n-        return prefix \u003d\u003d null \u0026\u0026 pointer !\u003d null ? getPrefix(pointer,\n-                namespaceURI) : prefix;\n-    }\n \n     /**\n      * Get the nearest prefix found that matches an externally-registered namespace. \n@@ -159,9 +136,19 @@\n      * @return String prefix if found.\n      * @since JXPath 1.3\n      */\n-    protected synchronized String getExternallyRegisteredPrefix(String namespaceURI) {\n         if (reverseMap \u003d\u003d null) {\n             reverseMap \u003d new HashMap();\n+            NodeIterator ni \u003d pointer.namespaceIterator();\n+            if (ni !\u003d null) {\n+                for (int position \u003d 1; ni.setPosition(position); position++) {\n+                    NodePointer nsPointer \u003d ni.getNodePointer();\n+                    String uri \u003d nsPointer.getNamespaceURI();                    \n+                    String prefix \u003d nsPointer.getName().getName();\n+                    if (!\"\".equals(prefix)) {\n+                        reverseMap.put(uri, prefix);\n+                    }\n+                }\n+            }\n             Iterator it \u003d namespaceMap.entrySet().iterator();\n             while (it.hasNext()) {\n                 Map.Entry entry \u003d (Map.Entry) it.next();\n@@ -169,8 +156,10 @@\n             }\n         }\n         String prefix \u003d (String) reverseMap.get(namespaceURI);\n-        return prefix \u003d\u003d null \u0026\u0026 parent !\u003d null ? parent\n-                .getExternallyRegisteredPrefix(namespaceURI) : prefix;\n+        if (prefix \u003d\u003d null \u0026\u0026 parent !\u003d null) {\n+            return parent.getPrefix(namespaceURI);\n+        }\n+        return prefix;\n     }\n \n     /**\n@@ -208,4 +197,4 @@\n         }\n     }\n \n-}\n\\ No newline at end of file\n+}\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [3766,3864]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [3873,3970]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [5339,5439]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [3770,3800]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [3802,3864]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ExpressionStatement [3816,3854]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [4560,5023]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Assignment [3816,3853]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [4564,4574]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ASSIGNMENT_OPERATOR: \u003d [3820,3821]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ForStatement [4594,5009]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationExpression [4599,4615]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [4617,4641]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PostfixExpression [4643,4653]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [4941,4969]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "Javadoc [1448,1646]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: protected [1651,1660]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: static [1661,1667]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [1668,1674]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: getPrefix [1675,1684]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [1685,1704]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [1706,1725]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [1737,1774]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [1790,1812]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "WhileStatement [1783,2403]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [2412,2424]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [1727,2430]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodDeclaration [1448,2430]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [4833,4862]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [4865,4932]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ConditionalExpression [4833,4938]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [4328,4358]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ConditionalExpression [4328,4414]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ReturnStatement [4321,4415]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Javadoc [4427,4660]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: protected [4666,4675]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: synchronized [4676,4688]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [4689,4695]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: getExternallyRegisteredNamespaceURI [4696,4731]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [4745,4758]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [4760,4945]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodDeclaration [4427,4945]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [2110,2134]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [2106,2329]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationExpression [1899,1915]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [1917,1955]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "PostfixExpression [1957,1967]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ForStatement [1894,2343]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [2356,2393]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [5668,5953]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [5247,5348]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Javadoc [5360,5548]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: protected [5553,5562]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: synchronized [5563,5575]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [5576,5582]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: getExternallyRegisteredPrefix [5583,5612]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [5613,5632]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [6032,6064]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [6067,6134]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ConditionalExpression [6032,6143]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [5634,6150]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodDeclaration [5360,6150]",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/jxpath/ri/model/dom/DOMNodePointer.java",
+        "src/java/org/apache/commons/jxpath/ri/model/dom/DOMNodePointer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.jxpath.ri.model.dom.DOMNodePointer:createAttribute:[JXPathContext context, QName name]:NodePointer",
+            "org.apache.commons.jxpath.ri.model.dom.DOMNodePointer:getNamespaceResolver:[]:NamespaceResolver"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.jxpath.ri.model.dom.DOMNodePointer:getNamespaceURI:[String prefix]:String",
+            "org.apache.commons.jxpath.ri.model.dom.DOMNodePointer:createAttribute:[JXPathContext context, QName name]:NodePointer"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "29",
+            "62",
+            "191",
+            "192",
+            "193",
+            "194",
+            "195",
+            "196",
+            "197",
+            "424",
+            "425",
+            "426",
+            "427",
+            "428"
+          ],
+          "num": 14
+        },
+        {
+          "qualified_names": [
+            "28",
+            "62",
+            "192",
+            "415"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/jxpath/ri/model/dom/DOMNodePointer.java b/src/java/org/apache/commons/jxpath/ri/model/dom/DOMNodePointer.java\nindex 4516297..f22f825 100644\n--- a/src/java/org/apache/commons/jxpath/ri/model/dom/DOMNodePointer.java\n+++ b/src/java/org/apache/commons/jxpath/ri/model/dom/DOMNodePointer.java\n@@ -26,7 +26,6 @@\n import org.apache.commons.jxpath.JXPathException;\n import org.apache.commons.jxpath.Pointer;\n import org.apache.commons.jxpath.ri.Compiler;\n-import org.apache.commons.jxpath.ri.NamespaceResolver;\n import org.apache.commons.jxpath.ri.QName;\n import org.apache.commons.jxpath.ri.compiler.NodeNameTest;\n import org.apache.commons.jxpath.ri.compiler.NodeTest;\n@@ -59,7 +58,6 @@\n     private Map namespaces;\n     private String defaultNamespace;\n     private String id;\n-    private NamespaceResolver localNamespaceResolver;\n \n     public static final String XML_NAMESPACE_URI \u003d \n             \"http://www.w3.org/XML/1998/namespace\";\n@@ -188,13 +186,6 @@\n     /* (non-Javadoc)\n      * @see org.apache.commons.jxpath.ri.model.NodePointer#getNamespaceResolver()\n      */\n-    public synchronized NamespaceResolver getNamespaceResolver() {\n-        if (localNamespaceResolver \u003d\u003d null) {\n-            localNamespaceResolver \u003d new NamespaceResolver(super.getNamespaceResolver());\n-            localNamespaceResolver.setNamespaceContextPointer(this);\n-        }\n-        return localNamespaceResolver;\n-    }\n \n     public String getNamespaceURI(String prefix) {\n         if (prefix \u003d\u003d null || prefix.equals(\"\")) {\n@@ -421,11 +412,7 @@\n         Element element \u003d (Element) node;\n         String prefix \u003d name.getPrefix();\n         if (prefix !\u003d null) {\n-            String ns \u003d null;\n-            NamespaceResolver nsr \u003d getNamespaceResolver();\n-            if (nsr !\u003d null) {\n-                ns \u003d nsr.getNamespaceURI(prefix);\n-            }\n+            String ns \u003d getNamespaceURI(prefix);\n             if (ns \u003d\u003d null) {\n                 throw new JXPathException(\n                     \"Unknown namespace prefix: \" + prefix);\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [14016,14052]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1226,1280]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [2382,2431]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [6734,7056]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [14452,14469]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [14482,14529]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [14542,14624]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.apache.commons.jxpath.ri.NamespaceResolver:isSealed:[]:boolean",
+        "org.apache.commons.jxpath.ri.model.dom.DOMNodePointer:getNamespaceURI:[String prefix]:String"
+      ],
+      "num": 2
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.apache.commons.jxpath.ri.NamespaceResolver:getPrefix:[NodePointer pointer, String namespaceURI]:String",
+        "org.apache.commons.jxpath.ri.NamespaceResolver:getExternallyRegisteredNamespaceURI:[String prefix]:String",
+        "org.apache.commons.jxpath.ri.model.dom.DOMNodePointer:getNamespaceResolver:[]:NamespaceResolver",
+        "org.apache.commons.jxpath.ri.NamespaceResolver:getExternallyRegisteredPrefix:[String namespaceURI]:String"
+      ],
+      "num": 4
+    }
+  }
+}

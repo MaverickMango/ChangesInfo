@@ -1,0 +1,135 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.ConvertToDottedPropertiesTest::testQuotedProps,com.google.javascript.jscomp.ConvertToDottedPropertiesTest::testDoNotConvert",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.rhino.TokenStream",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "131",
+  "workingDir": "../bugs/Closure_131_tmp",
+  "bug_name": "Closure_131",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.ConvertToDottedPropertiesTest",
+      "test_function": "testQuotedProps",
+      "assertion_line": "72",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: ({\"a\\u0004b\":0})\nResult: ({a\u0004b:0})"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.ConvertToDottedPropertiesTest",
+      "test_function": "testDoNotConvert",
+      "assertion_line": "58",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: a[\"A\\u0004\"]\nResult: a.A\u0004"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/TokenStream.java",
+        "src/com/google/javascript/rhino/TokenStream.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.TokenStream:isJSIdentifier:[String s]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.TokenStream:isJSIdentifier:[String s]:boolean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "194",
+            "200"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "199"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/TokenStream.java b/src/com/google/javascript/rhino/TokenStream.java\nindex cadb536..144a4ad 100644\n--- a/src/com/google/javascript/rhino/TokenStream.java\n+++ b/src/com/google/javascript/rhino/TokenStream.java\n@@ -191,13 +191,12 @@\n       int length \u003d s.length();\n \n       if (length \u003d\u003d 0 ||\n-          Character.isIdentifierIgnorable(s.charAt(0)) ||\n           !Character.isJavaIdentifierStart(s.charAt(0))) {\n         return false;\n       }\n \n       for (int i \u003d 1; i \u003c length; i++) {\n-        if (Character.isIdentifierIgnorable(s.charAt(i)) ||\n+        if (\n             !Character.isJavaIdentifierPart(s.charAt(i))) {\n           return false;\n         }\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: || [8329,8331]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [8342,8386]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [8317,8386]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [8533,8577]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: || [8578,8580]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [8533,8637]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

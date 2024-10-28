@@ -1,0 +1,136 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.CommandLineRunnerTest::testES5StrictUseStrictMultipleInputs",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.Compiler",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "64",
+  "workingDir": "../bugs/Closure_64_tmp",
+  "bug_name": "Closure_64",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.CommandLineRunnerTest",
+      "test_function": "testES5StrictUseStrictMultipleInputs",
+      "assertion_line": "803",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c17\u003e but was:\u003c-1\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/Compiler.java",
+        "src/com/google/javascript/jscomp/Compiler.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.Compiler:toSource:[Node n]:String",
+            "com.google.javascript.jscomp.Compiler:toSource:[final CodeBuilder cb, final int inputSeqNum, final Node root]:void",
+            "com.google.javascript.jscomp.Compiler:toSource:[Node n, SourceMap sourceMap, boolean firstOutput]:String"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.Compiler:toSource:[Node n, SourceMap sourceMap]:String",
+            "com.google.javascript.jscomp.Compiler:toSource:[Node n]:String",
+            "com.google.javascript.jscomp.Compiler:toSource:[final CodeBuilder cb, final int inputSeqNum, final Node root]:void"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1432",
+            "1461",
+            "1467",
+            "1473"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "1432",
+            "1461",
+            "1467",
+            "1473"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/Compiler.java b/src/com/google/javascript/jscomp/Compiler.java\nindex 45d88ba..71f76d8 100644\n--- a/src/com/google/javascript/jscomp/Compiler.java\n+++ b/src/com/google/javascript/jscomp/Compiler.java\n@@ -1429,7 +1429,7 @@\n \n         // if LanguageMode is ECMASCRIPT5_STRICT, only print \u0027use strict\u0027\n         // for the first input file\n-        String code \u003d toSource(root, sourceMap, inputSeqNum \u003d\u003d 0);\n+        String code \u003d toSource(root, sourceMap);\n         if (!code.isEmpty()) {\n           cb.append(code);\n \n@@ -1458,19 +1458,19 @@\n   @Override\n   String toSource(Node n) {\n     initCompilerOptionsIfTesting();\n-    return toSource(n, null, true);\n+    return toSource(n, null);\n   }\n \n   /**\n    * Generates JavaScript source code for an AST.\n    */\n-  private String toSource(Node n, SourceMap sourceMap, boolean firstOutput) {\n+  private String toSource(Node n, SourceMap sourceMap) {\n     CodePrinter.Builder builder \u003d new CodePrinter.Builder(n);\n     builder.setPrettyPrint(options.prettyPrint);\n     builder.setLineBreak(options.lineBreak);\n     builder.setSourceMap(sourceMap);\n     builder.setSourceMapDetailLevel(options.sourceMapDetailLevel);\n-    builder.setTagAsStrict(firstOutput \u0026\u0026\n+    builder.setTagAsStrict(\n         options.getLanguageOut() \u003d\u003d LanguageMode.ECMASCRIPT5_STRICT);\n     builder.setLineLengthThreshold(options.lineLengthThreshold);\n \n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [43138,43154]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "BooleanLiteral: true [44061,44065]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [44190,44209]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: firstOutput [44500,44511]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [44512,44514]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [44500,44582]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.Compiler:toSource:[Node n, SourceMap sourceMap]:String"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.Compiler:toSource:[Node n, SourceMap sourceMap, boolean firstOutput]:String"
+      ],
+      "num": 1
+    }
+  }
+}

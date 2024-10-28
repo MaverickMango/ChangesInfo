@@ -1,0 +1,117 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math.linear.EigenDecompositionImplTest::testMath308",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math.linear.EigenDecompositionImpl",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "81",
+  "workingDir": "../bugs/Math_81_tmp",
+  "bug_name": "Math_81",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math.linear.EigenDecompositionImplTest",
+      "test_function": "testMath308",
+      "assertion_line": "134",
+      "exception": "java.lang.ArrayIndexOutOfBoundsException",
+      "message": "-1"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/linear/EigenDecompositionImpl.java",
+        "src/main/java/org/apache/commons/math/linear/EigenDecompositionImpl.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.linear.EigenDecompositionImpl:computeGershgorinCircles:[]:void",
+            "org.apache.commons.math.linear.EigenDecompositionImpl:computeShiftIncrement:[final int start, final int end, final int deflated]:void",
+            "org.apache.commons.math.linear.EigenDecompositionImpl:processGeneralBlock:[final int n]:void"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.linear.EigenDecompositionImpl:processGeneralBlock:[final int n]:void",
+            "org.apache.commons.math.linear.EigenDecompositionImpl:computeShiftIncrement:[final int start, final int end, final int deflated]:void",
+            "org.apache.commons.math.linear.EigenDecompositionImpl:computeGershgorinCircles:[]:void"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "603",
+            "906",
+            "907",
+            "1544"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "602",
+            "905",
+            "906",
+            "1543"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/linear/EigenDecompositionImpl.java b/src/main/java/org/apache/commons/math/linear/EigenDecompositionImpl.java\nindex 3fc328d..2d0d72f 100644\n--- a/src/main/java/org/apache/commons/math/linear/EigenDecompositionImpl.java\n+++ b/src/main/java/org/apache/commons/math/linear/EigenDecompositionImpl.java\n@@ -600,7 +600,6 @@\n         lowerSpectra \u003d Math.min(lowerSpectra, lower);\n         final double upper \u003d dCurrent + eCurrent;\n         work[upperStart + m - 1] \u003d upper;\n-        upperSpectra \u003d Math.max(upperSpectra, upper);\n         minPivot \u003d MathUtils.SAFE_MIN * Math.max(1.0, eMax * eMax);\n \n     }\n@@ -903,8 +902,8 @@\n                     diagMax    \u003d work[4 * i0];\n                     offDiagMin \u003d work[4 * i0 + 2];\n                     double previousEMin \u003d work[4 * i0 + 3];\n-                    for (int i \u003d 4 * i0; i \u003c 4 * n0 - 16; i +\u003d 4) {\n-                        if ((work[i + 3] \u003c\u003d TOLERANCE_2 * work[i]) ||\n+                    for (int i \u003d 4 * i0; i \u003c 4 * n0 - 11; i +\u003d 4) {\n+                        if ((work[i + 3] \u003c\u003d TOLERANCE_2 * work[i]) \u0026\u0026\n                             (work[i + 2] \u003c\u003d TOLERANCE_2 * sigma)) {\n                             // insert a split\n                             work[i + 2]  \u003d -sigma;\n@@ -1541,7 +1540,7 @@\n                 double a2 \u003d (work[np - 8] / b2) * (1 + work[np - 4] / b1);\n \n                 // approximate contribution to norm squared from i \u003c nn-2.\n-                if (end - start \u003e 3) {\n+                if (end - start \u003e 2) {\n                     b2 \u003d work[nn - 13] / work[nn - 15];\n                     a2 \u003d a2 + b2;\n                     for (int i4 \u003d nn - 17; i4 \u003e\u003d 4 * start + 2 + pingPong; i4 -\u003d 4) {\n",
+      "operations": [
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [21378,21423]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

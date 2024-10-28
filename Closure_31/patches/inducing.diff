@@ -1,0 +1,320 @@
+diff --git a/src/com/google/javascript/jscomp/AbstractCommandLineRunner.java b/src/com/google/javascript/jscomp/AbstractCommandLineRunner.java
+index 0038434..687a8f0 100644
+--- a/src/com/google/javascript/jscomp/AbstractCommandLineRunner.java
++++ b/src/com/google/javascript/jscomp/AbstractCommandLineRunner.java
+@@ -226,10 +226,12 @@
+     options.setTweakProcessing(config.tweakProcessing);
+     createDefineOrTweakReplacements(config.tweak, options, true);
+ 
++    // Dependency options
+     options.setManageClosureDependencies(config.manageClosureDependencies);
+     if (config.closureEntryPoints.size() > 0) {
+       options.setManageClosureDependencies(config.closureEntryPoints);
+     }
++
+     options.devMode = config.jscompDevMode;
+     options.setCodingConvention(config.codingConvention);
+     options.setSummaryDetailLevel(config.summaryDetailLevel);
+diff --git a/src/com/google/javascript/jscomp/CompilationLevel.java b/src/com/google/javascript/jscomp/CompilationLevel.java
+index 3ca5c87..392f098 100644
+--- a/src/com/google/javascript/jscomp/CompilationLevel.java
++++ b/src/com/google/javascript/jscomp/CompilationLevel.java
+@@ -98,6 +98,7 @@
+ 
+     // Does not call applyBasicCompilationOptions(options) because the call to
+     // skipAllCompilerPasses() cannot be easily undone.
++    options.dependencyOptions.setDependencySorting(true);
+     options.closurePass = true;
+     options.setRenamingPolicy(
+         VariableRenamingPolicy.LOCAL, PropertyRenamingPolicy.OFF);
+@@ -133,6 +134,7 @@
+     // create possible conflicts between multiple diagnostic groups.
+ 
+     // All the safe optimizations.
++    options.dependencyOptions.setDependencySorting(true);
+     options.closurePass = true;
+     options.foldConstants = true;
+     options.coalesceVariableNames = true;
+diff --git a/src/com/google/javascript/jscomp/Compiler.java b/src/com/google/javascript/jscomp/Compiler.java
+index 90a469f..4ff23f7 100644
+--- a/src/com/google/javascript/jscomp/Compiler.java
++++ b/src/com/google/javascript/jscomp/Compiler.java
+@@ -479,14 +479,14 @@
+     inputsById = new HashMap<InputId, CompilerInput>();
+     for (CompilerInput input : externs) {
+       InputId id = input.getInputId();
+-      CompilerInput previous = inputsById.put(id, input);
++      CompilerInput previous = putCompilerInput(id, input);
+       if (previous != null) {
+         report(JSError.make(DUPLICATE_EXTERN_INPUT, input.getName()));
+       }
+     }
+     for (CompilerInput input : inputs) {
+       InputId id = input.getInputId();
+-      CompilerInput previous = inputsById.put(id, input);
++      CompilerInput previous = putCompilerInput(id, input);
+       if (previous != null) {
+         report(JSError.make(DUPLICATE_INPUT, input.getName()));
+       }
+@@ -1021,17 +1021,22 @@
+       throw new IllegalArgumentException("Conflicting externs name: " + name);
+     }
+     CompilerInput input = new CompilerInput(ast, true);
+-    inputsById.put(input.getInputId(), input);
++    putCompilerInput(input.getInputId(), input);
+     externsRoot.addChildToFront(ast.getAstRoot(this));
+     externs.add(0, input);
+     return input;
+   }
+ 
++  private CompilerInput putCompilerInput(InputId id, CompilerInput input) {
++    input.setCompiler(this);
++    return inputsById.put(id, input);
++  }
++
+   /** Add a source input dynamically. Intended for incremental compilation. */
+   void addIncrementalSourceAst(JsAst ast) {
+     InputId id = ast.getInputId();
+     Preconditions.checkState(getInput(id) == null, "Duplicate input %s", id.getIdName());
+-    inputsById.put(id, new CompilerInput(ast));
++    putCompilerInput(id, new CompilerInput(ast));
+   }
+ 
+   /**
+@@ -1059,7 +1064,7 @@
+     }
+ 
+     CompilerInput newInput = new CompilerInput(ast);
+-    inputsById.put(ast.getInputId(), newInput);
++    putCompilerInput(ast.getInputId(), newInput);
+ 
+     JSModule module = oldInput.getModule();
+     if (module != null) {
+@@ -1108,7 +1113,7 @@
+       modules.get(0).add(newInput);
+     }
+ 
+-    inputsById.put(ast.getInputId(), newInput);
++    putCompilerInput(ast.getInputId(), newInput);
+ 
+     return true;
+   }
+@@ -1268,11 +1273,14 @@
+         processAMDAndCommonJSModules();
+       }
+ 
+-      // Check if the sources need to be re-ordered.
+-      if (options.dependencyOptions.needsManagement()) {
+-        for (CompilerInput input : inputs) {
+-          input.setCompiler(this);
++      // Check if inputs need to be rebuilt from modules.
++      boolean staleInputs = false;
+ 
++      // Check if the sources need to be re-ordered.
++      if (options.dependencyOptions.needsManagement() &&
++          !options.skipAllPasses &&
++          options.closurePass) {
++        for (CompilerInput input : inputs) {
+           // Forward-declare all the provided types, so that they
+           // are not flagged even if they are dropped from the process.
+           for (String provide : input.getProvides()) {
+@@ -1284,6 +1292,7 @@
+           inputs =
+               (moduleGraph == null ? new JSModuleGraph(modules) : moduleGraph)
+               .manageDependencies(options.dependencyOptions, inputs);
++          staleInputs = true;
+         } catch (CircularDependencyException e) {
+           report(JSError.make(
+               JSModule.CIRCULAR_DEPENDENCY_ERROR, e.getMessage()));
+@@ -1303,8 +1312,6 @@
+         }
+       }
+ 
+-      // Check if inputs need to be rebuilt from modules.
+-      boolean staleInputs = false;
+       for (CompilerInput input : inputs) {
+         Node n = input.getAstRoot(this);
+ 
+@@ -1446,7 +1453,7 @@
+   Node parseSyntheticCode(String js) {
+     CompilerInput input = new CompilerInput(
+         SourceFile.fromCode(" [synthetic:" + (++syntheticCodeId) + "] ", js));
+-    inputsById.put(input.getInputId(), input);
++    putCompilerInput(input.getInputId(), input);
+     return input.getAstRoot(this);
+   }
+ 
+@@ -1479,7 +1486,7 @@
+     if (inputsById == null) {
+       inputsById = Maps.newHashMap();
+     }
+-    inputsById.put(input.getInputId(), input);
++    putCompilerInput(input.getInputId(), input);
+     return input.getAstRoot(this);
+   }
+ 
+diff --git a/src/com/google/javascript/jscomp/CompilerInput.java b/src/com/google/javascript/jscomp/CompilerInput.java
+index 0a2ce4f..0bb3d04 100644
+--- a/src/com/google/javascript/jscomp/CompilerInput.java
++++ b/src/com/google/javascript/jscomp/CompilerInput.java
+@@ -53,12 +53,9 @@
+   private final Set<String> requires = Sets.newHashSet();
+   private boolean generatedDependencyInfoFromSource = false;
+ 
+-  // An error manager for handling problems when dealing with
+-  // provides/requires.
+-  private ErrorManager errorManager;
+-
+   // An AbstractCompiler for doing parsing.
+-  private AbstractCompiler compiler;
++  // We do not want to persist this across serialized state.
++  private transient AbstractCompiler compiler;
+ 
+   public CompilerInput(SourceAst ast) {
+     this(ast, ast.getSourceFile().getName(), false);
+@@ -145,27 +142,27 @@
+     return ast;
+   }
+ 
+-  /** Sets an error manager for routing error messages. */
+-  public void setErrorManager(ErrorManager errorManager) {
+-    this.errorManager = errorManager;
+-  }
+-
+   /** Sets an abstract compiler for doing parsing. */
+   public void setCompiler(AbstractCompiler compiler) {
+     this.compiler = compiler;
+-    setErrorManager(compiler.getErrorManager());
++  }
++
++  private void checkErrorManager() {
++    Preconditions.checkNotNull(compiler,
++        "Expected setCompiler to be called first: " + this);
++    Preconditions.checkNotNull(compiler.getErrorManager(),
++        "Expected compiler to call an error manager: " + this);
+   }
+ 
+   /** Gets a list of types depended on by this input. */
+   @Override
+   public Collection<String> getRequires() {
+-    Preconditions.checkNotNull(errorManager,
+-        "Expected setErrorManager to be called first");
++    checkErrorManager();
+     try {
+       regenerateDependencyInfoIfNecessary();
+       return Collections.<String>unmodifiableSet(requires);
+     } catch (IOException e) {
+-      errorManager.report(CheckLevel.ERROR,
++      compiler.getErrorManager().report(CheckLevel.ERROR,
+           JSError.make(AbstractCompiler.READ_ERROR, getName()));
+       return ImmutableList.<String>of();
+     }
+@@ -174,13 +171,12 @@
+   /** Gets a list of types provided by this input. */
+   @Override
+   public Collection<String> getProvides() {
+-    Preconditions.checkNotNull(errorManager,
+-        "Expected setErrorManager to be called first");
++    checkErrorManager();
+     try {
+       regenerateDependencyInfoIfNecessary();
+       return Collections.<String>unmodifiableSet(provides);
+     } catch (IOException e) {
+-      errorManager.report(CheckLevel.ERROR,
++      compiler.getErrorManager().report(CheckLevel.ERROR,
+           JSError.make(AbstractCompiler.READ_ERROR, getName()));
+       return ImmutableList.<String>of();
+     }
+@@ -240,8 +236,9 @@
+         // getPathRelativeToClosureBase() here because we're not using
+         // this to generate deps files. (We're only using it for
+         // symbol dependencies.)
+-        DependencyInfo info = (new JsFileParser(errorManager)).parseFile(
+-            getName(), getName(), getCode());
++        DependencyInfo info =
++            (new JsFileParser(compiler.getErrorManager())).parseFile(
++                getName(), getName(), getCode());
+ 
+         provides.addAll(info.getProvides());
+         requires.addAll(info.getRequires());
+diff --git a/src/com/google/javascript/jscomp/CompilerOptions.java b/src/com/google/javascript/jscomp/CompilerOptions.java
+index c3d3a75..bb39439 100644
+--- a/src/com/google/javascript/jscomp/CompilerOptions.java
++++ b/src/com/google/javascript/jscomp/CompilerOptions.java
+@@ -1283,8 +1283,10 @@
+    * whose symbols are not required.
+    */
+   public void setManageClosureDependencies(boolean newVal) {
+-    dependencyOptions.setDependencySorting(newVal);
+-    dependencyOptions.setDependencyPruning(newVal);
++    dependencyOptions.setDependencySorting(
++        newVal || dependencyOptions.shouldSortDependencies());
++    dependencyOptions.setDependencyPruning(
++        newVal || dependencyOptions.shouldPruneDependencies());
+     dependencyOptions.setMoocherDropping(false);
+     manageClosureDependencies = newVal;
+   }
+diff --git a/test/com/google/javascript/jscomp/CommandLineRunnerTest.java b/test/com/google/javascript/jscomp/CommandLineRunnerTest.java
+index d478d51..92d50d0 100644
+--- a/test/com/google/javascript/jscomp/CommandLineRunnerTest.java
++++ b/test/com/google/javascript/jscomp/CommandLineRunnerTest.java
+@@ -499,14 +499,15 @@
+   }
+ 
+   public void testSourceSortingOff() {
+-    test(new String[] {
++    args.add("--compilation_level=WHITESPACE_ONLY");
++    testSame(
++        new String[] {
+           "goog.require('beer');",
+           "goog.provide('beer');"
+-         }, ProcessClosurePrimitives.LATE_PROVIDE_ERROR);
++        });
+   }
+ 
+   public void testSourceSortingOn() {
+-    args.add("--manage_closure_dependencies=true");
+     test(new String[] {
+           "goog.require('beer');",
+           "goog.provide('beer');"
+diff --git a/test/com/google/javascript/jscomp/CompilerTest.java b/test/com/google/javascript/jscomp/CompilerTest.java
+index 3c72d3e..f9f1ad9 100644
+--- a/test/com/google/javascript/jscomp/CompilerTest.java
++++ b/test/com/google/javascript/jscomp/CompilerTest.java
+@@ -131,8 +131,10 @@
+     assertEquals(graph.getModuleCount(), 3);
+     List<CompilerInput> result = graph.manageDependencies(entryPoints,
+         compiler.getInputsForTesting());
+-    assertEquals("tonic.js", result.get(0).getName());
+-    assertEquals("gin.js", result.get(1).getName());
+-    assertEquals("mix.js", result.get(2).getName());
++    assertEquals("[module$tonic]", result.get(0).getName());
++    assertEquals("[module$gin]", result.get(1).getName());
++    assertEquals("tonic.js", result.get(2).getName());
++    assertEquals("gin.js", result.get(3).getName());
++    assertEquals("mix.js", result.get(4).getName());
+   }
+ }
+diff --git a/test/com/google/javascript/jscomp/IntegrationTest.java b/test/com/google/javascript/jscomp/IntegrationTest.java
+index 4f9f3a7..d0f187f 100644
+--- a/test/com/google/javascript/jscomp/IntegrationTest.java
++++ b/test/com/google/javascript/jscomp/IntegrationTest.java
+@@ -1972,6 +1972,18 @@
+     );
+   }
+ 
++  public void testSortingOff() {
++    CompilerOptions options = new CompilerOptions();
++    options.closurePass = true;
++    options.setCodingConvention(new ClosureCodingConvention());
++    test(options,
++         new String[] {
++           "goog.require('goog.beer');",
++           "goog.provide('goog.beer');"
++         },
++         ProcessClosurePrimitives.LATE_PROVIDE_ERROR);
++  }
++
+   public void testProvideRequireSameFile() throws Exception {
+     CompilerOptions options = createCompilerOptions();
+     options.setDependencyOptions(

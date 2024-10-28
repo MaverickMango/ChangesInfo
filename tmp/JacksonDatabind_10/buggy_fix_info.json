@@ -1,0 +1,340 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.ser.TestAnyGetter::testIssue705",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.ser.AnyGetterWriter,com.fasterxml.jackson.databind.ser.BeanSerializerFactory",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "10",
+  "workingDir": "../bugs/JacksonDatabind_10_tmp",
+  "bug_name": "JacksonDatabind_10",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.ser.TestAnyGetter",
+      "test_function": "testIssue705",
+      "assertion_line": "139",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c{\"[stuff\":\"[key/value]]\"}\u003e but was:\u003c{\"[key\":\"value]\"}\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/ser/AnyGetterWriter.java",
+        "src/main/java/com/fasterxml/jackson/databind/ser/AnyGetterWriter.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.AnyGetterWriter:resolve:[SerializerProvider provider]:void",
+            "com.fasterxml.jackson.databind.ser.AnyGetterWriter:AnyGetterWriter:[BeanProperty property, AnnotatedMember accessor, JsonSerializer\u003c?\u003e serializer]:null",
+            "com.fasterxml.jackson.databind.ser.AnyGetterWriter:getAndSerialize:[Object bean, JsonGenerator gen, SerializerProvider provider]:void",
+            "com.fasterxml.jackson.databind.ser.AnyGetterWriter:getAndFilter:[Object bean, JsonGenerator gen, SerializerProvider provider, PropertyFilter filter]:void"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.AnyGetterWriter:resolve:[SerializerProvider provider]:void",
+            "com.fasterxml.jackson.databind.ser.AnyGetterWriter:getAndFilter:[Object bean, JsonGenerator gen, SerializerProvider provider, PropertyFilter filter]:void",
+            "com.fasterxml.jackson.databind.ser.AnyGetterWriter:AnyGetterWriter:[BeanProperty property, AnnotatedMember accessor, MapSerializer serializer]:null"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "24",
+            "30",
+            "34",
+            "35",
+            "37",
+            "56",
+            "80",
+            "88",
+            "89",
+            "90",
+            "91",
+            "92",
+            "93",
+            "94"
+          ],
+          "num": 14
+        },
+        {
+          "qualified_names": [
+            "29",
+            "59",
+            "82",
+            "84"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/ser/AnyGetterWriter.java b/src/main/java/com/fasterxml/jackson/databind/ser/AnyGetterWriter.java\nindex 9fe4077..2cd7bb7 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/ser/AnyGetterWriter.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/ser/AnyGetterWriter.java\n@@ -21,20 +21,16 @@\n      */\n     protected final AnnotatedMember _accessor;\n \n-    protected JsonSerializer\u003cObject\u003e _serializer;\n \n     protected MapSerializer _mapSerializer;\n     \n     @SuppressWarnings(\"unchecked\")\n     public AnyGetterWriter(BeanProperty property,\n-            AnnotatedMember accessor, JsonSerializer\u003c?\u003e serializer)\n+            AnnotatedMember accessor, MapSerializer serializer)\n     {\n         _accessor \u003d accessor;\n         _property \u003d property;\n-        _serializer \u003d (JsonSerializer\u003cObject\u003e) serializer;\n-        if (serializer instanceof MapSerializer) {\n             _mapSerializer \u003d (MapSerializer) serializer;\n-        }\n     }\n \n     public void getAndSerialize(Object bean, JsonGenerator gen, SerializerProvider provider)\n@@ -53,7 +49,6 @@\n             _mapSerializer.serializeFields((Map\u003c?,?\u003e) value, gen, provider);\n             return;\n         }\n-        _serializer.serialize(value, gen, provider);\n     }\n \n     /**\n@@ -77,7 +72,6 @@\n             return;\n         }\n         // ... not sure how custom handler would do it\n-        _serializer.serialize(value, gen, provider);\n     }\n     \n     // Note: NOT part of ResolvableSerializer...\n@@ -85,12 +79,6 @@\n     public void resolve(SerializerProvider provider) throws JsonMappingException\n     {\n         // 05-Sep-2013, tatu: I _think_ this can be considered a primary property...\n-        if (_serializer instanceof ContextualSerializer) {\n-            JsonSerializer\u003c?\u003e ser \u003d provider.handlePrimaryContextualization(_serializer, _property);\n-            _serializer \u003d (JsonSerializer\u003cObject\u003e) ser;\n-            if (ser instanceof MapSerializer) {\n-                _mapSerializer \u003d (MapSerializer) ser;\n-            }\n-        }\n+        _mapSerializer \u003d (MapSerializer) provider.handlePrimaryContextualization(_mapSerializer, _property);\n     }\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [827,840]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [658,703]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ParameterizedType [877,894]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [981,1031]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InstanceofExpression [1044,1079]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [1081,1149]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [1040,1149]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [1834,1878]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [2739,2783]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: ser [3364,3367]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InstanceofExpression [3063,3106]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ParameterizedType [3122,3139]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: ser [3140,3143]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [3140,3209]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [3122,3210]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [3223,3266]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InstanceofExpression [3283,3311]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [3313,3382]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [3279,3382]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [3108,3392]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [3059,3392]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/ser/BeanSerializerFactory.java",
+        "src/main/java/com/fasterxml/jackson/databind/ser/BeanSerializerFactory.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.BeanSerializerFactory:constructBeanSerializer:[SerializerProvider prov, BeanDescription beanDesc]:JsonSerializer\u003cObject\u003e"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.BeanSerializerFactory:constructBeanSerializer:[SerializerProvider prov, BeanDescription beanDesc]:JsonSerializer\u003cObject\u003e"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "395",
+            "396",
+            "398",
+            "399",
+            "400"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "395"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/ser/BeanSerializerFactory.java b/src/main/java/com/fasterxml/jackson/databind/ser/BeanSerializerFactory.java\nindex ec540cc..25e7e3f 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/ser/BeanSerializerFactory.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/ser/BeanSerializerFactory.java\n@@ -392,12 +392,8 @@\n             TypeSerializer typeSer \u003d createTypeSerializer(config, valueType);\n             // last 2 nulls; don\u0027t know key, value serializers (yet)\n             // 23-Feb-2015, tatu: As per [#705], need to support custom serializers\n-            JsonSerializer\u003c?\u003e anySer \u003d findSerializerFromAnnotation(prov, anyGetter);\n-            if (anySer \u003d\u003d null) {\n+            MapSerializer anySer \u003d MapSerializer.construct(null, type, staticTyping, typeSer, null, null, null);\n                 // TODO: support \u0027@JsonIgnoreProperties\u0027 with any setter?\n-                anySer \u003d MapSerializer.construct(/* ignored props*/ null, type, staticTyping,\n-                        typeSer, null, null, /*filterId*/ null);\n-            }\n             // TODO: can we find full PropertyName?\n             PropertyName name \u003d new PropertyName(anyGetter.getName());\n             BeanProperty.Std anyProp \u003d new BeanProperty.Std(name, valueType, null,\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [18118,18218]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [18118,18131]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [18132,18217]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [18118,18191]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [18208,18222]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ASSIGNMENT_OPERATOR: \u003d [18323,18324]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Assignment [18316,18457]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ExpressionStatement [18316,18458]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [18224,18472]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [18204,18472]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.ser.AnyGetterWriter:AnyGetterWriter:[BeanProperty property, AnnotatedMember accessor, MapSerializer serializer]:null"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.ser.AnyGetterWriter:AnyGetterWriter:[BeanProperty property, AnnotatedMember accessor, JsonSerializer\u003c?\u003e serializer]:null",
+        "com.fasterxml.jackson.databind.ser.AnyGetterWriter:getAndSerialize:[Object bean, JsonGenerator gen, SerializerProvider provider]:void"
+      ],
+      "num": 2
+    }
+  }
+}

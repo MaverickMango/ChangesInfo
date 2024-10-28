@@ -1,0 +1,105 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.compress.archivers.ZipTestCase::testListAllFilesWithNestedArchive,org.apache.commons.compress.archivers.zip.ZipArchiveInputStreamTest::testThrowOnInvalidEntry",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.compress.archivers.zip.ZipArchiveInputStream",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Compress",
+  "id": "41",
+  "workingDir": "../bugs/Compress_41_tmp",
+  "bug_name": "Compress_41",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.compress.archivers.ZipTestCase",
+      "test_function": "testListAllFilesWithNestedArchive",
+      "assertion_line": "281",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c1\u003e but was:\u003c0\u003e"
+    },
+    {
+      "test_class": "org.apache.commons.compress.archivers.zip.ZipArchiveInputStreamTest",
+      "test_function": "testThrowOnInvalidEntry",
+      "assertion_line": "243",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "IOException expected"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveInputStream.java",
+        "src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveInputStream.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.zip.ZipArchiveInputStream:getNextZipEntry:[]:ZipArchiveEntry"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.zip.ZipArchiveInputStream:getNextZipEntry:[]:ZipArchiveEntry"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "247",
+            "250"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "249"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveInputStream.java b/src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveInputStream.java\nindex 51b1930..5d4c0a8 100644\n--- a/src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveInputStream.java\n+++ b/src/main/java/org/apache/commons/compress/archivers/zip/ZipArchiveInputStream.java\n@@ -244,10 +244,9 @@\n         if (sig.equals(ZipLong.CFH_SIG) || sig.equals(ZipLong.AED_SIG)) {\n             hitCentralDirectory \u003d true;\n             skipRemainderOfArchive();\n-            return null;\n         }\n         if (!sig.equals(ZipLong.LFH_SIG)) {\n-            throw new ZipException(String.format(\"Unexpected record signature: 0X%X\", sig.getValue()));\n+            return null;\n         }\n \n         int off \u003d WORD;\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ThrowStatement [9591,9682]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

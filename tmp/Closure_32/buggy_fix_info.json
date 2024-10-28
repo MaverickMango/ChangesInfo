@@ -1,0 +1,228 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.IntegrationTest::testIssue701,com.google.javascript.jscomp.parsing.JsDocInfoParserTest::testParseLicense,com.google.javascript.jscomp.parsing.JsDocInfoParserTest::testParsePreserve,com.google.javascript.jscomp.parsing.JsDocInfoParserTest::testParseLicenseAscii",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.parsing.JsDocInfoParser",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "32",
+  "workingDir": "../bugs/Closure_32_tmp",
+  "bug_name": "Closure_32",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.IntegrationTest",
+      "test_function": "testIssue701",
+      "assertion_line": "1674",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c/*"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.parsing.JsDocInfoParserTest",
+      "test_function": "testParseLicense",
+      "assertion_line": "1286",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c Foo"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.parsing.JsDocInfoParserTest",
+      "test_function": "testParsePreserve",
+      "assertion_line": "1278",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c Foo"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.parsing.JsDocInfoParserTest",
+      "test_function": "testParseLicenseAscii",
+      "assertion_line": "1294",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c Foo"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java",
+        "src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.parsing.JsDocInfoParser:extractMultilineTextualBlock:[JsDocToken token, WhitespaceOption option]:ExtractionInfo"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.parsing.JsDocInfoParser:extractMultilineTextualBlock:[JsDocToken token, WhitespaceOption option]:ExtractionInfo"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1358",
+            "1365",
+            "1384",
+            "1392",
+            "1393",
+            "1394",
+            "1395",
+            "1396",
+            "1397",
+            "1398",
+            "1399",
+            "1400",
+            "1402",
+            "1403",
+            "1404",
+            "1428"
+          ],
+          "num": 16
+        },
+        {
+          "qualified_names": [
+            "1357",
+            "1385",
+            "1394",
+            "1414",
+            "1415",
+            "1416"
+          ],
+          "num": 6
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java b/src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java\nindex cfdccbe..f6a6400 100644\n--- a/src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java\n+++ b/src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java\n@@ -1355,14 +1355,12 @@\n     // Track the start of the line to count whitespace that\n     // the tokenizer skipped. Because this case is rare, it\u0027s easier\n     // to do this here than in the tokenizer.\n-    int lineStartChar \u003d -1;\n \n     do {\n       switch (token) {\n         case STAR:\n           if (ignoreStar) {\n             // Mark the position after the star as the new start of the line.\n-            lineStartChar \u003d stream.getCharno() + 1;\n           } else {\n             // The star is part of the comment.\n             if (builder.length() \u003e 0) {\n@@ -1381,7 +1379,6 @@\n           }\n \n           ignoreStar \u003d true;\n-          lineStartChar \u003d 0;\n           token \u003d next();\n           continue;\n \n@@ -1389,19 +1386,7 @@\n           ignoreStar \u003d false;\n           state \u003d State.SEARCHING_ANNOTATION;\n \n-          boolean isEOC \u003d token \u003d\u003d JsDocToken.EOC;\n-          if (!isEOC) {\n-            if (lineStartChar !\u003d -1 \u0026\u0026 option \u003d\u003d WhitespaceOption.PRESERVE) {\n-              int numSpaces \u003d stream.getCharno() - lineStartChar;\n-              for (int i \u003d 0; i \u003c numSpaces; i++) {\n-                builder.append(\u0027 \u0027);\n-              }\n-              lineStartChar \u003d -1;\n-            } else if (builder.length() \u003e 0) {\n               // All tokens must be separated by a space.\n-              builder.append(\u0027 \u0027);\n-            }\n-          }\n \n           if (token \u003d\u003d JsDocToken.EOC ||\n               token \u003d\u003d JsDocToken.EOF ||\n@@ -1426,6 +1411,9 @@\n             return new ExtractionInfo(multilineText, token);\n           }\n \n+          if (builder.length() \u003e 0) {\n+            builder.append(\u0027 \u0027);\n+          }\n           builder.append(toString(token));\n \n           line \u003d stream.getRemainingJSDocLine();\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [48264,48287]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [48458,48497]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [48908,48926]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [49078,49118]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "PrefixExpression [49133,49139]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [49159,49217]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [49235,49286]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationExpression [49306,49315]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [49317,49330]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "PostfixExpression [49332,49335]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [49337,49391]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ForStatement [49301,49391]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [49406,49425]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [49219,49439]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [49155,49579]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [49141,49591]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [49129,49591]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [49545,49565]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

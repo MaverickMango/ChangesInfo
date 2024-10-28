@@ -1,0 +1,153 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.ClosureReverseAbstractInterpreterTest::testGoogIsFunction2,com.google.javascript.jscomp.SemanticReverseAbstractInterpreterTest::testTypeof3",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.type.ChainableReverseAbstractInterpreter",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "7",
+  "workingDir": "../bugs/Closure_7_tmp",
+  "bug_name": "Closure_7",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.ClosureReverseAbstractInterpreterTest",
+      "test_function": "testGoogIsFunction2",
+      "assertion_line": "121",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: (Object|boolean|number|string)"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.SemanticReverseAbstractInterpreterTest",
+      "test_function": "testTypeof3",
+      "assertion_line": "568",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: (Object|boolean|number|string)"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/type/ChainableReverseAbstractInterpreter.java",
+        "src/com/google/javascript/jscomp/type/ChainableReverseAbstractInterpreter.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.type.ChainableReverseAbstractInterpreter\\$RestrictByOneTypeOfResultVisitor:caseObjectType:[ObjectType type]:JSType"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.type.ChainableReverseAbstractInterpreter\\$RestrictByOneTypeOfResultVisitor:caseObjectType:[ObjectType type]:JSType"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "613",
+            "615",
+            "616",
+            "618",
+            "619"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "613"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/type/ChainableReverseAbstractInterpreter.java b/src/com/google/javascript/jscomp/type/ChainableReverseAbstractInterpreter.java\nindex fa7d47d..0afabc8 100644\n--- a/src/com/google/javascript/jscomp/type/ChainableReverseAbstractInterpreter.java\n+++ b/src/com/google/javascript/jscomp/type/ChainableReverseAbstractInterpreter.java\n@@ -610,13 +610,9 @@\n     public JSType caseObjectType(ObjectType type) {\n       if (value.equals(\"function\")) {\n         JSType ctorType \u003d getNativeType(U2U_CONSTRUCTOR_TYPE);\n-        if (resultEqualsValue) {\n+        return resultEqualsValue \u0026\u0026 ctorType.isSubtype(type) ? ctorType : null;\n           // Objects are restricted to \"Function\", subtypes are left\n-          return ctorType.getGreatestSubtype(type);\n-        } else {\n           // Only filter out subtypes of \"function\"\n-          return type.isSubtype(ctorType) ? null : type;\n-        }\n       }\n       return matchesExpectation(\"object\") ? type : null;\n     }\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ReturnStatement [17941,18012]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ConditionalExpression [17948,18011]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [17948,17993]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: ctorType [17996,18004]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NullLiteral [18007,18011]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [17966,17968]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [17969,17993]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [17964,18096]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [18102,18222]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [17941,18222]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

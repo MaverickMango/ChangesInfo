@@ -1,0 +1,157 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeId999Test::testExternalTypeId",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.deser.BeanDeserializerBase,com.fasterxml.jackson.databind.deser.impl.ExternalTypeHandler",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "52",
+  "workingDir": "../bugs/JacksonDatabind_52_tmp",
+  "bug_name": "JacksonDatabind_52",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.jsontype.ext.ExternalTypeId999Test",
+      "test_function": "testExternalTypeId",
+      "assertion_line": "47",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003cfoo\u003e but was:\u003cnull\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerBase.java",
+        "src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerBase.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.BeanDeserializerBase:resolve:[DeserializationContext ctxt]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.BeanDeserializerBase:resolve:[DeserializationContext ctxt]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "612"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "612"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerBase.java b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerBase.java\nindex 43445e2..8484caa 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerBase.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerBase.java\n@@ -609,7 +609,7 @@\n         if (extTypes !\u003d null) {\n             // 21-Jun-2016, tatu: related to [databind#999], may need to link type ids too,\n             //    so need to pass collected properties\n-            _externalTypeIdHandler \u003d extTypes.build(_beanProperties);\n+            _externalTypeIdHandler \u003d extTypes.build();\n             // we consider this non-standard, to offline handling\n             _nonStandardCreation \u003d true;\n         }\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_ARGUMENTS [24469,24484]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/deser/impl/ExternalTypeHandler.java",
+        "src/main/java/com/fasterxml/jackson/databind/deser/impl/ExternalTypeHandler.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.impl.ExternalTypeHandler\\$Builder:build:[BeanPropertyMap otherProps]:ExternalTypeHandler"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.impl.ExternalTypeHandler\\$Builder:build:[]:ExternalTypeHandler"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "310",
+            "312",
+            "313",
+            "314",
+            "315",
+            "316",
+            "317",
+            "318",
+            "319",
+            "320",
+            "321",
+            "322",
+            "323",
+            "324"
+          ],
+          "num": 14
+        },
+        {
+          "qualified_names": [
+            "309"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/impl/ExternalTypeHandler.java b/src/main/java/com/fasterxml/jackson/databind/deser/impl/ExternalTypeHandler.java\nindex 30fb56f..e273c3b 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/deser/impl/ExternalTypeHandler.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/deser/impl/ExternalTypeHandler.java\n@@ -307,21 +307,7 @@\n          *\n          * @since 2.8\n          */\n-        public ExternalTypeHandler build(BeanPropertyMap otherProps) {\n             // 21-Jun-2016, tatu: as per [databind#999], may need to link type id property also\n-            final int len \u003d _properties.size();\n-            ExtTypedProperty[] extProps \u003d new ExtTypedProperty[len];\n-            for (int i \u003d 0; i \u003c len; ++i) {\n-                ExtTypedProperty extProp \u003d _properties.get(i);\n-                String typePropId \u003d extProp.getTypePropertyName();\n-                SettableBeanProperty typeProp \u003d otherProps.find(typePropId);\n-                if (typeProp !\u003d null) {\n-                    extProp.linkTypeProperty(typeProp);\n-                }\n-                extProps[i] \u003d extProp;\n-            }\n-            return new ExternalTypeHandler(extProps, _nameToPropertyIndex, null, null);\n-        }\n \n         @Deprecated // since 2.8; may be removed as early as 2.9\n         public ExternalTypeHandler build() {\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [12377,12671]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [12377,13471]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.deser.impl.ExternalTypeHandler\\$Builder:build:[]:ExternalTypeHandler"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.deser.impl.ExternalTypeHandler\\$Builder:build:[BeanPropertyMap otherProps]:ExternalTypeHandler"
+      ],
+      "num": 1
+    }
+  }
+}

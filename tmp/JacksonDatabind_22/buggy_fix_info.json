@@ -1,0 +1,428 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.ser.TestJsonValue::testJsonValueWithCustomOverride",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.ser.BasicSerializerFactory,com.fasterxml.jackson.databind.ser.BeanSerializerFactory",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "22",
+  "workingDir": "../bugs/JacksonDatabind_22_tmp",
+  "bug_name": "JacksonDatabind_22",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.ser.TestJsonValue",
+      "test_function": "testJsonValueWithCustomOverride",
+      "assertion_line": "282",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c[42]\u003e but was:\u003c[\"value\"]\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/ser/BasicSerializerFactory.java",
+        "src/main/java/com/fasterxml/jackson/databind/ser/BasicSerializerFactory.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.BasicSerializerFactory:buildCollectionSerializer:[SerializerProvider prov, CollectionType type, BeanDescription beanDesc, boolean staticTyping, TypeSerializer elementTypeSerializer, JsonSerializer\u003cObject\u003e elementValueSerializer]:JsonSerializer\u003c?\u003e",
+            "com.fasterxml.jackson.databind.ser.BasicSerializerFactory:buildMapSerializer:[SerializerProvider prov, MapType type, BeanDescription beanDesc, boolean staticTyping, JsonSerializer\u003cObject\u003e keySerializer, TypeSerializer elementTypeSerializer, JsonSerializer\u003cObject\u003e elementValueSerializer]:JsonSerializer\u003c?\u003e",
+            "com.fasterxml.jackson.databind.ser.BasicSerializerFactory:buildArraySerializer:[SerializerProvider prov, ArrayType type, BeanDescription beanDesc, boolean staticTyping, TypeSerializer elementTypeSerializer, JsonSerializer\u003cObject\u003e elementValueSerializer]:JsonSerializer\u003c?\u003e",
+            "com.fasterxml.jackson.databind.ser.BasicSerializerFactory:buildContainerSerializer:[SerializerProvider prov, JavaType type, BeanDescription beanDesc, boolean staticTyping]:JsonSerializer\u003c?\u003e"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.BasicSerializerFactory:buildArraySerializer:[SerializationConfig config, ArrayType type, BeanDescription beanDesc, boolean staticTyping, TypeSerializer elementTypeSerializer, JsonSerializer\u003cObject\u003e elementValueSerializer]:JsonSerializer\u003c?\u003e",
+            "com.fasterxml.jackson.databind.ser.BasicSerializerFactory:buildCollectionSerializer:[SerializationConfig config, CollectionType type, BeanDescription beanDesc, boolean staticTyping, TypeSerializer elementTypeSerializer, JsonSerializer\u003cObject\u003e elementValueSerializer]:JsonSerializer\u003c?\u003e",
+            "com.fasterxml.jackson.databind.ser.BasicSerializerFactory:buildContainerSerializer:[SerializerProvider prov, JavaType type, BeanDescription beanDesc, boolean staticTyping]:JsonSerializer\u003c?\u003e",
+            "com.fasterxml.jackson.databind.ser.BasicSerializerFactory:buildMapSerializer:[SerializationConfig config, MapType type, BeanDescription beanDesc, boolean staticTyping, JsonSerializer\u003cObject\u003e keySerializer, TypeSerializer elementTypeSerializer, JsonSerializer\u003cObject\u003e elementValueSerializer]:JsonSerializer\u003c?\u003e",
+            "com.fasterxml.jackson.databind.ser.BasicSerializerFactory:buildIndexedListSerializer:[JavaType elemType, boolean staticTyping, TypeSerializer vts, JsonSerializer\u003cObject\u003e valueSerializer]:ContainerSerializer\u003c?\u003e",
+            "com.fasterxml.jackson.databind.ser.BasicSerializerFactory:findSuppressableContentValue:[SerializationConfig config, JavaType contentType, BeanDescription beanDesc]:Object"
+          ],
+          "num": 6
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "580",
+            "585",
+            "589",
+            "590",
+            "591",
+            "592",
+            "593",
+            "594",
+            "595",
+            "603",
+            "608",
+            "617",
+            "618",
+            "619",
+            "620",
+            "621",
+            "622",
+            "623",
+            "631",
+            "634",
+            "646",
+            "651",
+            "666",
+            "667",
+            "704",
+            "751",
+            "757",
+            "771",
+            "772",
+            "801",
+            "849",
+            "859"
+          ],
+          "num": 32
+        },
+        {
+          "qualified_names": [
+            "580",
+            "586",
+            "594",
+            "595",
+            "598",
+            "603",
+            "616",
+            "618",
+            "621",
+            "624",
+            "636",
+            "676",
+            "716",
+            "737",
+            "785",
+            "817",
+            "831",
+            "876"
+          ],
+          "num": 18
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/ser/BasicSerializerFactory.java b/src/main/java/com/fasterxml/jackson/databind/ser/BasicSerializerFactory.java\nindex 302a385..732f631 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/ser/BasicSerializerFactory.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/ser/BasicSerializerFactory.java\n@@ -577,35 +577,30 @@\n              */\n             JsonSerializer\u003cObject\u003e keySerializer \u003d _findKeySerializer(prov, beanDesc.getClassInfo());\n             if (mlt.isTrueMapType()) {\n-                return buildMapSerializer(prov, (MapType) mlt, beanDesc, staticTyping,\n+                return buildMapSerializer(config, (MapType) mlt, beanDesc, staticTyping,\n                         keySerializer, elementTypeSerializer, elementValueSerializer);\n             }\n             // With Map-like, just 2 options: (1) Custom, (2) Annotations\n             JsonSerializer\u003c?\u003e ser \u003d null;\n-            MapLikeType mlType \u003d (MapLikeType) type;\n             for (Serializers serializers : customSerializers()) { // (1) Custom\n+                MapLikeType mlType \u003d (MapLikeType) type;\n                 ser \u003d serializers.findMapLikeSerializer(config,\n                         mlType, beanDesc, keySerializer, elementTypeSerializer, elementValueSerializer);\n-                if (ser !\u003d null) {\n-                    break;\n-                }\n-            }\n-            if (ser \u003d\u003d null) { // (2) Annotations-based ones:\n-                ser \u003d findSerializerByAnnotations(prov, type, beanDesc);\n-            }\n             if (ser !\u003d null) {\n                 if (_factoryConfig.hasSerializerModifiers()) {\n                     for (BeanSerializerModifier mod : _factoryConfig.serializerModifiers()) {\n                         ser \u003d mod.modifyMapLikeSerializer(config, mlType, beanDesc, ser);\n                     }\n+                    }\n+                    return ser;\n                 }\n             }\n-            return ser;\n+            return null;\n         }\n         if (type.isCollectionLikeType()) {\n             CollectionLikeType clt \u003d (CollectionLikeType) type;\n             if (clt.isTrueCollectionType()) {\n-                return buildCollectionSerializer(prov,  (CollectionType) clt, beanDesc, staticTyping,\n+                return buildCollectionSerializer(config,  (CollectionType) clt, beanDesc, staticTyping,\n                         elementTypeSerializer, elementValueSerializer);\n             }\n             // With Map-like, just 2 options: (1) Custom, (2) Annotations\n@@ -614,24 +609,19 @@\n             for (Serializers serializers : customSerializers()) { // (1) Custom\n                 ser \u003d serializers.findCollectionLikeSerializer(config,\n                         clType, beanDesc, elementTypeSerializer, elementValueSerializer);\n-                if (ser !\u003d null) {\n-                    break;\n-                }\n-            }\n-            if (ser \u003d\u003d null) { // (2) Annotations-based ones:\n-                ser \u003d findSerializerByAnnotations(prov, type, beanDesc);\n-            }\n             if (ser !\u003d null) {\n                 if (_factoryConfig.hasSerializerModifiers()) {\n                     for (BeanSerializerModifier mod : _factoryConfig.serializerModifiers()) {\n                         ser \u003d mod.modifyCollectionLikeSerializer(config, clType, beanDesc, ser);\n+                        }\n                     }\n+                    return ser;\n                 }\n             }\n-            return ser;\n+            return null;\n         }\n         if (type.isArrayType()) {\n-            return buildArraySerializer(prov, (ArrayType) type, beanDesc, staticTyping,\n+            return buildArraySerializer(config, (ArrayType) type, beanDesc, staticTyping,\n                     elementTypeSerializer, elementValueSerializer);\n         }\n         return null;\n@@ -643,12 +633,11 @@\n      * \n      * @since 2.1\n      */\n-    protected JsonSerializer\u003c?\u003e buildCollectionSerializer(SerializerProvider prov,\n+    protected JsonSerializer\u003c?\u003e buildCollectionSerializer(SerializationConfig config,\n             CollectionType type, BeanDescription beanDesc, boolean staticTyping,\n             TypeSerializer elementTypeSerializer, JsonSerializer\u003cObject\u003e elementValueSerializer) \n         throws JsonMappingException\n     {\n-        SerializationConfig config \u003d prov.getConfig();\n         JsonSerializer\u003c?\u003e ser \u003d null;\n         // Order of lookups:\n         // 1. Custom serializers\n@@ -663,8 +652,6 @@\n         }\n \n         if (ser \u003d\u003d null) {\n-            ser \u003d findSerializerByAnnotations(prov, type, beanDesc); // (2) Annotations\n-            if (ser \u003d\u003d null) {\n                 // We may also want to use serialize Collections \"as beans\", if (and only if)\n                 // this is specified with `@JsonFormat(shape\u003dObject)`\n                 JsonFormat.Value format \u003d beanDesc.findExpectedFormat(null);\n@@ -701,7 +688,6 @@\n                     if (ser \u003d\u003d null) {\n                         ser \u003d buildCollectionSerializer(type.getContentType(), staticTyping,\n                                 elementTypeSerializer, elementValueSerializer);\n-                    }\n                 }\n             }\n         }\n@@ -748,13 +734,12 @@\n      * Helper method that handles configuration details when constructing serializers for\n      * {@link java.util.Map} types.\n      */\n-    protected JsonSerializer\u003c?\u003e buildMapSerializer(SerializerProvider prov,\n+    protected JsonSerializer\u003c?\u003e buildMapSerializer(SerializationConfig config,\n             MapType type, BeanDescription beanDesc,\n             boolean staticTyping, JsonSerializer\u003cObject\u003e keySerializer,\n             TypeSerializer elementTypeSerializer, JsonSerializer\u003cObject\u003e elementValueSerializer)\n         throws JsonMappingException\n     {\n-        final SerializationConfig config \u003d prov.getConfig();\n         JsonSerializer\u003c?\u003e ser \u003d null;\n \n         // Order of lookups:\n@@ -768,8 +753,6 @@\n             if (ser !\u003d null) { break; }\n         }\n         if (ser \u003d\u003d null) {\n-            ser \u003d findSerializerByAnnotations(prov, type, beanDesc); // (2) Annotations\n-            if (ser \u003d\u003d null) {\n                 // 08-Nov-2014, tatu: As per [databind#601], better just use default Map serializer\n                 /*\n                 if (EnumMap.class.isAssignableFrom(type.getRawClass())\n@@ -798,7 +781,6 @@\n                 }\n                 ser \u003d mapSer;\n             }\n-        }\n         // [databind#120]: Allow post-processing\n         if (_factoryConfig.hasSerializerModifiers()) {\n             for (BeanSerializerModifier mod : _factoryConfig.serializerModifiers()) {\n@@ -846,7 +828,7 @@\n      * Helper method that handles configuration details when constructing serializers for\n      * \u003ccode\u003eObject[]\u003c/code\u003e (and subtypes, except for String).\n      */\n-    protected JsonSerializer\u003c?\u003e buildArraySerializer(SerializerProvider prov,\n+    protected JsonSerializer\u003c?\u003e buildArraySerializer(SerializationConfig config,\n             ArrayType type, BeanDescription beanDesc,\n             boolean staticTyping,\n             TypeSerializer elementTypeSerializer, JsonSerializer\u003cObject\u003e elementValueSerializer)\n@@ -856,7 +838,6 @@\n         //   types can not be annotated (in theory I guess we could have mix-ins but... ?)\n         //   so we need not do primary annotation lookup here.\n         //   So all we need is (1) Custom, (2) Default array serializers\n-        SerializationConfig config \u003d prov.getConfig();\n         JsonSerializer\u003c?\u003e ser \u003d null;\n \n         for (Serializers serializers : customSerializers()) { // (1) Custom\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [26977,27003]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [31714,31740]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [35905,35931]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [26692,26704]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [26459,26471]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [24872,24935]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [24962,25098]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [26246,26309]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [26336,26472]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [27339,27362]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [27593,27639]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [28134,28145]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [28161,28217]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [28147,30598]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [28130,30598]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [32269,32292]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [32565,32617]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [33101,33112]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [33128,33184]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [33114,34986]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [33097,34986]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [36647,36670]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [37230,37276]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/ser/BeanSerializerFactory.java",
+        "src/main/java/com/fasterxml/jackson/databind/ser/BeanSerializerFactory.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.BeanSerializerFactory:_createSerializer2:[SerializerProvider prov, JavaType type, BeanDescription beanDesc, boolean staticTyping]:JsonSerializer\u003c?\u003e"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ser.BeanSerializerFactory:_createSerializer2:[SerializerProvider prov, JavaType type, BeanDescription beanDesc, boolean staticTyping]:JsonSerializer\u003c?\u003e"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "174",
+            "209",
+            "210",
+            "211"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "174",
+            "175",
+            "176",
+            "177",
+            "205"
+          ],
+          "num": 5
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/ser/BeanSerializerFactory.java b/src/main/java/com/fasterxml/jackson/databind/ser/BeanSerializerFactory.java\nindex 063b0ff..992b364 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/ser/BeanSerializerFactory.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/ser/BeanSerializerFactory.java\n@@ -171,7 +171,10 @@\n             JavaType type, BeanDescription beanDesc, boolean staticTyping)\n         throws JsonMappingException\n     {\n-        JsonSerializer\u003c?\u003e ser \u003d null;\n+        JsonSerializer\u003c?\u003e ser \u003d findSerializerByAnnotations(prov, type, beanDesc);\n+        if (ser !\u003d null) {\n+            return ser;\n+        }\n         final SerializationConfig config \u003d prov.getConfig();\n         \n         // Container types differ from non-container types\n@@ -206,9 +209,6 @@\n             }\n             // 25-Jun-2015, tatu: Then JsonSerializable, @JsonValue etc. NOTE! Prior to 2.6,\n             //    this call was BEFORE custom serializer lookup, which was wrong.\n-            if (ser \u003d\u003d null) {\n-                ser \u003d findSerializerByAnnotations(prov, type, beanDesc);\n-            }\n         }\n         \n         if (ser \u003d\u003d null) {\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [7973,8047]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ParameterizedType [7973,7990]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [7991,8046]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [8087,8098]"
+        },
+        {
+          "type": "delete-node",
+          "from": "ASSIGNMENT_OPERATOR: \u003d [9631,9632]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Assignment [9627,9682]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ExpressionStatement [9627,9683]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [7973,8002]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.ser.BasicSerializerFactory:buildMapSerializer:[SerializationConfig config, MapType type, BeanDescription beanDesc, boolean staticTyping, JsonSerializer\u003cObject\u003e keySerializer, TypeSerializer elementTypeSerializer, JsonSerializer\u003cObject\u003e elementValueSerializer]:JsonSerializer\u003c?\u003e",
+        "com.fasterxml.jackson.databind.ser.BasicSerializerFactory:buildCollectionSerializer:[SerializationConfig config, CollectionType type, BeanDescription beanDesc, boolean staticTyping, TypeSerializer elementTypeSerializer, JsonSerializer\u003cObject\u003e elementValueSerializer]:JsonSerializer\u003c?\u003e",
+        "com.fasterxml.jackson.databind.ser.BasicSerializerFactory:buildIndexedListSerializer:[JavaType elemType, boolean staticTyping, TypeSerializer vts, JsonSerializer\u003cObject\u003e valueSerializer]:ContainerSerializer\u003c?\u003e",
+        "com.fasterxml.jackson.databind.ser.BasicSerializerFactory:buildArraySerializer:[SerializationConfig config, ArrayType type, BeanDescription beanDesc, boolean staticTyping, TypeSerializer elementTypeSerializer, JsonSerializer\u003cObject\u003e elementValueSerializer]:JsonSerializer\u003c?\u003e",
+        "com.fasterxml.jackson.databind.ser.BasicSerializerFactory:findSuppressableContentValue:[SerializationConfig config, JavaType contentType, BeanDescription beanDesc]:Object"
+      ],
+      "num": 5
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.ser.BasicSerializerFactory:buildCollectionSerializer:[SerializerProvider prov, CollectionType type, BeanDescription beanDesc, boolean staticTyping, TypeSerializer elementTypeSerializer, JsonSerializer\u003cObject\u003e elementValueSerializer]:JsonSerializer\u003c?\u003e",
+        "com.fasterxml.jackson.databind.ser.BasicSerializerFactory:buildMapSerializer:[SerializerProvider prov, MapType type, BeanDescription beanDesc, boolean staticTyping, JsonSerializer\u003cObject\u003e keySerializer, TypeSerializer elementTypeSerializer, JsonSerializer\u003cObject\u003e elementValueSerializer]:JsonSerializer\u003c?\u003e",
+        "com.fasterxml.jackson.databind.ser.BasicSerializerFactory:buildArraySerializer:[SerializerProvider prov, ArrayType type, BeanDescription beanDesc, boolean staticTyping, TypeSerializer elementTypeSerializer, JsonSerializer\u003cObject\u003e elementValueSerializer]:JsonSerializer\u003c?\u003e"
+      ],
+      "num": 3
+    }
+  }
+}

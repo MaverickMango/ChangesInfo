@@ -1,0 +1,275 @@
+diff -r -u buggy/src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java inducing/src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java
+--- buggy/src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java	2023-06-12 11:34:25.674206355 +0800
++++ inducing/src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java	2023-06-12 11:34:25.798208622 +0800
+@@ -18,7 +18,6 @@
+ 
+ import com.google.common.base.Preconditions;
+ import com.google.common.collect.ImmutableSet;
+-import com.google.common.collect.Lists;
+ import com.google.common.collect.Sets;
+ import com.google.javascript.jscomp.mozilla.rhino.ErrorReporter;
+ import com.google.javascript.jscomp.mozilla.rhino.ast.Comment;
+@@ -34,7 +33,6 @@
+ import java.util.HashSet;
+ import java.util.Map;
+ import java.util.Set;
+-import java.util.List;
+ 
+ /**
+  * A parser for JSDoc comments.
+@@ -178,8 +176,6 @@
+ 
+     JsDocToken token = next();
+ 
+-    List<ExtendedTypeInfo> extendedTypes = Lists.newArrayList();
+-
+     // Always record that we have a comment.
+     if (jsdocBuilder.shouldParseDocumentation()) {
+       ExtractionInfo blockInfo = extractBlockComment(token);
+@@ -412,9 +408,10 @@
+                     type = createJSTypeExpression(typeNode);
+ 
+                     if (annotation == Annotation.EXTENDS) {
+-                      // record the extended type, check later
+-                      extendedTypes.add(new ExtendedTypeInfo(
+-                          type, stream.getLineno(), stream.getCharno()));
++                      if (!jsdocBuilder.recordBaseType(type)) {
++                        parser.addTypeWarning(
++                            "msg.jsdoc.incompat.type", lineno, charno);
++                      }
+                     } else {
+                       Preconditions.checkState(
+                           annotation == Annotation.IMPLEMENTS);
+@@ -783,20 +780,13 @@
+                 case THIS:
+                 case TYPE:
+                 case TYPEDEF:
++                  skipEOLs();
+                   lineno = stream.getLineno();
+                   charno = stream.getCharno();
+ 
+-                  Node typeNode = null;
+-                  if (!lookAheadForTypeAnnotation() &&
+-                      annotation == Annotation.RETURN) {
+-                    // If RETURN doesn't have a type annotation, record
+-                    // it as the unknown type.
+-                    typeNode = newNode(Token.QMARK);
+-                  } else {
+-                    skipEOLs();
+-                    token = next();
+-                    typeNode = parseAndRecordTypeNode(token, lineno, charno);
+-                  }
++                  token = next();
++
++                  Node typeNode = parseAndRecordTypeNode(token, lineno, charno);
+ 
+                   if (annotation == Annotation.THIS) {
+                     typeNode = wrapNode(Token.BANG, typeNode);
+@@ -825,6 +815,9 @@
+                           break;
+                         }
+ 
++                        // *Update* the token to that after the type annotation.
++                        token = current();
++
+                         // Find the return's description (if applicable).
+                         if (jsdocBuilder.shouldParseDocumentation()) {
+                           ExtractionInfo returnDescriptionInfo =
+@@ -878,7 +871,7 @@
+           if (hasParsedFileOverviewDocInfo()) {
+             fileOverviewJSDocInfo = retrieveAndResetParsedJSDocInfo();
+           }
+-          checkExtendedTypes(extendedTypes);
++
+           return true;
+ 
+         case EOF:
+@@ -886,7 +879,6 @@
+           jsdocBuilder.build(null);
+           parser.addParserWarning("msg.unexpected.eof",
+               stream.getLineno(), stream.getCharno());
+-          checkExtendedTypes(extendedTypes);
+           return false;
+ 
+         case EOL:
+@@ -912,23 +904,6 @@
+     }
+   }
+ 
+-  private void checkExtendedTypes(List<ExtendedTypeInfo> extendedTypes) {
+-    for (ExtendedTypeInfo typeInfo : extendedTypes) {
+-      // If interface, record the multiple extended interfaces
+-      if (jsdocBuilder.isInterfaceRecorded()) {
+-        if (!jsdocBuilder.recordExtendedInterface(typeInfo.type)) {
+-          parser.addParserWarning("msg.jsdoc.extends.duplicate",
+-              typeInfo.lineno, typeInfo.charno);
+-        }
+-      } else {
+-        if (!jsdocBuilder.recordBaseType(typeInfo.type)) {
+-          parser.addTypeWarning("msg.jsdoc.incompat.type",
+-              typeInfo.lineno, typeInfo.charno);
+-        }
+-      }
+-    }
+-  }
+-
+   /**
+    * Parse a {@code @suppress} tag of the form
+    * {@code @suppress&#123;warning1|warning2&#125;}.
+@@ -1228,21 +1203,6 @@
+   }
+ 
+   /**
+-   * Tuple for recording extended types
+-   */
+-  private static class ExtendedTypeInfo {
+-    final JSTypeExpression type;
+-    final int lineno;
+-    final int charno;
+-
+-    public ExtendedTypeInfo(JSTypeExpression type, int lineno, int charno) {
+-      this.type = type;
+-      this.lineno = lineno;
+-      this.charno = charno;
+-    }
+-  }
+-
+-  /**
+    * Extracts the text found on the current line starting at token. Note that
+    * token = token.info; should be called after this method is used to update
+    * the token properly in the parser.
+@@ -1313,6 +1273,7 @@
+ 
+     // Read the content from the first line.
+     String line = stream.getRemainingJSDocLine();
++
+     if (option != WhitespaceOption.PRESERVE) {
+       line = line.trim();
+     }
+@@ -2275,30 +2236,4 @@
+   JSDocInfo getFileOverviewJSDocInfo() {
+     return fileOverviewJSDocInfo;
+   }
+-
+-  /**
+-   * Look ahead for a type annotation by advancing the character stream.
+-   * Does not modify the token stream.
+-   * This is kind of a hack, and is only necessary because we use the token
+-   * stream to parse types, but need the underlying character stream to get
+-   * JsDoc descriptions.
+-   * @return Whether we found a type annotation.
+-   */
+-  private boolean lookAheadForTypeAnnotation() {
+-    boolean matchedLc = false;
+-    int c;
+-    while (true) {
+-      c = stream.getChar();
+-      if (c == ' ') {
+-        continue;
+-      } else if (c == '{') {
+-        matchedLc = true;
+-        break;
+-      } else {
+-        break;
+-      }
+-    }
+-    stream.ungetChar(c);
+-    return matchedLc;
+-  }
+ }
+diff -r -u buggy/test/com/google/javascript/jscomp/parsing/JsDocInfoParserTest.java inducing/test/com/google/javascript/jscomp/parsing/JsDocInfoParserTest.java
+--- buggy/test/com/google/javascript/jscomp/parsing/JsDocInfoParserTest.java	2023-06-12 11:34:25.674206355 +0800
++++ inducing/test/com/google/javascript/jscomp/parsing/JsDocInfoParserTest.java	2023-06-12 11:34:25.798208622 +0800
+@@ -1789,51 +1789,8 @@
+          " * @interface \n" +
+          " * @extends {Extended} */");
+     assertTrue(jsdoc.isInterface());
+-    assertEquals(1, jsdoc.getExtendedInterfacesCount());
+-    List<JSTypeExpression> types = jsdoc.getExtendedInterfaces();
+     assertTypeEquals(registry.createNamedType("Extended", null, -1, -1),
+-        types.get(0));
+-  }
+-
+-  public void testInterfaceMultiExtends1() throws Exception {
+-    JSDocInfo jsdoc = parse(
+-        " * @interface \n" +
+-        " * @extends {Extended1} \n" +
+-        " * @extends {Extended2} */");
+-    assertTrue(jsdoc.isInterface());
+-    assertNull(jsdoc.getBaseType());
+-    assertEquals(2, jsdoc.getExtendedInterfacesCount());
+-    List<JSTypeExpression> types = jsdoc.getExtendedInterfaces();
+-    assertTypeEquals(registry.createNamedType("Extended1", null, -1, -1),
+-       types.get(0));
+-    assertTypeEquals(registry.createNamedType("Extended2", null, -1, -1),
+-        types.get(1));
+-  }
+-
+-  public void testInterfaceMultiExtends2() throws Exception {
+-    JSDocInfo jsdoc = parse(
+-        " * @extends {Extended1} \n" +
+-        " * @interface \n" +
+-        " * @extends {Extended2} \n" +
+-        " * @extends {Extended3} */");
+-    assertTrue(jsdoc.isInterface());
+-    assertNull(jsdoc.getBaseType());
+-    assertEquals(3, jsdoc.getExtendedInterfacesCount());
+-    List<JSTypeExpression> types = jsdoc.getExtendedInterfaces();
+-    assertTypeEquals(registry.createNamedType("Extended1", null, -1, -1),
+-       types.get(0));
+-    assertTypeEquals(registry.createNamedType("Extended2", null, -1, -1),
+-        types.get(1));
+-    assertTypeEquals(registry.createNamedType("Extended3", null, -1, -1),
+-        types.get(2));
+-  }
+-
+-  public void testBadClassMultiExtends() throws Exception {
+-    parse(" * @extends {Extended1} \n" +
+-        " * @constructor \n" +
+-        " * @extends {Extended2} */",
+-        "Bad type annotation. type annotation incompatible with other " +
+-        "annotations");
++        jsdoc.getBaseType());
+   }
+ 
+   public void testBadExtendsWithNullable() throws Exception {
+@@ -2209,26 +2166,6 @@
+     assertAnnotationMarker(jsdoc, "param", 1, 3);
+   }
+ 
+-  public void testParseWithMarkers5() throws Exception {
+-    JSDocInfo jsdoc =
+-        parse("@return some long \n * multiline" +
+-              " \n * description */", true);
+-
+-    assertDocumentationInMarker(
+-        assertAnnotationMarker(jsdoc, "return", 0, 0),
+-        "some long multiline description", 8, 2, 15);
+-  }
+-
+-  public void testParseWithMarkers6() throws Exception {
+-    JSDocInfo jsdoc =
+-        parse("@param x some long \n * multiline" +
+-              " \n * description */", true);
+-
+-    assertDocumentationInMarker(
+-        assertAnnotationMarker(jsdoc, "param", 0, 0),
+-        "some long multiline description", 8, 2, 15);
+-  }
+-
+   public void testParseWithMarkerNames1() throws Exception {
+     JSDocInfo jsdoc = parse("@param {SomeType} name somedescription */", true);
+ 
+@@ -2350,12 +2287,6 @@
+         "Bad type annotation. " +
+         "type annotation incompatible with other annotations");
+   }
+-
+-  public void testTypeTagConflict14() throws Exception {
+-    parse("@return x \n * @return y */",
+-        "Bad type annotation. " +
+-        "type annotation incompatible with other annotations");
+-  }
+ 
+   public void testParserWithTemplateTypeNameMissing() {
+     parse("@template */",

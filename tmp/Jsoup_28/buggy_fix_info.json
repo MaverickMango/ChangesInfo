@@ -1,0 +1,379 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.jsoup.nodes.EntitiesTest::unescape,org.jsoup.nodes.EntitiesTest::noSpuriousDecodes,org.jsoup.parser.AttributeParseTest::moreAttributeUnescapes,org.jsoup.parser.AttributeParseTest::strictAttributeUnescapes,org.jsoup.parser.HtmlParserTest::doesNotFindShortestMatchingEntity,org.jsoup.parser.HtmlParserTest::relaxedBaseEntityMatchAndStrictExtendedMatch",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.jsoup.nodes.Entities,org.jsoup.parser.Parser,org.jsoup.parser.Tokeniser",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Jsoup",
+  "id": "28",
+  "workingDir": "../bugs/Jsoup_28_tmp",
+  "bug_name": "Jsoup_28",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.jsoup.nodes.EntitiesTest",
+      "test_function": "unescape",
+      "assertion_line": "27",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003cHello \u0026\u003c\u003e ® Å [\u0026angst] π π 新 there \u0026! ¾ © ...\u003e but was:\u003cHello \u0026\u003c\u003e ® Å [Å] π π 新 there \u0026! ¾ © ...\u003e"
+    },
+    {
+      "test_class": "org.jsoup.nodes.EntitiesTest",
+      "test_function": "noSpuriousDecodes",
+      "assertion_line": "65",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c...tp://www.foo.com?a\u003d1[\u0026num_rooms\u003d1\u0026children\u003d0\u0026int]\u003dVA\u0026b\u003d2\u003e but was:\u003c...tp://www.foo.com?a\u003d1[#_rooms\u003d1\u0026children\u003d0∫]\u003dVA\u0026b\u003d2\u003e"
+    },
+    {
+      "test_class": "org.jsoup.parser.AttributeParseTest",
+      "test_function": "moreAttributeUnescapes",
+      "assertion_line": "67",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c...23\u0026mid-size\u003dtrue\u0026ok\u003d[\u0026wr]\u003e but was:\u003c...23\u0026mid-size\u003dtrue\u0026ok\u003d[≀]\u003e"
+    },
+    {
+      "test_class": "org.jsoup.parser.AttributeParseTest",
+      "test_function": "strictAttributeUnescapes",
+      "assertion_line": "60",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c?foo\u003dbar[\u0026mid]\u0026lt\u003dtrue\u003e but was:\u003c?foo\u003dbar[∣]\u0026lt\u003dtrue\u003e"
+    },
+    {
+      "test_class": "org.jsoup.parser.HtmlParserTest",
+      "test_function": "doesNotFindShortestMatchingEntity",
+      "assertion_line": "729",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003cOne [\u0026amp;clubsuit]e; ♣\u003e but was:\u003cOne [♣]e; ♣\u003e"
+    },
+    {
+      "test_class": "org.jsoup.parser.HtmlParserTest",
+      "test_function": "relaxedBaseEntityMatchAndStrictExtendedMatch",
+      "assertion_line": "737",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c\u0026amp; \u0026quot; \u0026reg; \u0026[amp;icy \u0026amp;hopf] \u0026icy; \u0026hopf;\u003e but was:\u003c\u0026amp; \u0026quot; \u0026reg; \u0026[icy; \u0026hopf;] \u0026icy; \u0026hopf;\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/nodes/Entities.java",
+        "src/main/java/org/jsoup/nodes/Entities.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.nodes.Entities:isBaseNamedEntity:[String name]:boolean",
+            "org.jsoup.nodes.Entities:unescape:[String string, boolean strict]:String"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.jsoup.nodes.Entities:unescape:[String string, boolean strict]:String",
+            "org.jsoup.nodes.Entities:getCharacterByName:[String name]:Character"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "3",
+            "62",
+            "63",
+            "64",
+            "107"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "2",
+            "62",
+            "103",
+            "104",
+            "105",
+            "106",
+            "107",
+            "108",
+            "109",
+            "110",
+            "111",
+            "112",
+            "113",
+            "114",
+            "115",
+            "116",
+            "117",
+            "118",
+            "119",
+            "120",
+            "121",
+            "122",
+            "123",
+            "124",
+            "125",
+            "126",
+            "127",
+            "128",
+            "129"
+          ],
+          "num": 29
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/nodes/Entities.java b/src/main/java/org/jsoup/nodes/Entities.java\nindex a60fab8..be73e32 100644\n--- a/src/main/java/org/jsoup/nodes/Entities.java\n+++ b/src/main/java/org/jsoup/nodes/Entities.java\n@@ -1,6 +1,5 @@\n package org.jsoup.nodes;\n \n-import org.jsoup.parser.Parser;\n \n import java.io.IOException;\n import java.io.InputStream;\n@@ -59,9 +58,6 @@\n      * @return true if a known named entity in the base set\n      * @see #isNamedEntity(String)\n      */\n-    public static boolean isBaseNamedEntity(String name) {\n-        return base.containsKey(name);\n-    }\n \n     /**\n      * Get the Character value of the named entity\n@@ -104,7 +100,33 @@\n      * @return\n      */\n     static String unescape(String string, boolean strict) {\n-        return Parser.unescapeEntities(string, strict);\n+        if (!string.contains(\"\u0026\"))\n+            return string;\n+        Matcher m \u003d strict? strictUnescapePattern.matcher(string) : unescapePattern.matcher(string);\n+        StringBuffer accum \u003d new StringBuffer(string.length());\n+        while (m.find()) {\n+            int charval \u003d -1;\n+            String num \u003d m.group(3);\n+            if (num !\u003d null) {\n+                try {\n+                    int base \u003d m.group(2) !\u003d null ? 16 : 10;\n+                    charval \u003d Integer.valueOf(num, base);\n+                } catch (NumberFormatException e) {\n+                }\n+            } else {\n+                String name \u003d m.group(1);\n+                if (full.containsKey(name))\n+                    charval \u003d full.get(name);\n+            }\n+            if (charval !\u003d -1 || charval \u003e 0xFFFF) {\n+                String c \u003d Character.toString((char) charval);\n+                m.appendReplacement(accum, Matcher.quoteReplacement(c));\n+            } else {\n+                m.appendReplacement(accum, Matcher.quoteReplacement(m.group(0)));\n+            }\n+        }\n+        m.appendTail(accum);\n+        return accum.toString();\n     }\n \n     // xhtml has restricted entities\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [3440,3493]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [3502,3594]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [3603,3658]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "WhileStatement [3667,4477]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [4486,4506]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [4515,4539]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [26,57]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [1799,2148]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [3576,3623]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/parser/Parser.java",
+        "src/main/java/org/jsoup/parser/Parser.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.parser.Parser:unescapeEntities:[String string, boolean inAttribute]:String"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "133",
+            "134",
+            "135",
+            "136"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "132"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/parser/Parser.java b/src/main/java/org/jsoup/parser/Parser.java\nindex eebce38..ed700d9 100644\n--- a/src/main/java/org/jsoup/parser/Parser.java\n+++ b/src/main/java/org/jsoup/parser/Parser.java\n@@ -130,10 +130,6 @@\n      * @param inAttribute if the string is to be escaped in strict mode (as attributes are)\n      * @return an unescaped string\n      */\n-    public static String unescapeEntities(String string, boolean inAttribute) {\n-        Tokeniser tokeniser \u003d new Tokeniser(new CharacterReader(string), ParseErrorList.noTracking());\n-        return tokeniser.unescapeEntities(inAttribute);\n-    }\n \n     /**\n      * @param bodyHtml HTML to parse\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [4380,4866]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/parser/Tokeniser.java",
+        "src/main/java/org/jsoup/parser/Tokeniser.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.parser.Tokeniser:unescapeEntities:[boolean inAttribute]:String",
+            "org.jsoup.parser.Tokeniser:consumeCharacterReference:[Character additionalAllowedCharacter, boolean inAttribute]:Character"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.jsoup.parser.Tokeniser:characterReferenceError:[String message]:void",
+            "org.jsoup.parser.Tokeniser:consumeCharacterReference:[Character additionalAllowedCharacter, boolean inAttribute]:Character"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "138",
+            "143",
+            "229",
+            "230",
+            "231",
+            "232",
+            "233",
+            "234",
+            "235",
+            "236",
+            "237",
+            "238",
+            "239",
+            "240",
+            "241",
+            "242",
+            "243"
+          ],
+          "num": 17
+        },
+        {
+          "qualified_names": [
+            "136",
+            "139",
+            "140",
+            "141",
+            "142",
+            "143",
+            "144",
+            "145",
+            "146",
+            "147",
+            "152",
+            "219"
+          ],
+          "num": 12
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/parser/Tokeniser.java b/src/main/java/org/jsoup/parser/Tokeniser.java\nindex 3445855..5c40cf7 100644\n--- a/src/main/java/org/jsoup/parser/Tokeniser.java\n+++ b/src/main/java/org/jsoup/parser/Tokeniser.java\n@@ -133,14 +133,23 @@\n         } else { // named\n             // get as many letters as possible, and look for matching entities.\n             String nameRef \u003d reader.consumeLetterThenDigitSequence();\n+            String origNameRef \u003d new String(nameRef);\n             boolean looksLegit \u003d reader.matches(\u0027;\u0027);\n             // found if a base named entity without a ;, or an extended entity with the ;.\n-            boolean found \u003d (Entities.isBaseNamedEntity(nameRef) || (Entities.isNamedEntity(nameRef) \u0026\u0026 looksLegit));\n+            boolean found \u003d false;\n+            while (nameRef.length() \u003e 0 \u0026\u0026 !found) {\n+                if (Entities.isNamedEntity(nameRef))\n+                    found \u003d true;\n+                else {\n+                    nameRef \u003d nameRef.substring(0, nameRef.length()-1);\n+                    reader.unconsume();\n+                }\n+            }\n \n             if (!found) {\n                 reader.rewindToMark();\n                 if (looksLegit) // named with semicolon\n-                    characterReferenceError(String.format(\"invalid named referenece \u0027%s\u0027\", nameRef));\n+                    characterReferenceError(String.format(\"invalid named referenece \u0027%s\u0027\", origNameRef));\n                 return null;\n             }\n             if (inAttribute \u0026\u0026 (reader.matchesLetter() || reader.matchesDigit() || reader.matchesAny(\u0027\u003d\u0027, \u0027-\u0027, \u0027_\u0027))) {\n@@ -226,19 +235,4 @@\n      * @param inAttribute\n      * @return unescaped string from reader\n      */\n-    String unescapeEntities(boolean inAttribute) {\n-        StringBuilder builder \u003d new StringBuilder();\n-        while (!reader.isEmpty()) {\n-            builder.append(reader.consumeTo(\u0027\u0026\u0027));\n-            if (reader.matches(\u0027\u0026\u0027)) {\n-                reader.consume();\n-                Character c \u003d consumeCharacterReference(null, inAttribute);\n-                if (c \u003d\u003d null)\n-                    builder.append(\u0027\u0026\u0027);\n-                else\n-                    builder.append(c);\n-            }\n-        }\n-        return builder.toString();\n-    }\n }\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [5010,5051]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [5209,5231]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "WhileStatement [5244,5538]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [5010,5016]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [5017,5050]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: origNameRef [5017,5028]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ClassInstanceCreation [5031,5050]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [5035,5041]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [5155,5260]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [7866,8560]",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.jsoup.nodes.Entities:getCharacterByName:[String name]:Character",
+        "org.jsoup.parser.Tokeniser:characterReferenceError:[String message]:void"
+      ],
+      "num": 2
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.jsoup.nodes.Entities:isBaseNamedEntity:[String name]:boolean",
+        "org.jsoup.parser.Parser:unescapeEntities:[String string, boolean inAttribute]:String",
+        "org.jsoup.parser.Tokeniser:unescapeEntities:[boolean inAttribute]:String"
+      ],
+      "num": 3
+    }
+  }
+}

@@ -1,0 +1,689 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Closure",
+  "id": "92",
+  "workingDir": "../bugs/Closure_92_buggy",
+  "inducingCommit": "5a3b4cb6b7e816aacd0ffd4c71e23da949fe360d",
+  "originalCommit": "9d1e18e87a41f2a610ed70f3a1d57abbce7a1cd7",
+  "bug_name": "Closure_92",
+  "derive": "defects4j",
+  "original_fixing_commit": "8980b60033b1c6853cbca593ec89d3d332adf7dc",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/FunctionTypeBuilder.java",
+        "src/com/google/javascript/jscomp/FunctionTypeBuilder.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "inferInheritance"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "apply",
+            "apply",
+            "inferInheritance"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "24",
+            "91",
+            "122",
+            "281",
+            "282",
+            "283",
+            "294",
+            "295",
+            "296",
+            "297",
+            "298"
+          ],
+          "num": 11
+        },
+        {
+          "qualified_names": [
+            "25",
+            "93",
+            "94",
+            "95",
+            "96",
+            "128",
+            "129",
+            "130",
+            "131",
+            "132",
+            "133",
+            "134",
+            "135",
+            "136",
+            "137",
+            "138",
+            "139",
+            "140",
+            "141",
+            "142",
+            "143",
+            "144",
+            "145",
+            "146",
+            "147",
+            "148",
+            "149",
+            "150",
+            "151",
+            "152",
+            "153",
+            "154",
+            "155",
+            "156",
+            "157",
+            "158",
+            "159",
+            "160",
+            "161",
+            "162",
+            "163",
+            "164",
+            "165",
+            "166",
+            "167",
+            "326",
+            "327",
+            "328",
+            "329",
+            "330",
+            "341",
+            "342",
+            "343",
+            "344"
+          ],
+          "num": 54
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/FunctionTypeBuilder.java b/src/com/google/javascript/jscomp/FunctionTypeBuilder.java\nindex 08f1a4e..28198bc 100644\n--- a/src/com/google/javascript/jscomp/FunctionTypeBuilder.java\n+++ b/src/com/google/javascript/jscomp/FunctionTypeBuilder.java\n@@ -22,6 +22,7 @@\n import static com.google.javascript.rhino.jstype.JSTypeNative.VOID_TYPE;\n \n import com.google.common.base.Preconditions;\n+import com.google.common.base.Predicate;\n import com.google.common.collect.Iterables;\n import com.google.common.collect.Lists;\n import com.google.common.collect.Sets;\n@@ -89,6 +90,10 @@\n       \"JSC_EXTENDS_NON_OBJECT\",\n       \"{0} @extends non-object type {1}\");\n \n+  static final DiagnosticType RESOLVED_TAG_EMPTY \u003d DiagnosticType.warning(\n+      \"JSC_RESOLVED_TAG_EMPTY\",\n+      \"Could not resolve type in {0} tag of {1}\");\n+\n   static final DiagnosticType IMPLEMENTS_WITHOUT_CONSTRUCTOR \u003d\n       DiagnosticType.warning(\n           \"JSC_IMPLEMENTS_WITHOUT_CONSTRUCTOR\",\n@@ -120,6 +125,46 @@\n       \"JSC_TEMPLATE_TYPE_EXPECTED\",\n       \"The template type must be a parameter type\");\n \n+  private class ExtendedTypeValidator implements Predicate\u003cJSType\u003e {\n+    @Override\n+    public boolean apply(JSType type) {\n+      ObjectType objectType \u003d ObjectType.cast(type);\n+      if (objectType \u003d\u003d null) {\n+        reportWarning(EXTENDS_NON_OBJECT, fnName, type.toString());\n+      } else if (objectType.isUnknownType() \u0026\u0026\n+          // If this has a supertype that hasn\u0027t been resolved yet,\n+          // then we can assume this type will be ok once the super\n+          // type resolves.\n+          (objectType.getImplicitPrototype() \u003d\u003d null ||\n+           objectType.getImplicitPrototype().isResolved())) {\n+        reportWarning(RESOLVED_TAG_EMPTY, \"@extends\", fnName);\n+      } else {\n+        return true;\n+      }\n+      return false;\n+    }\n+  };\n+\n+  private class ImplementedTypeValidator implements Predicate\u003cJSType\u003e {\n+    @Override\n+    public boolean apply(JSType type) {\n+      ObjectType objectType \u003d ObjectType.cast(type);\n+      if (objectType \u003d\u003d null) {\n+        reportError(BAD_IMPLEMENTED_TYPE, fnName);\n+      } else if (objectType.isUnknownType() \u0026\u0026\n+          // If this has a supertype that hasn\u0027t been resolved yet,\n+          // then we can assume this type will be ok once the super\n+          // type resolves.\n+          (objectType.getImplicitPrototype() \u003d\u003d null ||\n+           objectType.getImplicitPrototype().isResolved())) {\n+        reportWarning(RESOLVED_TAG_EMPTY, \"@implements\", fnName);\n+      } else {\n+        return true;\n+      }\n+      return false;\n+    }\n+  };\n+\n   /**\n    * @param fnName The function name.\n    * @param compiler The compiler.\n@@ -278,9 +323,11 @@\n       // base type\n       if (info.hasBaseType()) {\n         if (isConstructor || isInterface) {\n-          baseType \u003d ObjectType.cast(info.getBaseType().evaluate(scope, typeRegistry));\n-          if (baseType \u003d\u003d null) {\n-            reportWarning(EXTENDS_NON_OBJECT, fnName, baseType.toString());\n+          JSType maybeBaseType \u003d\n+              info.getBaseType().evaluate(scope, typeRegistry);\n+          if (maybeBaseType !\u003d null \u0026\u0026\n+              maybeBaseType.setValidator(new ExtendedTypeValidator())) {\n+            baseType \u003d (ObjectType) maybeBaseType;\n           }\n         } else {\n           reportWarning(EXTENDS_WITHOUT_TYPEDEF, fnName);\n@@ -291,11 +338,10 @@\n       if (isConstructor || isInterface) {\n         implementedInterfaces \u003d Lists.newArrayList();\n         for (JSTypeExpression t : info.getImplementedInterfaces()) {\n-          ObjectType interType \u003d ObjectType.cast(t.evaluate(scope, typeRegistry));\n-          if (interType !\u003d null) {\n-            implementedInterfaces.add(interType);\n-          } else {\n-            reportError(BAD_IMPLEMENTED_TYPE, fnName);\n+          JSType maybeInterType \u003d t.evaluate(scope, typeRegistry);\n+          if (maybeInterType !\u003d null \u0026\u0026\n+              maybeInterType.setValidator(new ImplementedTypeValidator())) {\n+            implementedInterfaces.add((ObjectType) maybeInterType);\n           }\n         }\n         if (baseType !\u003d null) {\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [991,1031]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [3677,3832]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TypeDeclaration [5090,5829]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TypeDeclaration [5834,6562]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [12118,12204]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [12215,12379]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [12681,12737]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [12748,12934]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [12219,12313]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [12315,12379]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [12681,12687]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [12688,12736]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [12752,12851]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: maybeInterType [12688,12702]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "CastExpression [12340,12366]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleType [12341,12351]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: maybeBaseType [12353,12366]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "CastExpression [12893,12920]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_RECEIVER [10452,10462]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: cast [10463,10467]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_ARGUMENTS [10468,10516]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [10452,10517]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [10529,10640]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: interType [11088,11097]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [10942,10952]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: interType [10953,10962]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_RECEIVER [10965,10975]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: cast [10976,10980]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [10981,11012]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [10965,11013]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [10953,11013]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [10942,11014]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [11029,11046]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [11117,11185]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [11025,11185]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/ProcessClosurePrimitives.java",
+        "src/com/google/javascript/jscomp/ProcessClosurePrimitives.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "replace"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "replace"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "789"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "789"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/ProcessClosurePrimitives.java b/src/com/google/javascript/jscomp/ProcessClosurePrimitives.java\nindex 1d738b5..c929a36 100644\n--- a/src/com/google/javascript/jscomp/ProcessClosurePrimitives.java\n+++ b/src/com/google/javascript/jscomp/ProcessClosurePrimitives.java\n@@ -786,7 +786,7 @@\n         } else {\n           // In this case, the name was implicitly provided by two independent\n           // modules. We need to move this code up to a common module.\n-          int indexOfDot \u003d namespace.lastIndexOf(\u0027.\u0027);\n+          int indexOfDot \u003d namespace.indexOf(\u0027.\u0027);\n           if (indexOfDot \u003d\u003d -1) {\n             // Any old place is fine.\n             compiler.getNodeForCodeInsertion(minimumModule)\n",
+      "operations": [
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/SourceFile.java",
+        "src/com/google/javascript/jscomp/SourceFile.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "toString"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "235",
+            "236",
+            "237",
+            "238",
+            "239"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "234"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/SourceFile.java b/src/com/google/javascript/jscomp/SourceFile.java\nindex 891389c..0c40f03 100644\n--- a/src/com/google/javascript/jscomp/SourceFile.java\n+++ b/src/com/google/javascript/jscomp/SourceFile.java\n@@ -232,11 +232,6 @@\n     }\n   }\n \n-  @Override\n-  public String toString() {\n-    return fileName;\n-  }\n-\n   public static SourceFile fromFile(String fileName, Charset c) {\n     return fromFile(new File(fileName), c);\n   }\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [7058,7121]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/JSType.java",
+        "src/com/google/javascript/rhino/jstype/JSType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [
+            "setValidator"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "43",
+            "927"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "44",
+            "929",
+            "930",
+            "931",
+            "932",
+            "933",
+            "934",
+            "935",
+            "936",
+            "937",
+            "938"
+          ],
+          "num": 11
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/JSType.java b/src/com/google/javascript/rhino/jstype/JSType.java\nindex ec47cd0..2ca901e 100644\n--- a/src/com/google/javascript/rhino/jstype/JSType.java\n+++ b/src/com/google/javascript/rhino/jstype/JSType.java\n@@ -41,6 +41,7 @@\n \n import static com.google.javascript.rhino.jstype.TernaryValue.UNKNOWN;\n \n+import com.google.common.base.Predicate;\n import com.google.javascript.rhino.ErrorReporter;\n import com.google.javascript.rhino.JSDocInfo;\n import com.google.javascript.rhino.jstype.JSTypeRegistry.ResolveMode;\n@@ -925,6 +926,16 @@\n     return type \u003d\u003d null ? null : type.resolve(t, scope);\n   }\n \n+  /**\n+   * Certain types have constraints on them at resolution-time.\n+   * For example, a type in an {@code @extends} annotation must be an\n+   * object. Clients should inject a validator that emits a warning\n+   * if the type does not validate, and return false.\n+   */\n+  public boolean setValidator(Predicate\u003cJSType\u003e validator) {\n+    return validator.apply(this);\n+  }\n+\n   public static class TypePair {\n     public final JSType typeA;\n     public final JSType typeB;\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [1700,1740]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [29174,29538]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/NamedType.java",
+        "src/com/google/javascript/rhino/jstype/NamedType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "handleUnresolvedType",
+            "setReferencedAndResolvedType",
+            "getTypedefType"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "handleUnresolvedType",
+            "setValidator",
+            "setReferencedAndResolvedType"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "42",
+            "85",
+            "290",
+            "317",
+            "318",
+            "319",
+            "326",
+            "342"
+          ],
+          "num": 8
+        },
+        {
+          "qualified_names": [
+            "43",
+            "87",
+            "88",
+            "89",
+            "90",
+            "91",
+            "297",
+            "298",
+            "299",
+            "326",
+            "327",
+            "328",
+            "329",
+            "337",
+            "338",
+            "339",
+            "340",
+            "357",
+            "358",
+            "359",
+            "360",
+            "361",
+            "362",
+            "363",
+            "364",
+            "365",
+            "366",
+            "367",
+            "368",
+            "369"
+          ],
+          "num": 30
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/NamedType.java b/src/com/google/javascript/rhino/jstype/NamedType.java\nindex cd4e2d0..fc5996b 100644\n--- a/src/com/google/javascript/rhino/jstype/NamedType.java\n+++ b/src/com/google/javascript/rhino/jstype/NamedType.java\n@@ -40,6 +40,7 @@\n package com.google.javascript.rhino.jstype;\n \n import com.google.common.base.Preconditions;\n+import com.google.common.base.Predicate;\n import com.google.javascript.rhino.ErrorReporter;\n \n /**\n@@ -83,6 +84,11 @@\n   private final int charno;\n \n   /**\n+   * Validates the type resolution.\n+   */\n+  private Predicate\u003cJSType\u003e validator;\n+\n+  /**\n    * If true, don\u0027t warn about unresolveable type names.\n    *\n    * NOTE(nicksantos): A lot of third-party code doesn\u0027t use our type syntax.\n@@ -288,6 +294,9 @@\n \n   private void setReferencedAndResolvedType(JSType type, ErrorReporter t,\n       StaticScope\u003cJSType\u003e enclosing) {\n+    if (validator !\u003d null) {\n+      validator.apply(type);\n+    }\n     setReferencedType(type);\n     checkEnumElementCycle(t);\n     setResolvedTypeInternal(getReferencedType());\n@@ -314,9 +323,10 @@\n   private void handleUnresolvedType(\n       ErrorReporter t, boolean ignoreForwardReferencedTypes) {\n     if (registry.isLastGeneration()) {\n-      boolean beForgiving \u003d forgiving ||\n-          (ignoreForwardReferencedTypes \u0026\u0026\n-           registry.isForwardDeclaredType(reference));\n+      boolean isForwardDeclared \u003d\n+          ignoreForwardReferencedTypes \u0026\u0026\n+          registry.isForwardDeclaredType(reference);\n+      boolean beForgiving \u003d forgiving || isForwardDeclared;\n       if (!beForgiving \u0026\u0026 registry.isLastGeneration()) {\n         t.warning(\"Unknown type \" + reference, sourceName, lineno, null,\n             charno);\n@@ -324,6 +334,10 @@\n         setReferencedType(\n             registry.getNativeObjectType(\n                 JSTypeNative.CHECKED_UNKNOWN_TYPE));\n+\n+        if (registry.isLastGeneration() \u0026\u0026 validator !\u003d null) {\n+          validator.apply(getReferencedType());\n+        }\n       }\n \n       setResolvedTypeInternal(getReferencedType());\n@@ -340,4 +354,17 @@\n     handleUnresolvedType(t, true);\n     return null;\n   }\n+\n+  @Override\n+  public boolean setValidator(Predicate\u003cJSType\u003e validator) {\n+    // If the type is already resolved, we can validate it now. If\n+    // the type has not been resolved yet, we need to wait till its\n+    // resolved before we can validate it.\n+    if (this.isResolved()) {\n+      return super.setValidator(validator);\n+    } else {\n+      this.validator \u003d validator;\n+      return true;\n+    }\n+  }\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [1673,1713]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [3596,3680]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [11991,12388]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [10062,10121]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [11181,11234]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [11532,11645]"
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: forgiving [10881,10890]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: || [10891,10893]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ParenthesizedExpression [10904,10990]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [10881,10990]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "apply",
+        "setValidator"
+      ],
+      "num": 2
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "toString",
+        "getTypedefType"
+      ],
+      "num": 2
+    }
+  },
+  "trigger_tests": [],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/ProcessClosurePrimitives.java",
+        "src/com/google/javascript/jscomp/ProcessClosurePrimitives.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "replace"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "replace"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "789"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "789"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Closure_92/properties/modified_classes/inducing/src/com/google/javascript/jscomp/ProcessClosurePrimitives.java data/changesInfo//Closure_92/cleaned/fixing/src/com/google/javascript/jscomp/ProcessClosurePrimitives.java\n--- data/changesInfo//Closure_92/properties/modified_classes/inducing/src/com/google/javascript/jscomp/ProcessClosurePrimitives.java\t2023-08-25 13:25:11.853198461 +0800\n+++ data/changesInfo//Closure_92/cleaned/fixing/src/com/google/javascript/jscomp/ProcessClosurePrimitives.java\t2023-06-15 14:50:42.916085212 +0800\n@@ -786,7 +786,7 @@\n         } else {\n           // In this case, the name was implicitly provided by two independent\n           // modules. We need to move this code up to a common module.\n-          int indexOfDot \u003d namespace.indexOf(\u0027.\u0027);\n+          int indexOfDot \u003d namespace.lastIndexOf(\u0027.\u0027);\n           if (indexOfDot \u003d\u003d -1) {\n             // Any old place is fine.\n             compiler.getNodeForCodeInsertion(minimumModule)\n",
+      "operations": [
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

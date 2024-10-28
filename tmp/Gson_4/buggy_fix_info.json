@@ -1,0 +1,246 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.gson.stream.JsonReaderTest::testTopLevelValueTypeWithSkipValue,com.google.gson.stream.JsonReaderTest::testTopLevelValueTypes,com.google.gson.stream.JsonWriterTest::testTopLevelValueTypes",
+    "test.dir": "gson/src/test/java",
+    "clz.modified": "com.google.gson.stream.JsonReader,com.google.gson.stream.JsonWriter",
+    "src.dir": "gson/src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Gson",
+  "id": "4",
+  "workingDir": "../bugs/Gson_4_tmp",
+  "bug_name": "Gson_4",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.gson.stream.JsonReaderTest",
+      "test_function": "testTopLevelValueTypeWithSkipValue",
+      "assertion_line": "1251",
+      "exception": "com.google.gson.stream.MalformedJsonException",
+      "message": "Use JsonReader.setLenient(true) to accept malformed JSON at line 1 column 1 path $"
+    },
+    {
+      "test_class": "com.google.gson.stream.JsonReaderTest",
+      "test_function": "testTopLevelValueTypes",
+      "assertion_line": "1224",
+      "exception": "com.google.gson.stream.MalformedJsonException",
+      "message": "Use JsonReader.setLenient(true) to accept malformed JSON at line 1 column 1 path $"
+    },
+    {
+      "test_class": "com.google.gson.stream.JsonWriterTest",
+      "test_function": "testTopLevelValueTypes",
+      "assertion_line": "31",
+      "exception": "java.lang.IllegalStateException",
+      "message": "JSON must start with an array or an object."
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "gson/src/main/java/com/google/gson/stream/JsonReader.java",
+        "gson/src/main/java/com/google/gson/stream/JsonReader.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.gson.stream.JsonReader:doPeek:[]:int"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.gson.stream.JsonReader:doPeek:[]:int"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "573",
+            "581"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "574",
+            "575",
+            "576",
+            "585",
+            "586",
+            "587"
+          ],
+          "num": 6
+        }
+      ],
+      "diff": "diff --git a/gson/src/main/java/com/google/gson/stream/JsonReader.java b/gson/src/main/java/com/google/gson/stream/JsonReader.java\nindex 838355c..e3ad50e 100644\n--- a/gson/src/main/java/com/google/gson/stream/JsonReader.java\n+++ b/gson/src/main/java/com/google/gson/stream/JsonReader.java\n@@ -571,6 +571,9 @@\n       checkLenient();\n       return peeked \u003d PEEKED_SINGLE_QUOTED;\n     case \u0027\"\u0027:\n+      if (stackSize \u003d\u003d 1) {\n+        checkLenient();\n+      }\n       return peeked \u003d PEEKED_DOUBLE_QUOTED;\n     case \u0027[\u0027:\n       return peeked \u003d PEEKED_BEGIN_ARRAY;\n@@ -579,6 +582,9 @@\n     default:\n       pos--; // Don\u0027t consume the first character in a literal value.\n     }\n+    if (stackSize \u003d\u003d 1) {\n+      checkLenient();\n+    }\n \n     int result \u003d peekKeyword();\n     if (result !\u003d PEEKED_NONE) {\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [20308,20357]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [20004,20057]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "gson/src/main/java/com/google/gson/stream/JsonWriter.java",
+        "gson/src/main/java/com/google/gson/stream/JsonWriter.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.gson.stream.JsonWriter:value:[Number value]:JsonWriter",
+            "com.google.gson.stream.JsonWriter:value:[boolean value]:JsonWriter",
+            "com.google.gson.stream.JsonWriter:beforeValue:[]:void",
+            "com.google.gson.stream.JsonWriter:value:[String value]:JsonWriter",
+            "com.google.gson.stream.JsonWriter:nullValue:[]:JsonWriter",
+            "com.google.gson.stream.JsonWriter:value:[long value]:JsonWriter",
+            "com.google.gson.stream.JsonWriter:open:[int empty, String openBracket]:JsonWriter",
+            "com.google.gson.stream.JsonWriter:jsonValue:[String value]:JsonWriter",
+            "com.google.gson.stream.JsonWriter:value:[double value]:JsonWriter"
+          ],
+          "num": 9
+        },
+        {
+          "qualified_names": [
+            "com.google.gson.stream.JsonWriter:jsonValue:[String value]:JsonWriter",
+            "com.google.gson.stream.JsonWriter:value:[long value]:JsonWriter",
+            "com.google.gson.stream.JsonWriter:value:[String value]:JsonWriter",
+            "com.google.gson.stream.JsonWriter:value:[Number value]:JsonWriter",
+            "com.google.gson.stream.JsonWriter:value:[boolean value]:JsonWriter",
+            "com.google.gson.stream.JsonWriter:beforeValue:[boolean root]:void",
+            "com.google.gson.stream.JsonWriter:value:[double value]:JsonWriter",
+            "com.google.gson.stream.JsonWriter:open:[int empty, String openBracket]:JsonWriter",
+            "com.google.gson.stream.JsonWriter:nullValue:[]:JsonWriter"
+          ],
+          "num": 9
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "325",
+            "418",
+            "435",
+            "454",
+            "466",
+            "483",
+            "495",
+            "518",
+            "613",
+            "621"
+          ],
+          "num": 10
+        },
+        {
+          "qualified_names": [
+            "325",
+            "418",
+            "435",
+            "454",
+            "466",
+            "483",
+            "495",
+            "518",
+            "613",
+            "622",
+            "623",
+            "624",
+            "625"
+          ],
+          "num": 13
+        }
+      ],
+      "diff": "diff --git a/gson/src/main/java/com/google/gson/stream/JsonWriter.java b/gson/src/main/java/com/google/gson/stream/JsonWriter.java\nindex 9bf2d22..d76f7c1 100644\n--- a/gson/src/main/java/com/google/gson/stream/JsonWriter.java\n+++ b/gson/src/main/java/com/google/gson/stream/JsonWriter.java\n@@ -322,7 +322,7 @@\n    * bracket.\n    */\n   private JsonWriter open(int empty, String openBracket) throws IOException {\n-    beforeValue();\n+    beforeValue(true);\n     push(empty);\n     out.write(openBracket);\n     return this;\n@@ -415,7 +415,7 @@\n       return nullValue();\n     }\n     writeDeferredName();\n-    beforeValue();\n+    beforeValue(false);\n     string(value);\n     return this;\n   }\n@@ -432,7 +432,7 @@\n       return nullValue();\n     }\n     writeDeferredName();\n-    beforeValue();\n+    beforeValue(false);\n     out.append(value);\n     return this;\n   }\n@@ -451,7 +451,7 @@\n         return this; // skip the name and the value\n       }\n     }\n-    beforeValue();\n+    beforeValue(false);\n     out.write(\"null\");\n     return this;\n   }\n@@ -463,7 +463,7 @@\n    */\n   public JsonWriter value(boolean value) throws IOException {\n     writeDeferredName();\n-    beforeValue();\n+    beforeValue(false);\n     out.write(value ? \"true\" : \"false\");\n     return this;\n   }\n@@ -480,7 +480,7 @@\n       throw new IllegalArgumentException(\"Numeric values must be finite, but was \" + value);\n     }\n     writeDeferredName();\n-    beforeValue();\n+    beforeValue(false);\n     out.append(Double.toString(value));\n     return this;\n   }\n@@ -492,7 +492,7 @@\n    */\n   public JsonWriter value(long value) throws IOException {\n     writeDeferredName();\n-    beforeValue();\n+    beforeValue(false);\n     out.write(Long.toString(value));\n     return this;\n   }\n@@ -515,7 +515,7 @@\n         \u0026\u0026 (string.equals(\"-Infinity\") || string.equals(\"Infinity\") || string.equals(\"NaN\"))) {\n       throw new IllegalArgumentException(\"Numeric values must be finite, but was \" + value);\n     }\n-    beforeValue();\n+    beforeValue(false);\n     out.append(string);\n     return this;\n   }\n@@ -610,7 +610,7 @@\n    * closing bracket or another element.\n    */\n   @SuppressWarnings(\"fallthrough\")\n-  private void beforeValue() throws IOException {\n+  private void beforeValue(boolean root) throws IOException {\n     switch (peek()) {\n     case NONEMPTY_DOCUMENT:\n       if (!lenient) {\n@@ -619,6 +619,10 @@\n       }\n       // fall-through\n     case EMPTY_DOCUMENT: // first in document\n+      if (!lenient \u0026\u0026 !root) {\n+        throw new IllegalStateException(\n+            \"JSON must start with an array or an object.\");\n+      }\n       replaceTop(NONEMPTY_DOCUMENT);\n       break;\n \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [17943,17955]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [18230,18363]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [10677,10681]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [12956,12961]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [13372,13377]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [13763,13768]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [13990,13995]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [14517,14522]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [14758,14763]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [15431,15436]"
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.google.gson.stream.JsonWriter:beforeValue:[boolean root]:void"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.gson.stream.JsonWriter:beforeValue:[]:void"
+      ],
+      "num": 1
+    }
+  }
+}

@@ -1,0 +1,128 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.compress.archivers.zip.X5455_ExtendedTimestampTest::testGettersSetters",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.compress.archivers.zip.X5455_ExtendedTimestamp",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Compress",
+  "id": "46",
+  "workingDir": "../bugs/Compress_46_tmp",
+  "bug_name": "Compress_46",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.compress.archivers.zip.X5455_ExtendedTimestampTest",
+      "test_function": "testGettersSetters",
+      "assertion_line": "218",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Time too big for 32 bits!"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/compress/archivers/zip/X5455_ExtendedTimestamp.java",
+        "src/main/java/org/apache/commons/compress/archivers/zip/X5455_ExtendedTimestamp.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.zip.X5455_ExtendedTimestamp:unixTimeToZipLong:[long l]:ZipLong"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.zip.X5455_ExtendedTimestamp:unixTimeToZipLong:[long l]:ZipLong"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "529"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "529",
+            "530"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/compress/archivers/zip/X5455_ExtendedTimestamp.java b/src/main/java/org/apache/commons/compress/archivers/zip/X5455_ExtendedTimestamp.java\nindex f050874..f7a7440 100644\n--- a/src/main/java/org/apache/commons/compress/archivers/zip/X5455_ExtendedTimestamp.java\n+++ b/src/main/java/org/apache/commons/compress/archivers/zip/X5455_ExtendedTimestamp.java\n@@ -526,7 +526,8 @@\n     }\n \n     private static ZipLong unixTimeToZipLong(long l) {\n-        if (l \u003c Integer.MIN_VALUE || l \u003e Integer.MAX_VALUE) {\n+        final long TWO_TO_32 \u003d 0x100000000L;\n+        if (l \u003e\u003d TWO_TO_32) {\n             throw new IllegalArgumentException(\"X5455 timestamps must fit in a signed 32 bit integer: \" + l);\n         }\n         return new ZipLong(l);\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [18899,18935]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: TWO_TO_32 [18953,18962]"
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u003c [18905,18906]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "QualifiedName: Integer.MIN_VALUE [18907,18924]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [18903,18924]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [18928,18949]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

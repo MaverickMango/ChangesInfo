@@ -1,0 +1,141 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.TypeInferenceTest::testBackwardsInferenceNew",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.TypeInference",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "25",
+  "workingDir": "../bugs/Closure_25_tmp",
+  "bug_name": "Closure_25",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.TypeInferenceTest",
+      "test_function": "testBackwardsInferenceNew",
+      "assertion_line": "890",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c{[foo: (number|undefined)]}\u003e but was:\u003c{[]}\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/TypeInference.java",
+        "src/com/google/javascript/jscomp/TypeInference.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypeInference:traverseNew:[Node n, FlowScope scope]:FlowScope"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypeInference:traverseNew:[Node n, FlowScope scope]:FlowScope"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1036",
+            "1055"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "1038",
+            "1059",
+            "1060",
+            "1061"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/TypeInference.java b/src/com/google/javascript/jscomp/TypeInference.java\nindex 74728ee..7e218d8 100644\n--- a/src/com/google/javascript/jscomp/TypeInference.java\n+++ b/src/com/google/javascript/jscomp/TypeInference.java\n@@ -1033,9 +1033,9 @@\n   }\n \n   private FlowScope traverseNew(Node n, FlowScope scope) {\n-    scope \u003d traverseChildren(n, scope);\n \n     Node constructor \u003d n.getFirstChild();\n+    scope \u003d traverse(constructor, scope);\n     JSType constructorType \u003d constructor.getJSType();\n     JSType type \u003d null;\n     if (constructorType !\u003d null) {\n@@ -1052,11 +1052,13 @@\n         }\n         if (ct !\u003d null \u0026\u0026 ct.isConstructor()) {\n           type \u003d ct.getInstanceType();\n-          backwardsInferenceFromCallSite(n, ct);\n         }\n       }\n     }\n     n.setJSType(type);\n+    for (Node arg \u003d constructor.getNext(); arg !\u003d null; arg \u003d arg.getNext()) {\n+      scope \u003d traverse(arg, scope);\n+    }\n     return scope;\n   }\n \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [36792,36829]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ForStatement [37676,37792]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationExpression [37681,37713]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [37715,37726]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Assignment [37728,37747]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [37749,37792]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [37633,37671]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

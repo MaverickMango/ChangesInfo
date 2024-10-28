@@ -1,0 +1,240 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math3.linear.RectangularCholeskyDecompositionTest::testMath789,org.apache.commons.math3.linear.RectangularCholeskyDecompositionTest::testFullRank",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math3.linear.RectangularCholeskyDecomposition",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "21",
+  "workingDir": "../bugs/Math_21_tmp",
+  "bug_name": "Math_21",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math3.linear.RectangularCholeskyDecompositionTest",
+      "test_function": "testMath789",
+      "assertion_line": "108",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c0.0\u003e but was:\u003c0.0180652917341963\u003e"
+    },
+    {
+      "test_class": "org.apache.commons.math3.linear.RectangularCholeskyDecompositionTest",
+      "test_function": "testFullRank",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math3/linear/RectangularCholeskyDecomposition.java",
+        "src/main/java/org/apache/commons/math3/linear/RectangularCholeskyDecomposition.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.linear.RectangularCholeskyDecomposition:RectangularCholeskyDecomposition:[RealMatrix matrix, double small]:null"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.linear.RectangularCholeskyDecomposition:RectangularCholeskyDecomposition:[RealMatrix matrix, double small]:null"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "68",
+            "78",
+            "81",
+            "82",
+            "83",
+            "89",
+            "90",
+            "91",
+            "92",
+            "93",
+            "94",
+            "95",
+            "126",
+            "131"
+          ],
+          "num": 14
+        },
+        {
+          "qualified_names": [
+            "69",
+            "79",
+            "82",
+            "83",
+            "84",
+            "90",
+            "91",
+            "92",
+            "93",
+            "128"
+          ],
+          "num": 10
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math3/linear/RectangularCholeskyDecomposition.java b/src/main/java/org/apache/commons/math3/linear/RectangularCholeskyDecomposition.java\nindex aba7b98..04488e5 100644\n--- a/src/main/java/org/apache/commons/math3/linear/RectangularCholeskyDecomposition.java\n+++ b/src/main/java/org/apache/commons/math3/linear/RectangularCholeskyDecomposition.java\n@@ -66,6 +66,7 @@\n         final double[][] c \u003d matrix.getData();\n         final double[][] b \u003d new double[order][order];\n \n+        int[] swap  \u003d new int[order];\n         int[] index \u003d new int[order];\n         for (int i \u003d 0; i \u003c order; ++i) {\n             index[i] \u003d i;\n@@ -75,24 +76,21 @@\n         for (boolean loop \u003d true; loop;) {\n \n             // find maximal diagonal element\n-            int swapR \u003d r;\n+            swap[r] \u003d r;\n             for (int i \u003d r + 1; i \u003c order; ++i) {\n                 int ii  \u003d index[i];\n-                int isr \u003d index[swapR];\n-                if (c[ii][ii] \u003e c[isr][isr]) {\n-                    swapR \u003d i;\n+                int isi \u003d index[swap[i]];\n+                if (c[ii][ii] \u003e c[isi][isi]) {\n+                    swap[r] \u003d i;\n                 }\n             }\n \n \n             // swap elements\n-            if (swapR !\u003d r) {\n-                final int tmpIndex    \u003d index[r];\n-                index[r]              \u003d index[swapR];\n-                index[swapR]          \u003d tmpIndex;\n-                final double[] tmpRow \u003d b[r];\n-                b[r]                  \u003d b[swapR];\n-                b[swapR]              \u003d tmpRow;\n+            if (swap[r] !\u003d r) {\n+                int tmp \u003d index[r];\n+                index[r] \u003d index[swap[r]];\n+                index[swap[r]] \u003d tmp;\n             }\n \n             // check diagonal element\n@@ -123,12 +121,11 @@\n                 final double sqrt \u003d FastMath.sqrt(c[ir][ir]);\n                 b[r][r] \u003d sqrt;\n                 final double inverse  \u003d 1 / sqrt;\n-                final double inverse2 \u003d 1 / c[ir][ir];\n                 for (int i \u003d r + 1; i \u003c order; ++i) {\n                     final int ii \u003d index[i];\n                     final double e \u003d inverse * c[ii][ir];\n                     b[i][r] \u003d e;\n-                    c[ii][ii] -\u003d c[ii][ir] * c[ii][ir] * inverse2;\n+                    c[ii][ii] -\u003d e * e;\n                     for (int j \u003d r + 1; j \u003c i; ++j) {\n                         final int ij \u003d index[j];\n                         final double f \u003d c[ii][ij] - e * b[j][r];\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [3224,3253]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [3491,3503]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ArrayAccess [3791,3798]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [5294,5313]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ArrayAccess [3622,3629]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ArrayAccess [3876,3883]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ArrayAccess [3908,3915]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ArrayAccess [3699,3706]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [3453,3467]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: swapR [3586,3591]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: swapR [3661,3666]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: swapR [3751,3756]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Modifier: final [3781,3786]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: swapR [3861,3866]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: swapR [3891,3896]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [3935,3964]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [3981,4014]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [4031,4062]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [5239,5277]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [5488,5534]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

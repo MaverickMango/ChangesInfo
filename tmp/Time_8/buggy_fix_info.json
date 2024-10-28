@@ -1,0 +1,132 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.joda.time.TestDateTimeZone::testForOffsetHoursMinutes_int_int",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.joda.time.DateTimeZone",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Time",
+  "id": "8",
+  "workingDir": "../bugs/Time_8_tmp",
+  "bug_name": "Time_8",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.joda.time.TestDateTimeZone",
+      "test_function": "testForOffsetHoursMinutes_int_int",
+      "assertion_line": "316",
+      "exception": "java.lang.IllegalArgumentException",
+      "message": "Minutes out of range: -15"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/joda/time/DateTimeZone.java",
+        "src/main/java/org/joda/time/DateTimeZone.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.joda.time.DateTimeZone:forOffsetHoursMinutes:[int hoursOffset, int minutesOffset]:DateTimeZone"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.joda.time.DateTimeZone:forOffsetHoursMinutes:[int hoursOffset, int minutesOffset]:DateTimeZone"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "279",
+            "282",
+            "283",
+            "284",
+            "289"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "279",
+            "286"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/joda/time/DateTimeZone.java b/src/main/java/org/joda/time/DateTimeZone.java\nindex a127604..7d1719b 100644\n--- a/src/main/java/org/joda/time/DateTimeZone.java\n+++ b/src/main/java/org/joda/time/DateTimeZone.java\n@@ -276,17 +276,14 @@\n         if (hoursOffset \u003c -23 || hoursOffset \u003e 23) {\n             throw new IllegalArgumentException(\"Hours out of range: \" + hoursOffset);\n         }\n-        if (minutesOffset \u003c -59 || minutesOffset \u003e 59) {\n+        if (minutesOffset \u003c 0 || minutesOffset \u003e 59) {\n             throw new IllegalArgumentException(\"Minutes out of range: \" + minutesOffset);\n         }\n-        if (hoursOffset \u003e 0 \u0026\u0026 minutesOffset \u003c 0) {\n-            throw new IllegalArgumentException(\"Positive hours must not have negative minutes: \" + minutesOffset);\n-        }\n         int offset \u003d 0;\n         try {\n             int hoursInMinutes \u003d hoursOffset * 60;\n             if (hoursInMinutes \u003c 0) {\n-                minutesOffset \u003d hoursInMinutes - Math.abs(minutesOffset);\n+                minutesOffset \u003d hoursInMinutes - minutesOffset;\n             } else {\n                 minutesOffset \u003d hoursInMinutes + minutesOffset;\n             }\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NumberLiteral: 0 [11411,11412]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "PrefixExpression [11411,11414]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [11548,11716]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_RECEIVER [11893,11897]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: abs [11898,11901]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [11902,11915]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [11893,11916]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,137 @@
+diff -r -u buggy/src/com/google/javascript/jscomp/UnreachableCodeElimination.java inducing/src/com/google/javascript/jscomp/UnreachableCodeElimination.java
+--- buggy/src/com/google/javascript/jscomp/UnreachableCodeElimination.java	2023-06-12 11:34:29.974284938 +0800
++++ inducing/src/com/google/javascript/jscomp/UnreachableCodeElimination.java	2023-06-12 11:34:30.146288080 +0800
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright 2008 The Closure Compiler Authors.
++ * Copyright 2008 Google Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -43,6 +43,7 @@
+  *    prototype properties can be annotated using JSDoc without actually
+  *    being initialized.
+  *
++*
+  */
+ class UnreachableCodeElimination extends AbstractPostOrderCallback
+     implements CompilerPass, ScopedCallback  {
+@@ -68,7 +69,7 @@
+     Scope scope = t.getScope();
+ 
+     // Computes the control flow graph.
+-    ControlFlowAnalysis cfa = new ControlFlowAnalysis(compiler, false, false);
++    ControlFlowAnalysis cfa = new ControlFlowAnalysis(compiler, false);
+     cfa.process(null, scope.getRootNode());
+     cfgStack.push(curCfg);
+     curCfg = cfa.getCfg();
+@@ -95,7 +96,22 @@
+     if (n.getType() == Token.FUNCTION || n.getType() == Token.SCRIPT) {
+       return;
+     }
+-
++    // Removes TRYs that had its CATCH removed and/or empty FINALLY.
++    // TODO(dcc): Move the parts of this that don't require a control flow
++    // graph to PeepholeRemoveDeadCode
++    if (n.getType() == Token.TRY) {
++      Node body = n.getFirstChild();
++      Node catchOrFinallyBlock = body.getNext();
++      Node finallyBlock = catchOrFinallyBlock.getNext();
++
++      if (!catchOrFinallyBlock.hasChildren() &&
++          (finallyBlock == null || !finallyBlock.hasChildren())) {
++        n.removeChild(body);
++        parent.replaceChild(n, body);
++        compiler.reportCodeChange();
++        n = body;
++      }
++    }
+     DiGraphNode<Node, Branch> gNode = curCfg.getDirectedGraphNode(n);
+     if (gNode == null) { // Not in CFG.
+       return;
+@@ -194,39 +210,27 @@
+             removeDeadExprStatementSafely(n);
+             return fallThrough;
+           }
++
+         }
+     }
+     return n;
+   }
+ 
+   private void removeDeadExprStatementSafely(Node n) {
+-    Node parent = n.getParent();
+     if (n.getType() == Token.EMPTY ||
+         (n.getType() == Token.BLOCK && !n.hasChildren())) {
+       // Not always trivial to remove, let FoldContants work its magic later.
+       return;
+     }
+-
++    // Removing an unreachable DO node is messy because it means we still have
++    // to execute one iteration. If the DO's body has breaks in the middle, it
++    // can get even more trickier and code size might actually increase.
+     switch (n.getType()) {
+-      // Removing an unreachable DO node is messy because it means we still have
+-      // to execute one iteration. If the DO's body has breaks in the middle, it
+-      // can get even more trickier and code size might actually increase.
+       case Token.DO:
+-        return;
+-
+-      case Token.BLOCK:
+-        // BLOCKs are used in several ways including wrapping CATCH blocks in TRYs
+-        if (parent.getType() == Token.TRY) {
+-          if (NodeUtil.isTryCatchNodeContainer(n)) {
+-            return;
+-          }
+-        }
+-        break;
+-
++      case Token.TRY:
+       case Token.CATCH:
+-        Node tryNode = parent.getParent();
+-        NodeUtil.maybeAddFinally(tryNode);
+-        break;
++      case Token.FINALLY:
++        return;
+     }
+ 
+     NodeUtil.redeclareVarsInsideBranch(n);
+diff -r -u buggy/test/com/google/javascript/jscomp/UnreachableCodeEliminationTest.java inducing/test/com/google/javascript/jscomp/UnreachableCodeEliminationTest.java
+--- buggy/test/com/google/javascript/jscomp/UnreachableCodeEliminationTest.java	2023-06-12 11:34:29.974284938 +0800
++++ inducing/test/com/google/javascript/jscomp/UnreachableCodeEliminationTest.java	2023-06-12 11:34:30.154288226 +0800
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright 2008 The Closure Compiler Authors.
++ * Copyright 2008 Google Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -19,6 +19,7 @@
+ /**
+  * Test for {@link UnreachableCodeElimination}.
+  *
++*
+  */
+ public class UnreachableCodeEliminationTest extends CompilerTestCase {
+   private boolean removeNoOpStatements = true;
+@@ -148,15 +149,15 @@
+   public void testTryCatchFinally() {
+     testSame("try {foo()} catch (e) {bar()}");
+     testSame("try { try {foo()} catch (e) {bar()}} catch (x) {bar()}");
+-    test("try {var x = 1} catch (e) {e()}", "try {var x = 1} finally {}");
++    test("try {var x = 1} catch (e) {e()}", "{var x = 1}");
+     test("try {var x = 1} catch (e) {e()} finally {x()}",
+         " try {var x = 1}                 finally {x()}");
+     test("try {var x = 1} catch (e) {e()} finally {}",
+-        "try {var x = 1} finally {}");
++        "     {var x = 1}");
+     testSame("try {var x = 1} finally {x()}");
+-    testSame("try {var x = 1} finally {}");
+-    test("function f() {return; try{var x = 1}catch(e){} }",
+-         "function f() {var x;}");
++    test("try {var x = 1} finally {}", "{var x = 1}");
++    test("function f() { return; try{var x = 1}catch(e){} }",
++        "function f() { var x; return; {}}");
+   }
+ 
+   public void testRemovalRequiresRedeclaration() {

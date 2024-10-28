@@ -1,0 +1,167 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.compress.archivers.zip.UTF8ZipFilesTest::testReadWinZipArchive",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.compress.archivers.zip.ZipFile",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Compress",
+  "id": "10",
+  "workingDir": "../bugs/Compress_10_tmp",
+  "bug_name": "Compress_10",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.compress.archivers.zip.UTF8ZipFilesTest",
+      "test_function": "testReadWinZipArchive",
+      "assertion_line": "133",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "InputStream is null"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/compress/archivers/zip/ZipFile.java",
+        "src/main/java/org/apache/commons/compress/archivers/zip/ZipFile.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.zip.ZipFile:resolveLocalFileHeaderData:[Map\u003cZipArchiveEntry,NameAndComment\u003e entriesWithoutUTF8Flag]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.zip.ZipFile:startsWithLocalFileHeader:[]:boolean",
+            "org.apache.commons.compress.archivers.zip.ZipFile:resolveLocalFileHeaderData:[Map\u003cZipArchiveEntry,NameAndComment\u003e entriesWithoutUTF8Flag]:void"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "808",
+            "809",
+            "810",
+            "811",
+            "812",
+            "845"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "808",
+            "809",
+            "847"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/compress/archivers/zip/ZipFile.java b/src/main/java/org/apache/commons/compress/archivers/zip/ZipFile.java\nindex b058869..964c86d 100644\n--- a/src/main/java/org/apache/commons/compress/archivers/zip/ZipFile.java\n+++ b/src/main/java/org/apache/commons/compress/archivers/zip/ZipFile.java\n@@ -805,11 +805,8 @@\n         // the hashcode - see COMPRESS-164\n         // Map needs to be reconstructed in order to keep central\n         // directory order\n-        Map\u003cZipArchiveEntry, OffsetEntry\u003e origMap \u003d\n-            new LinkedHashMap\u003cZipArchiveEntry, OffsetEntry\u003e(entries);\n-        entries.clear();\n-        for (ZipArchiveEntry ze : origMap.keySet()) {\n-            OffsetEntry offsetEntry \u003d origMap.get(ze);\n+        for (ZipArchiveEntry ze : entries.keySet()) {\n+            OffsetEntry offsetEntry \u003d entries.get(ze);\n             long offset \u003d offsetEntry.headerOffset;\n             archive.seek(offset + LFH_OFFSET_FOR_FILENAME_LENGTH);\n             byte[] b \u003d new byte[SHORT];\n@@ -842,7 +839,6 @@\n                     nameMap.put(ze.getName(), ze);\n                 }\n             }\n-            entries.put(ze, offsetEntry);\n         }\n     }\n \n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ParameterizedType [29980,30013]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: origMap [30014,30021]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ParameterizedType [30040,30083]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ClassInstanceCreation [30036,30092]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [30014,30092]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [29980,30093]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [30102,30118]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [31740,31769]",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.apache.commons.compress.archivers.zip.ZipFile:startsWithLocalFileHeader:[]:boolean"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

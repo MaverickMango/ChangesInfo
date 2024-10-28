@@ -1,0 +1,1127 @@
+diff --git a/pom.xml b/pom.xml
+index 2ccae6c..430e23d 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -24,7 +24,7 @@
+   <modelVersion>4.0.0</modelVersion>
+   <groupId>org.apache.commons</groupId>
+   <artifactId>commons-math3</artifactId>
+-  <version>3.1.1-SNAPSHOT</version>
++  <version>3.2-SNAPSHOT</version>
+   <name>Commons Math</name>
+ 
+   <inceptionYear>2003</inceptionYear>
+@@ -293,7 +293,7 @@
+   <properties>
+     <commons.componentid>math3</commons.componentid>
+     <!-- do not use snapshot suffix here -->
+-    <commons.release.version>3.1.1</commons.release.version>
++    <commons.release.version>3.2</commons.release.version>
+     <commons.release.desc>(requires Java 1.5+)</commons.release.desc>
+     <!-- <commons.rc.version>RC1</commons.rc.version> -->
+     <commons.binary.suffix>-bin</commons.binary.suffix>
+diff --git a/src/changes/changes.xml b/src/changes/changes.xml
+index 5621653..1941f1c 100644
+--- a/src/changes/changes.xml
++++ b/src/changes/changes.xml
+@@ -50,13 +50,6 @@
+     <title>Commons Math Release Notes</title>
+   </properties>
+   <body>
+-    <release version="3.1.1" date="TBD" description="
+-This is a micro release: It only contains bug fixes bug fixes.
+-">
+-      <action dev="luc" type="fix" issue="MATH-924">
+-        Fix handling of large number of weights in the new optimizers API.
+-      </action>
+-    </release>
+     <release version="3.1" date="2012-12-23" description="
+ This is a minor release: It combines bug fixes and new features.
+   Changes to existing features were made in a backwards-compatible
+diff --git a/src/main/java/org/apache/commons/math3/fitting/CurveFitter.java b/src/main/java/org/apache/commons/math3/fitting/CurveFitter.java
+index 42274f3..e5c2024 100644
+--- a/src/main/java/org/apache/commons/math3/fitting/CurveFitter.java
++++ b/src/main/java/org/apache/commons/math3/fitting/CurveFitter.java
+@@ -18,18 +18,17 @@
+ 
+ import java.util.ArrayList;
+ import java.util.List;
+-
+-import org.apache.commons.math3.analysis.MultivariateMatrixFunction;
+ import org.apache.commons.math3.analysis.MultivariateVectorFunction;
++import org.apache.commons.math3.analysis.MultivariateMatrixFunction;
+ import org.apache.commons.math3.analysis.ParametricUnivariateFunction;
+-import org.apache.commons.math3.optim.InitialGuess;
+ import org.apache.commons.math3.optim.MaxEval;
++import org.apache.commons.math3.optim.InitialGuess;
+ import org.apache.commons.math3.optim.PointVectorValuePair;
++import org.apache.commons.math3.optim.nonlinear.vector.MultivariateVectorOptimizer;
+ import org.apache.commons.math3.optim.nonlinear.vector.ModelFunction;
+ import org.apache.commons.math3.optim.nonlinear.vector.ModelFunctionJacobian;
+-import org.apache.commons.math3.optim.nonlinear.vector.MultivariateVectorOptimizer;
+ import org.apache.commons.math3.optim.nonlinear.vector.Target;
+-import org.apache.commons.math3.optim.nonlinear.vector.NonCorrelatedWeight;
++import org.apache.commons.math3.optim.nonlinear.vector.Weight;
+ 
+ /**
+  * Fitter for parametric univariate real functions y = f(x).
+@@ -175,7 +174,7 @@
+                                  model.getModelFunction(),
+                                  model.getModelFunctionJacobian(),
+                                  new Target(target),
+-                                 new NonCorrelatedWeight(weights),
++                                 new Weight(weights),
+                                  new InitialGuess(initialGuess));
+         // Extract the coefficients.
+         return optimum.getPointRef();
+diff --git a/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/MultiStartMultivariateVectorOptimizer.java b/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/MultiStartMultivariateVectorOptimizer.java
+index 465c6ee..c90a5b3 100644
+--- a/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/MultiStartMultivariateVectorOptimizer.java
++++ b/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/MultiStartMultivariateVectorOptimizer.java
+@@ -16,18 +16,18 @@
+  */
+ package org.apache.commons.math3.optim.nonlinear.vector;
+ 
+-import java.util.ArrayList;
+ import java.util.Collections;
+-import java.util.Comparator;
+ import java.util.List;
+-
++import java.util.ArrayList;
++import java.util.Comparator;
+ import org.apache.commons.math3.exception.NotStrictlyPositiveException;
+ import org.apache.commons.math3.exception.NullArgumentException;
+-import org.apache.commons.math3.linear.ArrayRealVector;
++import org.apache.commons.math3.linear.RealMatrix;
+ import org.apache.commons.math3.linear.RealVector;
++import org.apache.commons.math3.linear.ArrayRealVector;
++import org.apache.commons.math3.random.RandomVectorGenerator;
+ import org.apache.commons.math3.optim.BaseMultiStartMultivariateOptimizer;
+ import org.apache.commons.math3.optim.PointVectorValuePair;
+-import org.apache.commons.math3.random.RandomVectorGenerator;
+ 
+ /**
+  * Multi-start optimizer for a (vector) model function.
+@@ -98,7 +98,7 @@
+     private Comparator<PointVectorValuePair> getPairComparator() {
+         return new Comparator<PointVectorValuePair>() {
+             private final RealVector target = new ArrayRealVector(optimizer.getTarget(), false);
+-            private final double[] weight   = optimizer.getNonCorrelatedWeight();
++            private final RealMatrix weight = optimizer.getWeight();
+ 
+             public int compare(final PointVectorValuePair o1,
+                                final PointVectorValuePair o2) {
+@@ -114,12 +114,7 @@
+             private double weightedResidual(final PointVectorValuePair pv) {
+                 final RealVector v = new ArrayRealVector(pv.getValueRef(), false);
+                 final RealVector r = target.subtract(v);
+-                double sum = 0;
+-                for (int i = 0; i < r.getDimension(); ++i) {
+-                    final double ri = r.getEntry(i);
+-                    sum += ri * weight[i] * ri;
+-                }
+-                return sum;
++                return r.dotProduct(weight.operate(r));
+             }
+         };
+     }
+diff --git a/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/MultivariateVectorOptimizer.java b/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/MultivariateVectorOptimizer.java
+index 3a4b175..f43d387 100644
+--- a/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/MultivariateVectorOptimizer.java
++++ b/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/MultivariateVectorOptimizer.java
+@@ -17,15 +17,14 @@
+ 
+ package org.apache.commons.math3.optim.nonlinear.vector;
+ 
+-import org.apache.commons.math3.analysis.MultivariateVectorFunction;
+-import org.apache.commons.math3.exception.DimensionMismatchException;
+ import org.apache.commons.math3.exception.TooManyEvaluationsException;
+-import org.apache.commons.math3.linear.RealMatrix;
++import org.apache.commons.math3.exception.DimensionMismatchException;
++import org.apache.commons.math3.analysis.MultivariateVectorFunction;
++import org.apache.commons.math3.optim.OptimizationData;
+ import org.apache.commons.math3.optim.BaseMultivariateOptimizer;
+ import org.apache.commons.math3.optim.ConvergenceChecker;
+-import org.apache.commons.math3.optim.OptimizationData;
+ import org.apache.commons.math3.optim.PointVectorValuePair;
+-import org.apache.commons.math3.optim.nonlinear.vector.jacobian.GaussNewtonOptimizer;
++import org.apache.commons.math3.linear.RealMatrix;
+ 
+ /**
+  * Base class for a multivariate vector function optimizer.
+@@ -37,13 +36,8 @@
+     extends BaseMultivariateOptimizer<PointVectorValuePair> {
+     /** Target values for the model function at optimum. */
+     private double[] target;
+-    /** Weight matrix.
+-     * @deprecated as of 3.1.1, replaced by weight
+-     */
+-    @Deprecated
++    /** Weight matrix. */
+     private RealMatrix weightMatrix;
+-    /** Weight vector. */
+-    private double[] weight;
+     /** Model function. */
+     private MultivariateVectorFunction model;
+ 
+@@ -71,25 +65,14 @@
+ 
+     /**
+      * {@inheritDoc}
+-     * <p>
+-     * Note that for version 3.1 of Apache Commons Math, a general <code>Weight</code>
+-     * data was looked for, which could hold arbitrary square matrices and not only
+-     * vector as the current {@link NonCorrelatedWeight} does. This was flawed as some
+-     * optimizers like {@link GaussNewtonOptimizer} only considered the diagonal elements.
+-     * This feature was deprecated. If users need non-diagonal weights to handle correlated
+-     * observations, they will have to implement it by themselves using pre-multiplication
+-     * by a matrix in both their function implementation and observation vectors. There is
+-     * no direct support for this anymore in the Apache Commons Math library. The only
+-     * feature that is supported here is a convenience feature for non-correlated observations,
+-     * with vector only weights (i.e. weight[i] is the weight for observation i).
+-     * </p>
++     *
+      * @param optData Optimization data. The following data will be looked for:
+      * <ul>
+      *  <li>{@link org.apache.commons.math3.optim.MaxEval}</li>
+      *  <li>{@link org.apache.commons.math3.optim.InitialGuess}</li>
+      *  <li>{@link org.apache.commons.math3.optim.SimpleBounds}</li>
+      *  <li>{@link Target}</li>
+-     *  <li>{@link NonCorrelatedWeight}</li>
++     *  <li>{@link Weight}</li>
+      *  <li>{@link ModelFunction}</li>
+      * </ul>
+      * @return {@inheritDoc}
+@@ -113,22 +96,10 @@
+      * Gets the weight matrix of the observations.
+      *
+      * @return the weight matrix.
+-     * @deprecated as of 3.1.1, replaced by {@link #getNonCorrelatedWeight()}
+      */
+-    @Deprecated
+     public RealMatrix getWeight() {
+         return weightMatrix.copy();
+     }
+-
+-    /**
+-     * Gets the weights of the observations.
+-     *
+-     * @return the weights.
+-     * @since 3.1.1
+-     */
+-    public double[] getNonCorrelatedWeight() {
+-        return weight.clone();
+-    }
+     /**
+      * Gets the observed values to be matched by the objective vector
+      * function.
+@@ -155,7 +126,7 @@
+      * @param optData Optimization data. The following data will be looked for:
+      * <ul>
+      *  <li>{@link Target}</li>
+-     *  <li>{@link NonCorrelatedWeight}</li>
++     *  <li>{@link Weight}</li>
+      *  <li>{@link ModelFunction}</li>
+      * </ul>
+      */
+@@ -171,18 +142,8 @@
+                 target = ((Target) data).getTarget();
+                 continue;
+             }
+-            if (data instanceof NonCorrelatedWeight) {
+-                weight = ((NonCorrelatedWeight) data).getWeight();
+-                continue;
+-            }
+-            // TODO: remove this for 4.0, when the Weight class will be removed
+             if (data instanceof Weight) {
+                 weightMatrix = ((Weight) data).getWeight();
+-                weight = new double[weightMatrix.getColumnDimension()];
+-                for (int i = 0; i < weight.length; ++i) {
+-                    // extract the diagonal of the matrix
+-                    weight[i] = weightMatrix.getEntry(i, i);
+-                }
+                 continue;
+             }
+         }
+@@ -192,11 +153,12 @@
+      * Check parameters consistency.
+      *
+      * @throws DimensionMismatchException if {@link #target} and
+-     * {@link #weight} have inconsistent dimensions.
++     * {@link #weightMatrix} have inconsistent dimensions.
+      */
+     private void checkParameters() {
+-        if (target.length != weight.length) {
+-            throw new DimensionMismatchException(target.length, weight.length);
++        if (target.length != weightMatrix.getColumnDimension()) {
++            throw new DimensionMismatchException(target.length,
++                                                 weightMatrix.getColumnDimension());
+         }
+     }
+ }
+diff --git a/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/NonCorrelatedWeight.java b/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/NonCorrelatedWeight.java
+deleted file mode 100644
+index e23329c..0000000
+--- a/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/NonCorrelatedWeight.java
++++ /dev/null
+@@ -1,53 +0,0 @@
+-/*
+- * Licensed to the Apache Software Foundation (ASF) under one or more
+- * contributor license agreements.  See the NOTICE file distributed with
+- * this work for additional information regarding copyright ownership.
+- * The ASF licenses this file to You under the Apache License, Version 2.0
+- * (the "License"); you may not use this file except in compliance with
+- * the License.  You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-package org.apache.commons.math3.optim.nonlinear.vector;
+-
+-import org.apache.commons.math3.optim.OptimizationData;
+-
+-/**
+- * Weight of the residuals between model and observations, when
+- * observations are non-correlated.
+- * <br/>
+- * Immutable class.
+- *
+- * @version $Id$
+- * @since 3.1.1
+- */
+-public class NonCorrelatedWeight implements OptimizationData {
+-
+-    /** Weight. */
+-    private final double[] weight;
+-
+-    /**
+-     * Creates a weight vector.
+-     *
+-     * @param weight weight of the observations
+-     */
+-    public NonCorrelatedWeight(final double[] weight) {
+-        this.weight = weight.clone();
+-    }
+-
+-    /**
+-     * Gets the weight.
+-     *
+-     * @return a fresh copy of the weight.
+-     */
+-    public double[] getWeight() {
+-        return weight.clone();
+-    }
+-
+-}
+diff --git a/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/Weight.java b/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/Weight.java
+index 1b58d81..789bc25 100644
+--- a/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/Weight.java
++++ b/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/Weight.java
+@@ -28,20 +28,22 @@
+  *
+  * @version $Id: Weight.java 1416643 2012-12-03 19:37:14Z tn $
+  * @since 3.1
+- * @deprecated as of 3.1.1, replaced by {@link NonCorrelatedWeight}
+  */
+-@Deprecated
+ public class Weight implements OptimizationData {
+     /** Weight matrix. */
+     private final RealMatrix weightMatrix;
+ 
+     /**
+-     * Creates a weight matrix.
++     * Creates a diagonal weight matrix.
+      *
+-     * @param weight matrix elements.
++     * @param weight List of the values of the diagonal.
+      */
+-    public Weight(double[][] weight) {
+-        weightMatrix = MatrixUtils.createRealMatrix(weight);
++    public Weight(double[] weight) {
++        final int dim = weight.length;
++        weightMatrix = MatrixUtils.createRealMatrix(dim, dim);
++        for (int i = 0; i < dim; i++) {
++            weightMatrix.setEntry(i, i, weight[i]);
++        }
+     }
+ 
+     /**
+@@ -59,9 +61,9 @@
+     }
+ 
+     /**
+-     * Gets the weight.
++     * Gets the initial guess.
+      *
+-     * @return a fresh copy of the weight.
++     * @return the initial guess.
+      */
+     public RealMatrix getWeight() {
+         return weightMatrix.copy();
+diff --git a/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/AbstractLeastSquaresOptimizer.java b/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/AbstractLeastSquaresOptimizer.java
+index 7b2c6b5..b7bb6f5 100644
+--- a/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/AbstractLeastSquaresOptimizer.java
++++ b/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/AbstractLeastSquaresOptimizer.java
+@@ -19,18 +19,16 @@
+ import org.apache.commons.math3.exception.DimensionMismatchException;
+ import org.apache.commons.math3.exception.TooManyEvaluationsException;
+ import org.apache.commons.math3.linear.ArrayRealVector;
++import org.apache.commons.math3.linear.RealMatrix;
+ import org.apache.commons.math3.linear.DecompositionSolver;
+-import org.apache.commons.math3.linear.EigenDecomposition;
+ import org.apache.commons.math3.linear.MatrixUtils;
+ import org.apache.commons.math3.linear.QRDecomposition;
+-import org.apache.commons.math3.linear.RealMatrix;
+-import org.apache.commons.math3.optim.ConvergenceChecker;
++import org.apache.commons.math3.linear.EigenDecomposition;
+ import org.apache.commons.math3.optim.OptimizationData;
++import org.apache.commons.math3.optim.ConvergenceChecker;
+ import org.apache.commons.math3.optim.PointVectorValuePair;
+-import org.apache.commons.math3.optim.nonlinear.vector.JacobianMultivariateVectorOptimizer;
+-import org.apache.commons.math3.optim.nonlinear.vector.MultivariateVectorOptimizer;
+-import org.apache.commons.math3.optim.nonlinear.vector.NonCorrelatedWeight;
+ import org.apache.commons.math3.optim.nonlinear.vector.Weight;
++import org.apache.commons.math3.optim.nonlinear.vector.JacobianMultivariateVectorOptimizer;
+ import org.apache.commons.math3.util.FastMath;
+ 
+ /**
+@@ -42,13 +40,8 @@
+  */
+ public abstract class AbstractLeastSquaresOptimizer
+     extends JacobianMultivariateVectorOptimizer {
+-    /** Square-root of the weight matrix.
+-     * @deprecated as of 3.1.1, replaced by {@link #weight}
+-     */
+-    @Deprecated
++    /** Square-root of the weight matrix. */
+     private RealMatrix weightMatrixSqrt;
+-    /** Square-root of the weight vector. */
+-    private double[] weightSquareRoot;
+     /** Cost value (square root of the sum of the residuals). */
+     private double cost;
+ 
+@@ -68,23 +61,7 @@
+      * match problem dimension.
+      */
+     protected RealMatrix computeWeightedJacobian(double[] params) {
+-
+-        final double[][] jacobian = computeJacobian(params);
+-
+-        if (weightSquareRoot != null) {
+-            for (int i = 0; i < jacobian.length; ++i) {
+-                final double wi = weightSquareRoot[i];
+-                final double[] row = jacobian[i];
+-                for (int j = 0; j < row.length; ++j) {
+-                    row[j] *= wi;
+-                }
+-            }
+-            return MatrixUtils.createRealMatrix(jacobian);
+-        } else {
+-            // TODO: remove for 4.0, when the {@link Weight} class will be removed
+-            return weightMatrixSqrt.multiply(MatrixUtils.createRealMatrix(jacobian));
+-        }
+-
++        return weightMatrixSqrt.multiply(MatrixUtils.createRealMatrix(computeJacobian(params)));
+     }
+ 
+     /**
+@@ -96,13 +73,7 @@
+      */
+     protected double computeCost(double[] residuals) {
+         final ArrayRealVector r = new ArrayRealVector(residuals);
+-        final double[] weight = getNonCorrelatedWeight();
+-        double sum = 0;
+-        for (int i = 0; i < r.getDimension(); ++i) {
+-            final double ri = r.getEntry(i);
+-            sum += ri * weight[i] * ri;
+-        }
+-        return FastMath.sqrt(sum);
++        return FastMath.sqrt(r.dotProduct(getWeight().operate(r)));
+     }
+ 
+     /**
+@@ -134,9 +105,7 @@
+      * Gets the square-root of the weight matrix.
+      *
+      * @return the square-root of the weight matrix.
+-     * @deprecated as of 3.1.1, replaced with {@link MultivariateVectorOptimizer#getNonCorrelatedWeight()}
+      */
+-    @Deprecated
+     public RealMatrix getWeightSquareRoot() {
+         return weightMatrixSqrt.copy();
+     }
+@@ -214,7 +183,7 @@
+      *  <li>{@link org.apache.commons.math3.optim.InitialGuess}</li>
+      *  <li>{@link org.apache.commons.math3.optim.SimpleBounds}</li>
+      *  <li>{@link org.apache.commons.math3.optim.nonlinear.vector.Target}</li>
+-     *  <li>{@link org.apache.commons.math3.optim.nonlinear.vector.NonCorrelatedWeight}</li>
++     *  <li>{@link org.apache.commons.math3.optim.nonlinear.vector.Weight}</li>
+      *  <li>{@link org.apache.commons.math3.optim.nonlinear.vector.ModelFunction}</li>
+      *  <li>{@link org.apache.commons.math3.optim.nonlinear.vector.ModelFunctionJacobian}</li>
+      * </ul>
+@@ -266,7 +235,8 @@
+     /**
+      * Scans the list of (required and optional) optimization data that
+      * characterize the problem.
+-     * If the weight is specified, the {@link #weightSquareRoot} field is recomputed.
++     * If the weight matrix is specified, the {@link #weightMatrixSqrt}
++     * field is recomputed.
+      *
+      * @param optData Optimization data. The following data will be looked for:
+      * <ul>
+@@ -278,19 +248,22 @@
+         // not provided in the argument list.
+         for (OptimizationData data : optData) {
+             if (data instanceof Weight) {
+-                // TODO: remove for 4.0, when the {@link Weight} class will be removed
+-                weightSquareRoot = null;
+-                final RealMatrix w = ((Weight) data).getWeight();
+-                final EigenDecomposition dec = new EigenDecomposition(w);
+-                weightMatrixSqrt = dec.getSquareRoot();
+-            } else if (data instanceof NonCorrelatedWeight) {
+-                weightSquareRoot = ((NonCorrelatedWeight) data).getWeight();
+-                for (int i = 0; i < weightSquareRoot.length; ++i) {
+-                    weightSquareRoot[i] = FastMath.sqrt(weightSquareRoot[i]);
+-                }
+-                weightMatrixSqrt = null;
++                weightMatrixSqrt = squareRoot(((Weight) data).getWeight());
++                // If more data must be parsed, this statement _must_ be
++                // changed to "continue".
++                break;
+             }
+         }
+     }
+ 
++    /**
++     * Computes the square-root of the weight matrix.
++     *
++     * @param m Symmetric, positive-definite (weight) matrix.
++     * @return the square-root of the weight matrix.
++     */
++    private RealMatrix squareRoot(RealMatrix m) {
++        final EigenDecomposition dec = new EigenDecomposition(m);
++        return dec.getSquareRoot();
++    }
+ }
+diff --git a/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/GaussNewtonOptimizer.java b/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/GaussNewtonOptimizer.java
+index bb6cc8f..6aa684d 100644
+--- a/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/GaussNewtonOptimizer.java
++++ b/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/GaussNewtonOptimizer.java
+@@ -17,8 +17,8 @@
+ package org.apache.commons.math3.optim.nonlinear.vector.jacobian;
+ 
+ import org.apache.commons.math3.exception.ConvergenceException;
+-import org.apache.commons.math3.exception.MathInternalError;
+ import org.apache.commons.math3.exception.NullArgumentException;
++import org.apache.commons.math3.exception.MathInternalError;
+ import org.apache.commons.math3.exception.util.LocalizedFormats;
+ import org.apache.commons.math3.linear.ArrayRealVector;
+ import org.apache.commons.math3.linear.BlockRealMatrix;
+@@ -83,7 +83,12 @@
+         final double[] targetValues = getTarget();
+         final int nR = targetValues.length; // Number of observed data.
+ 
+-        final double[] residualsWeights = getNonCorrelatedWeight();
++        final RealMatrix weightMatrix = getWeight();
++        // Diagonal of the weight matrix.
++        final double[] residualsWeights = new double[nR];
++        for (int i = 0; i < nR; i++) {
++            residualsWeights[i] = weightMatrix.getEntry(i, i);
++        }
+ 
+         final double[] currentPoint = getStartPoint();
+         final int nC = currentPoint.length;
+diff --git a/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/LevenbergMarquardtOptimizer.java b/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/LevenbergMarquardtOptimizer.java
+index e9cb692..e3b2a3f 100644
+--- a/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/LevenbergMarquardtOptimizer.java
++++ b/src/main/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/LevenbergMarquardtOptimizer.java
+@@ -17,14 +17,13 @@
+ package org.apache.commons.math3.optim.nonlinear.vector.jacobian;
+ 
+ import java.util.Arrays;
+-
+ import org.apache.commons.math3.exception.ConvergenceException;
+ import org.apache.commons.math3.exception.util.LocalizedFormats;
+-import org.apache.commons.math3.linear.RealMatrix;
+-import org.apache.commons.math3.optim.ConvergenceChecker;
+ import org.apache.commons.math3.optim.PointVectorValuePair;
+-import org.apache.commons.math3.util.FastMath;
++import org.apache.commons.math3.optim.ConvergenceChecker;
++import org.apache.commons.math3.linear.RealMatrix;
+ import org.apache.commons.math3.util.Precision;
++import org.apache.commons.math3.util.FastMath;
+ 
+ 
+ /**
+@@ -301,7 +300,7 @@
+         double[] work2   = new double[nC];
+         double[] work3   = new double[nC];
+ 
+-        final double[] weight = getNonCorrelatedWeight();
++        final RealMatrix weightMatrixSqrt = getWeightSquareRoot();
+ 
+         // Evaluate the function at the starting point and calculate its norm.
+         double[] currentObjective = computeObjectiveValue(currentPoint);
+@@ -321,10 +320,7 @@
+             // QR decomposition of the jacobian matrix
+             qrDecomposition(computeWeightedJacobian(currentPoint));
+ 
+-            weightedResidual = new double[currentResiduals.length];
+-            for (int i = 0; i < weightedResidual.length; ++i) {
+-                weightedResidual[i] = FastMath.sqrt(weight[i]) * currentResiduals[i];
+-            }
++            weightedResidual = weightMatrixSqrt.operate(currentResiduals);
+             for (int i = 0; i < nR; i++) {
+                 qtf[i] = weightedResidual[i];
+             }
+diff --git a/src/test/java/org/apache/commons/math3/fitting/PolynomialFitterTest.java b/src/test/java/org/apache/commons/math3/fitting/PolynomialFitterTest.java
+index 73603cd..b695ee6 100644
+--- a/src/test/java/org/apache/commons/math3/fitting/PolynomialFitterTest.java
++++ b/src/test/java/org/apache/commons/math3/fitting/PolynomialFitterTest.java
+@@ -220,33 +220,6 @@
+         checkUnsolvableProblem(new GaussNewtonOptimizer(true, new SimpleVectorValueChecker(1e-15, 1e-15)), false);
+     }
+ 
+-    @Test
+-    public void testLargeSample() {
+-        Random randomizer = new Random(0x5551480dca5b369bl);
+-        double maxError = 0;
+-        for (int degree = 0; degree < 10; ++degree) {
+-            PolynomialFunction p = buildRandomPolynomial(degree, randomizer);
+-
+-            PolynomialFitter fitter = new PolynomialFitter(new LevenbergMarquardtOptimizer());
+-            for (int i = 0; i < 40000; ++i) {
+-                double x = -1.0 + i / 20000.0;
+-                fitter.addObservedPoint(1.0, x,
+-                                        p.value(x) + 0.1 * randomizer.nextGaussian());
+-            }
+-
+-            final double[] init = new double[degree + 1];
+-            PolynomialFunction fitted = new PolynomialFunction(fitter.fit(init));
+-
+-            for (double x = -1.0; x < 1.0; x += 0.01) {
+-                double error = FastMath.abs(p.value(x) - fitted.value(x)) /
+-                              (1.0 + FastMath.abs(p.value(x)));
+-                maxError = FastMath.max(maxError, error);
+-                Assert.assertTrue(FastMath.abs(error) < 0.01);
+-            }
+-        }
+-        Assert.assertTrue(maxError > 0.001);
+-    }
+-
+     private void checkUnsolvableProblem(MultivariateVectorOptimizer optimizer,
+                                         boolean solvable) {
+         Random randomizer = new Random(1248788532l);
+diff --git a/src/test/java/org/apache/commons/math3/optim/nonlinear/vector/MultiStartMultivariateVectorOptimizerTest.java b/src/test/java/org/apache/commons/math3/optim/nonlinear/vector/MultiStartMultivariateVectorOptimizerTest.java
+index 93cbe80..e92091f 100644
+--- a/src/test/java/org/apache/commons/math3/optim/nonlinear/vector/MultiStartMultivariateVectorOptimizerTest.java
++++ b/src/test/java/org/apache/commons/math3/optim/nonlinear/vector/MultiStartMultivariateVectorOptimizerTest.java
+@@ -16,12 +16,13 @@
+  */
+ package org.apache.commons.math3.optim.nonlinear.vector;
+ 
+-import org.apache.commons.math3.analysis.MultivariateMatrixFunction;
+ import org.apache.commons.math3.analysis.MultivariateVectorFunction;
++import org.apache.commons.math3.analysis.MultivariateMatrixFunction;
++import org.apache.commons.math3.exception.MathIllegalStateException;
+ import org.apache.commons.math3.linear.BlockRealMatrix;
+ import org.apache.commons.math3.linear.RealMatrix;
+-import org.apache.commons.math3.optim.InitialGuess;
+ import org.apache.commons.math3.optim.MaxEval;
++import org.apache.commons.math3.optim.InitialGuess;
+ import org.apache.commons.math3.optim.PointVectorValuePair;
+ import org.apache.commons.math3.optim.SimpleVectorValueChecker;
+ import org.apache.commons.math3.optim.nonlinear.vector.jacobian.GaussNewtonOptimizer;
+@@ -129,7 +130,7 @@
+                                  problem.getModelFunction(),
+                                  problem.getModelFunctionJacobian(),
+                                  problem.getTarget(),
+-                                 new NonCorrelatedWeight(new double[] { 1 }),
++                                 new Weight(new double[] { 1 }),
+                                  new InitialGuess(new double[] { 0 }));
+         Assert.assertEquals(1.5, optimum.getPoint()[0], 1e-10);
+         Assert.assertEquals(3.0, optimum.getValue()[0], 1e-10);
+@@ -160,7 +161,7 @@
+             = new MultiStartMultivariateVectorOptimizer(underlyingOptimizer, 10, generator);
+         optimizer.optimize(new MaxEval(100),
+                            new Target(new double[] { 0 }),
+-                           new NonCorrelatedWeight(new double[] { 1 }),
++                           new Weight(new double[] { 1 }),
+                            new InitialGuess(new double[] { 0 }),
+                            new ModelFunction(new MultivariateVectorFunction() {
+                                    public double[] value(double[] point) {
+diff --git a/src/test/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/AbstractLeastSquaresOptimizerAbstractTest.java b/src/test/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/AbstractLeastSquaresOptimizerAbstractTest.java
+index 6f62df4..cc86ae0 100644
+--- a/src/test/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/AbstractLeastSquaresOptimizerAbstractTest.java
++++ b/src/test/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/AbstractLeastSquaresOptimizerAbstractTest.java
+@@ -17,22 +17,23 @@
+ package org.apache.commons.math3.optim.nonlinear.vector.jacobian;
+ 
+ import java.io.IOException;
++import java.io.Serializable;
+ import java.util.Arrays;
+-
+-import org.apache.commons.math3.analysis.MultivariateMatrixFunction;
+ import org.apache.commons.math3.analysis.MultivariateVectorFunction;
++import org.apache.commons.math3.analysis.MultivariateMatrixFunction;
+ import org.apache.commons.math3.exception.ConvergenceException;
+ import org.apache.commons.math3.exception.DimensionMismatchException;
++import org.apache.commons.math3.exception.NumberIsTooSmallException;
+ import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
+ import org.apache.commons.math3.linear.BlockRealMatrix;
+ import org.apache.commons.math3.linear.RealMatrix;
++import org.apache.commons.math3.optim.PointVectorValuePair;
+ import org.apache.commons.math3.optim.InitialGuess;
+ import org.apache.commons.math3.optim.MaxEval;
+-import org.apache.commons.math3.optim.PointVectorValuePair;
++import org.apache.commons.math3.optim.nonlinear.vector.Target;
++import org.apache.commons.math3.optim.nonlinear.vector.Weight;
+ import org.apache.commons.math3.optim.nonlinear.vector.ModelFunction;
+ import org.apache.commons.math3.optim.nonlinear.vector.ModelFunctionJacobian;
+-import org.apache.commons.math3.optim.nonlinear.vector.Target;
+-import org.apache.commons.math3.optim.nonlinear.vector.NonCorrelatedWeight;
+ import org.apache.commons.math3.util.FastMath;
+ import org.junit.Assert;
+ import org.junit.Test;
+@@ -114,7 +115,7 @@
+                                problem.getModelFunction(),
+                                problem.getModelFunctionJacobian(),
+                                problem.getTarget(),
+-                               new NonCorrelatedWeight(new double[] { 1 }),
++                               new Weight(new double[] { 1 }),
+                                new InitialGuess(new double[] { 0 }));
+         Assert.assertEquals(0, optimizer.getRMS(), 1e-10);
+         Assert.assertEquals(1.5, optimum.getPoint()[0], 1e-10);
+@@ -134,7 +135,7 @@
+                                problem.getModelFunction(),
+                                problem.getModelFunctionJacobian(),
+                                problem.getTarget(),
+-                               new NonCorrelatedWeight(new double[] { 1, 1, 1 }),
++                               new Weight(new double[] { 1, 1, 1 }),
+                                new InitialGuess(new double[] { 0, 0 }));
+         Assert.assertEquals(0, optimizer.getRMS(), 1e-10);
+         Assert.assertEquals(7, optimum.getPoint()[0], 1e-10);
+@@ -160,7 +161,7 @@
+                                problem.getModelFunction(),
+                                problem.getModelFunctionJacobian(),
+                                problem.getTarget(),
+-                               new NonCorrelatedWeight(new double[] { 1, 1, 1, 1, 1, 1 }),
++                               new Weight(new double[] { 1, 1, 1, 1, 1, 1 }),
+                                new InitialGuess(new double[] { 0, 0, 0, 0, 0, 0 }));
+         Assert.assertEquals(0, optimizer.getRMS(), 1e-10);
+         for (int i = 0; i < problem.target.length; ++i) {
+@@ -182,7 +183,7 @@
+                                problem.getModelFunction(),
+                                problem.getModelFunctionJacobian(),
+                                problem.getTarget(),
+-                               new NonCorrelatedWeight(new double[] { 1, 1, 1 }),
++                               new Weight(new double[] { 1, 1, 1 }),
+                                new InitialGuess(new double[] { 0, 0, 0 }));
+         Assert.assertEquals(0, optimizer.getRMS(), 1e-10);
+         Assert.assertEquals(1, optimum.getPoint()[0], 1e-10);
+@@ -208,7 +209,7 @@
+                                problem.getModelFunction(),
+                                problem.getModelFunctionJacobian(),
+                                problem.getTarget(),
+-                               new NonCorrelatedWeight(new double[] { 1, 1, 1, 1, 1, 1 }),
++                               new Weight(new double[] { 1, 1, 1, 1, 1, 1 }),
+                                new InitialGuess(new double[] { 0, 0, 0, 0, 0, 0 }));
+         Assert.assertEquals(0, optimizer.getRMS(), 1e-10);
+         Assert.assertEquals(3, optimum.getPoint()[0], 1e-10);
+@@ -234,7 +235,7 @@
+                            problem.getModelFunction(),
+                            problem.getModelFunctionJacobian(),
+                            problem.getTarget(),
+-                           new NonCorrelatedWeight(new double[] { 1, 1, 1 }),
++                           new Weight(new double[] { 1, 1, 1 }),
+                            new InitialGuess(new double[] { 0, 0, 0 }));
+     }
+ 
+@@ -252,7 +253,7 @@
+                                problem1.getModelFunction(),
+                                problem1.getModelFunctionJacobian(),
+                                problem1.getTarget(),
+-                               new NonCorrelatedWeight(new double[] { 1, 1, 1, 1 }),
++                               new Weight(new double[] { 1, 1, 1, 1 }),
+                                new InitialGuess(new double[] { 0, 1, 2, 3 }));
+         Assert.assertEquals(0, optimizer.getRMS(), 1e-10);
+         Assert.assertEquals(1, optimum1.getPoint()[0], 1e-10);
+@@ -271,7 +272,7 @@
+                                problem2.getModelFunction(),
+                                problem2.getModelFunctionJacobian(),
+                                problem2.getTarget(), 
+-                               new NonCorrelatedWeight(new double[] { 1, 1, 1, 1 }),
++                               new Weight(new double[] { 1, 1, 1, 1 }),
+                                new InitialGuess(new double[] { 0, 1, 2, 3 }));
+         Assert.assertEquals(0, optimizer.getRMS(), 1e-10);
+         Assert.assertEquals(-81, optimum2.getPoint()[0], 1e-8);
+@@ -294,7 +295,7 @@
+                            problem.getModelFunction(),
+                            problem.getModelFunctionJacobian(),
+                            problem.getTarget(),
+-                           new NonCorrelatedWeight(new double[] { 1, 1, 1 }),
++                           new Weight(new double[] { 1, 1, 1 }),
+                            new InitialGuess(new double[] { 7, 6, 5, 4 }));
+         Assert.assertEquals(0, optimizer.getRMS(), 1e-10);
+     }
+@@ -315,7 +316,7 @@
+                                problem.getModelFunction(),
+                                problem.getModelFunctionJacobian(),
+                                problem.getTarget(),
+-                               new NonCorrelatedWeight(new double[] { 1, 1, 1, 1, 1 }),
++                               new Weight(new double[] { 1, 1, 1, 1, 1 }),
+                                new InitialGuess(new double[] { 2, 2, 2, 2, 2, 2 }));
+         Assert.assertEquals(0, optimizer.getRMS(), 1e-10);
+         Assert.assertEquals(3, optimum.getPointRef()[2], 1e-10);
+@@ -338,7 +339,7 @@
+                                problem.getModelFunction(),
+                                problem.getModelFunctionJacobian(),
+                                problem.getTarget(),
+-                               new NonCorrelatedWeight(new double[] { 1, 1, 1 }),
++                               new Weight(new double[] { 1, 1, 1 }),
+                                new InitialGuess(new double[] { 1, 1 }));
+         Assert.assertEquals(0, optimizer.getRMS(), 1e-10);
+         Assert.assertEquals(2, optimum.getPointRef()[0], 1e-10);
+@@ -358,7 +359,7 @@
+                            problem.getModelFunction(),
+                            problem.getModelFunctionJacobian(),
+                            problem.getTarget(),
+-                           new NonCorrelatedWeight(new double[] { 1, 1, 1 }),
++                           new Weight(new double[] { 1, 1, 1 }),
+                            new InitialGuess(new double[] { 1, 1 }));
+         Assert.assertTrue(optimizer.getRMS() > 0.1);
+     }
+@@ -374,7 +375,7 @@
+                                problem.getModelFunction(),
+                                problem.getModelFunctionJacobian(),
+                                problem.getTarget(),
+-                               new NonCorrelatedWeight(new double[] { 1, 1 }),
++                               new Weight(new double[] { 1, 1 }),
+                                new InitialGuess(new double[] { 0, 0 }));
+         Assert.assertEquals(0, optimizer.getRMS(), 1e-10);
+         Assert.assertEquals(-1, optimum.getPoint()[0], 1e-10);
+@@ -384,7 +385,7 @@
+                            problem.getModelFunction(),
+                            problem.getModelFunctionJacobian(),
+                            problem.getTarget(),
+-                           new NonCorrelatedWeight(new double[] { 1 }),
++                           new Weight(new double[] { 1 }),
+                            new InitialGuess(new double[] { 0, 0 }));
+     }
+ 
+@@ -399,7 +400,7 @@
+                                  problem.getModelFunction(),
+                                  problem.getModelFunctionJacobian(),
+                                  problem.getTarget(),
+-                                 new NonCorrelatedWeight(new double[] { 1, 1 }),
++                                 new Weight(new double[] { 1, 1 }),
+                                  new InitialGuess(new double[] { 0, 0 }));
+         Assert.assertEquals(0, optimizer.getRMS(), 1e-10);
+         Assert.assertEquals(-1, optimum.getPoint()[0], 1e-10);
+@@ -409,7 +410,7 @@
+                            problem.getModelFunction(),
+                            problem.getModelFunctionJacobian(),
+                            new Target(new double[] { 1 }),
+-                           new NonCorrelatedWeight(new double[] { 1 }),
++                           new Weight(new double[] { 1 }),
+                            new InitialGuess(new double[] { 0, 0 }));
+     }
+ 
+@@ -427,7 +428,7 @@
+                                  circle.getModelFunction(),
+                                  circle.getModelFunctionJacobian(),
+                                  new Target(new double[] { 0, 0, 0, 0, 0 }),
+-                                 new NonCorrelatedWeight(new double[] { 1, 1, 1, 1, 1 }),
++                                 new Weight(new double[] { 1, 1, 1, 1, 1 }),
+                                  new InitialGuess(new double[] { 98.680, 47.345 }));
+         Assert.assertTrue(optimizer.getEvaluations() < 10);
+         double rms = optimizer.getRMS();
+@@ -455,7 +456,7 @@
+                                      circle.getModelFunction(),
+                                      circle.getModelFunctionJacobian(),
+                                      new Target(target),
+-                                     new NonCorrelatedWeight(weights),
++                                     new Weight(weights),
+                                      new InitialGuess(new double[] { 98.680, 47.345 }));
+         cov = optimizer.computeCovariances(optimum.getPoint(), 1e-14);
+         Assert.assertEquals(0.0016, cov[0][0], 0.001);
+@@ -481,7 +482,7 @@
+                                  circle.getModelFunction(),
+                                  circle.getModelFunctionJacobian(),
+                                  new Target(target),
+-                                 new NonCorrelatedWeight(weights),
++                                 new Weight(weights),
+                                  new InitialGuess(new double[] { -12, -12 }));
+         Vector2D center = new Vector2D(optimum.getPointRef()[0], optimum.getPointRef()[1]);
+         Assert.assertTrue(optimizer.getEvaluations() < 25);
+@@ -508,7 +509,7 @@
+                                circle.getModelFunction(),
+                                circle.getModelFunctionJacobian(),
+                                new Target(target),
+-                               new NonCorrelatedWeight(weights),
++                               new Weight(weights),
+                                new InitialGuess(new double[] { 0, 0 }));
+         Assert.assertEquals(-0.1517383071957963, optimum.getPointRef()[0], 1e-6);
+         Assert.assertEquals(0.2074999736353867,  optimum.getPointRef()[1], 1e-6);
+@@ -562,7 +563,7 @@
+                                  problem.getModelFunction(),
+                                  problem.getModelFunctionJacobian(),
+                                  new Target(data[1]),
+-                                 new NonCorrelatedWeight(w),
++                                 new Weight(w),
+                                  new InitialGuess(initial));
+ 
+         final double[] actual = optimum.getPoint();
+diff --git a/src/test/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/AbstractLeastSquaresOptimizerTest.java b/src/test/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/AbstractLeastSquaresOptimizerTest.java
+index 5b7f9ec..7197616 100644
+--- a/src/test/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/AbstractLeastSquaresOptimizerTest.java
++++ b/src/test/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/AbstractLeastSquaresOptimizerTest.java
+@@ -15,15 +15,14 @@
+ 
+ import java.io.IOException;
+ import java.util.Arrays;
+-
++import org.apache.commons.math3.optim.PointVectorValuePair;
+ import org.apache.commons.math3.optim.InitialGuess;
+ import org.apache.commons.math3.optim.MaxEval;
+-import org.apache.commons.math3.optim.PointVectorValuePair;
+ import org.apache.commons.math3.optim.nonlinear.vector.Target;
+-import org.apache.commons.math3.optim.nonlinear.vector.NonCorrelatedWeight;
++import org.apache.commons.math3.optim.nonlinear.vector.Weight;
+ import org.apache.commons.math3.util.FastMath;
+-import org.junit.Assert;
+ import org.junit.Test;
++import org.junit.Assert;
+ 
+ public class AbstractLeastSquaresOptimizerTest {
+ 
+@@ -57,7 +56,7 @@
+                            problem.getModelFunction(),
+                            problem.getModelFunctionJacobian(),
+                            new Target(y),
+-                           new NonCorrelatedWeight(w),
++                           new Weight(w),
+                            new InitialGuess(a));
+         final double expected = dataset.getResidualSumOfSquares();
+         final double actual = optimizer.getChiSquare();
+@@ -82,7 +81,7 @@
+                            problem.getModelFunction(),
+                            problem.getModelFunctionJacobian(),
+                            new Target(y),
+-                           new NonCorrelatedWeight(w),
++                           new Weight(w),
+                            new InitialGuess(a));
+ 
+         final double expected = FastMath
+@@ -111,7 +110,7 @@
+                                  problem.getModelFunction(),
+                                  problem.getModelFunctionJacobian(),
+                                  new Target(y),
+-                                 new NonCorrelatedWeight(w),
++                                 new Weight(w),
+                                  new InitialGuess(a));
+ 
+         final double[] sig = optimizer.computeSigma(optimum.getPoint(), 1e-14);
+diff --git a/src/test/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/AbstractLeastSquaresOptimizerTestValidation.java b/src/test/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/AbstractLeastSquaresOptimizerTestValidation.java
+index 33f91c5..d9aa761 100644
+--- a/src/test/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/AbstractLeastSquaresOptimizerTestValidation.java
++++ b/src/test/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/AbstractLeastSquaresOptimizerTestValidation.java
+@@ -13,21 +13,20 @@
+  */
+ package org.apache.commons.math3.optim.nonlinear.vector.jacobian;
+ 
+-import java.awt.geom.Point2D;
+-import java.util.ArrayList;
+ import java.util.Arrays;
+ import java.util.List;
+-
++import java.util.ArrayList;
++import java.awt.geom.Point2D;
++import org.apache.commons.math3.optim.PointVectorValuePair;
+ import org.apache.commons.math3.optim.InitialGuess;
+ import org.apache.commons.math3.optim.MaxEval;
+-import org.apache.commons.math3.optim.PointVectorValuePair;
+ import org.apache.commons.math3.optim.nonlinear.vector.Target;
+-import org.apache.commons.math3.optim.nonlinear.vector.NonCorrelatedWeight;
+-import org.apache.commons.math3.stat.descriptive.StatisticalSummary;
++import org.apache.commons.math3.optim.nonlinear.vector.Weight;
+ import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
++import org.apache.commons.math3.stat.descriptive.StatisticalSummary;
+ import org.apache.commons.math3.util.FastMath;
+-import org.junit.Assert;
+ import org.junit.Test;
++import org.junit.Assert;
+ 
+ /**
+  * This class demonstrates the main functionality of the
+@@ -125,7 +124,7 @@
+                                  problem.getModelFunction(),
+                                  problem.getModelFunctionJacobian(),
+                                  new Target(problem.target()),
+-                                 new NonCorrelatedWeight(problem.weight()),
++                                 new Weight(problem.weight()),
+                                  new InitialGuess(init));
+             final double[] sigma = optim.computeSigma(optimum.getPoint(), 1e-14);
+ 
+@@ -306,7 +305,7 @@
+                        problem.getModelFunction(),
+                        problem.getModelFunctionJacobian(),
+                        new Target(t),
+-                       new NonCorrelatedWeight(w),
++                       new Weight(w),
+                        new InitialGuess(params));
+ 
+         return optim.getChiSquare() / (t.length - params.length);
+diff --git a/src/test/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/GaussNewtonOptimizerTest.java b/src/test/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/GaussNewtonOptimizerTest.java
+index 0465c3a..af23e3f 100644
+--- a/src/test/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/GaussNewtonOptimizerTest.java
++++ b/src/test/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/GaussNewtonOptimizerTest.java
+@@ -18,14 +18,15 @@
+ package org.apache.commons.math3.optim.nonlinear.vector.jacobian;
+ 
+ import java.io.IOException;
+-
+ import org.apache.commons.math3.exception.ConvergenceException;
+ import org.apache.commons.math3.exception.TooManyEvaluationsException;
++import org.apache.commons.math3.optim.SimpleVectorValueChecker;
+ import org.apache.commons.math3.optim.InitialGuess;
+ import org.apache.commons.math3.optim.MaxEval;
+-import org.apache.commons.math3.optim.SimpleVectorValueChecker;
+ import org.apache.commons.math3.optim.nonlinear.vector.Target;
+-import org.apache.commons.math3.optim.nonlinear.vector.NonCorrelatedWeight;
++import org.apache.commons.math3.optim.nonlinear.vector.Weight;
++import org.apache.commons.math3.optim.nonlinear.vector.ModelFunction;
++import org.apache.commons.math3.optim.nonlinear.vector.ModelFunctionJacobian;
+ import org.junit.Test;
+ 
+ /**
+@@ -132,7 +133,7 @@
+                            circle.getModelFunction(),
+                            circle.getModelFunctionJacobian(),
+                            new Target(new double[] { 0, 0, 0, 0, 0 }),
+-                           new NonCorrelatedWeight(new double[] { 1, 1, 1, 1, 1 }),
++                           new Weight(new double[] { 1, 1, 1, 1, 1 }),
+                            new InitialGuess(new double[] { 98.680, 47.345 }));
+     }
+ 
+diff --git a/src/test/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/LevenbergMarquardtOptimizerTest.java b/src/test/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/LevenbergMarquardtOptimizerTest.java
+index 4e1a222..20a81ff 100644
+--- a/src/test/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/LevenbergMarquardtOptimizerTest.java
++++ b/src/test/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/LevenbergMarquardtOptimizerTest.java
+@@ -17,26 +17,28 @@
+ 
+ package org.apache.commons.math3.optim.nonlinear.vector.jacobian;
+ 
++import java.io.Serializable;
+ import java.util.ArrayList;
+ import java.util.List;
+-
+-import org.apache.commons.math3.analysis.MultivariateMatrixFunction;
++import org.apache.commons.math3.optim.PointVectorValuePair;
++import org.apache.commons.math3.optim.InitialGuess;
++import org.apache.commons.math3.optim.MaxEval;
++import org.apache.commons.math3.optim.nonlinear.vector.Target;
++import org.apache.commons.math3.optim.nonlinear.vector.Weight;
++import org.apache.commons.math3.optim.nonlinear.vector.ModelFunction;
++import org.apache.commons.math3.optim.nonlinear.vector.ModelFunctionJacobian;
+ import org.apache.commons.math3.analysis.MultivariateVectorFunction;
++import org.apache.commons.math3.analysis.MultivariateMatrixFunction;
++import org.apache.commons.math3.exception.ConvergenceException;
+ import org.apache.commons.math3.exception.DimensionMismatchException;
+ import org.apache.commons.math3.exception.TooManyEvaluationsException;
+ import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
+ import org.apache.commons.math3.linear.SingularMatrixException;
+-import org.apache.commons.math3.optim.InitialGuess;
+-import org.apache.commons.math3.optim.MaxEval;
+-import org.apache.commons.math3.optim.PointVectorValuePair;
+-import org.apache.commons.math3.optim.nonlinear.vector.ModelFunction;
+-import org.apache.commons.math3.optim.nonlinear.vector.ModelFunctionJacobian;
+-import org.apache.commons.math3.optim.nonlinear.vector.Target;
+-import org.apache.commons.math3.optim.nonlinear.vector.NonCorrelatedWeight;
+ import org.apache.commons.math3.util.FastMath;
+ import org.apache.commons.math3.util.Precision;
+ import org.junit.Assert;
+ import org.junit.Test;
++import org.junit.Ignore;
+ 
+ /**
+  * <p>Some of the unit tests are re-implementations of the MINPACK <a
+@@ -126,7 +128,7 @@
+                                  problem.getModelFunction(),
+                                  problem.getModelFunctionJacobian(),
+                                  problem.getTarget(),
+-                                 new NonCorrelatedWeight(new double[] { 1, 1, 1 }),
++                                 new Weight(new double[] { 1, 1, 1 }),
+                                  new InitialGuess(new double[] { 0, 0, 0 }));
+         Assert.assertTrue(FastMath.sqrt(optimizer.getTargetSize()) * optimizer.getRMS() > 0.6);
+ 
+@@ -172,7 +174,7 @@
+                                problem,
+                                problemJacobian,
+                                new Target(new double[] { 0, 0, 0, 0, 0 }),
+-                               new NonCorrelatedWeight(new double[] { 1, 1, 1, 1, 1 }),
++                               new Weight(new double[] { 1, 1, 1, 1, 1 }),
+                                new InitialGuess(new double[] { 98.680, 47.345 }));
+             Assert.assertTrue(!shouldFail);
+         } catch (DimensionMismatchException ee) {
+@@ -227,7 +229,7 @@
+                                  problem.getModelFunction(),
+                                  problem.getModelFunctionJacobian(),
+                                  new Target(dataPoints[1]),
+-                                 new NonCorrelatedWeight(weights),
++                                 new Weight(weights),
+                                  new InitialGuess(new double[] { 10, 900, 80, 27, 225 }));
+ 
+         final double[] solution = optimum.getPoint();
+@@ -291,7 +293,7 @@
+                                                                 circle.getModelFunction(),
+                                                                 circle.getModelFunctionJacobian(),
+                                                                 new Target(circle.target()),
+-                                                                new NonCorrelatedWeight(circle.weight()),
++                                                                new Weight(circle.weight()),
+                                                                 new InitialGuess(init));
+ 
+         final double[] paramFound = optimum.getPoint();
+diff --git a/src/test/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/MinpackTest.java b/src/test/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/MinpackTest.java
+index ae8eb72..18e1ac6 100644
+--- a/src/test/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/MinpackTest.java
++++ b/src/test/java/org/apache/commons/math3/optim/nonlinear/vector/jacobian/MinpackTest.java
+@@ -17,18 +17,18 @@
+ 
+ package org.apache.commons.math3.optim.nonlinear.vector.jacobian;
+ 
++import java.io.Serializable;
+ import java.util.Arrays;
+-
+-import org.apache.commons.math3.analysis.MultivariateMatrixFunction;
+-import org.apache.commons.math3.analysis.MultivariateVectorFunction;
+ import org.apache.commons.math3.exception.TooManyEvaluationsException;
++import org.apache.commons.math3.analysis.MultivariateVectorFunction;
++import org.apache.commons.math3.analysis.MultivariateMatrixFunction;
++import org.apache.commons.math3.optim.PointVectorValuePair;
+ import org.apache.commons.math3.optim.InitialGuess;
+ import org.apache.commons.math3.optim.MaxEval;
+-import org.apache.commons.math3.optim.PointVectorValuePair;
++import org.apache.commons.math3.optim.nonlinear.vector.Target;
++import org.apache.commons.math3.optim.nonlinear.vector.Weight;
+ import org.apache.commons.math3.optim.nonlinear.vector.ModelFunction;
+ import org.apache.commons.math3.optim.nonlinear.vector.ModelFunctionJacobian;
+-import org.apache.commons.math3.optim.nonlinear.vector.Target;
+-import org.apache.commons.math3.optim.nonlinear.vector.NonCorrelatedWeight;
+ import org.apache.commons.math3.util.FastMath;
+ import org.junit.Assert;
+ import org.junit.Test;
+@@ -512,7 +512,7 @@
+                                      function.getModelFunction(),
+                                      function.getModelFunctionJacobian(),
+                                      new Target(function.getTarget()),
+-                                     new NonCorrelatedWeight(function.getWeight()),
++                                     new Weight(function.getWeight()),
+                                      new InitialGuess(function.getStartPoint()));
+             Assert.assertFalse(exceptionExpected);
+             function.checkTheoreticalMinCost(optimizer.getRMS());

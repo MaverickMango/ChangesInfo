@@ -1,0 +1,76 @@
+diff -u -r data/changesInfo//Lang_46/properties/modified_classes/inducing/src/java/org/apache/commons/lang/StringEscapeUtils.java data/changesInfo//Lang_46/cleaned/fixing/src/java/org/apache/commons/lang/StringEscapeUtils.java
+--- data/changesInfo//Lang_46/properties/modified_classes/inducing/src/java/org/apache/commons/lang/StringEscapeUtils.java	2023-12-27 22:45:49.831651064 -0800
++++ data/changesInfo//Lang_46/cleaned/fixing/src/java/org/apache/commons/lang/StringEscapeUtils.java	2023-06-20 06:54:01.402341557 -0700
+@@ -78,7 +78,7 @@
+      * @return String with escaped values, <code>null</code> if null string input
+      */
+     public static String escapeJava(String str) {
+-        return escapeJavaStyleString(str, false);
++        return escapeJavaStyleString(str, false, false);
+     }
+ 
+     /**
+@@ -94,7 +94,7 @@
+      * @throws IOException if error occurs on underlying Writer
+      */
+     public static void escapeJava(Writer out, String str) throws IOException {
+-        escapeJavaStyleString(out, str, false);
++        escapeJavaStyleString(out, str, false, false);
+     }
+ 
+     /**
+@@ -119,7 +119,7 @@
+      * @return String with escaped values, <code>null</code> if null string input
+      */
+     public static String escapeJavaScript(String str) {
+-        return escapeJavaStyleString(str, true);
++        return escapeJavaStyleString(str, true, true);
+     }
+ 
+     /**
+@@ -135,7 +135,7 @@
+      * @throws IOException if error occurs on underlying Writer
+      **/
+     public static void escapeJavaScript(Writer out, String str) throws IOException {
+-        escapeJavaStyleString(out, str, true);
++        escapeJavaStyleString(out, str, true, true);
+     }
+ 
+     /**
+@@ -145,13 +145,13 @@
+      * @param escapeSingleQuotes escapes single quotes if <code>true</code>
+      * @return the escaped string
+      */
+-    private static String escapeJavaStyleString(String str, boolean escapeSingleQuotes) {
++    private static String escapeJavaStyleString(String str, boolean escapeSingleQuotes, boolean escapeForwardSlash) {
+         if (str == null) {
+             return null;
+         }
+         try {
+             StringWriter writer = new StringWriter(str.length() * 2);
+-            escapeJavaStyleString(writer, str, escapeSingleQuotes);
++            escapeJavaStyleString(writer, str, escapeSingleQuotes, escapeForwardSlash);
+             return writer.toString();
+         } catch (IOException ioe) {
+             // this should never ever happen while writing to a StringWriter
+@@ -168,7 +168,7 @@
+      * @param escapeSingleQuote escapes single quotes if <code>true</code>
+      * @throws IOException if an IOException occurs
+      */
+-    private static void escapeJavaStyleString(Writer out, String str, boolean escapeSingleQuote) throws IOException {
++    private static void escapeJavaStyleString(Writer out, String str, boolean escapeSingleQuote, boolean escapeForwardSlash) throws IOException {
+         if (out == null) {
+             throw new IllegalArgumentException("The Writer must not be null");
+         }
+@@ -234,7 +234,9 @@
+                         out.write('\\');
+                         break;
+                     case '/':
+-                        out.write('\\');
++                        if (escapeForwardSlash) {
++                            out.write('\\');
++                        }
+                         out.write('/');
+                         break;
+                     default :
+Only in data/changesInfo//Lang_46/properties/modified_classes/inducing/src: test

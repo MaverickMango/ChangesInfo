@@ -1,0 +1,213 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.creators.Creator1476Test::testConstructorChoice",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.deser.impl.CreatorCollector",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "69",
+  "workingDir": "../bugs/JacksonDatabind_69_tmp",
+  "bug_name": "JacksonDatabind_69",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.creators.Creator1476Test",
+      "test_function": "testConstructorChoice",
+      "assertion_line": "38",
+      "exception": "com.fasterxml.jackson.databind.JsonMappingException",
+      "message": "Could not find creator property with name \u0027intField\u0027 (in class com.fasterxml.jackson.databind.creators.Creator1476Test$SimplePojo)"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/deser/impl/CreatorCollector.java",
+        "src/main/java/com/fasterxml/jackson/databind/deser/impl/CreatorCollector.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.impl.CreatorCollector:verifyNonDup:[AnnotatedWithParams newOne, int typeIndex, boolean explicit]:boolean",
+            "com.fasterxml.jackson.databind.deser.impl.CreatorCollector:addDelegatingCreator:[AnnotatedWithParams creator, boolean explicit, SettableBeanProperty[] injectables]:void",
+            "com.fasterxml.jackson.databind.deser.impl.CreatorCollector:addPropertyCreator:[AnnotatedWithParams creator, boolean explicit, SettableBeanProperty[] properties]:void"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.impl.CreatorCollector:addIncompeteParameter:[AnnotatedParameter parameter]:void",
+            "com.fasterxml.jackson.databind.deser.impl.CreatorCollector:addPropertyCreator:[AnnotatedWithParams creator, boolean explicit, SettableBeanProperty[] properties]:void",
+            "com.fasterxml.jackson.databind.deser.impl.CreatorCollector:verifyNonDup:[AnnotatedWithParams newOne, int typeIndex, boolean explicit]:void",
+            "com.fasterxml.jackson.databind.deser.impl.CreatorCollector:addDelegatingCreator:[AnnotatedWithParams creator, boolean explicit, SettableBeanProperty[] injectables]:void"
+          ],
+          "num": 4
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "165",
+            "167",
+            "169",
+            "171",
+            "178",
+            "197",
+            "302",
+            "313",
+            "335",
+            "344"
+          ],
+          "num": 10
+        },
+        {
+          "qualified_names": [
+            "165",
+            "168",
+            "176",
+            "198",
+            "299",
+            "310",
+            "332",
+            "346"
+          ],
+          "num": 8
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/impl/CreatorCollector.java b/src/main/java/com/fasterxml/jackson/databind/deser/impl/CreatorCollector.java\nindex a530e4b..b3030af 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/deser/impl/CreatorCollector.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/deser/impl/CreatorCollector.java\n@@ -162,20 +162,18 @@\n             SettableBeanProperty[] injectables)\n     {\n         if (creator.getParameterType(0).isCollectionLikeType()) {\n-            if (verifyNonDup(creator, C_ARRAY_DELEGATE, explicit)) {\n+            verifyNonDup(creator, C_ARRAY_DELEGATE, explicit);\n                 _arrayDelegateArgs \u003d injectables;\n-            }\n         } else {\n-            if (verifyNonDup(creator, C_DELEGATE, explicit)) {\n+            verifyNonDup(creator, C_DELEGATE, explicit);\n                 _delegateArgs \u003d injectables;\n-            }\n         }\n     }\n     \n     public void addPropertyCreator(AnnotatedWithParams creator, boolean explicit,\n             SettableBeanProperty[] properties)\n     {\n-        if (verifyNonDup(creator, C_PROPS, explicit)) {\n+        verifyNonDup(creator, C_PROPS, explicit);\n             // Better ensure we have no duplicate names either...\n             if (properties.length \u003e 1) {\n                 HashMap\u003cString,Integer\u003e names \u003d new HashMap\u003cString,Integer\u003e();\n@@ -194,7 +192,6 @@\n                 }\n             }\n             _propertyBasedArgs \u003d properties;\n-        }\n     }\n \n     public void addIncompeteParameter(AnnotatedParameter parameter) {\n@@ -299,7 +296,7 @@\n     /**\n      * @return True if specified Creator is to be used\n      */\n-    protected boolean verifyNonDup(AnnotatedWithParams newOne, int typeIndex, boolean explicit)\n+    protected void verifyNonDup(AnnotatedWithParams newOne, int typeIndex, boolean explicit)\n     {\n         final int mask \u003d (1 \u003c\u003c typeIndex);\n         _hasNonDefaultCreator \u003d true;\n@@ -310,7 +307,7 @@\n             if ((_explicitCreators \u0026 mask) !\u003d 0) { // already had explicitly annotated, leave as-is\n                 // but skip, if new one not annotated\n                 if (!explicit) {\n-                    return false;\n+                    return;\n                 }\n                 // both explicit: verify\n                 verify \u003d true;\n@@ -332,7 +329,7 @@\n                 // otherwise, which one to choose?\n                 if (newType.isAssignableFrom(oldType)) {\n                     // new type more generic, use old\n-                    return false;\n+                    return;\n                 }\n                 // new type more specific, use it\n             }\n@@ -341,7 +338,6 @@\n             _explicitCreators |\u003d mask;\n         }\n         _creators[typeIndex] \u003d _fixAccess(newOne);\n-        return true;\n     }\n \n     /*\n",
+      "operations": [
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ExpressionStatement [6774,6815]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ExpressionStatement [6390,6440]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ExpressionStatement [6520,6564]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [6445,6510]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [6390,6510]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [6589,6649]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [6540,6649]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [6860,7847]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [6814,7847]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "BooleanLiteral: false [11402,11407]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "BooleanLiteral: false [12434,12439]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [12665,12677]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.deser.impl.CreatorCollector:verifyNonDup:[AnnotatedWithParams newOne, int typeIndex, boolean explicit]:void",
+        "com.fasterxml.jackson.databind.deser.impl.CreatorCollector:addIncompeteParameter:[AnnotatedParameter parameter]:void"
+      ],
+      "num": 2
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.deser.impl.CreatorCollector:verifyNonDup:[AnnotatedWithParams newOne, int typeIndex, boolean explicit]:boolean"
+      ],
+      "num": 1
+    }
+  }
+}

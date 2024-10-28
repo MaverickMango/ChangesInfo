@@ -1,0 +1,100 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.core.filter.BasicParserFilteringTest::testNotAllowMultipleMatches",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.core.filter.FilteringParserDelegate",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonCore",
+  "id": "15",
+  "workingDir": "../bugs/JacksonCore_15_tmp",
+  "bug_name": "JacksonCore_15",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.core.filter.BasicParserFilteringTest",
+      "test_function": "testNotAllowMultipleMatches",
+      "assertion_line": "118",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c3[]\u003e but was:\u003c3[ 4]\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java",
+        "src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.filter.FilteringParserDelegate:nextToken:[]:JsonToken"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.filter.FilteringParserDelegate:nextToken:[]:JsonToken"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "227",
+            "229",
+            "230",
+            "231",
+            "234",
+            "235",
+            "236",
+            "237",
+            "238"
+          ],
+          "num": 9
+        },
+        {
+          "qualified_names": [
+            "226"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java b/src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java\nindex bf68cd7..e2de6f8 100644\n--- a/src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java\n+++ b/src/main/java/com/fasterxml/jackson/core/filter/FilteringParserDelegate.java\n@@ -224,18 +224,9 @@\n     \t//Check for _allowMultipleMatches - false and atleast there is one token - which is _currToken\n     \t// check for no buffered context _exposedContext - null\n     \t//If all the conditions matches then check for scalar / non-scalar property\n-    \tif(!_allowMultipleMatches \u0026\u0026 _currToken !\u003d null \u0026\u0026 _exposedContext \u003d\u003d null){\n     \t\t//if not scalar and ended successfully, then return null\n-    \t\tif((_currToken.isStructEnd()  \u0026\u0026 _headContext.isStartHandled()) ){\n-    \t\t\treturn (_currToken \u003d null);\n-    \t\t}\n     \t\t//else if scalar, and scalar not present in obj/array and !includePath and INCLUDE_ALL matched once\n     \t\t// then return null \n-    \t\telse if(_currToken.isScalarValue() \u0026\u0026 !_headContext.isStartHandled() \u0026\u0026 !_includePath \n-    \t\t\t\t\u0026\u0026 _itemFilter \u003d\u003d TokenFilter.INCLUDE_ALL) {\n-    \t\t\treturn (_currToken \u003d null);\n-    \t\t}\n-    \t}\n         // Anything buffered?\n         TokenFilterContext ctxt \u003d _exposedContext;\n \n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [7751,8335]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

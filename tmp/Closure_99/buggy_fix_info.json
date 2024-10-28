@@ -1,0 +1,192 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.CheckGlobalThisTest::testPropertyOfMethod,com.google.javascript.jscomp.CheckGlobalThisTest::testMethod4,com.google.javascript.jscomp.CheckGlobalThisTest::testInterface1",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.CheckGlobalThis",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "99",
+  "workingDir": "../bugs/Closure_99_tmp",
+  "bug_name": "Closure_99",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.CheckGlobalThisTest",
+      "test_function": "testPropertyOfMethod",
+      "assertion_line": "158",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "There should be one error.  expected:\u003c1\u003e but was:\u003c0\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.CheckGlobalThisTest",
+      "test_function": "testMethod4",
+      "assertion_line": "154",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Unexpected error(s): JSC_USED_GLOBAL_THIS. dangerous use of the global this object at testcode line 1 : 39 expected:\u003c0\u003e but was:\u003c1\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.CheckGlobalThisTest",
+      "test_function": "testInterface1",
+      "assertion_line": "112",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Unexpected error(s): JSC_USED_GLOBAL_THIS. dangerous use of the global this object at testcode line 1 : 54 expected:\u003c0\u003e but was:\u003c1\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CheckGlobalThis.java",
+        "src/com/google/javascript/jscomp/CheckGlobalThis.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CheckGlobalThis:shouldTraverse:[NodeTraversal t, Node n, Node parent]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CheckGlobalThis:shouldTraverse:[NodeTraversal t, Node n, Node parent]:boolean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "92",
+            "126",
+            "131",
+            "132",
+            "133",
+            "136"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "91",
+            "129"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/CheckGlobalThis.java b/src/com/google/javascript/jscomp/CheckGlobalThis.java\nindex 5108686..25327af 100644\n--- a/src/com/google/javascript/jscomp/CheckGlobalThis.java\n+++ b/src/com/google/javascript/jscomp/CheckGlobalThis.java\n@@ -89,7 +89,6 @@\n       JSDocInfo jsDoc \u003d getFunctionJsDocInfo(n);\n       if (jsDoc !\u003d null \u0026\u0026\n           (jsDoc.isConstructor() ||\n-           jsDoc.isInterface() ||\n            jsDoc.hasThisType() ||\n            jsDoc.isOverride())) {\n         return false;\n@@ -123,17 +122,13 @@\n       } else {\n         // Only traverse the right side if it\u0027s not an assignment to a prototype\n         // property or subproperty.\n-        if (NodeUtil.isGet(lhs)) {\n           if (lhs.getType() \u003d\u003d Token.GETPROP \u0026\u0026\n               lhs.getLastChild().getString().equals(\"prototype\")) {\n             return false;\n           }\n-          Node llhs \u003d lhs.getFirstChild();\n-          if (llhs.getType() \u003d\u003d Token.GETPROP \u0026\u0026\n-              llhs.getLastChild().getString().equals(\"prototype\")) {\n+          if (lhs.getQualifiedName() !\u003d null \u0026\u0026 lhs.getQualifiedName().contains(\".prototype.\")) {\n             return false;\n           }\n-        }\n       }\n     }\n \n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NullLiteral [4273,4277]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: lhs [4281,4284]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [2968,2987]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "QualifiedName: Token.GETPROP [4377,4390]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [4408,4427]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [4125,4144]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [4312,4344]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [4146,4510]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [4121,4510]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,311 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.jsoup.nodes.ElementTest::elementIsNotASiblingOfItself,org.jsoup.nodes.NodeTest::nodeIsNotASiblingOfItself,org.jsoup.nodes.NodeTest::orphanNodeReturnsNullForSiblingElements",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.jsoup.nodes.Element,org.jsoup.nodes.Node,org.jsoup.select.Elements",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Jsoup",
+  "id": "22",
+  "workingDir": "../bugs/Jsoup_22_tmp",
+  "bug_name": "Jsoup_22",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.jsoup.nodes.ElementTest",
+      "test_function": "elementIsNotASiblingOfItself",
+      "assertion_line": "538",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c2\u003e but was:\u003c3\u003e"
+    },
+    {
+      "test_class": "org.jsoup.nodes.NodeTest",
+      "test_function": "nodeIsNotASiblingOfItself",
+      "assertion_line": "206",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c2\u003e but was:\u003c3\u003e"
+    },
+    {
+      "test_class": "org.jsoup.nodes.NodeTest",
+      "test_function": "orphanNodeReturnsNullForSiblingElements",
+      "assertion_line": "190",
+      "exception": "java.lang.NullPointerException",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/nodes/Element.java",
+        "src/main/java/org/jsoup/nodes/Element.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.nodes.Element:nextElementSibling:[]:Element",
+            "org.jsoup.nodes.Element:siblingElements:[]:Elements",
+            "org.jsoup.nodes.Element:previousElementSibling:[]:Element"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "org.jsoup.nodes.Element:siblingElements:[]:Elements",
+            "org.jsoup.nodes.Element:firstElementSibling:[]:Element",
+            "org.jsoup.nodes.Element:previousElementSibling:[]:Element"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "434",
+            "435",
+            "437",
+            "438",
+            "439",
+            "440",
+            "441",
+            "442",
+            "454",
+            "470"
+          ],
+          "num": 10
+        },
+        {
+          "qualified_names": [
+            "435",
+            "460",
+            "477"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/nodes/Element.java b/src/main/java/org/jsoup/nodes/Element.java\nindex dc352dc..fd2b542 100644\n--- a/src/main/java/org/jsoup/nodes/Element.java\n+++ b/src/main/java/org/jsoup/nodes/Element.java\n@@ -431,15 +431,8 @@\n      * @return sibling elements\n      */\n     public Elements siblingElements() {\n-        if (parentNode \u003d\u003d null)\n-            return new Elements(0);\n \n-        List\u003cElement\u003e elements \u003d parent().children();\n-        Elements siblings \u003d new Elements(elements.size() - 1);\n-        for (Element el: elements)\n-            if (el !\u003d this)\n-                siblings.add(el);\n-        return siblings;\n+        return parent().children();\n     }\n \n     /**\n@@ -451,7 +444,6 @@\n      * @see #previousElementSibling()\n      */\n     public Element nextElementSibling() {\n-        if (parentNode \u003d\u003d null) return null;\n         List\u003cElement\u003e siblings \u003d parent().children();\n         Integer index \u003d indexInList(this, siblings);\n         Validate.notNull(index);\n@@ -467,7 +459,6 @@\n      * @see #nextElementSibling()\n      */\n     public Element previousElementSibling() {\n-        if (parentNode \u003d\u003d null) return null;\n         List\u003cElement\u003e siblings \u003d parent().children();\n         Integer index \u003d indexInList(this, siblings);\n         Validate.notNull(index);\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ReturnStatement [14390,14417]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [14389,14448]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ParameterizedType [14458,14471]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: elements [14472,14480]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [14472,14502]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [14458,14503]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [14512,14566]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "EnhancedForStatement [14575,14663]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [14672,14688]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [15157,15193]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [15699,15735]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/nodes/Node.java",
+        "src/main/java/org/jsoup/nodes/Node.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.nodes.Node:siblingNodes:[]:List\u003cNode\u003e",
+            "org.jsoup.nodes.Node:previousSibling:[]:Node"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.jsoup.nodes.Node:siblingIndex:[]:int",
+            "org.jsoup.nodes.Node:siblingNodes:[]:List\u003cNode\u003e"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "444",
+            "445",
+            "447",
+            "448",
+            "449",
+            "450",
+            "451",
+            "452",
+            "477",
+            "478"
+          ],
+          "num": 10
+        },
+        {
+          "qualified_names": [
+            "445",
+            "483"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/nodes/Node.java b/src/main/java/org/jsoup/nodes/Node.java\nindex c0640cd..92a2f8f 100644\n--- a/src/main/java/org/jsoup/nodes/Node.java\n+++ b/src/main/java/org/jsoup/nodes/Node.java\n@@ -441,15 +441,8 @@\n      @return node siblings. If the node has no parent, returns an empty list.\n      */\n     public List\u003cNode\u003e siblingNodes() {\n-        if (parentNode \u003d\u003d null)\n-            return Collections.emptyList();\n \n-        List\u003cNode\u003e nodes \u003d parentNode.childNodes;\n-        List\u003cNode\u003e siblings \u003d new ArrayList\u003cNode\u003e(nodes.size() - 1);\n-        for (Node node: nodes)\n-            if (node !\u003d this)\n-                siblings.add(node);\n-        return siblings;\n+        return parent().childNodes();\n     }\n \n     /**\n@@ -474,8 +467,6 @@\n      @return the previous sibling, or null if this is the first sibling\n      */\n     public Node previousSibling() {\n-        if (parentNode \u003d\u003d null)\n-            return null; // root\n \n         List\u003cNode\u003e siblings \u003d parentNode.childNodes;\n         Integer index \u003d siblingIndex();\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [14701,14730]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [14700,14767]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [14777,14818]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [14827,14887]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "EnhancedForStatement [14896,14984]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [14993,15009]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [15660,15708]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/select/Elements.java",
+        "src/main/java/org/jsoup/select/Elements.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.select.Elements:Elements:[int initialCapacity]:null"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "22",
+            "23",
+            "24"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "21"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/select/Elements.java b/src/main/java/org/jsoup/select/Elements.java\nindex 7f8f66a..a10ae3b 100644\n--- a/src/main/java/org/jsoup/select/Elements.java\n+++ b/src/main/java/org/jsoup/select/Elements.java\n@@ -19,9 +19,6 @@\n         contents \u003d new ArrayList\u003cElement\u003e();\n     }\n \n-    public Elements(int initialCapacity) {\n-        contents \u003d new ArrayList\u003cElement\u003e(initialCapacity);\n-    }\n \n     public Elements(Collection\u003cElement\u003e elements) {\n         contents \u003d new ArrayList\u003cElement\u003e(elements);\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [545,649]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.jsoup.nodes.Element:firstElementSibling:[]:Element",
+        "org.jsoup.nodes.Node:siblingIndex:[]:int"
+      ],
+      "num": 2
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.jsoup.nodes.Node:previousSibling:[]:Node",
+        "org.jsoup.select.Elements:Elements:[int initialCapacity]:null",
+        "org.jsoup.nodes.Element:nextElementSibling:[]:Element"
+      ],
+      "num": 3
+    }
+  }
+}

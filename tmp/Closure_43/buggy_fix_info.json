@@ -1,0 +1,158 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.TypeCheckTest::testLends10,com.google.javascript.jscomp.TypeCheckTest::testLends11",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.TypedScopeCreator",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "43",
+  "workingDir": "../bugs/Closure_43_tmp",
+  "bug_name": "Closure_43",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testLends10",
+      "assertion_line": "8781",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c[inconsistent return type"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.TypeCheckTest",
+      "test_function": "testLends11",
+      "assertion_line": "8793",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c[inconsistent return type"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/TypedScopeCreator.java",
+        "src/com/google/javascript/jscomp/TypedScopeCreator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypedScopeCreator\\$AbstractScopeBuilder:visit:[NodeTraversal t, Node n, Node parent]:void",
+            "com.google.javascript.jscomp.TypedScopeCreator\\$AbstractScopeBuilder:attachLiteralTypes:[NodeTraversal t, Node n]:void"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.TypedScopeCreator\\$AbstractScopeBuilder:defineObjectLiteral:[Node objectLit]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "420",
+            "548",
+            "549",
+            "550",
+            "551",
+            "552",
+            "553",
+            "554",
+            "588",
+            "589",
+            "590",
+            "591",
+            "592",
+            "593",
+            "594",
+            "595",
+            "597"
+          ],
+          "num": 17
+        },
+        {
+          "qualified_names": [
+            "419",
+            "548",
+            "595"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/TypedScopeCreator.java b/src/com/google/javascript/jscomp/TypedScopeCreator.java\nindex f9943a1..92d8715 100644\n--- a/src/com/google/javascript/jscomp/TypedScopeCreator.java\n+++ b/src/com/google/javascript/jscomp/TypedScopeCreator.java\n@@ -417,7 +417,6 @@\n      * For more information, see\n      * http://code.google.com/p/closure-compiler/issues/detail?id\u003d314\n      */\n-    private List\u003cNode\u003e lentObjectLiterals \u003d null;\n \n     /**\n      * Type-less stubs.\n@@ -545,13 +544,6 @@\n       }\n \n       // Analyze any @lends object literals in this statement.\n-      if (n.getParent() !\u003d null \u0026\u0026 NodeUtil.isStatement(n) \u0026\u0026\n-          lentObjectLiterals !\u003d null) {\n-        for (Node objLit : lentObjectLiterals) {\n-          defineObjectLiteral(objLit);\n-        }\n-        lentObjectLiterals.clear();\n-      }\n     }\n \n     private void attachLiteralTypes(NodeTraversal t, Node n) {\n@@ -585,16 +577,7 @@\n           break;\n \n         case Token.OBJECTLIT:\n-          JSDocInfo info \u003d n.getJSDocInfo();\n-          if (info !\u003d null \u0026\u0026\n-              info.getLendsName() !\u003d null) {\n-            if (lentObjectLiterals \u003d\u003d null) {\n-              lentObjectLiterals \u003d Lists.newArrayList();\n-            }\n-            lentObjectLiterals.add(n);\n-          } else {\n             defineObjectLiteral(n);\n-          }\n           break;\n \n           // NOTE(nicksantos): If we ever support Array tuples,\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [16503,16959]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [20689,20926]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [21785,21819]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [21834,21891]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [21893,22062]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [22068,22117]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [21830,22117]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.TypedScopeCreator\\$AbstractScopeBuilder:defineObjectLiteral:[Node objectLit]:void"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.TypedScopeCreator\\$AbstractScopeBuilder:visit:[NodeTraversal t, Node n, Node parent]:void",
+        "com.google.javascript.jscomp.TypedScopeCreator\\$AbstractScopeBuilder:attachLiteralTypes:[NodeTraversal t, Node n]:void"
+      ],
+      "num": 2
+    }
+  }
+}

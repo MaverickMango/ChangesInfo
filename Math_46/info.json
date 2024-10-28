@@ -1,0 +1,249 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Math",
+  "id": "46",
+  "workingDir": "../bugs/Math_46_buggy",
+  "inducingCommit": "330f3fe17d132bd4e2a91ff812ccf489e77f390f",
+  "originalCommit": "37680e23b8bddb80ac4ed0dfc6eb12d25a234adf",
+  "bug_name": "Math_46",
+  "derive": "defects4j",
+  "original_fixing_commit": "e6f27ebcb9ee0a344308382b99a3894bb61b225d",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/complex/Complex.java",
+        "src/main/java/org/apache/commons/math/complex/Complex.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "divide",
+            "Complex",
+            "divide"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "Complex",
+            "divide",
+            "divide"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "80",
+            "103",
+            "225",
+            "252",
+            "253",
+            "254",
+            "255",
+            "288"
+          ],
+          "num": 8
+        },
+        {
+          "qualified_names": [
+            "81",
+            "82",
+            "106",
+            "228",
+            "229",
+            "230",
+            "231",
+            "258",
+            "259",
+            "266",
+            "267",
+            "268",
+            "295"
+          ],
+          "num": 13
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/complex/Complex.java b/src/main/java/org/apache/commons/math/complex/Complex.java\nindex ac31e4b..137765c 100644\n--- a/src/main/java/org/apache/commons/math/complex/Complex.java\n+++ b/src/main/java/org/apache/commons/math/complex/Complex.java\n@@ -78,6 +78,8 @@\n     private final transient boolean isNaN;\n     /** Record whether this complex number is infinite. */\n     private final transient boolean isInfinite;\n+    /** Record whether this complex number is zero. */\n+    private final transient boolean isZero;\n \n     /**\n      * Create a complex number given only the real part.\n@@ -101,6 +103,7 @@\n         isNaN \u003d Double.isNaN(real) || Double.isNaN(imaginary);\n         isInfinite \u003d !isNaN \u0026\u0026\n             (Double.isInfinite(real) || Double.isInfinite(imaginary));\n+        isZero \u003d real \u003d\u003d 0 \u0026\u0026 imaginary \u003d\u003d 0;\n     }\n \n     /**\n@@ -222,7 +225,10 @@\n      *  \u003cli\u003eIf either {@code this} or {@code divisor} has a {@code NaN} value\n      *   in either part, {@link #NaN} is returned.\n      *  \u003c/li\u003e\n-     *  \u003cli\u003eIf {@code divisor} equals {@link #ZERO}, {@link #NaN} is returned.\n+     *  \u003cli\u003eIf {@code this} and {@code divisor} are both {@link #ZERO},\n+     *   {@link #NaN} is returned.\n+     *  \u003c/li\u003e\n+     *  \u003cli\u003eIf {@code divisor} equals {@link #ZERO}, {@link #INF} is returned.\n      *  \u003c/li\u003e\n      *  \u003cli\u003eIf {@code this} and {@code divisor} are both infinite,\n      *   {@link #NaN} is returned.\n@@ -249,16 +255,17 @@\n             return NaN;\n         }\n \n-        final double c \u003d divisor.getReal();\n-        final double d \u003d divisor.getImaginary();\n-        if (c \u003d\u003d 0.0 \u0026\u0026 d \u003d\u003d 0.0) {\n-            return NaN;\n+        if (divisor.isZero) {\n+            return isZero ? NaN : INF;\n         }\n \n         if (divisor.isInfinite() \u0026\u0026 !isInfinite()) {\n             return ZERO;\n         }\n \n+        final double c \u003d divisor.getReal();\n+        final double d \u003d divisor.getImaginary();\n+\n         if (FastMath.abs(c) \u003c FastMath.abs(d)) {\n             double q \u003d c / d;\n             double denominator \u003d c * q + d;\n@@ -285,7 +292,7 @@\n             return NaN;\n         }\n         if (divisor \u003d\u003d 0d) {\n-            return NaN;\n+            return isZero ? NaN : INF;\n         }\n         if (Double.isInfinite(divisor)) {\n             return !isInfinite() ? ZERO : NaN;\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [3504,3598]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [4224,4261]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [8327,8339]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement:  and  [8339,8344]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement:  are both  [8359,8369]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: , [8382,8383]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [8448,8463]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [8471,8484]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [8486,8498]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement:  is returned. [8498,8511]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003c/li\u003e [8520,8525]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003cli\u003eIf  [8534,8541]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "QualifiedName: divisor.isZero [9550,9564]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ConditionalExpression [9587,9605]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ConditionalExpression [10756,10774]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: isZero [9587,9593]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: INF [9602,9605]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: isZero [10756,10762]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: INF [10771,10774]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [9377,9397]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [],
+  "fixing_changes": [],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

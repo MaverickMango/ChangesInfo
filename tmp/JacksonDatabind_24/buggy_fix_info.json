@@ -1,0 +1,133 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.ser.TestConfig::testDateFormatConfig",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.cfg.BaseSettings",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "24",
+  "workingDir": "../bugs/JacksonDatabind_24_tmp",
+  "bug_name": "JacksonDatabind_24",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.ser.TestConfig",
+      "test_function": "testDateFormatConfig",
+      "assertion_line": "221",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003csun.util.calendar.ZoneInfo[id\u003d\"America/Los_Angeles\",offset\u003d-28800000,dstSavings\u003d3600000,useDaylight\u003dtrue,transitions\u003d185,lastRule\u003djava.util.SimpleTimeZone[id\u003dAmerica/Los_Angeles,offset\u003d-28800000,dstSavings\u003d3600000,useDaylight\u003dtrue,startYear\u003d0,startMode\u003d3,startMonth\u003d2,startDay\u003d8,startDayOfWeek\u003d1,startTime\u003d7200000,startTimeMode\u003d0,endMode\u003d3,endMonth\u003d10,endDay\u003d1,endDayOfWeek\u003d1,endTime\u003d7200000,endTimeMode\u003d0]]\u003e but was:\u003csun.util.calendar.ZoneInfo[id\u003d\"GMT\",offset\u003d0,dstSavings\u003d0,useDaylight\u003dfalse,transitions\u003d0,lastRule\u003dnull]\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/cfg/BaseSettings.java",
+        "src/main/java/com/fasterxml/jackson/databind/cfg/BaseSettings.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.cfg.BaseSettings:withDateFormat:[DateFormat df]:BaseSettings"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.cfg.BaseSettings:withDateFormat:[DateFormat df]:BaseSettings"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "236"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "234",
+            "237"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/cfg/BaseSettings.java b/src/main/java/com/fasterxml/jackson/databind/cfg/BaseSettings.java\nindex 7291b5d..cd2da61 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/cfg/BaseSettings.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/cfg/BaseSettings.java\n@@ -231,9 +231,10 @@\n         if (_dateFormat \u003d\u003d df) {\n             return this;\n         }\n+        TimeZone tz \u003d (df \u003d\u003d null) ? _timeZone : df.getTimeZone();\n         return new BaseSettings(_classIntrospector, _annotationIntrospector, _visibilityChecker, _propertyNamingStrategy, _typeFactory,\n                 _typeResolverBuilder, df, _handlerInstantiator, _locale,\n-                _timeZone, _defaultBase64);\n+                tz, _defaultBase64);\n     }\n \n     public BaseSettings withHandlerInstantiator(HandlerInstantiator hi) {\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [9281,9339]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [9281,9289]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [9290,9338]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: tz [9290,9292]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ConditionalExpression [9295,9338]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ParenthesizedExpression [9295,9307]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [9322,9338]"
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

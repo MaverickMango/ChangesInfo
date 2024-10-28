@@ -1,0 +1,1464 @@
+diff -r -u buggy/src/main/java/org/apache/commons/math3/fraction/Fraction.java inducing/src/main/java/org/apache/commons/math3/fraction/Fraction.java
+--- buggy/src/main/java/org/apache/commons/math3/fraction/Fraction.java	2023-06-12 11:34:45.778573518 +0800
++++ inducing/src/main/java/org/apache/commons/math3/fraction/Fraction.java	2023-06-12 11:34:46.134580015 +0800
+@@ -14,80 +14,33 @@
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
+-package org.apache.commons.math3.fraction;
++package org.apache.commons.math.fraction;
+ 
+-import java.io.Serializable;
+ import java.math.BigInteger;
+-
+-import org.apache.commons.math3.FieldElement;
+-import org.apache.commons.math3.exception.util.LocalizedFormats;
+-import org.apache.commons.math3.exception.MathArithmeticException;
+-import org.apache.commons.math3.exception.NullArgumentException;
+-import org.apache.commons.math3.util.ArithmeticUtils;
+-import org.apache.commons.math3.util.FastMath;
++import org.apache.commons.math.util.MathUtils;
+ 
+ /**
+  * Representation of a rational number.
+  *
+- * implements Serializable since 2.0
+- *
+  * @since 1.1
+- * @version $Id$
++ * @version $Revision$ $Date$
+  */
+-public class Fraction
+-    extends Number
+-    implements FieldElement<Fraction>, Comparable<Fraction>, Serializable {
+-
+-    /** A fraction representing "2 / 1". */
+-    public static final Fraction TWO = new Fraction(2, 1);
++public class Fraction extends Number implements Comparable {
+ 
+-    /** A fraction representing "1". */
++    /** A fraction representing "1 / 1". */
+     public static final Fraction ONE = new Fraction(1, 1);
+ 
+-    /** A fraction representing "0". */
++    /** A fraction representing "0 / 1". */
+     public static final Fraction ZERO = new Fraction(0, 1);
+ 
+-    /** A fraction representing "4/5". */
+-    public static final Fraction FOUR_FIFTHS = new Fraction(4, 5);
+-
+-    /** A fraction representing "1/5". */
+-    public static final Fraction ONE_FIFTH = new Fraction(1, 5);
+-
+-    /** A fraction representing "1/2". */
+-    public static final Fraction ONE_HALF = new Fraction(1, 2);
+-
+-    /** A fraction representing "1/4". */
+-    public static final Fraction ONE_QUARTER = new Fraction(1, 4);
+-
+-    /** A fraction representing "1/3". */
+-    public static final Fraction ONE_THIRD = new Fraction(1, 3);
+-
+-    /** A fraction representing "3/5". */
+-    public static final Fraction THREE_FIFTHS = new Fraction(3, 5);
+-
+-    /** A fraction representing "3/4". */
+-    public static final Fraction THREE_QUARTERS = new Fraction(3, 4);
+-
+-    /** A fraction representing "2/5". */
+-    public static final Fraction TWO_FIFTHS = new Fraction(2, 5);
+-
+-    /** A fraction representing "2/4". */
+-    public static final Fraction TWO_QUARTERS = new Fraction(2, 4);
+-
+-    /** A fraction representing "2/3". */
+-    public static final Fraction TWO_THIRDS = new Fraction(2, 3);
+-
+-    /** A fraction representing "-1 / 1". */
+-    public static final Fraction MINUS_ONE = new Fraction(-1, 1);
+-
+     /** Serializable version identifier */
+-    private static final long serialVersionUID = 3698073679419233275L;
+-
++    private static final long serialVersionUID = -8958519416450949235L;
++    
+     /** The denominator. */
+-    private final int denominator;
+-
++    private int denominator;
++    
+     /** The numerator. */
+-    private final int numerator;
++    private int numerator;
+ 
+     /**
+      * Create a fraction given the double value.
+@@ -110,7 +63,7 @@
+      * </p>
+      * @param value the double value to convert to a fraction.
+      * @param epsilon maximum error allowed.  The resulting fraction is within
+-     *        {@code epsilon} of {@code value}, in absolute terms.
++     *        <code>epsilon</code> of <code>value</code>, in absolute terms.
+      * @param maxIterations maximum number of convergents
+      * @throws FractionConversionException if the continued fraction failed to
+      *         converge.
+@@ -153,7 +106,7 @@
+      *   - a valid maxDenominator value and the epsilon value set to zero
+      *     (that way epsilon only has effect if there is an exact match before
+      *     the maxDenominator value is reached).
+-     * </p><p>
++     * <p>
+      *
+      * It has been done this way so that the same code can be (re)used for both
+      * scenarios. However this could be confusing to users if it were part of
+@@ -166,7 +119,7 @@
+      *
+      * @param value the double value to convert to a fraction.
+      * @param epsilon maximum error allowed.  The resulting fraction is within
+-     *        {@code epsilon} of {@code value}, in absolute terms.
++     *        <code>epsilon</code> of <code>value</code>, in absolute terms.
+      * @param maxDenominator maximum denominator value allowed.
+      * @param maxIterations maximum number of convergents
+      * @throws FractionConversionException if the continued fraction failed to
+@@ -177,20 +130,20 @@
+     {
+         long overflow = Integer.MAX_VALUE;
+         double r0 = value;
+-        long a0 = (long)FastMath.floor(r0);
++        long a0 = (long)Math.floor(r0);
+         if (a0 > overflow) {
+             throw new FractionConversionException(value, a0, 1l);
+         }
+ 
+         // check for (almost) integer arguments, which should not go
+         // to iterations.
+-        if (FastMath.abs(a0 - value) < epsilon) {
++        if (Math.abs(a0 - value) < epsilon) {
+             this.numerator = (int) a0;
+             this.denominator = 1;
+             return;
+         }
+ 
+-        long p0 = 1;
++       long p0 = 1;
+         long q0 = 0;
+         long p1 = a0;
+         long q1 = 1;
+@@ -203,15 +156,15 @@
+         do {
+             ++n;
+             double r1 = 1.0 / (r0 - a0);
+-            long a1 = (long)FastMath.floor(r1);
++            long a1 = (long)Math.floor(r1);
+             p2 = (a1 * p1) + p0;
+             q2 = (a1 * q1) + q0;
+             if ((p2 > overflow) || (q2 > overflow)) {
+                 throw new FractionConversionException(value, p2, q2);
+             }
+-
++            
+             double convergent = (double)p2 / (double)q2;
+-            if (n < maxIterations && FastMath.abs(convergent - value) > epsilon && q2 < maxDenominator) {
++            if (n < maxIterations && Math.abs(convergent - value) > epsilon && q2 < maxDenominator) {
+                 p0 = p1;
+                 p1 = p2;
+                 q0 = q1;
+@@ -226,7 +179,7 @@
+         if (n >= maxIterations) {
+             throw new FractionConversionException(value, maxIterations);
+         }
+-
++        
+         if (q2 < maxDenominator) {
+             this.numerator = (int) p2;
+             this.denominator = (int) q2;
+@@ -236,53 +189,32 @@
+         }
+ 
+     }
+-
+-    /**
+-     * Create a fraction from an int.
+-     * The fraction is num / 1.
+-     * @param num the numerator.
+-     */
+-    public Fraction(int num) {
+-        this(num, 1);
+-    }
+-
++    
+     /**
+      * Create a fraction given the numerator and denominator.  The fraction is
+      * reduced to lowest terms.
+      * @param num the numerator.
+      * @param den the denominator.
+-     * @throws MathArithmeticException if the denominator is {@code zero}
++     * @throws ArithmeticException if the denomiator is <code>zero</code>
+      */
+     public Fraction(int num, int den) {
++        super();
+         if (den == 0) {
+-            throw new MathArithmeticException(LocalizedFormats.ZERO_DENOMINATOR_IN_FRACTION,
+-                                              num, den);
++            throw new ArithmeticException("The denominator must not be zero");
+         }
+         if (den < 0) {
+             if (num == Integer.MIN_VALUE ||
+-                den == Integer.MIN_VALUE) {
+-                throw new MathArithmeticException(LocalizedFormats.OVERFLOW_IN_FRACTION,
+-                                                  num, den);
++                    den == Integer.MIN_VALUE) {
++                throw new ArithmeticException("overflow: can't negate");
+             }
+             num = -num;
+             den = -den;
+         }
+-        // reduce numerator and denominator by greatest common denominator.
+-        final int d = ArithmeticUtils.gcd(num, den);
+-        if (d > 1) {
+-            num /= d;
+-            den /= d;
+-        }
+-
+-        // move sign to numerator.
+-        if (den < 0) {
+-            num = -num;
+-            den = -den;
+-        }
+-        this.numerator   = num;
++        this.numerator = num;
+         this.denominator = den;
++        reduce();
+     }
+-
++    
+     /**
+      * Returns the absolute value of this fraction.
+      * @return the absolute value.
+@@ -294,31 +226,42 @@
+         } else {
+             ret = negate();
+         }
+-        return ret;
++        return ret;        
+     }
+-
++    
+     /**
+      * Compares this object to another based on size.
+      * @param object the object to compare to
+      * @return -1 if this is less than <tt>object</tt>, +1 if this is greater
+      *         than <tt>object</tt>, 0 if they are equal.
+      */
+-    public int compareTo(Fraction object) {
+-        long nOd = ((long) numerator) * object.denominator;
+-        long dOn = ((long) denominator) * object.numerator;
+-        return (nOd < dOn) ? -1 : ((nOd > dOn) ? +1 : 0);
++    public int compareTo(Object object) {
++        int ret = 0;
++        
++        if (this != object) { 
++            Fraction other = (Fraction)object;
++            double first = doubleValue();
++            double second = other.doubleValue();
++            
++            if (first < second) {
++                ret = -1;
++            } else if (first > second) {
++                ret = 1;
++            }
++        }
++        
++        return ret;
+     }
+-
++    
+     /**
+      * Gets the fraction as a <tt>double</tt>. This calculates the fraction as
+      * the numerator divided by denominator.
+      * @return the fraction as a <tt>double</tt>
+      */
+-    @Override
+     public double doubleValue() {
+         return (double)numerator / (double)denominator;
+     }
+-
++    
+     /**
+      * Test for the equality of two fractions.  If the lowest term
+      * numerator and denominators are the same for both fractions, the two
+@@ -328,31 +271,38 @@
+      *         <tt>null</tt>, not an instance of {@link Fraction}, or not equal
+      *         to this fraction instance.
+      */
+-    @Override
+     public boolean equals(Object other) {
+-        if (this == other) {
+-            return true;
+-        }
+-        if (other instanceof Fraction) {
+-            // since fractions are always in lowest terms, numerators and
+-            // denominators can be compared directly for equality.
+-            Fraction rhs = (Fraction)other;
+-            return (numerator == rhs.numerator) &&
+-                (denominator == rhs.denominator);
++        boolean ret;
++        
++        if (this == other) { 
++            ret = true;
++        } else if (other == null) {
++            ret = false;
++        } else {
++            try {
++                // since fractions are always in lowest terms, numerators and
++                // denominators can be compared directly for equality.
++                Fraction rhs = (Fraction)other;
++                ret = (numerator == rhs.numerator) &&
++                    (denominator == rhs.denominator);
++            } catch (ClassCastException ex) {
++                // ignore exception
++                ret = false;
++            }
+         }
+-        return false;
++        
++        return ret;
+     }
+-
++    
+     /**
+      * Gets the fraction as a <tt>float</tt>. This calculates the fraction as
+      * the numerator divided by denominator.
+      * @return the fraction as a <tt>float</tt>
+      */
+-    @Override
+     public float floatValue() {
+         return (float)doubleValue();
+     }
+-
++    
+     /**
+      * Access the denominator.
+      * @return the denominator.
+@@ -360,7 +310,7 @@
+     public int getDenominator() {
+         return denominator;
+     }
+-
++    
+     /**
+      * Access the numerator.
+      * @return the numerator.
+@@ -368,43 +318,40 @@
+     public int getNumerator() {
+         return numerator;
+     }
+-
++    
+     /**
+      * Gets a hashCode for the fraction.
+      * @return a hash code value for this object
+      */
+-    @Override
+     public int hashCode() {
+-        return 37 * (37 * 17 + numerator) + denominator;
++        return 37 * (37 * 17 + getNumerator()) + getDenominator();
+     }
+-
++    
+     /**
+      * Gets the fraction as an <tt>int</tt>. This returns the whole number part
+      * of the fraction.
+      * @return the whole number fraction part
+      */
+-    @Override
+     public int intValue() {
+         return (int)doubleValue();
+     }
+-
++    
+     /**
+      * Gets the fraction as a <tt>long</tt>. This returns the whole number part
+      * of the fraction.
+      * @return the whole number fraction part
+      */
+-    @Override
+     public long longValue() {
+         return (long)doubleValue();
+     }
+-
++    
+     /**
+      * Return the additive inverse of this fraction.
+      * @return the negation of this fraction.
+      */
+     public Fraction negate() {
+         if (numerator==Integer.MIN_VALUE) {
+-            throw new MathArithmeticException(LocalizedFormats.OVERFLOW_IN_FRACTION, numerator, denominator);
++            throw new ArithmeticException("overflow: too large to negate");
+         }
+         return new Fraction(-numerator, denominator);
+     }
+@@ -416,66 +363,48 @@
+     public Fraction reciprocal() {
+         return new Fraction(denominator, numerator);
+     }
+-
++    
+     /**
+      * <p>Adds the value of this fraction to another, returning the result in reduced form.
+      * The algorithm follows Knuth, 4.5.1.</p>
+      *
+-     * @param fraction  the fraction to add, must not be {@code null}
+-     * @return a {@code Fraction} instance with the resulting values
+-     * @throws NullArgumentException if the fraction is {@code null}
+-     * @throws MathArithmeticException if the resulting numerator or denominator exceeds
+-     *  {@code Integer.MAX_VALUE}
++     * @param fraction  the fraction to add, must not be <code>null</code>
++     * @return a <code>Fraction</code> instance with the resulting values
++     * @throws IllegalArgumentException if the fraction is <code>null</code>
++     * @throws ArithmeticException if the resulting numerator or denominator exceeds
++     *  <code>Integer.MAX_VALUE</code>
+      */
+     public Fraction add(Fraction fraction) {
+         return addSub(fraction, true /* add */);
+     }
+ 
+     /**
+-     * Add an integer to the fraction.
+-     * @param i the <tt>integer</tt> to add.
+-     * @return this + i
+-     */
+-    public Fraction add(final int i) {
+-        return new Fraction(numerator + i * denominator, denominator);
+-    }
+-
+-    /**
+-     * <p>Subtracts the value of another fraction from the value of this one,
++     * <p>Subtracts the value of another fraction from the value of this one, 
+      * returning the result in reduced form.</p>
+      *
+-     * @param fraction  the fraction to subtract, must not be {@code null}
+-     * @return a {@code Fraction} instance with the resulting values
+-     * @throws NullArgumentException if the fraction is {@code null}
+-     * @throws MathArithmeticException if the resulting numerator or denominator
+-     *   cannot be represented in an {@code int}.
++     * @param fraction  the fraction to subtract, must not be <code>null</code>
++     * @return a <code>Fraction</code> instance with the resulting values
++     * @throws IllegalArgumentException if the fraction is <code>null</code>
++     * @throws ArithmeticException if the resulting numerator or denominator
++     *   cannot be represented in an <code>int</code>.
+      */
+     public Fraction subtract(Fraction fraction) {
+         return addSub(fraction, false /* subtract */);
+     }
+ 
+-    /**
+-     * Subtract an integer from the fraction.
+-     * @param i the <tt>integer</tt> to subtract.
+-     * @return this - i
+-     */
+-    public Fraction subtract(final int i) {
+-        return new Fraction(numerator - i * denominator, denominator);
+-    }
+-
+-    /**
++    /** 
+      * Implement add and subtract using algorithm described in Knuth 4.5.1.
+-     *
+-     * @param fraction the fraction to subtract, must not be {@code null}
++     * 
++     * @param fraction the fraction to subtract, must not be <code>null</code>
+      * @param isAdd true to add, false to subtract
+-     * @return a {@code Fraction} instance with the resulting values
+-     * @throws NullArgumentException if the fraction is {@code null}
+-     * @throws MathArithmeticException if the resulting numerator or denominator
+-     *   cannot be represented in an {@code int}.
++     * @return a <code>Fraction</code> instance with the resulting values
++     * @throws IllegalArgumentException if the fraction is <code>null</code>
++     * @throws ArithmeticException if the resulting numerator or denominator
++     *   cannot be represented in an <code>int</code>.
+      */
+     private Fraction addSub(Fraction fraction, boolean isAdd) {
+         if (fraction == null) {
+-            throw new NullArgumentException(LocalizedFormats.FRACTION);
++            throw new IllegalArgumentException("The fraction must not be null");
+         }
+         // zero is identity for addition.
+         if (numerator == 0) {
+@@ -483,18 +412,18 @@
+         }
+         if (fraction.numerator == 0) {
+             return this;
+-        }
++        }     
+         // if denominators are randomly distributed, d1 will be 1 about 61%
+         // of the time.
+-        int d1 = ArithmeticUtils.gcd(denominator, fraction.denominator);
++        int d1 = MathUtils.gcd(denominator, fraction.denominator);
+         if (d1==1) {
+             // result is ( (u*v' +/- u'v) / u'v')
+-            int uvp = ArithmeticUtils.mulAndCheck(numerator, fraction.denominator);
+-            int upv = ArithmeticUtils.mulAndCheck(fraction.numerator, denominator);
++            int uvp = MathUtils.mulAndCheck(numerator, fraction.denominator);
++            int upv = MathUtils.mulAndCheck(fraction.numerator, denominator);
+             return new Fraction
+-                (isAdd ? ArithmeticUtils.addAndCheck(uvp, upv) :
+-                 ArithmeticUtils.subAndCheck(uvp, upv),
+-                 ArithmeticUtils.mulAndCheck(denominator, fraction.denominator));
++                (isAdd ? MathUtils.addAndCheck(uvp, upv) : 
++                 MathUtils.subAndCheck(uvp, upv),
++                 MathUtils.mulAndCheck(denominator, fraction.denominator));
+         }
+         // the quantity 't' requires 65 bits of precision; see knuth 4.5.1
+         // exercise 7.  we're going to use a BigInteger.
+@@ -507,98 +436,67 @@
+         // but d2 doesn't need extra precision because
+         // d2 = gcd(t,d1) = gcd(t mod d1, d1)
+         int tmodd1 = t.mod(BigInteger.valueOf(d1)).intValue();
+-        int d2 = (tmodd1==0)?d1:ArithmeticUtils.gcd(tmodd1, d1);
++        int d2 = (tmodd1==0)?d1:MathUtils.gcd(tmodd1, d1);
+ 
+         // result is (t/d2) / (u'/d1)(v'/d2)
+         BigInteger w = t.divide(BigInteger.valueOf(d2));
+         if (w.bitLength() > 31) {
+-            throw new MathArithmeticException(LocalizedFormats.NUMERATOR_OVERFLOW_AFTER_MULTIPLY,
+-                                              w);
++            throw new ArithmeticException
++            ("overflow: numerator too large after multiply");
+         }
+-        return new Fraction (w.intValue(),
+-                ArithmeticUtils.mulAndCheck(denominator/d1,
++        return new Fraction (w.intValue(), 
++                MathUtils.mulAndCheck(denominator/d1, 
+                         fraction.denominator/d2));
+     }
+ 
+     /**
+-     * <p>Multiplies the value of this fraction by another, returning the
++     * <p>Multiplies the value of this fraction by another, returning the 
+      * result in reduced form.</p>
+      *
+-     * @param fraction  the fraction to multiply by, must not be {@code null}
+-     * @return a {@code Fraction} instance with the resulting values
+-     * @throws NullArgumentException if the fraction is {@code null}
+-     * @throws MathArithmeticException if the resulting numerator or denominator exceeds
+-     *  {@code Integer.MAX_VALUE}
++     * @param fraction  the fraction to multiply by, must not be <code>null</code>
++     * @return a <code>Fraction</code> instance with the resulting values
++     * @throws IllegalArgumentException if the fraction is <code>null</code>
++     * @throws ArithmeticException if the resulting numerator or denominator exceeds
++     *  <code>Integer.MAX_VALUE</code>
+      */
+     public Fraction multiply(Fraction fraction) {
+         if (fraction == null) {
+-            throw new NullArgumentException(LocalizedFormats.FRACTION);
++            throw new IllegalArgumentException("The fraction must not be null");
+         }
+         if (numerator == 0 || fraction.numerator == 0) {
+             return ZERO;
+         }
+         // knuth 4.5.1
+         // make sure we don't overflow unless the result *must* overflow.
+-        int d1 = ArithmeticUtils.gcd(numerator, fraction.denominator);
+-        int d2 = ArithmeticUtils.gcd(fraction.numerator, denominator);
++        int d1 = MathUtils.gcd(numerator, fraction.denominator);
++        int d2 = MathUtils.gcd(fraction.numerator, denominator);
+         return getReducedFraction
+-        (ArithmeticUtils.mulAndCheck(numerator/d1, fraction.numerator/d2),
+-                ArithmeticUtils.mulAndCheck(denominator/d2, fraction.denominator/d1));
+-    }
+-
+-    /**
+-     * Multiply the fraction by an integer.
+-     * @param i the <tt>integer</tt> to multiply by.
+-     * @return this * i
+-     */
+-    public Fraction multiply(final int i) {
+-        return new Fraction(numerator * i, denominator);
++        (MathUtils.mulAndCheck(numerator/d1, fraction.numerator/d2),
++                MathUtils.mulAndCheck(denominator/d2, fraction.denominator/d1));
+     }
+ 
+     /**
+      * <p>Divide the value of this fraction by another.</p>
+      *
+-     * @param fraction  the fraction to divide by, must not be {@code null}
+-     * @return a {@code Fraction} instance with the resulting values
+-     * @throws IllegalArgumentException if the fraction is {@code null}
+-     * @throws MathArithmeticException if the fraction to divide by is zero
+-     * @throws MathArithmeticException if the resulting numerator or denominator exceeds
+-     *  {@code Integer.MAX_VALUE}
++     * @param fraction  the fraction to divide by, must not be <code>null</code>
++     * @return a <code>Fraction</code> instance with the resulting values
++     * @throws IllegalArgumentException if the fraction is <code>null</code>
++     * @throws ArithmeticException if the fraction to divide by is zero
++     * @throws ArithmeticException if the resulting numerator or denominator exceeds
++     *  <code>Integer.MAX_VALUE</code>
+      */
+     public Fraction divide(Fraction fraction) {
+         if (fraction == null) {
+-            throw new NullArgumentException(LocalizedFormats.FRACTION);
++            throw new IllegalArgumentException("The fraction must not be null");
+         }
+         if (fraction.numerator == 0) {
+-            throw new MathArithmeticException(LocalizedFormats.ZERO_FRACTION_TO_DIVIDE_BY,
+-                                              fraction.numerator, fraction.denominator);
++            throw new ArithmeticException("The fraction to divide by must not be zero");
+         }
+         return multiply(fraction.reciprocal());
+     }
+-
+-    /**
+-     * Divide the fraction by an integer.
+-     * @param i the <tt>integer</tt> to divide by.
+-     * @return this * i
+-     */
+-    public Fraction divide(final int i) {
+-        return new Fraction(numerator, denominator * i);
+-    }
+-
+-    /**
+-     * <p>
+-     * Gets the fraction percentage as a <tt>double</tt>. This calculates the
+-     * fraction as the numerator divided by denominator multiplied by 100.
+-     * </p>
+-     *
+-     * @return the fraction percentage as a <tt>double</tt>.
+-     */
+-    public double percentageValue() {
+-        return 100 * doubleValue();
+-    }
+-
++    
+     /**
+-     * <p>Creates a {@code Fraction} instance with the 2 parts
++     * <p>Creates a <code>Fraction</code> instance with the 2 parts
+      * of a fraction Y/Z.</p>
+      *
+      * <p>Any negative signs are resolved to be on the numerator.</p>
+@@ -606,12 +504,11 @@
+      * @param numerator  the numerator, for example the three in 'three sevenths'
+      * @param denominator  the denominator, for example the seven in 'three sevenths'
+      * @return a new fraction instance, with the numerator and denominator reduced
+-     * @throws MathArithmeticException if the denominator is {@code zero}
++     * @throws ArithmeticException if the denominator is <code>zero</code>
+      */
+     public static Fraction getReducedFraction(int numerator, int denominator) {
+         if (denominator == 0) {
+-            throw new MathArithmeticException(LocalizedFormats.ZERO_DENOMINATOR_IN_FRACTION,
+-                                              numerator, denominator);
++            throw new ArithmeticException("The denominator must not be zero");
+         }
+         if (numerator==0) {
+             return ZERO; // normalize zero.
+@@ -623,44 +520,34 @@
+         if (denominator < 0) {
+             if (numerator==Integer.MIN_VALUE ||
+                     denominator==Integer.MIN_VALUE) {
+-                throw new MathArithmeticException(LocalizedFormats.OVERFLOW_IN_FRACTION,
+-                                                  numerator, denominator);
++                throw new ArithmeticException("overflow: can't negate");
+             }
+             numerator = -numerator;
+             denominator = -denominator;
+         }
+         // simplify fraction.
+-        int gcd = ArithmeticUtils.gcd(numerator, denominator);
++        int gcd = MathUtils.gcd(numerator, denominator);
+         numerator /= gcd;
+         denominator /= gcd;
+         return new Fraction(numerator, denominator);
+     }
+-
++    
+     /**
+-     * <p>
+-     * Returns the {@code String} representing this fraction, ie
+-     * "num / dem" or just "num" if the denominator is one.
+-     * </p>
+-     *
+-     * @return a string representation of the fraction.
+-     * @see java.lang.Object#toString()
++     * Reduce this fraction to lowest terms.  This is accomplished by dividing
++     * both numerator and denominator by their greatest common divisor.
+      */
+-    @Override
+-    public String toString() {
+-        String str = null;
+-        if (denominator == 1) {
+-            str = Integer.toString(numerator);
+-        } else if (numerator == 0) {
+-            str = "0";
+-        } else {
+-            str = numerator + " / " + denominator;
++    private void reduce() {
++        // reduce numerator and denominator by greatest common denominator.
++        int d = MathUtils.gcd(numerator, denominator);
++        if (d > 1) {
++            numerator /= d;
++            denominator /= d;
+         }
+-        return str;
+-    }
+ 
+-    /** {@inheritDoc} */
+-    public FractionField getField() {
+-        return FractionField.getInstance();
++        // move sign to numerator.
++        if (denominator < 0) {
++            numerator *= -1;
++            denominator *= -1;
++        }
+     }
+-
+ }
+diff -r -u buggy/src/test/java/org/apache/commons/math3/fraction/FractionTest.java inducing/src/test/java/org/apache/commons/math3/fraction/FractionTest.java
+--- buggy/src/test/java/org/apache/commons/math3/fraction/FractionTest.java	2023-06-12 11:34:45.814574175 +0800
++++ inducing/src/test/java/org/apache/commons/math3/fraction/FractionTest.java	2023-06-12 11:34:46.162580525 +0800
+@@ -14,28 +14,22 @@
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
+-package org.apache.commons.math3.fraction;
++package org.apache.commons.math.fraction;
+ 
+-import org.apache.commons.math3.exception.ConvergenceException;
+-import org.apache.commons.math3.exception.MathIllegalArgumentException;
+-import org.apache.commons.math3.exception.MathArithmeticException;
+-import org.apache.commons.math3.TestUtils;
+-import org.apache.commons.math3.util.FastMath;
+-import org.junit.Assert;
+-import org.junit.Test;
++import org.apache.commons.math.ConvergenceException;
+ 
++import junit.framework.TestCase;
+ 
+ /**
+- * @version $Id$
++ * @version $Revision$ $Date$
+  */
+-public class FractionTest {
++public class FractionTest extends TestCase {
+ 
+     private void assertFraction(int expectedNumerator, int expectedDenominator, Fraction actual) {
+-        Assert.assertEquals(expectedNumerator, actual.getNumerator());
+-        Assert.assertEquals(expectedDenominator, actual.getDenominator());
++        assertEquals(expectedNumerator, actual.getNumerator());
++        assertEquals(expectedDenominator, actual.getDenominator());
+     }
+-
+-    @Test
++    
+     public void testConstructor() {
+         assertFraction(0, 1, new Fraction(0, 1));
+         assertFraction(0, 1, new Fraction(0, 2));
+@@ -46,33 +40,43 @@
+         assertFraction(-1, 2, new Fraction(1, -2));
+         assertFraction(-1, 2, new Fraction(-2, 4));
+         assertFraction(-1, 2, new Fraction(2, -4));
+-
++        
+         // overflow
+         try {
+             new Fraction(Integer.MIN_VALUE, -1);
+-            Assert.fail();
+-        } catch (MathArithmeticException ex) {
++            fail();
++        } catch (ArithmeticException ex) {
+             // success
+         }
+         try {
+             new Fraction(1, Integer.MIN_VALUE);
+-            Assert.fail();
+-        } catch (MathArithmeticException ex) {
++            fail();
++        } catch (ArithmeticException ex) {
+             // success
+         }
+-        assertFraction(0, 1, new Fraction(0.00000000000001));
+-        assertFraction(2, 5, new Fraction(0.40000000000001));
+-        assertFraction(15, 1, new Fraction(15.0000000000001));
++        try {        
++            assertFraction(0, 1, new Fraction(0.00000000000001));
++            assertFraction(2, 5, new Fraction(0.40000000000001));
++            assertFraction(15, 1, new Fraction(15.0000000000001));
++            
++        } catch (ConvergenceException ex) {
++            fail(ex.getMessage());
++        }
+     }
+ 
+-    @Test(expected=ConvergenceException.class)
+     public void testGoldenRatio() {
+-        // the golden ratio is notoriously a difficult number for continuous fraction
+-        new Fraction((1 + FastMath.sqrt(5)) / 2, 1.0e-12, 25);
++        try {
++            // the golden ratio is notoriously a difficult number for continuous fraction
++            new Fraction((1 + Math.sqrt(5)) / 2, 1.0e-12, 25);
++            fail("an exception should have been thrown");
++        } catch (ConvergenceException ce) {
++            // expected behavior
++        } catch (Exception e) {
++            fail("wrong exception caught");
++        }
+     }
+ 
+     // MATH-179
+-    @Test
+     public void testDoubleConstructor() throws ConvergenceException  {
+         assertFraction(1, 2, new Fraction((double)1 / (double)2));
+         assertFraction(1, 3, new Fraction((double)1 / (double)3));
+@@ -118,7 +122,6 @@
+     }
+ 
+     // MATH-181
+-    @Test
+     public void testDigitLimitConstructor() throws ConvergenceException  {
+         assertFraction(2, 5, new Fraction(0.4,   9));
+         assertFraction(2, 5, new Fraction(0.4,  99));
+@@ -130,7 +133,6 @@
+         assertFraction(769, 1250, new Fraction(0.6152, 9999));
+     }
+ 
+-    @Test
+     public void testIntegerOverflow() {
+         checkIntegerOverflow(0.75000000001455192);
+         checkIntegerOverflow(1.0e10);
+@@ -139,13 +141,14 @@
+     private void checkIntegerOverflow(double a) {
+         try {
+             new Fraction(a, 1.0e-12, 1000);
+-            Assert.fail("an exception should have been thrown");
++            fail("an exception should have been thrown");
+         } catch (ConvergenceException ce) {
+             // expected behavior
++        } catch (Exception e) {
++            fail("wrong exception caught");
+         }
+     }
+ 
+-    @Test
+     public void testEpsilonLimitConstructor() throws ConvergenceException  {
+         assertFraction(2, 5, new Fraction(0.4, 1.0e-5, 100));
+ 
+@@ -157,455 +160,382 @@
+         assertFraction(769, 1250, new Fraction(0.6152, 1.0e-7, 100));
+     }
+ 
+-    @Test
+     public void testCompareTo() {
+         Fraction first = new Fraction(1, 2);
+         Fraction second = new Fraction(1, 3);
+         Fraction third = new Fraction(1, 2);
+-
+-        Assert.assertEquals(0, first.compareTo(first));
+-        Assert.assertEquals(0, first.compareTo(third));
+-        Assert.assertEquals(1, first.compareTo(second));
+-        Assert.assertEquals(-1, second.compareTo(first));
+-
+-        // these two values are different approximations of PI
+-        // the first  one is approximately PI - 3.07e-18
+-        // the second one is approximately PI + 1.936e-17
+-        Fraction pi1 = new Fraction(1068966896, 340262731);
+-        Fraction pi2 = new Fraction( 411557987, 131002976);
+-        Assert.assertEquals(-1, pi1.compareTo(pi2));
+-        Assert.assertEquals( 1, pi2.compareTo(pi1));
+-        Assert.assertEquals(0.0, pi1.doubleValue() - pi2.doubleValue(), 1.0e-20);
++        
++        assertEquals(0, first.compareTo(first));
++        assertEquals(0, first.compareTo(third));
++        assertEquals(1, first.compareTo(second));
++        assertEquals(-1, second.compareTo(first));
+     }
+-
+-    @Test
++    
+     public void testDoubleValue() {
+         Fraction first = new Fraction(1, 2);
+         Fraction second = new Fraction(1, 3);
+ 
+-        Assert.assertEquals(0.5, first.doubleValue(), 0.0);
+-        Assert.assertEquals(1.0 / 3.0, second.doubleValue(), 0.0);
++        assertEquals(0.5, first.doubleValue(), 0.0);
++        assertEquals(1.0 / 3.0, second.doubleValue(), 0.0);
+     }
+-
+-    @Test
++    
+     public void testFloatValue() {
+         Fraction first = new Fraction(1, 2);
+         Fraction second = new Fraction(1, 3);
+ 
+-        Assert.assertEquals(0.5f, first.floatValue(), 0.0f);
+-        Assert.assertEquals((float)(1.0 / 3.0), second.floatValue(), 0.0f);
++        assertEquals(0.5f, first.floatValue(), 0.0f);
++        assertEquals((float)(1.0 / 3.0), second.floatValue(), 0.0f);
+     }
+-
+-    @Test
++    
+     public void testIntValue() {
+         Fraction first = new Fraction(1, 2);
+         Fraction second = new Fraction(3, 2);
+ 
+-        Assert.assertEquals(0, first.intValue());
+-        Assert.assertEquals(1, second.intValue());
++        assertEquals(0, first.intValue());
++        assertEquals(1, second.intValue());
+     }
+-
+-    @Test
++    
+     public void testLongValue() {
+         Fraction first = new Fraction(1, 2);
+         Fraction second = new Fraction(3, 2);
+ 
+-        Assert.assertEquals(0L, first.longValue());
+-        Assert.assertEquals(1L, second.longValue());
++        assertEquals(0L, first.longValue());
++        assertEquals(1L, second.longValue());
+     }
+-
+-    @Test
++    
+     public void testConstructorDouble() {
+-        assertFraction(1, 2, new Fraction(0.5));
+-        assertFraction(1, 3, new Fraction(1.0 / 3.0));
+-        assertFraction(17, 100, new Fraction(17.0 / 100.0));
+-        assertFraction(317, 100, new Fraction(317.0 / 100.0));
+-        assertFraction(-1, 2, new Fraction(-0.5));
+-        assertFraction(-1, 3, new Fraction(-1.0 / 3.0));
+-        assertFraction(-17, 100, new Fraction(17.0 / -100.0));
+-        assertFraction(-317, 100, new Fraction(-317.0 / 100.0));
++        try {
++            assertFraction(1, 2, new Fraction(0.5));
++            assertFraction(1, 3, new Fraction(1.0 / 3.0));
++            assertFraction(17, 100, new Fraction(17.0 / 100.0));
++            assertFraction(317, 100, new Fraction(317.0 / 100.0));
++            assertFraction(-1, 2, new Fraction(-0.5));
++            assertFraction(-1, 3, new Fraction(-1.0 / 3.0));
++            assertFraction(-17, 100, new Fraction(17.0 / -100.0));
++            assertFraction(-317, 100, new Fraction(-317.0 / 100.0));
++        } catch (ConvergenceException ex) {
++            fail(ex.getMessage());
++        }
+     }
+-
+-    @Test
++    
+     public void testAbs() {
+         Fraction a = new Fraction(10, 21);
+         Fraction b = new Fraction(-10, 21);
+         Fraction c = new Fraction(10, -21);
+-
++        
+         assertFraction(10, 21, a.abs());
+         assertFraction(10, 21, b.abs());
+         assertFraction(10, 21, c.abs());
+     }
+-
+-    @Test
+-    public void testPercentage() {
+-        Assert.assertEquals(50.0, new Fraction(1, 2).percentageValue(), 1.0e-15);
+-    }
+-
+-    @Test
+-    public void testMath835() {
+-        final int numer = Integer.MAX_VALUE / 99;
+-        final int denom = 1;
+-        final double percentage = 100 * ((double) numer) / denom;
+-        final Fraction frac = new Fraction(numer, denom);
+-        // With the implementation that preceded the fix suggested in MATH-835,
+-        // this test was failing, due to overflow.
+-        Assert.assertEquals(percentage, frac.percentageValue(), Math.ulp(percentage));
+-    }
+-
+-    @Test
++    
+     public void testReciprocal() {
+         Fraction f = null;
+-
++        
+         f = new Fraction(50, 75);
+         f = f.reciprocal();
+-        Assert.assertEquals(3, f.getNumerator());
+-        Assert.assertEquals(2, f.getDenominator());
+-
++        assertEquals(3, f.getNumerator());
++        assertEquals(2, f.getDenominator());
++        
+         f = new Fraction(4, 3);
+         f = f.reciprocal();
+-        Assert.assertEquals(3, f.getNumerator());
+-        Assert.assertEquals(4, f.getDenominator());
+-
++        assertEquals(3, f.getNumerator());
++        assertEquals(4, f.getDenominator());
++        
+         f = new Fraction(-15, 47);
+         f = f.reciprocal();
+-        Assert.assertEquals(-47, f.getNumerator());
+-        Assert.assertEquals(15, f.getDenominator());
+-
++        assertEquals(-47, f.getNumerator());
++        assertEquals(15, f.getDenominator());
++        
+         f = new Fraction(0, 3);
+         try {
+             f = f.reciprocal();
+-            Assert.fail("expecting MathArithmeticException");
+-        } catch (MathArithmeticException ex) {}
++            fail("expecting ArithmeticException");
++        } catch (ArithmeticException ex) {}
+ 
+         // large values
+         f = new Fraction(Integer.MAX_VALUE, 1);
+         f = f.reciprocal();
+-        Assert.assertEquals(1, f.getNumerator());
+-        Assert.assertEquals(Integer.MAX_VALUE, f.getDenominator());
++        assertEquals(1, f.getNumerator());
++        assertEquals(Integer.MAX_VALUE, f.getDenominator());
+     }
+-
+-    @Test
++    
+     public void testNegate() {
+         Fraction f = null;
+-
++        
+         f = new Fraction(50, 75);
+         f = f.negate();
+-        Assert.assertEquals(-2, f.getNumerator());
+-        Assert.assertEquals(3, f.getDenominator());
+-
++        assertEquals(-2, f.getNumerator());
++        assertEquals(3, f.getDenominator());
++        
+         f = new Fraction(-50, 75);
+         f = f.negate();
+-        Assert.assertEquals(2, f.getNumerator());
+-        Assert.assertEquals(3, f.getDenominator());
++        assertEquals(2, f.getNumerator());
++        assertEquals(3, f.getDenominator());
+ 
+         // large values
+         f = new Fraction(Integer.MAX_VALUE-1, Integer.MAX_VALUE);
+         f = f.negate();
+-        Assert.assertEquals(Integer.MIN_VALUE+2, f.getNumerator());
+-        Assert.assertEquals(Integer.MAX_VALUE, f.getDenominator());
++        assertEquals(Integer.MIN_VALUE+2, f.getNumerator());
++        assertEquals(Integer.MAX_VALUE, f.getDenominator());
+ 
+         f = new Fraction(Integer.MIN_VALUE, 1);
+         try {
+             f = f.negate();
+-            Assert.fail("expecting MathArithmeticException");
+-        } catch (MathArithmeticException ex) {}
++            fail("expecting ArithmeticException");
++        } catch (ArithmeticException ex) {}
+     }
+-
+-    @Test
++    
+     public void testAdd() {
+         Fraction a = new Fraction(1, 2);
+         Fraction b = new Fraction(2, 3);
+-
++        
+         assertFraction(1, 1, a.add(a));
+         assertFraction(7, 6, a.add(b));
+         assertFraction(7, 6, b.add(a));
+         assertFraction(4, 3, b.add(b));
+-
++        
+         Fraction f1 = new Fraction(Integer.MAX_VALUE - 1, 1);
+         Fraction f2 = Fraction.ONE;
+         Fraction f = f1.add(f2);
+-        Assert.assertEquals(Integer.MAX_VALUE, f.getNumerator());
+-        Assert.assertEquals(1, f.getDenominator());
+-        f = f1.add(1);
+-        Assert.assertEquals(Integer.MAX_VALUE, f.getNumerator());
+-        Assert.assertEquals(1, f.getDenominator());
+-
++        assertEquals(Integer.MAX_VALUE, f.getNumerator());
++        assertEquals(1, f.getDenominator());
++        
+         f1 = new Fraction(-1, 13*13*2*2);
+         f2 = new Fraction(-2, 13*17*2);
+         f = f1.add(f2);
+-        Assert.assertEquals(13*13*17*2*2, f.getDenominator());
+-        Assert.assertEquals(-17 - 2*13*2, f.getNumerator());
+-
++        assertEquals(13*13*17*2*2, f.getDenominator());
++        assertEquals(-17 - 2*13*2, f.getNumerator());
++        
+         try {
+             f.add(null);
+-            Assert.fail("expecting MathIllegalArgumentException");
+-        } catch (MathIllegalArgumentException ex) {}
+-
++            fail("expecting IllegalArgumentException");
++        } catch (IllegalArgumentException ex) {}
++        
+         // if this fraction is added naively, it will overflow.
+         // check that it doesn't.
+         f1 = new Fraction(1,32768*3);
+         f2 = new Fraction(1,59049);
+         f = f1.add(f2);
+-        Assert.assertEquals(52451, f.getNumerator());
+-        Assert.assertEquals(1934917632, f.getDenominator());
++        assertEquals(52451, f.getNumerator());
++        assertEquals(1934917632, f.getDenominator());
+ 
+         f1 = new Fraction(Integer.MIN_VALUE, 3);
+         f2 = new Fraction(1,3);
+         f = f1.add(f2);
+-        Assert.assertEquals(Integer.MIN_VALUE+1, f.getNumerator());
+-        Assert.assertEquals(3, f.getDenominator());
+-
++        assertEquals(Integer.MIN_VALUE+1, f.getNumerator());
++        assertEquals(3, f.getDenominator());
++        
+         f1 = new Fraction(Integer.MAX_VALUE - 1, 1);
+         f2 = Fraction.ONE;
+         f = f1.add(f2);
+-        Assert.assertEquals(Integer.MAX_VALUE, f.getNumerator());
+-        Assert.assertEquals(1, f.getDenominator());
+-
++        assertEquals(Integer.MAX_VALUE, f.getNumerator());
++        assertEquals(1, f.getDenominator());
++        
+         try {
+             f = f.add(Fraction.ONE); // should overflow
+-            Assert.fail("expecting MathArithmeticException but got: " + f.toString());
+-        } catch (MathArithmeticException ex) {}
+-
++            fail("expecting ArithmeticException but got: " + f.toString());
++        } catch (ArithmeticException ex) {}
++        
+         // denominator should not be a multiple of 2 or 3 to trigger overflow
+         f1 = new Fraction(Integer.MIN_VALUE, 5);
+         f2 = new Fraction(-1,5);
+         try {
+             f = f1.add(f2); // should overflow
+-            Assert.fail("expecting MathArithmeticException but got: " + f.toString());
+-        } catch (MathArithmeticException ex) {}
+-
++            fail("expecting ArithmeticException but got: " + f.toString());
++        } catch (ArithmeticException ex) {}
++        
+         try {
+             f= new Fraction(-Integer.MAX_VALUE, 1);
+             f = f.add(f);
+-            Assert.fail("expecting MathArithmeticException");
+-        } catch (MathArithmeticException ex) {}
+-
++            fail("expecting ArithmeticException");
++        } catch (ArithmeticException ex) {}
++        
+         try {
+             f= new Fraction(-Integer.MAX_VALUE, 1);
+             f = f.add(f);
+-            Assert.fail("expecting MathArithmeticException");
+-        } catch (MathArithmeticException ex) {}
+-
++            fail("expecting ArithmeticException");
++        } catch (ArithmeticException ex) {}
++        
+         f1 = new Fraction(3,327680);
+         f2 = new Fraction(2,59049);
+         try {
+             f = f1.add(f2); // should overflow
+-            Assert.fail("expecting MathArithmeticException but got: " + f.toString());
+-        } catch (MathArithmeticException ex) {}
++            fail("expecting ArithmeticException but got: " + f.toString());
++        } catch (ArithmeticException ex) {}
+     }
+-
+-    @Test
++    
+     public void testDivide() {
+         Fraction a = new Fraction(1, 2);
+         Fraction b = new Fraction(2, 3);
+-
++        
+         assertFraction(1, 1, a.divide(a));
+         assertFraction(3, 4, a.divide(b));
+         assertFraction(4, 3, b.divide(a));
+         assertFraction(1, 1, b.divide(b));
+-
++        
+         Fraction f1 = new Fraction(3, 5);
+         Fraction f2 = Fraction.ZERO;
+         try {
+             f1.divide(f2);
+-            Assert.fail("expecting MathArithmeticException");
+-        } catch (MathArithmeticException ex) {}
+-
++            fail("expecting ArithmeticException");
++        } catch (ArithmeticException ex) {}
++        
+         f1 = new Fraction(0, 5);
+         f2 = new Fraction(2, 7);
+         Fraction f = f1.divide(f2);
+-        Assert.assertSame(Fraction.ZERO, f);
+-
++        assertSame(Fraction.ZERO, f);
++        
+         f1 = new Fraction(2, 7);
+         f2 = Fraction.ONE;
+         f = f1.divide(f2);
+-        Assert.assertEquals(2, f.getNumerator());
+-        Assert.assertEquals(7, f.getDenominator());
+-
++        assertEquals(2, f.getNumerator());
++        assertEquals(7, f.getDenominator());
++        
+         f1 = new Fraction(1, Integer.MAX_VALUE);
+-        f = f1.divide(f1);
+-        Assert.assertEquals(1, f.getNumerator());
+-        Assert.assertEquals(1, f.getDenominator());
+-
++        f = f1.divide(f1);  
++        assertEquals(1, f.getNumerator());
++        assertEquals(1, f.getDenominator());
++        
+         f1 = new Fraction(Integer.MIN_VALUE, Integer.MAX_VALUE);
+         f2 = new Fraction(1, Integer.MAX_VALUE);
+         f = f1.divide(f2);
+-        Assert.assertEquals(Integer.MIN_VALUE, f.getNumerator());
+-        Assert.assertEquals(1, f.getDenominator());
++        assertEquals(Integer.MIN_VALUE, f.getNumerator());
++        assertEquals(1, f.getDenominator());
+ 
+         try {
+             f.divide(null);
+-            Assert.fail("MathIllegalArgumentException");
+-        } catch (MathIllegalArgumentException ex) {}
+-
++            fail("IllegalArgumentException");
++        } catch (IllegalArgumentException ex) {}
++        
+         try {
+             f1 = new Fraction(1, Integer.MAX_VALUE);
+             f = f1.divide(f1.reciprocal());  // should overflow
+-            Assert.fail("expecting MathArithmeticException");
+-        } catch (MathArithmeticException ex) {}
++            fail("expecting ArithmeticException");
++        } catch (ArithmeticException ex) {}
+         try {
+             f1 = new Fraction(1, -Integer.MAX_VALUE);
+             f = f1.divide(f1.reciprocal());  // should overflow
+-            Assert.fail("expecting MathArithmeticException");
+-        } catch (MathArithmeticException ex) {}
+-
+-        f1 = new Fraction(6, 35);
+-        f  = f1.divide(15);
+-        Assert.assertEquals(2, f.getNumerator());
+-        Assert.assertEquals(175, f.getDenominator());
+-
++            fail("expecting ArithmeticException");
++        } catch (ArithmeticException ex) {}
+     }
+-
+-    @Test
++    
+     public void testMultiply() {
+         Fraction a = new Fraction(1, 2);
+         Fraction b = new Fraction(2, 3);
+-
++        
+         assertFraction(1, 4, a.multiply(a));
+         assertFraction(1, 3, a.multiply(b));
+         assertFraction(1, 3, b.multiply(a));
+         assertFraction(4, 9, b.multiply(b));
+-
++        
+         Fraction f1 = new Fraction(Integer.MAX_VALUE, 1);
+         Fraction f2 = new Fraction(Integer.MIN_VALUE, Integer.MAX_VALUE);
+         Fraction f = f1.multiply(f2);
+-        Assert.assertEquals(Integer.MIN_VALUE, f.getNumerator());
+-        Assert.assertEquals(1, f.getDenominator());
++        assertEquals(Integer.MIN_VALUE, f.getNumerator());
++        assertEquals(1, f.getDenominator());
+ 
+         try {
+             f.multiply(null);
+-            Assert.fail("expecting MathIllegalArgumentException");
+-        } catch (MathIllegalArgumentException ex) {}
+-
+-        f1 = new Fraction(6, 35);
+-        f  = f1.multiply(15);
+-        Assert.assertEquals(18, f.getNumerator());
+-        Assert.assertEquals(7, f.getDenominator());
++            fail("expecting IllegalArgumentException");
++        } catch (IllegalArgumentException ex) {}
+     }
+-
+-    @Test
++    
+     public void testSubtract() {
+         Fraction a = new Fraction(1, 2);
+         Fraction b = new Fraction(2, 3);
+-
++        
+         assertFraction(0, 1, a.subtract(a));
+         assertFraction(-1, 6, a.subtract(b));
+         assertFraction(1, 6, b.subtract(a));
+         assertFraction(0, 1, b.subtract(b));
+-
++        
+         Fraction f = new Fraction(1,1);
+         try {
+             f.subtract(null);
+-            Assert.fail("expecting MathIllegalArgumentException");
+-        } catch (MathIllegalArgumentException ex) {}
+-
++            fail("expecting IllegalArgumentException");
++        } catch (IllegalArgumentException ex) {}
++        
+         // if this fraction is subtracted naively, it will overflow.
+         // check that it doesn't.
+         Fraction f1 = new Fraction(1,32768*3);
+         Fraction f2 = new Fraction(1,59049);
+         f = f1.subtract(f2);
+-        Assert.assertEquals(-13085, f.getNumerator());
+-        Assert.assertEquals(1934917632, f.getDenominator());
++        assertEquals(-13085, f.getNumerator());
++        assertEquals(1934917632, f.getDenominator());
+ 
+         f1 = new Fraction(Integer.MIN_VALUE, 3);
+         f2 = new Fraction(1,3).negate();
+         f = f1.subtract(f2);
+-        Assert.assertEquals(Integer.MIN_VALUE+1, f.getNumerator());
+-        Assert.assertEquals(3, f.getDenominator());
+-
++        assertEquals(Integer.MIN_VALUE+1, f.getNumerator());
++        assertEquals(3, f.getDenominator());
++        
+         f1 = new Fraction(Integer.MAX_VALUE, 1);
+         f2 = Fraction.ONE;
+         f = f1.subtract(f2);
+-        Assert.assertEquals(Integer.MAX_VALUE-1, f.getNumerator());
+-        Assert.assertEquals(1, f.getDenominator());
+-        f = f1.subtract(1);
+-        Assert.assertEquals(Integer.MAX_VALUE-1, f.getNumerator());
+-        Assert.assertEquals(1, f.getDenominator());
++        assertEquals(Integer.MAX_VALUE-1, f.getNumerator());
++        assertEquals(1, f.getDenominator());
+ 
+         try {
+             f1 = new Fraction(1, Integer.MAX_VALUE);
+             f2 = new Fraction(1, Integer.MAX_VALUE - 1);
+             f = f1.subtract(f2);
+-            Assert.fail("expecting MathArithmeticException");  //should overflow
+-        } catch (MathArithmeticException ex) {}
+-
++            fail("expecting ArithmeticException");  //should overflow
++        } catch (ArithmeticException ex) {}
++        
+         // denominator should not be a multiple of 2 or 3 to trigger overflow
+         f1 = new Fraction(Integer.MIN_VALUE, 5);
+         f2 = new Fraction(1,5);
+         try {
+             f = f1.subtract(f2); // should overflow
+-            Assert.fail("expecting MathArithmeticException but got: " + f.toString());
+-        } catch (MathArithmeticException ex) {}
+-
++            fail("expecting ArithmeticException but got: " + f.toString());
++        } catch (ArithmeticException ex) {}
++        
+         try {
+             f= new Fraction(Integer.MIN_VALUE, 1);
+             f = f.subtract(Fraction.ONE);
+-            Assert.fail("expecting MathArithmeticException");
+-        } catch (MathArithmeticException ex) {}
+-
++            fail("expecting ArithmeticException");
++        } catch (ArithmeticException ex) {}
++        
+         try {
+             f= new Fraction(Integer.MAX_VALUE, 1);
+             f = f.subtract(Fraction.ONE.negate());
+-            Assert.fail("expecting MathArithmeticException");
+-        } catch (MathArithmeticException ex) {}
+-
++            fail("expecting ArithmeticException");
++        } catch (ArithmeticException ex) {}
++        
+         f1 = new Fraction(3,327680);
+         f2 = new Fraction(2,59049);
+         try {
+             f = f1.subtract(f2); // should overflow
+-            Assert.fail("expecting MathArithmeticException but got: " + f.toString());
+-        } catch (MathArithmeticException ex) {}
++            fail("expecting ArithmeticException but got: " + f.toString());
++        } catch (ArithmeticException ex) {}
+     }
+-
+-    @Test
++    
+     public void testEqualsAndHashCode() {
+         Fraction zero  = new Fraction(0,1);
+         Fraction nullFraction = null;
+-        Assert.assertTrue( zero.equals(zero));
+-        Assert.assertFalse(zero.equals(nullFraction));
+-        Assert.assertFalse(zero.equals(Double.valueOf(0)));
++        assertTrue( zero.equals(zero));
++        assertFalse(zero.equals(nullFraction));
++        assertFalse(zero.equals(new Double(0)));
+         Fraction zero2 = new Fraction(0,2);
+-        Assert.assertTrue(zero.equals(zero2));
+-        Assert.assertEquals(zero.hashCode(), zero2.hashCode());
++        assertTrue(zero.equals(zero2));
++        assertEquals(zero.hashCode(), zero2.hashCode());
+         Fraction one = new Fraction(1,1);
+-        Assert.assertFalse((one.equals(zero) ||zero.equals(one)));
++        assertFalse((one.equals(zero) ||zero.equals(one)));
+     }
+-
+-    @Test
++    
+     public void testGetReducedFraction() {
+         Fraction threeFourths = new Fraction(3, 4);
+-        Assert.assertTrue(threeFourths.equals(Fraction.getReducedFraction(6, 8)));
+-        Assert.assertTrue(Fraction.ZERO.equals(Fraction.getReducedFraction(0, -1)));
++        assertTrue(threeFourths.equals(Fraction.getReducedFraction(6, 8)));
++        assertTrue(Fraction.ZERO.equals(Fraction.getReducedFraction(0, -1)));
+         try {
+             Fraction.getReducedFraction(1, 0);
+-            Assert.fail("expecting MathArithmeticException");
+-        } catch (MathArithmeticException ex) {
++            fail("expecting ArithmeticException");
++        } catch (ArithmeticException ex) {
+             // expected
+         }
+-        Assert.assertEquals(Fraction.getReducedFraction
++        assertEquals(Fraction.getReducedFraction
+                 (2, Integer.MIN_VALUE).getNumerator(),-1);
+-        Assert.assertEquals(Fraction.getReducedFraction
++        assertEquals(Fraction.getReducedFraction
+                 (1, -1).getNumerator(), -1);
+     }
+-
+-    @Test
+-    public void testToString() {
+-        Assert.assertEquals("0", new Fraction(0, 3).toString());
+-        Assert.assertEquals("3", new Fraction(6, 2).toString());
+-        Assert.assertEquals("2 / 3", new Fraction(18, 27).toString());
+-    }
+-
+-    @Test
+-    public void testSerial() throws FractionConversionException {
+-        Fraction[] fractions = {
+-            new Fraction(3, 4), Fraction.ONE, Fraction.ZERO,
+-            new Fraction(17), new Fraction(FastMath.PI, 1000),
+-            new Fraction(-5, 2)
+-        };
+-        for (Fraction fraction : fractions) {
+-            Assert.assertEquals(fraction, TestUtils.serializeAndRecover(fraction));
+-        }
+-    }
+-
+ }

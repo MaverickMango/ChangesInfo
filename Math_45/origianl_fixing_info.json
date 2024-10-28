@@ -1,0 +1,1177 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "/home/liumengjiao/Desktop/CI/Benchmark/data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math.linear.OpenMapRealMatrixTest::testMath679",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math.linear.OpenMapRealMatrix",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "45",
+  "workingDir": "../bugs/Math_45_buggy",
+  "buggyCommit": "4a702dbf7e2264c0b9757178f3afbde38e07fe41",
+  "inducingCommit": "405e3967633804c42cbe3f90fc013bab94eeafbe",
+  "originalCommit": "8c131082913e0edc1ae248d36407f88991d7aa53",
+  "bug_name": "Math_45",
+  "derive": "defects4j",
+  "original_fixing_commit": "bc4e9db01c2a03062965fa4bac65782376ab2287",
+  "buildFiles_changed": false,
+  "regression": true,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/analysis/interpolation/BicubicSplineInterpolatingFunction.java",
+        "src/main/java/org/apache/commons/math/analysis/interpolation/BicubicSplineInterpolatingFunction.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.interpolation.BicubicSplineInterpolatingFunction:BicubicSplineInterpolatingFunction:[double[] x, double[] y, double[][] f, double[][] dFdX, double[][] dFdY, double[][] d2FdXdY]:null",
+            "org.apache.commons.math.analysis.interpolation.BicubicSplineFunction:value:[double x, double y]:double",
+            "org.apache.commons.math.analysis.interpolation.BicubicSplineInterpolatingFunction:partialDerivative:[int which, double x, double y]:double",
+            "org.apache.commons.math.analysis.interpolation.BicubicSplineInterpolatingFunction:value:[double x, double y]:double"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.interpolation.BicubicSplineInterpolatingFunction:BicubicSplineInterpolatingFunction:[double[] x, double[] y, double[][] f, double[][] dFdX, double[][] dFdY, double[][] d2FdXdY]:null",
+            "org.apache.commons.math.analysis.interpolation.BicubicSplineFunction:value:[double x, double y]:double",
+            "org.apache.commons.math.analysis.interpolation.BicubicSplineInterpolatingFunction:partialDerivative:[int which, double x, double y]:double",
+            "org.apache.commons.math.analysis.interpolation.BicubicSplineInterpolatingFunction:value:[double x, double y]:double"
+          ],
+          "num": 4
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "21",
+            "88",
+            "102",
+            "161",
+            "162",
+            "163",
+            "167",
+            "168",
+            "169",
+            "236",
+            "237",
+            "241",
+            "242",
+            "379",
+            "380",
+            "383",
+            "384"
+          ],
+          "num": 17
+        },
+        {
+          "qualified_names": [
+            "21",
+            "22",
+            "89",
+            "91",
+            "104",
+            "163",
+            "167",
+            "234",
+            "238",
+            "375",
+            "378"
+          ],
+          "num": 11
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/analysis/interpolation/BicubicSplineInterpolatingFunction.java b/src/main/java/org/apache/commons/math/analysis/interpolation/BicubicSplineInterpolatingFunction.java\nindex e50ef00..e4cae99 100644\n--- a/src/main/java/org/apache/commons/math/analysis/interpolation/BicubicSplineInterpolatingFunction.java\n+++ b/src/main/java/org/apache/commons/math/analysis/interpolation/BicubicSplineInterpolatingFunction.java\n@@ -18,7 +18,8 @@\n \n import org.apache.commons.math.util.LocalizedFormats;\n import org.apache.commons.math.util.MathUtils;\n-import org.apache.commons.math.MathRuntimeException;\n+import org.apache.commons.math.exception.NoDataException;\n+import org.apache.commons.math.exception.OutOfRangeException;\n import org.apache.commons.math.FunctionEvaluationException;\n import org.apache.commons.math.DimensionMismatchException;\n import org.apache.commons.math.analysis.BivariateRealFunction;\n@@ -85,8 +86,9 @@\n      * every grid point.\n      * @throws DimensionMismatchException if the various arrays do not contain\n      * the expected number of elements.\n-     * @throws IllegalArgumentException if {@code x} or {@code y} are not strictly\n+     * @throws NonMonotonousSequenceException if {@code x} or {@code y} are not strictly\n      * increasing.\n+     * @throws NoDataException if any of the arrays has zero length.\n      */\n     public BicubicSplineInterpolatingFunction(double[] x,\n                                               double[] y,\n@@ -99,7 +101,7 @@\n         final int yLen \u003d y.length;\n \n         if (xLen \u003d\u003d 0 || yLen \u003d\u003d 0 || f.length \u003d\u003d 0 || f[0].length \u003d\u003d 0) {\n-            throw MathRuntimeException.createIllegalArgumentException(LocalizedFormats.NO_DATA);\n+            throw new NoDataException();\n         }\n         if (xLen !\u003d f.length) {\n             throw new DimensionMismatchException(xLen, f.length);\n@@ -158,15 +160,11 @@\n     public double value(double x, double y) {\n         final int i \u003d searchIndex(x, xval);\n         if (i \u003d\u003d -1) {\n-            throw MathRuntimeException.createIllegalArgumentException(\n-                  LocalizedFormats.OUT_OF_RANGE_SIMPLE,\n-                  x, xval[0], xval[xval.length - 1]);\n+            throw new OutOfRangeException(x, xval[0], xval[xval.length - 1]);\n         }\n         final int j \u003d searchIndex(y, yval);\n         if (j \u003d\u003d -1) {\n-            throw MathRuntimeException.createIllegalArgumentException(\n-                  LocalizedFormats.OUT_OF_RANGE_SIMPLE,\n-                  y, yval[0], yval[yval.length - 1]);\n+            throw new OutOfRangeException(y, yval[0], yval[yval.length - 1]);\n         }\n \n         final double xN \u003d (x - xval[i]) / (xval[i + 1] - xval[i]);\n@@ -233,13 +231,11 @@\n \n         final int i \u003d searchIndex(x, xval);\n         if (i \u003d\u003d -1) {\n-            throw MathRuntimeException.createIllegalArgumentException(LocalizedFormats.OUT_OF_RANGE_SIMPLE,\n-                                                                      x, xval[0], xval[xval.length - 1]);\n+            throw new OutOfRangeException(x, xval[0], xval[xval.length - 1]);\n         }\n         final int j \u003d searchIndex(y, yval);\n         if (j \u003d\u003d -1) {\n-            throw MathRuntimeException.createIllegalArgumentException(LocalizedFormats.OUT_OF_RANGE_SIMPLE,\n-                                                                      y, yval[0], yval[yval.length - 1]);\n+            throw new OutOfRangeException(y, yval[0], yval[yval.length - 1]);\n         }\n \n         final double xN \u003d (x - xval[i]) / (xval[i + 1] - xval[i]);\n@@ -376,12 +372,10 @@\n      */\n     public double value(double x, double y) {\n         if (x \u003c 0 || x \u003e 1) {\n-            throw MathRuntimeException.createIllegalArgumentException(LocalizedFormats.OUT_OF_RANGE_SIMPLE,\n-                                                                      x, 0, 1);\n+            throw new OutOfRangeException(x, 0, 1);\n         }\n         if (y \u003c 0 || y \u003e 1) {\n-            throw MathRuntimeException.createIllegalArgumentException(LocalizedFormats.OUT_OF_RANGE_SIMPLE,\n-                                                                      y, 0, 1);\n+            throw new OutOfRangeException(y, 0, 1);\n         }\n \n         final double x2 \u003d x * x;\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [961,1018]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [1019,1080]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [3896,3957]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ThrowStatement [4536,4564]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ThrowStatement [6635,6700]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ThrowStatement [6790,6855]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ThrowStatement [8916,8981]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ThrowStatement [9071,9136]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ThrowStatement [13355,13394]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ThrowStatement [13447,13486]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [961,1013]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ThrowStatement [4394,4478]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ThrowStatement [6549,6717]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ThrowStatement [6807,6975]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ThrowStatement [9036,9237]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ThrowStatement [9327,9528]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ThrowStatement [13747,13922]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ThrowStatement [13975,14150]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/analysis/interpolation/BicubicSplineInterpolator.java",
+        "src/main/java/org/apache/commons/math/analysis/interpolation/BicubicSplineInterpolator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.interpolation.BicubicSplineInterpolator:interpolate:[final double[] xval, final double[] yval, final double[][] fval]:BicubicSplineInterpolatingFunction"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.interpolation.BicubicSplineInterpolator:interpolate:[final double[] xval, final double[] yval, final double[][] fval]:BicubicSplineInterpolatingFunction"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "20",
+            "43"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "20",
+            "43"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/analysis/interpolation/BicubicSplineInterpolator.java b/src/main/java/org/apache/commons/math/analysis/interpolation/BicubicSplineInterpolator.java\nindex 5a9dad5..10c85e1 100644\n--- a/src/main/java/org/apache/commons/math/analysis/interpolation/BicubicSplineInterpolator.java\n+++ b/src/main/java/org/apache/commons/math/analysis/interpolation/BicubicSplineInterpolator.java\n@@ -17,7 +17,7 @@\n package org.apache.commons.math.analysis.interpolation;\n \n import org.apache.commons.math.DimensionMismatchException;\n-import org.apache.commons.math.MathRuntimeException;\n+import org.apache.commons.math.exception.NoDataException;\n import org.apache.commons.math.MathException;\n import org.apache.commons.math.util.LocalizedFormats;\n import org.apache.commons.math.util.MathUtils;\n@@ -40,7 +40,7 @@\n                                                           final double[][] fval)\n         throws MathException, IllegalArgumentException {\n         if (xval.length \u003d\u003d 0 || yval.length \u003d\u003d 0 || fval.length \u003d\u003d 0) {\n-            throw MathRuntimeException.createIllegalArgumentException(LocalizedFormats.NO_DATA);\n+            throw new NoDataException();\n         }\n         if (xval.length !\u003d fval.length) {\n             throw new DimensionMismatchException(xval.length, fval.length);\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [919,976]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ThrowStatement [1872,1900]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [919,971]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ThrowStatement [1867,1951]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/analysis/interpolation/LinearInterpolator.java",
+        "src/main/java/org/apache/commons/math/analysis/interpolation/LinearInterpolator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.interpolation.LinearInterpolator:interpolate:[double x[], double y[]]:PolynomialSplineFunction"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.interpolation.LinearInterpolator:interpolate:[double x[], double y[]]:PolynomialSplineFunction"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "19",
+            "22",
+            "33",
+            "36",
+            "37",
+            "41",
+            "42",
+            "48",
+            "49",
+            "50",
+            "51",
+            "52",
+            "53",
+            "54"
+          ],
+          "num": 14
+        },
+        {
+          "qualified_names": [
+            "19",
+            "20",
+            "23",
+            "34",
+            "35",
+            "36",
+            "37",
+            "38",
+            "39",
+            "40",
+            "43",
+            "47",
+            "53"
+          ],
+          "num": 13
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/analysis/interpolation/LinearInterpolator.java b/src/main/java/org/apache/commons/math/analysis/interpolation/LinearInterpolator.java\nindex f7b6c21..11e2148 100644\n--- a/src/main/java/org/apache/commons/math/analysis/interpolation/LinearInterpolator.java\n+++ b/src/main/java/org/apache/commons/math/analysis/interpolation/LinearInterpolator.java\n@@ -16,10 +16,11 @@\n  */\n package org.apache.commons.math.analysis.interpolation;\n \n-import org.apache.commons.math.MathRuntimeException;\n+import org.apache.commons.math.exception.DimensionMismatchException;\n+import org.apache.commons.math.exception.NumberIsTooSmallException;\n import org.apache.commons.math.analysis.polynomials.PolynomialFunction;\n import org.apache.commons.math.analysis.polynomials.PolynomialSplineFunction;\n-import org.apache.commons.math.util.LocalizedFormats;\n+import org.apache.commons.math.util.MathUtils;\n \n /**\n  * Implements a linear function for interpolation of real univariate functions.\n@@ -30,28 +31,26 @@\n      * @param x the arguments for the interpolation points\n      * @param y the values for the interpolation points\n      * @return a function which interpolates the data set\n-    */\n+     * @throws DimensionMismatchException if {@code x} and {@code y}\n+     * have different sizes.\n+     * @throws NonMonotonousSequenceException if {@code x} is not sorted in\n+     * strict increasing order.\n+     * @throws NumberIsTooSmallException if the size of {@code x} is smaller\n+     * than 2.\n+     */\n     public PolynomialSplineFunction interpolate(double x[], double y[]) {\n         if (x.length !\u003d y.length) {\n-            throw MathRuntimeException.createIllegalArgumentException(\n-                  LocalizedFormats.DIMENSIONS_MISMATCH_SIMPLE, x.length, y.length);\n+            throw new DimensionMismatchException(x.length, y.length);\n         }\n \n         if (x.length \u003c 2) {\n-            throw MathRuntimeException.createIllegalArgumentException(\n-                  LocalizedFormats.WRONG_NUMBER_OF_POINTS, 2, x.length);\n+            throw new NumberIsTooSmallException(x.length, 2, true);\n         }\n \n         // Number of intervals.  The number of data points is n + 1.\n         int n \u003d x.length - 1;\n \n-        for (int i \u003d 0; i \u003c n; i++) {\n-            if (x[i] \u003e\u003d x[i + 1]) {\n-                throw MathRuntimeException.createIllegalArgumentException(\n-                LocalizedFormats.NOT_STRICTLY_INCREASING_NUMBER_OF_POINTS,\n-                i, i+1, x[i], x[i+1]);\n-            }\n-        }\n+        MathUtils.checkOrder(x);\n \n         // Slope of the lines between the datapoints.\n         final double m[] \u003d new double[n];\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [860,928]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [929,996]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [1147,1193]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Javadoc [1359,1907]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [1609,1699]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [1707,1807]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [1815,1899]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [2314,2338]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ThrowStatement [2030,2087]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ThrowStatement [2139,2194]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [860,912]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1063,1116]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Javadoc [1282,1531]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ThrowStatement [1654,1796]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ThrowStatement [1848,1979]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ForStatement [2099,2377]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/analysis/interpolation/MicrosphereInterpolatingFunction.java",
+        "src/main/java/org/apache/commons/math/analysis/interpolation/MicrosphereInterpolatingFunction.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.interpolation.MicrosphereInterpolatingFunction:MicrosphereInterpolatingFunction:[double[][] xval, double[] yval, int brightnessExponent, int microsphereElements, UnitSphereRandomVectorGenerator rand]:null"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.interpolation.MicrosphereInterpolatingFunction:MicrosphereInterpolatingFunction:[double[][] xval, double[] yval, int brightnessExponent, int microsphereElements, UnitSphereRandomVectorGenerator rand]:null"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "25",
+            "145",
+            "154"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "25",
+            "145",
+            "154"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/analysis/interpolation/MicrosphereInterpolatingFunction.java b/src/main/java/org/apache/commons/math/analysis/interpolation/MicrosphereInterpolatingFunction.java\nindex bf10172..0e7d824 100644\n--- a/src/main/java/org/apache/commons/math/analysis/interpolation/MicrosphereInterpolatingFunction.java\n+++ b/src/main/java/org/apache/commons/math/analysis/interpolation/MicrosphereInterpolatingFunction.java\n@@ -22,7 +22,7 @@\n import java.util.Map;\n \n import org.apache.commons.math.DimensionMismatchException;\n-import org.apache.commons.math.MathRuntimeException;\n+import org.apache.commons.math.exception.NoDataException;\n import org.apache.commons.math.analysis.MultivariateRealFunction;\n import org.apache.commons.math.linear.ArrayRealVector;\n import org.apache.commons.math.linear.RealVector;\n@@ -142,7 +142,7 @@\n      * {@code xval} (equal to {@code n}, the number of interpolation points)\n      * do not match, or the the arrays {@code xval[0]} ... {@code xval[n]},\n      * have lengths different from {@code dimension}.\n-     * @throws IllegalArgumentException if there are no data (xval null or zero length)\n+     * @throws NoDataException if there are no data (xval null or zero length)\n      */\n     public MicrosphereInterpolatingFunction(double[][] xval,\n                                             double[] yval,\n@@ -151,7 +151,7 @@\n                                             UnitSphereRandomVectorGenerator rand)\n         throws DimensionMismatchException, IllegalArgumentException {\n         if (xval.length \u003d\u003d 0 || xval[0] \u003d\u003d null) {\n-            throw MathRuntimeException.createIllegalArgumentException(LocalizedFormats.NO_DATA);\n+            throw new NoDataException();\n         }\n \n         if (xval.length !\u003d yval.length) {\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [1019,1076]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [5662,5755]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1019,1071]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [5666,5815]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/analysis/interpolation/MicrosphereInterpolator.java",
+        "src/main/java/org/apache/commons/math/analysis/interpolation/MicrosphereInterpolator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.interpolation.MicrosphereInterpolator:setBrightnessExponent:[final int brightnessExponent]:void",
+            "org.apache.commons.math.analysis.interpolation.MicrosphereInterpolator:MicrosphereInterpolator:[]:null",
+            "org.apache.commons.math.analysis.interpolation.MicrosphereInterpolator:MicrosphereInterpolator:[final int microsphereElements, final int brightnessExponent]:null",
+            "org.apache.commons.math.analysis.interpolation.MicrosphereInterpolator:setMicropshereElements:[final int elements]:void"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.interpolation.MicrosphereInterpolator:MicrosphereInterpolator:[final int microsphereElements, final int brightnessExponent]:null",
+            "org.apache.commons.math.analysis.interpolation.MicrosphereInterpolator:setBrightnessExponent:[final int exponent]:void",
+            "org.apache.commons.math.analysis.interpolation.MicrosphereInterpolator:setMicropshereElements:[final int elements]:void"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "20",
+            "28",
+            "62",
+            "69",
+            "71",
+            "72",
+            "73",
+            "97",
+            "99",
+            "101",
+            "102",
+            "103",
+            "104",
+            "105",
+            "107",
+            "113",
+            "116",
+            "117",
+            "118",
+            "119",
+            "121",
+            "123"
+          ],
+          "num": 22
+        },
+        {
+          "qualified_names": [
+            "20",
+            "21",
+            "29",
+            "69",
+            "71",
+            "72",
+            "73",
+            "97",
+            "99",
+            "101",
+            "102",
+            "103",
+            "105",
+            "111",
+            "114",
+            "115",
+            "117"
+          ],
+          "num": 17
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/analysis/interpolation/MicrosphereInterpolator.java b/src/main/java/org/apache/commons/math/analysis/interpolation/MicrosphereInterpolator.java\nindex d909aed..d8872c7 100644\n--- a/src/main/java/org/apache/commons/math/analysis/interpolation/MicrosphereInterpolator.java\n+++ b/src/main/java/org/apache/commons/math/analysis/interpolation/MicrosphereInterpolator.java\n@@ -17,7 +17,8 @@\n package org.apache.commons.math.analysis.interpolation;\n \n import org.apache.commons.math.MathException;\n-import org.apache.commons.math.MathRuntimeException;\n+import org.apache.commons.math.exception.NotPositiveException;\n+import org.apache.commons.math.exception.NotStrictlyPositiveException;\n import org.apache.commons.math.analysis.MultivariateRealFunction;\n import org.apache.commons.math.random.UnitSphereRandomVectorGenerator;\n import org.apache.commons.math.util.LocalizedFormats;\n@@ -25,7 +26,7 @@\n /**\n  * Interpolator that implements the algorithm described in\n  * \u003cem\u003eWilliam Dudziak\u003c/em\u003e\u0027s\n- * \u003ca href\u003d\"http://www.dudziak.com/microsphere.pdf\"\u003eMS thesis\u003c/a\u003e\n+ * \u003ca href\u003d\"http://www.dudziak.com/microsphere.pdf\"\u003eMS thesis\u003c/a\u003e.\n  * @since 2.1\n  *\n  * @version $Revision$ $Date$\n@@ -59,18 +60,17 @@\n      * #MicrosphereInterpolator(int, int)\n      * MicrosphereInterpolator(MicrosphereInterpolator.DEFAULT_MICROSPHERE_ELEMENTS,\n      * MicrosphereInterpolator.DEFAULT_BRIGHTNESS_EXPONENT)}.\u003c/p\u003e\n-     * weights of the sample data\n      */\n     public MicrosphereInterpolator() {\n         this(DEFAULT_MICROSPHERE_ELEMENTS, DEFAULT_BRIGHTNESS_EXPONENT);\n     }\n \n     /** Create a microsphere interpolator.\n-     * @param microsphereElements number of surface elements of the microsphere\n+     * @param microsphereElements number of surface elements of the microsphere.\n      * @param brightnessExponent exponent used in the power law that computes the\n-     * weights of the sample data\n-     * @throws IllegalArgumentException if {@code microsphereElements \u003c\u003d 0}\n-     * or {@code brightnessExponent \u003c 0}\n+     * weights of the sample data.\n+     * @throws NotPositiveException if {@code microsphereElements \u003c\u003d 0}\n+     * or {@code brightnessExponent \u003c 0}.\n      */\n     public MicrosphereInterpolator(final int microsphereElements,\n                                    final int brightnessExponent) {\n@@ -94,31 +94,26 @@\n \n     /**\n      * Set the brightness exponent.\n-     * @param brightnessExponent Exponent for computing the distance dimming\n+     * @param exponent Exponent for computing the distance dimming\n      * factor.\n-     * @throws IllegalArgumentException if {@code brightnessExponent \u003c 0}.\n+     * @throws NotPositiveException if {@code exponent \u003c 0}.\n      */\n-    public void setBrightnessExponent(final int brightnessExponent) {\n-        if (brightnessExponent \u003c 0) {\n-            throw MathRuntimeException.createIllegalArgumentException(\n-                LocalizedFormats.NEGATIVE_BRIGHTNESS_EXPONENT,\n-                brightnessExponent);\n+    public void setBrightnessExponent(final int exponent) {\n+        if (exponent \u003c 0) {\n+            throw new NotPositiveException(exponent);\n         }\n-        this.brightnessExponent \u003d brightnessExponent;\n+        brightnessExponent \u003d exponent;\n     }\n \n     /**\n      * Set the number of microsphere elements.\n      * @param elements Number of surface elements of the microsphere.\n-     * @throws IllegalArgumentException if {@code microsphereElements \u003c\u003d 0}.\n+     * @throws NotStrictlyPositiveException if {@code elements \u003c\u003d 0}.\n      */\n     public void setMicropshereElements(final int elements) {\n-        if (microsphereElements \u003c 0) {\n-            throw MathRuntimeException.createIllegalArgumentException(\n-                LocalizedFormats.NON_POSITIVE_MICROSPHERE_ELEMENTS,\n-                microsphereElements);\n+        if (elements \u003c\u003d 0) {\n+            throw new NotStrictlyPositiveException(elements);\n         }\n-        this.microsphereElements \u003d elements;\n+        microsphereElements \u003d elements;\n     }\n-\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [906,968]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [969,1039]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [4012,4095]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [4414,4506]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: . [2868,2869]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: exponent [4125,4133]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [906,958]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "TextElement: weights of the sample data [2313,2339]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [3999,4209]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldAccess [4218,4241]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [4550,4767]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ThisExpression [4776,4780]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "FieldAccess [4776,4800]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/analysis/interpolation/SplineInterpolator.java",
+        "src/main/java/org/apache/commons/math/analysis/interpolation/SplineInterpolator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.interpolation.SplineInterpolator:interpolate:[double x[], double y[]]:PolynomialSplineFunction"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.analysis.interpolation.SplineInterpolator:interpolate:[double x[], double y[]]:PolynomialSplineFunction"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "19",
+            "22",
+            "61",
+            "62",
+            "66",
+            "67",
+            "73",
+            "74",
+            "75",
+            "76",
+            "77",
+            "78",
+            "79"
+          ],
+          "num": 13
+        },
+        {
+          "qualified_names": [
+            "19",
+            "20",
+            "23",
+            "59",
+            "60",
+            "61",
+            "62",
+            "63",
+            "64",
+            "68",
+            "72",
+            "78"
+          ],
+          "num": 12
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/analysis/interpolation/SplineInterpolator.java b/src/main/java/org/apache/commons/math/analysis/interpolation/SplineInterpolator.java\nindex d908228..288c6b9 100644\n--- a/src/main/java/org/apache/commons/math/analysis/interpolation/SplineInterpolator.java\n+++ b/src/main/java/org/apache/commons/math/analysis/interpolation/SplineInterpolator.java\n@@ -16,10 +16,11 @@\n  */\n package org.apache.commons.math.analysis.interpolation;\n \n-import org.apache.commons.math.MathRuntimeException;\n+import org.apache.commons.math.exception.DimensionMismatchException;\n+import org.apache.commons.math.exception.NumberIsTooSmallException;\n import org.apache.commons.math.analysis.polynomials.PolynomialFunction;\n import org.apache.commons.math.analysis.polynomials.PolynomialSplineFunction;\n-import org.apache.commons.math.util.LocalizedFormats;\n+import org.apache.commons.math.util.MathUtils;\n \n /**\n  * Computes a natural (also known as \"free\", \"unclamped\") cubic spline interpolation for the data set.\n@@ -55,28 +56,26 @@\n      * @param x the arguments for the interpolation points\n      * @param y the values for the interpolation points\n      * @return a function which interpolates the data set\n+     * @throws DimensionMismatchException if {@code x} and {@code y}\n+     * have different sizes.\n+     * @throws NonMonotonousSequenceException if {@code x} is not sorted in\n+     * strict increasing order.\n+     * @throws NumberIsTooSmallException if the size of {@code x} is smaller\n+     * than 3.\n      */\n     public PolynomialSplineFunction interpolate(double x[], double y[]) {\n         if (x.length !\u003d y.length) {\n-            throw MathRuntimeException.createIllegalArgumentException(\n-                  LocalizedFormats.DIMENSIONS_MISMATCH_SIMPLE, x.length, y.length);\n+            throw new DimensionMismatchException(x.length, y.length);\n         }\n \n         if (x.length \u003c 3) {\n-            throw MathRuntimeException.createIllegalArgumentException(\n-                  LocalizedFormats.WRONG_NUMBER_OF_POINTS, 3, x.length);\n+            throw new NumberIsTooSmallException(x.length, 3, true);\n         }\n \n         // Number of intervals.  The number of data points is n + 1.\n         int n \u003d x.length - 1;\n \n-        for (int i \u003d 0; i \u003c n; i++) {\n-            if (x[i] \u003e\u003d x[i + 1]) {\n-                throw MathRuntimeException.createIllegalArgumentException(\n-                      LocalizedFormats.NOT_STRICTLY_INCREASING_NUMBER_OF_POINTS,\n-                      i, i+1, x[i], x[i+1]);\n-            }\n-        }\n+        MathUtils.checkOrder(x);\n \n         // Differences between knot points\n         double h[] \u003d new double[n];\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [860,928]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [929,996]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [1147,1193]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Javadoc [2718,3260]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [2962,3052]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [3060,3160]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [3168,3252]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [3667,3691]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ThrowStatement [3383,3440]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ThrowStatement [3492,3547]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [860,912]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1063,1116]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Javadoc [2641,2885]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ThrowStatement [3008,3150]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ThrowStatement [3202,3333]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ForStatement [3453,3743]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/exception/NotPositiveException.java",
+        "src/main/java/org/apache/commons/math/exception/NotPositiveException.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.exception.NotPositiveException:NotPositiveException:[Number value]:null"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.exception.NotPositiveException:NotPositiveException:[Number value]:null"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "27",
+            "34"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "27",
+            "34"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/exception/NotPositiveException.java b/src/main/java/org/apache/commons/math/exception/NotPositiveException.java\nindex 2513814..bf24ebd 100644\n--- a/src/main/java/org/apache/commons/math/exception/NotPositiveException.java\n+++ b/src/main/java/org/apache/commons/math/exception/NotPositiveException.java\n@@ -24,13 +24,13 @@\n  * @since 2.2\n  * @version $Revision$ $Date$\n  */\n-public class NotPositiveException extends MathIllegalNumberException {\n+public class NotPositiveException extends NumberIsTooSmallException {\n     /**\n      * Construct the exception.\n      *\n      * @param value Argument.\n      */\n     public NotPositiveException(Number value) {\n-        super(LocalizedFormats.NOT_POSITIVE, value);\n+        super(value, 0, true);\n     }\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [1056,1081]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NumberLiteral: 0 [1238,1239]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "BooleanLiteral: true [1241,1245]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [1056,1082]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "QualifiedName: LocalizedFormats.NOT_POSITIVE [1232,1261]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/exception/NotStrictlyPositiveException.java",
+        "src/main/java/org/apache/commons/math/exception/NotStrictlyPositiveException.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.exception.NotStrictlyPositiveException:NotStrictlyPositiveException:[Number value]:null"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.exception.NotStrictlyPositiveException:NotStrictlyPositiveException:[Number value]:null"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "27",
+            "34"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "27",
+            "34"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/exception/NotStrictlyPositiveException.java b/src/main/java/org/apache/commons/math/exception/NotStrictlyPositiveException.java\nindex b2f4229..3b5af31 100644\n--- a/src/main/java/org/apache/commons/math/exception/NotStrictlyPositiveException.java\n+++ b/src/main/java/org/apache/commons/math/exception/NotStrictlyPositiveException.java\n@@ -24,13 +24,13 @@\n  * @since 2.2\n  * @version $Revision$ $Date$\n  */\n-public class NotStrictlyPositiveException extends MathIllegalNumberException {\n+public class NotStrictlyPositiveException extends NumberIsTooSmallException {\n     /**\n      * Construct the exception.\n      *\n      * @param value Argument.\n      */\n     public NotStrictlyPositiveException(Number value) {\n-        super(LocalizedFormats.NOT_STRICTLY_POSITIVE, value);\n+        super(value, 0, false);\n     }\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [1064,1089]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NumberLiteral: 0 [1254,1255]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "BooleanLiteral: false [1257,1262]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [1064,1090]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "QualifiedName: LocalizedFormats.NOT_STRICTLY_POSITIVE [1248,1286]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/util/LocalizedFormats.java",
+        "src/main/java/org/apache/commons/math/util/LocalizedFormats.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "169",
+            "170",
+            "221"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "168",
+            "220",
+            "221",
+            "222",
+            "223"
+          ],
+          "num": 5
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/util/LocalizedFormats.java b/src/main/java/org/apache/commons/math/util/LocalizedFormats.java\nindex 2334d40..c3bd9e5 100644\n--- a/src/main/java/org/apache/commons/math/util/LocalizedFormats.java\n+++ b/src/main/java/org/apache/commons/math/util/LocalizedFormats.java\n@@ -166,8 +166,6 @@\n     NOT_INCREASING_NUMBER_OF_POINTS(\"points {0} and {1} are not increasing ({2} \u003e {3})\"),\n     NOT_INCREASING_SEQUENCE(\"points {3} and {2} are not increasing ({1} \u003e {0})\"), /* keep */\n     NOT_MULTIPLICATION_COMPATIBLE_MATRICES(\"{0}x{1} and {2}x{3} matrices are not multiplication compatible\"),\n-    NOT_STRICTLY_POSITIVE(\"{0} is not strictly positive\"), /* keep */\n-    NOT_POSITIVE(\"{0} is not positive\"), /* keep */\n     NOT_POSITIVE_ALPHA(\"alpha must be positive ({0})\"),\n     NOT_POSITIVE_BETA(\"beta must be positive ({0})\"),\n     NOT_POSITIVE_COLUMNDIMENSION(\"invalid column dimension: {0} (must be positive)\"),\n@@ -219,6 +217,10 @@\n     NULL_OBJECT_TRANSFORMATION(\"Conversion Exception in Transformation, Object is null\"),\n     NULL_REAL_FORMAT(\"null real format\"),\n     NULL_WHOLE_FORMAT(\"whole format can not be null\"),\n+    NUMBER_TOO_LARGE(\"{0} is larger than the maximum ({1})\"), /* keep */\n+    NUMBER_TOO_SMALL(\"{0} is smaller than the minimum ({1})\"), /* keep */\n+    NUMBER_TOO_LARGE_BOUND_EXCLUDED(\"{0} is larger than, or equal to, the maximum ({1})\"), /* keep */\n+    NUMBER_TOO_SMALL_BOUND_EXCLUDED(\"{0} is smaller than, or equal to, the minimum ({1})\"), /* keep */\n     NUMBER_OF_SUCCESS_LARGER_THAN_POPULATION_SIZE(\"number of successes ({0}) must be less than or equal to population size ({1})\"),\n     NUMERATOR_OVERFLOW_AFTER_MULTIPLY(\"overflow, numerator too large after multiply: {0}\"),\n     N_POINTS_GAUSS_LEGENDRE_INTEGRATOR_NOT_SUPPORTED(\"{0} points Legendre-Gauss integrator not supported, number of points must be in the {1}-{2} range\"),\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "EnumConstantDeclaration [16592,16648]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "EnumConstantDeclaration [16665,16722]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "EnumConstantDeclaration [16739,16824]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "EnumConstantDeclaration [16841,16927]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "EnumConstantDeclaration [13106,13159]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "EnumConstantDeclaration [13176,13211]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [
+        "src/main/java/org/apache/commons/math/exception/NumberIsTooLargeException.java",
+        "src/main/java/org/apache/commons/math/exception/NumberIsTooSmallException.java"
+      ],
+      "num": 2
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.apache.commons.math.analysis.interpolation.MicrosphereInterpolator:setBrightnessExponent:[final int exponent]:void"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.apache.commons.math.analysis.interpolation.MicrosphereInterpolator:setBrightnessExponent:[final int brightnessExponent]:void",
+        "org.apache.commons.math.analysis.interpolation.MicrosphereInterpolator:MicrosphereInterpolator:[]:null"
+      ],
+      "num": 2
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math.linear.OpenMapRealMatrixTest",
+      "test_function": "testMath679",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected exception: org.apache.commons.math.exception.NumberIsTooLargeException"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/linear/OpenMapRealMatrix.java",
+        "src/main/java/org/apache/commons/math/linear/OpenMapRealMatrix.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.linear.OpenMapRealMatrix:OpenMapRealMatrix:[int rowDimension, int columnDimension]:null"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.linear.OpenMapRealMatrix:OpenMapRealMatrix:[int rowDimension, int columnDimension]:null"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "21",
+            "48"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "22",
+            "50",
+            "51",
+            "52",
+            "53",
+            "54"
+          ],
+          "num": 6
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/linear/OpenMapRealMatrix.java b/src/main/java/org/apache/commons/math/linear/OpenMapRealMatrix.java\nindex 4369db7..f05c878 100644\n--- a/src/main/java/org/apache/commons/math/linear/OpenMapRealMatrix.java\n+++ b/src/main/java/org/apache/commons/math/linear/OpenMapRealMatrix.java\n@@ -19,6 +19,7 @@\n \n import java.io.Serializable;\n \n+import org.apache.commons.math.exception.NumberIsTooLargeException;\n import org.apache.commons.math.util.OpenIntToDoubleHashMap;\n \n /**\n@@ -46,6 +47,11 @@\n      */\n     public OpenMapRealMatrix(int rowDimension, int columnDimension) {\n         super(rowDimension, columnDimension);\n+        long lRow \u003d (long) rowDimension;\n+        long lCol \u003d (long) columnDimension;\n+        if (lRow * lCol \u003e\u003d (long) Integer.MAX_VALUE) {\n+            throw new NumberIsTooLargeException(lRow * lCol, Integer.MAX_VALUE, false);\n+        }\n         this.rows \u003d rowDimension;\n         this.columns \u003d columnDimension;\n         this.entries \u003d new OpenIntToDoubleHashMap(0.0);\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [875,942]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [1917,1949]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [1958,1993]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [2002,2146]"
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "patch_changed_mths": {
+    "qualified_names": [
+      "org.apache.commons.math.linear.OpenMapRealMatrix:OpenMapRealMatrix(II)V:regression",
+      "org.apache.commons.math.linear.OpenMapRealMatrix:OpenMapRealMatrix(II)Lorg/apache/commons/math/linear/OpenMapRealMatrix;:regression",
+      "org.apache.commons.math.linear.OpenMapRealMatrix:OpenMapRealMatrix(II)D:regression",
+      "org.apache.commons.math.linear.OpenMapRealMatrix:OpenMapRealMatrix(II)I:regression",
+      "org.apache.commons.math.linear.OpenMapRealMatrix:OpenMapRealMatrix(II)Lorg/apache/commons/math/linear/RealMatrix;:regression"
+    ],
+    "num": 5
+  }
+}

@@ -1,0 +1,144 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.core.sym.TestByteBasedSymbols::testIssue207,com.fasterxml.jackson.core.sym.TestSymbolTables::testCollisionsWithBytesNew187b,com.fasterxml.jackson.core.sym.TestSymbolTables::testSyntheticWithBytesNew,com.fasterxml.jackson.core.sym.TestSymbolTables::testShortNameCollisionsDirectNew",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.core.sym.ByteQuadsCanonicalizer",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonCore",
+  "id": "10",
+  "workingDir": "../bugs/JacksonCore_10_tmp",
+  "bug_name": "JacksonCore_10",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.core.sym.TestByteBasedSymbols",
+      "test_function": "testIssue207",
+      "assertion_line": "119",
+      "exception": "java.lang.ArrayIndexOutOfBoundsException",
+      "message": "256"
+    },
+    {
+      "test_class": "com.fasterxml.jackson.core.sym.TestSymbolTables",
+      "test_function": "testCollisionsWithBytesNew187b",
+      "assertion_line": "316",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c16384\u003e but was:\u003c32768\u003e"
+    },
+    {
+      "test_class": "com.fasterxml.jackson.core.sym.TestSymbolTables",
+      "test_function": "testSyntheticWithBytesNew",
+      "assertion_line": "82",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c8534\u003e but was:\u003c8524\u003e"
+    },
+    {
+      "test_class": "com.fasterxml.jackson.core.sym.TestSymbolTables",
+      "test_function": "testShortNameCollisionsDirectNew",
+      "assertion_line": "473",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c1024\u003e but was:\u003c2048\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/core/sym/ByteQuadsCanonicalizer.java",
+        "src/main/java/com/fasterxml/jackson/core/sym/ByteQuadsCanonicalizer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.sym.ByteQuadsCanonicalizer:_findOffsetForAdd:[int hash]:int",
+            "com.fasterxml.jackson.core.sym.ByteQuadsCanonicalizer:calcHash:[int q1]:int"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.sym.ByteQuadsCanonicalizer:calcHash:[int q1]:int",
+            "com.fasterxml.jackson.core.sym.ByteQuadsCanonicalizer:_findOffsetForAdd:[int hash]:int"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "925",
+            "926",
+            "985",
+            "986"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "925",
+            "984"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/core/sym/ByteQuadsCanonicalizer.java b/src/main/java/com/fasterxml/jackson/core/sym/ByteQuadsCanonicalizer.java\nindex 7c37ffa..976ef6e 100644\n--- a/src/main/java/com/fasterxml/jackson/core/sym/ByteQuadsCanonicalizer.java\n+++ b/src/main/java/com/fasterxml/jackson/core/sym/ByteQuadsCanonicalizer.java\n@@ -922,8 +922,7 @@\n         /* 31-Jul-2015, tatu: Note that spillover area does NOT end at end of array,\n          *   since \"long names\" area follows. Instead, need to calculate from hash size.\n          */\n-        final int end \u003d (_hashSize \u003c\u003c 3);\n-        if (_spilloverEnd \u003e\u003d end) {\n+        if (_spilloverEnd \u003e\u003d hashArea.length) {\n             if (_failOnDoS) {\n                 _reportTooManyCollisions();\n             }\n@@ -982,8 +981,7 @@\n          *    to work it out, but this is the simplest, fast and seems to do ok.\n          */\n         hash +\u003d (hash \u003e\u003e\u003e 16); // to xor hi- and low- 16-bits\n-        hash ^\u003d (hash \u003c\u003c 3); // shuffle back a bit\n-        hash +\u003d (hash \u003e\u003e\u003e 12); // and bit more\n+        hash ^\u003d (hash \u003e\u003e\u003e 12);\n         return hash;\n     }\n \n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "QualifiedName: hashArea.length [32037,32052]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [32016,32049]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: end [32079,32082]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [34541,34563]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,257 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math.optimization.MultiStartUnivariateRealOptimizerTest::testQuinticMin,org.apache.commons.math.optimization.MultiStartUnivariateRealOptimizerTest::testSinMin,org.apache.commons.math.optimization.univariate.BrentOptimizerTest::testQuinticMinStatistics,org.apache.commons.math.optimization.univariate.BrentOptimizerTest::testSinMin",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math.optimization.univariate.BrentOptimizer",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "66",
+  "workingDir": "../bugs/Math_66_tmp",
+  "bug_name": "Math_66",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math.optimization.MultiStartUnivariateRealOptimizerTest",
+      "test_function": "testQuinticMin",
+      "assertion_line": "87",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c-0.2719561270319131\u003e but was:\u003c-0.2719561299044896\u003e"
+    },
+    {
+      "test_class": "org.apache.commons.math.optimization.MultiStartUnivariateRealOptimizerTest",
+      "test_function": "testSinMin",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/optimization/univariate/BrentOptimizer.java",
+        "src/main/java/org/apache/commons/math/optimization/univariate/BrentOptimizer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.optimization.univariate.BrentOptimizer:doOptimize:[]:double",
+            "org.apache.commons.math.optimization.univariate.BrentOptimizer:BrentOptimizer:[]:null",
+            "org.apache.commons.math.optimization.univariate.BrentOptimizer:localMin:[boolean isMinim, double lo, double mid, double hi, double eps, double t]:double"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.optimization.univariate.BrentOptimizer:optimize:[final UnivariateRealFunction f, final GoalType goalType, final double min, final double max]:double",
+            "org.apache.commons.math.optimization.univariate.BrentOptimizer:localMin:[boolean isMinim, UnivariateRealFunction f, GoalType goalType, double lo, double mid, double hi, double eps, double t]:double",
+            "org.apache.commons.math.optimization.univariate.BrentOptimizer:BrentOptimizer:[]:null",
+            "org.apache.commons.math.optimization.univariate.BrentOptimizer:doOptimize:[]:double",
+            "org.apache.commons.math.optimization.univariate.BrentOptimizer:optimize:[final UnivariateRealFunction f, final GoalType goalType, final double min, final double max, final double startValue]:double"
+          ],
+          "num": 5
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "44",
+            "46",
+            "47",
+            "58",
+            "86",
+            "110",
+            "111",
+            "117",
+            "190",
+            "191",
+            "228",
+            "231"
+          ],
+          "num": 12
+        },
+        {
+          "qualified_names": [
+            "44",
+            "46",
+            "47",
+            "57",
+            "58",
+            "59",
+            "60",
+            "62",
+            "65",
+            "66",
+            "67",
+            "94",
+            "95",
+            "119",
+            "120",
+            "126",
+            "127",
+            "200",
+            "201",
+            "238",
+            "241",
+            "243"
+          ],
+          "num": 22
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/optimization/univariate/BrentOptimizer.java b/src/main/java/org/apache/commons/math/optimization/univariate/BrentOptimizer.java\nindex 46c4afa..9265415 100644\n--- a/src/main/java/org/apache/commons/math/optimization/univariate/BrentOptimizer.java\n+++ b/src/main/java/org/apache/commons/math/optimization/univariate/BrentOptimizer.java\n@@ -41,10 +41,10 @@\n      * Construct a solver.\n      */\n     public BrentOptimizer() {\n-        setMaxEvaluations(1000);\n+        setMaxEvaluations(Integer.MAX_VALUE);\n         setMaximalIterationCount(100);\n-        setAbsoluteAccuracy(1e-11);\n-        setRelativeAccuracy(1e-9);\n+        setAbsoluteAccuracy(1E-10);\n+        setRelativeAccuracy(1.0e-14);\n     }\n \n     /**\n@@ -54,10 +54,17 @@\n      */\n     protected double doOptimize()\n         throws MaxIterationsExceededException, FunctionEvaluationException {\n+        throw new UnsupportedOperationException();\n+    }\n+    public double optimize(final UnivariateRealFunction f, final GoalType goalType, final double min, final double max, final double startValue) throws MaxIterationsExceededException, FunctionEvaluationException {\n+        clearResult();\n         return localMin(getGoalType() \u003d\u003d GoalType.MINIMIZE,\n-                        getMin(), getStartValue(), getMax(),\n+                        f, goalType, min, startValue, max,\n                         getRelativeAccuracy(), getAbsoluteAccuracy());\n     }\n+    public double optimize(final UnivariateRealFunction f, final GoalType goalType, final double min, final double max) throws MaxIterationsExceededException, FunctionEvaluationException {\n+        return optimize(f, goalType, min, max, min + GOLDEN_SECTION * (max - min));\n+    }\n \n     /**\n      * Find the minimum of the function within the interval {@code (lo, hi)}.\n@@ -84,6 +91,8 @@\n      * the function.\n      */\n     private double localMin(boolean isMinim,\n+                            UnivariateRealFunction f,\n+                            GoalType goalType,\n                             double lo, double mid, double hi,\n                             double eps, double t)\n         throws MaxIterationsExceededException, FunctionEvaluationException {\n@@ -107,14 +116,15 @@\n         double w \u003d x;\n         double d \u003d 0;\n         double e \u003d 0;\n-        double fx \u003d computeObjectiveValue(x);\n-        if (!isMinim) {\n+        double fx \u003d computeObjectiveValue(f, x);\n+        if (goalType \u003d\u003d GoalType.MAXIMIZE) {\n             fx \u003d -fx;\n         }\n         double fv \u003d fx;\n         double fw \u003d fx;\n \n-        while (true) {\n+        int count \u003d 0;\n+        while (count \u003c maximalIterationCount) {\n             double m \u003d 0.5 * (a + b);\n             final double tol1 \u003d eps * Math.abs(x) + t;\n             final double tol2 \u003d 2 * tol1;\n@@ -187,8 +197,8 @@\n                     u \u003d x + d;\n                 }\n \n-                double fu \u003d computeObjectiveValue(u);\n-                if (!isMinim) {\n+                double fu \u003d computeObjectiveValue(f, u);\n+                if (goalType \u003d\u003d GoalType.MAXIMIZE) {\n                     fu \u003d -fu;\n                 }\n \n@@ -225,10 +235,11 @@\n                     }\n                 }\n             } else { // termination\n-                setFunctionValue(isMinim ? fx : -fx);\n+                setResult(x, (goalType \u003d\u003d GoalType.MAXIMIZE) ? -fx : fx, count);\n                 return x;\n             }\n-            incrementIterationsCounter();\n+            ++count;\n         }\n+        throw new MaxIterationsExceededException(maximalIterationCount);\n     }\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [2189,2617]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [2622,2896]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [4182,4206]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [4236,4253]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ThrowStatement [2136,2178]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [5069,5083]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ThrowStatement [8861,8925]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [4947,4976]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [5099,5128]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [8834,8842]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "QualifiedName: Integer.MAX_VALUE [1793,1810]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: f [4928,4929]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [8717,8781]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [7595,7624]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: f [7568,7569]"
+        },
+        {
+          "type": "delete-node",
+          "from": "NumberLiteral: 1000 [1793,1797]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [2120,2303]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "PrefixExpression [4256,4264]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "BooleanLiteral: true [4364,4368]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "PrefixExpression [6832,6840]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [7933,7970]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [8023,8052]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.apache.commons.math.optimization.univariate.BrentOptimizer:optimize:[final UnivariateRealFunction f, final GoalType goalType, final double min, final double max]:double",
+        "org.apache.commons.math.optimization.univariate.BrentOptimizer:optimize:[final UnivariateRealFunction f, final GoalType goalType, final double min, final double max, final double startValue]:double",
+        "org.apache.commons.math.optimization.univariate.BrentOptimizer:localMin:[boolean isMinim, UnivariateRealFunction f, GoalType goalType, double lo, double mid, double hi, double eps, double t]:double"
+      ],
+      "num": 3
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.apache.commons.math.optimization.univariate.BrentOptimizer:localMin:[boolean isMinim, double lo, double mid, double hi, double eps, double t]:double"
+      ],
+      "num": 1
+    }
+  }
+}

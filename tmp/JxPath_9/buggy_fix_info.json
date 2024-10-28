@@ -1,0 +1,516 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.jxpath.ri.compiler.CoreOperationTest::testNan",
+    "test.dir": "src/test",
+    "clz.modified": "org.apache.commons.jxpath.ri.compiler.CoreOperationCompare,org.apache.commons.jxpath.ri.compiler.CoreOperationEqual,org.apache.commons.jxpath.ri.compiler.CoreOperationNotEqual",
+    "src.dir": "src/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JxPath",
+  "id": "9",
+  "workingDir": "../bugs/JxPath_9_tmp",
+  "bug_name": "JxPath_9",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.jxpath.ri.compiler.CoreOperationTest",
+      "test_function": "testNan",
+      "assertion_line": "121",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Evaluating \u003c$nan \u003d $nan\u003e expected:\u003cfalse\u003e but was:\u003ctrue\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/jxpath/ri/compiler/CoreOperationCompare.java",
+        "src/java/org/apache/commons/jxpath/ri/compiler/CoreOperationCompare.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.jxpath.ri.compiler.CoreOperationCompare:computeValue:[EvalContext context]:Object",
+            "org.apache.commons.jxpath.ri.compiler.CoreOperationCompare:CoreOperationCompare:[Expression arg1, Expression arg2]:null",
+            "org.apache.commons.jxpath.ri.compiler.CoreOperationCompare:equal:[Object l, Object r]:boolean",
+            "org.apache.commons.jxpath.ri.compiler.CoreOperationCompare:CoreOperationCompare:[Expression arg1, Expression arg2, boolean invert]:null"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.jxpath.ri.compiler.CoreOperationCompare:equal:[Object l, Object r]:boolean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "37",
+            "40",
+            "41",
+            "42",
+            "43",
+            "45",
+            "46",
+            "47",
+            "48",
+            "49",
+            "130",
+            "139",
+            "140",
+            "141",
+            "142",
+            "143",
+            "144",
+            "145",
+            "146",
+            "147",
+            "148",
+            "149",
+            "150",
+            "151",
+            "152",
+            "153",
+            "154",
+            "155",
+            "156",
+            "157",
+            "158",
+            "160"
+          ],
+          "num": 32
+        },
+        {
+          "qualified_names": [
+            "36",
+            "121",
+            "122",
+            "123",
+            "124",
+            "125",
+            "134",
+            "135",
+            "137",
+            "138",
+            "139",
+            "140",
+            "141",
+            "142",
+            "143",
+            "144",
+            "145",
+            "146",
+            "147",
+            "148"
+          ],
+          "num": 20
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/jxpath/ri/compiler/CoreOperationCompare.java b/src/java/org/apache/commons/jxpath/ri/compiler/CoreOperationCompare.java\nindex e083ab3..27bd557 100644\n--- a/src/java/org/apache/commons/jxpath/ri/compiler/CoreOperationCompare.java\n+++ b/src/java/org/apache/commons/jxpath/ri/compiler/CoreOperationCompare.java\n@@ -34,19 +34,9 @@\n  * @version $Revision$ $Date$\n  */\n public abstract class CoreOperationCompare extends CoreOperation {\n-    private boolean invert;\n \n     public CoreOperationCompare(Expression arg1, Expression arg2) {\n-        this(arg1, arg2, false);\n-    }\n-\n-    protected CoreOperationCompare(Expression arg1, Expression arg2, boolean invert) {\n         super(new Expression[] { arg1, arg2 });\n-        this.invert \u003d invert;\n-    }\n-\n-    public Object computeValue(EvalContext context) {\n-        return equal(context, args[0], args[1]) ? Boolean.TRUE : Boolean.FALSE;\n     }\n \n     protected int getPrecedence() {\n@@ -128,6 +118,11 @@\n     }\n \n     protected boolean equal(Object l, Object r) {\n+        if (l instanceof Pointer \u0026\u0026 r instanceof Pointer) {\n+            if (l.equals(r)) {\n+                return true;\n+            }\n+        }\n         if (l instanceof Pointer) {\n             l \u003d ((Pointer) l).getValue();\n         }\n@@ -136,28 +131,21 @@\n             r \u003d ((Pointer) r).getValue();\n         }\n \n-        boolean result;\n-        if (l instanceof Boolean || r instanceof Boolean) {\n-            result \u003d l \u003d\u003d r || InfoSetUtil.booleanValue(l) \u003d\u003d InfoSetUtil.booleanValue(r);\n-        } else if (l instanceof Number || r instanceof Number) {\n-            //if either side is NaN, no comparison returns true:\n-            double ld \u003d InfoSetUtil.doubleValue(l);\n-            if (Double.isNaN(ld)) {\n-                return false;\n-            }\n-            double rd \u003d InfoSetUtil.doubleValue(r);\n-            if (Double.isNaN(rd)) {\n-                return false;\n-            }\n-            result \u003d ld \u003d\u003d rd;\n-        } else {\n-            if (l instanceof String || r instanceof String) {\n-                l \u003d InfoSetUtil.stringValue(l);\n-                r \u003d InfoSetUtil.stringValue(r);\n-            }\n-            result \u003d l \u003d\u003d r || l !\u003d null \u0026\u0026 l.equals(r);\n+        if (l \u003d\u003d r) {\n+            return true;\n         }\n-        return result ^ invert;\n+        if (l instanceof Boolean || r instanceof Boolean) {\n+            return (InfoSetUtil.booleanValue(l) \u003d\u003d InfoSetUtil.booleanValue(r));\n+            }\n+            //if either side is NaN, no comparison returns true:\n+        if (l instanceof Number || r instanceof Number) {\n+            return (InfoSetUtil.doubleValue(l) \u003d\u003d InfoSetUtil.doubleValue(r));\n+            }\n+            if (l instanceof String || r instanceof String) {\n+            return (\n+                InfoSetUtil.stringValue(l).equals(InfoSetUtil.stringValue(r)));\n+        }\n+        return l !\u003d null \u0026\u0026 l.equals(r);\n     }\n \n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SuperConstructorInvocation [1493,1532]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [3516,3651]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ReturnStatement [4439,4471]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [3520,3564]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [3566,3651]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [3842,3848]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [3959,4027]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ReturnStatement [4177,4243]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [4332,4420]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ParenthesizedExpression [4184,4242]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [4185,4241]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: \u003d\u003d [4212,4214]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [1420,1443]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ConstructorInvocation [1521,1545]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [1557,1723]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [4385,4401]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [4020,4035]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [4108,4186]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PrimitiveType: double [4329,4335]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: ld [4336,4338]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [4336,4367]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [4329,4368]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PrimitiveType: double [4461,4467]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: rd [4468,4470]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [4468,4499]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [4461,4500]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [4593,4611]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: result [4813,4819]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ASSIGNMENT_OPERATOR: \u003d [4820,4821]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [4822,4828]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: || [4829,4831]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [4822,4856]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Assignment [4813,4856]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ExpressionStatement [4813,4857]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [4627,4867]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [4707,4738]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [4755,4786]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [4876,4899]",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/jxpath/ri/compiler/CoreOperationEqual.java",
+        "src/java/org/apache/commons/jxpath/ri/compiler/CoreOperationEqual.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.jxpath.ri.compiler.CoreOperationEqual:computeValue:[EvalContext context]:Object"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "18",
+            "30"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "19",
+            "32",
+            "33",
+            "34"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/jxpath/ri/compiler/CoreOperationEqual.java b/src/java/org/apache/commons/jxpath/ri/compiler/CoreOperationEqual.java\nindex 801e7fb..26da44c 100644\n--- a/src/java/org/apache/commons/jxpath/ri/compiler/CoreOperationEqual.java\n+++ b/src/java/org/apache/commons/jxpath/ri/compiler/CoreOperationEqual.java\n@@ -16,6 +16,7 @@\n  */\n package org.apache.commons.jxpath.ri.compiler;\n \n+import org.apache.commons.jxpath.ri.EvalContext;\n /**\n  * Implementation of Expression for the operation \"\u003d\".\n  *\n@@ -28,6 +29,9 @@\n         super(arg1, arg2);\n     }\n \n+    public Object computeValue(EvalContext context) {\n+        return equal(context, args[0], args[1]) ? Boolean.TRUE : Boolean.FALSE;\n+    }\n     public String getSymbol() {\n         return \"\u003d\";\n     }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [850,898]"
+        },
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/jxpath/ri/compiler/CoreOperationNotEqual.java",
+        "src/java/org/apache/commons/jxpath/ri/compiler/CoreOperationNotEqual.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.jxpath.ri.compiler.CoreOperationNotEqual:CoreOperationNotEqual:[Expression arg1, Expression arg2]:null"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.jxpath.ri.compiler.CoreOperationNotEqual:CoreOperationNotEqual:[Expression arg1, Expression arg2]:null",
+            "org.apache.commons.jxpath.ri.compiler.CoreOperationNotEqual:computeValue:[EvalContext context]:Object"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "18",
+            "28"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "19",
+            "29",
+            "32",
+            "33",
+            "34"
+          ],
+          "num": 5
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/jxpath/ri/compiler/CoreOperationNotEqual.java b/src/java/org/apache/commons/jxpath/ri/compiler/CoreOperationNotEqual.java\nindex aad3f5f..dac71f2 100644\n--- a/src/java/org/apache/commons/jxpath/ri/compiler/CoreOperationNotEqual.java\n+++ b/src/java/org/apache/commons/jxpath/ri/compiler/CoreOperationNotEqual.java\n@@ -16,6 +16,7 @@\n  */\n package org.apache.commons.jxpath.ri.compiler;\n \n+import org.apache.commons.jxpath.ri.EvalContext;\n /**\n  * Implementation of Expression for the operation \"!\u003d\".\n  *\n@@ -25,9 +26,12 @@\n public class CoreOperationNotEqual extends CoreOperationCompare {\n \n     public CoreOperationNotEqual(Expression arg1, Expression arg2) {\n-        super(arg1, arg2, true);\n+        super(arg1, arg2);\n     }\n \n+    public Object computeValue(EvalContext context) {\n+        return equal(context, args[0], args[1]) ? Boolean.FALSE : Boolean.TRUE;\n+    }\n     public String getSymbol() {\n         return \"!\u003d\";\n     }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [850,898]"
+        },
+        {
+          "type": "M",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "BooleanLiteral: true [1137,1141]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.apache.commons.jxpath.ri.compiler.CoreOperationEqual:computeValue:[EvalContext context]:Object",
+        "org.apache.commons.jxpath.ri.compiler.CoreOperationNotEqual:computeValue:[EvalContext context]:Object"
+      ],
+      "num": 2
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.apache.commons.jxpath.ri.compiler.CoreOperationCompare:CoreOperationCompare:[Expression arg1, Expression arg2]:null",
+        "org.apache.commons.jxpath.ri.compiler.CoreOperationCompare:CoreOperationCompare:[Expression arg1, Expression arg2, boolean invert]:null",
+        "org.apache.commons.jxpath.ri.compiler.CoreOperationCompare:computeValue:[EvalContext context]:Object"
+      ],
+      "num": 3
+    }
+  }
+}

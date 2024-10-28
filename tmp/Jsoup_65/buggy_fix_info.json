@@ -1,0 +1,181 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.jsoup.parser.HtmlParserTest::testTemplateInsideTable",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.jsoup.parser.HtmlTreeBuilder,org.jsoup.parser.HtmlTreeBuilderState",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Jsoup",
+  "id": "65",
+  "workingDir": "../bugs/Jsoup_65_tmp",
+  "bug_name": "Jsoup_65",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.jsoup.parser.HtmlParserTest",
+      "test_function": "testTemplateInsideTable",
+      "assertion_line": "1045",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/parser/HtmlTreeBuilder.java",
+        "src/main/java/org/jsoup/parser/HtmlTreeBuilder.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.jsoup.parser.HtmlTreeBuilder:clearStackToTableRowContext:[]:void",
+            "org.jsoup.parser.HtmlTreeBuilder:clearStackToTableBodyContext:[]:void"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.jsoup.parser.HtmlTreeBuilder:clearStackToTableBodyContext:[]:void",
+            "org.jsoup.parser.HtmlTreeBuilder:clearStackToTableRowContext:[]:void"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "360",
+            "364"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "360",
+            "364"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/parser/HtmlTreeBuilder.java b/src/main/java/org/jsoup/parser/HtmlTreeBuilder.java\nindex 041dcbd..6ada343 100644\n--- a/src/main/java/org/jsoup/parser/HtmlTreeBuilder.java\n+++ b/src/main/java/org/jsoup/parser/HtmlTreeBuilder.java\n@@ -357,11 +357,11 @@\n     }\n \n     void clearStackToTableBodyContext() {\n-        clearStackToContext(\"tbody\", \"tfoot\", \"thead\", \"template\");\n+        clearStackToContext(\"tbody\", \"tfoot\", \"thead\");\n     }\n \n     void clearStackToTableRowContext() {\n-        clearStackToContext(\"tr\", \"template\");\n+        clearStackToContext(\"tr\");\n     }\n \n     private void clearStackToContext(String... nodeNames) {\n",
+      "operations": [
+        {
+          "type": "delete-node",
+          "from": "StringLiteral: \"template\" [12947,12957]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "StringLiteral: \"template\" [13042,13052]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/jsoup/parser/HtmlTreeBuilderState.java",
+        "src/main/java/org/jsoup/parser/HtmlTreeBuilderState.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1036",
+            "1037",
+            "1038",
+            "1098",
+            "1099",
+            "1100"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "1036",
+            "1096"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/jsoup/parser/HtmlTreeBuilderState.java b/src/main/java/org/jsoup/parser/HtmlTreeBuilderState.java\nindex c4924e4..aaf6041 100644\n--- a/src/main/java/org/jsoup/parser/HtmlTreeBuilderState.java\n+++ b/src/main/java/org/jsoup/parser/HtmlTreeBuilderState.java\n@@ -1033,9 +1033,7 @@\n                 case StartTag:\n                     Token.StartTag startTag \u003d t.asStartTag();\n                     String name \u003d startTag.normalName();\n-                    if (name.equals(\"template\")) {\n-                        tb.insert(startTag);\n-                    } else if (name.equals(\"tr\")) {\n+                    if (name.equals(\"tr\")) {\n                         tb.clearStackToTableBodyContext();\n                         tb.insert(startTag);\n                         tb.transition(InRow);\n@@ -1095,9 +1093,7 @@\n                 Token.StartTag startTag \u003d t.asStartTag();\n                 String name \u003d startTag.normalName();\n \n-                if (name.equals(\"template\")) {\n-                    tb.insert(startTag);\n-                } else if (StringUtil.in(name, \"th\", \"td\")) {\n+                if (StringUtil.in(name, \"th\", \"td\")) {\n                     tb.clearStackToTableRowContext();\n                     tb.insert(startTag);\n                     tb.transition(InCell);\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [50175,50198]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [50200,50268]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [50171,50900]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [52830,52853]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [52855,52915]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [52826,53411]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

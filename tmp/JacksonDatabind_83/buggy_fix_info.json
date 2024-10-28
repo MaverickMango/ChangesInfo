@@ -1,0 +1,108 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.filter.ProblemHandlerTest::testWeirdStringHandling",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.deser.std.FromStringDeserializer",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "83",
+  "workingDir": "../bugs/JacksonDatabind_83_tmp",
+  "bug_name": "JacksonDatabind_83",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.filter.ProblemHandlerTest",
+      "test_function": "testWeirdStringHandling",
+      "assertion_line": "247",
+      "exception": "com.fasterxml.jackson.databind.exc.InvalidFormatException",
+      "message": "Can not deserialize value of type java.util.UUID from String \"not a uuid!\": not a valid textual representation"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/deser/std/FromStringDeserializer.java",
+        "src/main/java/com/fasterxml/jackson/databind/deser/std/FromStringDeserializer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.std.FromStringDeserializer:deserialize:[JsonParser p, DeserializationContext ctxt]:T"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.std.FromStringDeserializer:deserialize:[JsonParser p, DeserializationContext ctxt]:T"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "118"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "119",
+            "121"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/std/FromStringDeserializer.java b/src/main/java/com/fasterxml/jackson/databind/deser/std/FromStringDeserializer.java\nindex 0d01e78..4f4eb67 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/deser/std/FromStringDeserializer.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/deser/std/FromStringDeserializer.java\n@@ -116,7 +116,9 @@\n                 // 19-May-2017, tatu: Used to require non-null result (assuming `null`\n                 //    indicated error; but that seems wrong. Should be able to return\n                 //    `null` as value.\n+                if (_deserialize(text, ctxt) !\u003d null) {\n                 return _deserialize(text, ctxt);\n+                }\n             } catch (IllegalArgumentException iae) {\n                 cause \u003d iae;\n             } catch (MalformedURLException me) {\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [4113,4219]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [4117,4149]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [4151,4219]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,26 @@
+diff -r -u buggy/src/main/java/org/apache/commons/lang3/SerializationUtils.java inducing/src/main/java/org/apache/commons/lang3/SerializationUtils.java
+--- buggy/src/main/java/org/apache/commons/lang3/SerializationUtils.java	2023-06-12 11:34:38.590442311 +0800
++++ inducing/src/main/java/org/apache/commons/lang3/SerializationUtils.java	2023-06-12 11:34:38.710444503 +0800
+@@ -89,9 +89,7 @@
+              * it is reasonable to assume the deserialized object
+              * is of the same type as the original serialized object
+              */
+-            @SuppressWarnings("unchecked") // see above
+-            T readObject = (T) in.readObject();
+-            return readObject;
++            return (T) in.readObject();
+ 
+         } catch (ClassNotFoundException ex) {
+             throw new SerializationException("ClassNotFoundException while reading cloned object data", ex);
+diff -r -u buggy/src/test/java/org/apache/commons/lang3/SerializationUtilsTest.java inducing/src/test/java/org/apache/commons/lang3/SerializationUtilsTest.java
+--- buggy/src/test/java/org/apache/commons/lang3/SerializationUtilsTest.java	2023-06-12 11:34:38.606442603 +0800
++++ inducing/src/test/java/org/apache/commons/lang3/SerializationUtilsTest.java	2023-06-12 11:34:38.714444575 +0800
+@@ -53,7 +53,7 @@
+         super.setUp();
+ 
+         iString = "foo";
+-        iInteger = Integer.valueOf(7);
++        iInteger = new Integer(7);
+         iMap = new HashMap<Object, Object>();
+         iMap.put("FOO", iString);
+         iMap.put("BAR", iInteger);

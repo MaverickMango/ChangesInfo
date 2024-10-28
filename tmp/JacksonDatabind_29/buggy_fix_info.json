@@ -1,0 +1,106 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.jsontype.TestExternalId::testExternalTypeIdWithNull",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.deser.impl.ExternalTypeHandler",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "29",
+  "workingDir": "../bugs/JacksonDatabind_29_tmp",
+  "bug_name": "JacksonDatabind_29",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.jsontype.TestExternalId",
+      "test_function": "testExternalTypeIdWithNull",
+      "assertion_line": "288",
+      "exception": "com.fasterxml.jackson.databind.JsonMappingException",
+      "message": "Can not deserialize instance of com.fasterxml.jackson.databind.jsontype.TestExternalId$ValueBean out of VALUE_STRING token"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/deser/impl/ExternalTypeHandler.java",
+        "src/main/java/com/fasterxml/jackson/databind/deser/impl/ExternalTypeHandler.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.impl.ExternalTypeHandler:_deserialize:[JsonParser p, DeserializationContext ctxt, int index, String typeId]:Object",
+            "com.fasterxml.jackson.databind.deser.impl.ExternalTypeHandler:_deserializeAndSet:[JsonParser p, DeserializationContext ctxt, Object bean, int index, String typeId]:void"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.impl.ExternalTypeHandler:_deserialize:[JsonParser p, DeserializationContext ctxt, int index, String typeId]:Object",
+            "com.fasterxml.jackson.databind.deser.impl.ExternalTypeHandler:_deserializeAndSet:[JsonParser p, DeserializationContext ctxt, Object bean, int index, String typeId]:void"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "228",
+            "229",
+            "230",
+            "254",
+            "255",
+            "256",
+            "257"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "227",
+            "256"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/impl/ExternalTypeHandler.java b/src/main/java/com/fasterxml/jackson/databind/deser/impl/ExternalTypeHandler.java\nindex b4e1a26..93f3013 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/deser/impl/ExternalTypeHandler.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/deser/impl/ExternalTypeHandler.java\n@@ -225,9 +225,6 @@\n         JsonParser p2 \u003d _tokens[index].asParser(p);\n         JsonToken t \u003d p2.nextToken();\n         // 29-Sep-2015, tatu: As per [databind#942], nulls need special support\n-        if (t \u003d\u003d JsonToken.VALUE_NULL) {\n-            return null;\n-        }\n \n         TokenBuffer merged \u003d new TokenBuffer(p);\n         merged.writeStartArray();\n@@ -251,10 +248,6 @@\n         JsonParser p2 \u003d _tokens[index].asParser(p);\n         JsonToken t \u003d p2.nextToken();\n         // 29-Sep-2015, tatu: As per [databind#942], nulls need special support\n-        if (t \u003d\u003d JsonToken.VALUE_NULL) {\n-            _properties[index].getProperty().set(bean, null);\n-            return;\n-        }\n         TokenBuffer merged \u003d new TokenBuffer(p);\n         merged.writeStartArray();\n         merged.writeString(typeId);\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [9527,9594]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [10548,10672]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

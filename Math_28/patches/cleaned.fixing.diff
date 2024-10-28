@@ -1,0 +1,58 @@
+diff -u -r data/changesInfo//Math_28/properties/modified_classes/inducing/src/main/java/org/apache/commons/math3/optimization/linear/SimplexSolver.java data/changesInfo//Math_28/cleaned/fixing/src/main/java/org/apache/commons/math3/optimization/linear/SimplexSolver.java
+--- data/changesInfo//Math_28/properties/modified_classes/inducing/src/main/java/org/apache/commons/math3/optimization/linear/SimplexSolver.java	2023-12-27 22:46:57.476649939 -0800
++++ data/changesInfo//Math_28/cleaned/fixing/src/main/java/org/apache/commons/math3/optimization/linear/SimplexSolver.java	2023-08-02 05:59:05.903741502 -0700
+@@ -131,20 +131,22 @@
+             //
+             // see http://www.stanford.edu/class/msande310/blandrule.pdf
+             // see http://en.wikipedia.org/wiki/Bland%27s_rule (not equivalent to the above paper)
+-            Integer minRow = null;
+-            int minIndex = tableau.getWidth();
+-            for (Integer row : minRatioPositions) {
+-                for (int i = tableau.getNumObjectiveFunctions(); i < tableau.getWidth() - 1 && minRow != row; i++) {
+-                    if (row == tableau.getBasicRow(i)) {
+-                        if (i < minIndex) {
+-                            minIndex = i;
+-                            minRow = row;
++            if (getIterations() < getMaxIterations() / 2) {
++                Integer minRow = null;
++                int minIndex = tableau.getWidth();
++                for (Integer row : minRatioPositions) {
++                    for (int i = tableau.getNumObjectiveFunctions(); i < tableau.getWidth() - 1 && minRow != row; i++) {
++                        if (row == tableau.getBasicRow(i)) {
++                            if (i < minIndex) {
++                                minIndex = i;
++                                minRow = row;
++                            }
+                         }
+                     }
+                 }
+-            }
+ 
+-            return minRow;
++                return minRow;
++            }
+         }
+         return minRatioPositions.get(0);
+     }
+diff -u -r data/changesInfo//Math_28/properties/modified_classes/inducing/src/main/java/org/apache/commons/math3/optimization/linear/SimplexTableau.java data/changesInfo//Math_28/cleaned/fixing/src/main/java/org/apache/commons/math3/optimization/linear/SimplexTableau.java
+--- data/changesInfo//Math_28/properties/modified_classes/inducing/src/main/java/org/apache/commons/math3/optimization/linear/SimplexTableau.java	2023-12-27 22:46:57.480649999 -0800
++++ data/changesInfo//Math_28/cleaned/fixing/src/main/java/org/apache/commons/math3/optimization/linear/SimplexTableau.java	2023-08-02 05:56:34.685000000 -0700
+@@ -27,7 +27,7 @@
+ import java.util.List;
+ import java.util.Set;
+ 
+-import odk.lang.FastMath;
++//import odk.lang.FastMath;
+ 
+ import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+ import org.apache.commons.math3.linear.MatrixUtils;
+@@ -461,7 +461,7 @@
+         for (int i = 0; i < getWidth(); i++) {
+             double result = tableau.getEntry(minuendRow, i) - tableau.getEntry(subtrahendRow, i) * multiple;
+             // cut-off values smaller than the CUTOFF_THRESHOLD, otherwise may lead to numerical instabilities
+-            if (FastMath.abs(result) < CUTOFF_THRESHOLD) {
++            if (Math.abs(result) < CUTOFF_THRESHOLD) {
+                 result = 0.0;
+             }
+             tableau.setEntry(minuendRow, i, result);
+Only in data/changesInfo//Math_28/properties/modified_classes/inducing/src: test

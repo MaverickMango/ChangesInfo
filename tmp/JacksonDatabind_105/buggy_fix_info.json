@@ -1,0 +1,102 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.deser.jdk.JDKScalarsTest::testVoidDeser",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.deser.std.JdkDeserializers",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "105",
+  "workingDir": "../bugs/JacksonDatabind_105_tmp",
+  "bug_name": "JacksonDatabind_105",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.deser.jdk.JDKScalarsTest",
+      "test_function": "testVoidDeser",
+      "assertion_line": "863",
+      "exception": "com.fasterxml.jackson.databind.exc.MismatchedInputException",
+      "message": "Cannot construct instance of `java.lang.Void` (although at least one Creator exists): no int/Int-argument constructor/factory method to deserialize from Number value (123)"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/deser/std/JdkDeserializers.java",
+        "src/main/java/com/fasterxml/jackson/databind/deser/std/JdkDeserializers.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.std.JdkDeserializers:find:[Class\u003c?\u003e rawType, String clsName]:JsonDeserializer\u003c?\u003e"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.std.JdkDeserializers:find:[Class\u003c?\u003e rawType, String clsName]:JsonDeserializer\u003c?\u003e"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "22",
+            "23",
+            "49",
+            "50",
+            "51"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "22",
+            "49"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/std/JdkDeserializers.java b/src/main/java/com/fasterxml/jackson/databind/deser/std/JdkDeserializers.java\nindex 7743dea..c4c0ed9 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/deser/std/JdkDeserializers.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/deser/std/JdkDeserializers.java\n@@ -19,8 +19,7 @@\n                 UUID.class,\n                 AtomicBoolean.class,\n                 StackTraceElement.class,\n-                ByteBuffer.class,\n-                Void.class\n+                ByteBuffer.class\n         };\n         for (Class\u003c?\u003e cls : types) { _classNames.add(cls.getName()); }\n         for (Class\u003c?\u003e cls : FromStringDeserializer.types()) { _classNames.add(cls.getName()); }\n@@ -46,9 +45,6 @@\n             if (rawType \u003d\u003d ByteBuffer.class) {\n                 return new ByteBufferDeserializer();\n             }\n-            if (rawType \u003d\u003d Void.class) {\n-                return NullifyingDeserializer.instance;\n-            }\n         }\n         return null;\n     }\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "TypeLiteral [701,711]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [1746,1844]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

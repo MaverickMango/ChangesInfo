@@ -1,0 +1,180 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.CodePrinterTest::testManyAdds",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.CodeGenerator,com.google.javascript.jscomp.CodePrinter",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "34",
+  "workingDir": "../bugs/Closure_34_tmp",
+  "bug_name": "Closure_34",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.CodePrinterTest",
+      "test_function": "testManyAdds",
+      "exception": "java.lang.StackOverflowError",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CodeGenerator.java",
+        "src/com/google/javascript/jscomp/CodeGenerator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CodeGenerator:add:[Node n, Context context]:void",
+            "com.google.javascript.jscomp.CodeGenerator:unrollBinaryOperator:[Node n, int op, String opStr, Context context, Context rhsContext, int leftPrecedence, int rightPrecedence]:void"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CodeGenerator:unrollBinaryOperator:[Node n, int op, String opStr, Context context, Context rhsContext, int leftPrecedence, int rightPrecedence]:void",
+            "com.google.javascript.jscomp.CodeGenerator:add:[Node n, Context context]:void"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "122",
+            "752"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "122",
+            "123",
+            "124",
+            "754"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/CodeGenerator.java b/src/com/google/javascript/jscomp/CodeGenerator.java\nindex d50320a..f28378c 100644\n--- a/src/com/google/javascript/jscomp/CodeGenerator.java\n+++ b/src/com/google/javascript/jscomp/CodeGenerator.java\n@@ -119,7 +119,9 @@\n         cc.addOp(opstr, true);\n         addExpr(last, p, rhsContext);\n       } else {\n-        unrollBinaryOperator(n, type, opstr, context, rhsContext, p, p + 1);\n+        addExpr(first, p, context);\n+        cc.addOp(opstr, true);\n+        addExpr(last, p + 1, rhsContext);\n       }\n       return;\n     }\n@@ -749,7 +751,7 @@\n     Node current \u003d firstNonOperator;\n     do {\n       current \u003d current.getParent();\n-      cc.addOp(opStr, true);\n+      cc.listSeparator();\n       addExpr(current.getFirstChild().getNext(), rightPrecedence, rhsContext);\n     } while (current !\u003d n);\n   }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [22433,22452]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [3800,3827]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [3836,3858]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [3867,3900]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [3800,3868]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [22401,22423]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CodePrinter.java",
+        "src/com/google/javascript/jscomp/CodePrinter.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CodePrinter\\$PrettyCodePrinter:appendOp:[String op, boolean binOp]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CodePrinter\\$PrettyCodePrinter:appendOp:[String op, boolean binOp]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "334"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "334"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/CodePrinter.java b/src/com/google/javascript/jscomp/CodePrinter.java\nindex 31c62d9..52dfa9b 100644\n--- a/src/com/google/javascript/jscomp/CodePrinter.java\n+++ b/src/com/google/javascript/jscomp/CodePrinter.java\n@@ -331,7 +331,7 @@\n     @Override\n     void appendOp(String op, boolean binOp) {\n       if (binOp) {\n-        if (getLastChar() !\u003d \u0027 \u0027 \u0026\u0026 op.charAt(0) !\u003d \u0027,\u0027) {\n+        if (getLastChar() !\u003d \u0027 \u0027) {\n           append(\" \");\n         }\n         append(op);\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [10235,10237]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [10238,10257]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [10214,10257]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.compress.archivers.tar.TarArchiveOutputStreamTest::testWriteNonAsciiDirectoryNamePosixMode",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.compress.archivers.tar.TarArchiveOutputStream",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Compress",
+  "id": "18",
+  "workingDir": "../bugs/Compress_18_tmp",
+  "bug_name": "Compress_18",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.compress.archivers.tar.TarArchiveOutputStreamTest",
+      "test_function": "testWriteNonAsciiDirectoryNamePosixMode",
+      "assertion_line": "418",
+      "exception": "java.io.IOException",
+      "message": "request to write \u002715\u0027 bytes exceeds size in header of \u00270\u0027 bytes for entry \u0027./PaxHeaders.X/fvv/\u0027"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/compress/archivers/tar/TarArchiveOutputStream.java",
+        "src/main/java/org/apache/commons/compress/archivers/tar/TarArchiveOutputStream.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.tar.TarArchiveOutputStream:writePaxHeaders:[String entryName, Map\u003cString,String\u003e headers]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.tar.TarArchiveOutputStream:writePaxHeaders:[String entryName, Map\u003cString,String\u003e headers]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "457",
+            "460",
+            "461"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "456"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/compress/archivers/tar/TarArchiveOutputStream.java b/src/main/java/org/apache/commons/compress/archivers/tar/TarArchiveOutputStream.java\nindex 5a7e4a3..4c57133 100644\n--- a/src/main/java/org/apache/commons/compress/archivers/tar/TarArchiveOutputStream.java\n+++ b/src/main/java/org/apache/commons/compress/archivers/tar/TarArchiveOutputStream.java\n@@ -454,11 +454,8 @@\n     void writePaxHeaders(String entryName,\n                          Map\u003cString, String\u003e headers) throws IOException {\n         String name \u003d \"./PaxHeaders.X/\" + stripTo7Bits(entryName);\n-        while (name.endsWith(\"/\")) {\n             // TarEntry\u0027s constructor would think this is a directory\n             // and not allow any data to be written\n-            name \u003d name.substring(0, name.length() - 1);\n-        }\n         if (name.length() \u003e\u003d TarConstants.NAMELEN) {\n             name \u003d name.substring(0, TarConstants.NAMELEN - 1);\n         }\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "WhileStatement [16424,16641]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

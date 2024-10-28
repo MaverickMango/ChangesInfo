@@ -1,0 +1,108 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.compress.DetectArchiverTestCase::testCOMPRESS335",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.compress.archivers.tar.TarUtils",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Compress",
+  "id": "35",
+  "workingDir": "../bugs/Compress_35_tmp",
+  "bug_name": "Compress_35",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.compress.DetectArchiverTestCase",
+      "test_function": "testCOMPRESS335",
+      "assertion_line": "60",
+      "exception": "org.apache.commons.compress.archivers.ArchiveException",
+      "message": "No Archiver found for the stream signature"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/compress/archivers/tar/TarUtils.java",
+        "src/main/java/org/apache/commons/compress/archivers/tar/TarUtils.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.tar.TarUtils:verifyCheckSum:[byte[] header]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.archivers.tar.TarUtils:verifyCheckSum:[byte[] header]:boolean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "594",
+            "601"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "594",
+            "602",
+            "603",
+            "604",
+            "605",
+            "606"
+          ],
+          "num": 6
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/compress/archivers/tar/TarUtils.java b/src/main/java/org/apache/commons/compress/archivers/tar/TarUtils.java\nindex 204debf..d60c4de 100644\n--- a/src/main/java/org/apache/commons/compress/archivers/tar/TarUtils.java\n+++ b/src/main/java/org/apache/commons/compress/archivers/tar/TarUtils.java\n@@ -591,7 +591,7 @@\n      * @since 1.5\n      */\n     public static boolean verifyCheckSum(byte[] header) {\n-        long storedSum \u003d parseOctal(header, CHKSUM_OFFSET, CHKSUMLEN);\n+        long storedSum \u003d 0;\n         long unsignedSum \u003d 0;\n         long signedSum \u003d 0;\n \n@@ -599,6 +599,11 @@\n         for (int i \u003d 0; i \u003c header.length; i++) {\n             byte b \u003d header[i];\n             if (CHKSUM_OFFSET  \u003c\u003d i \u0026\u0026 i \u003c CHKSUM_OFFSET + CHKSUMLEN) {\n+                if (\u00270\u0027 \u003c\u003d b \u0026\u0026 b \u003c\u003d \u00277\u0027 \u0026\u0026 digits++ \u003c 6) {\n+                    storedSum \u003d storedSum * 8 + b - \u00270\u0027;\n+                } else if (digits \u003e 0) {\n+                    digits \u003d 6;\n+                }\n                 b \u003d \u0027 \u0027;\n             }\n             unsignedSum +\u003d 0xff \u0026 b;\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [23037,23056]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [23310,23501]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [23037,23099]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

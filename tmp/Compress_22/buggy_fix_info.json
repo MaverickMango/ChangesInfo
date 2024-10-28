@@ -1,0 +1,253 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.compress.compressors.bzip2.PythonTruncatedBzip2Test::testPartialReadTruncatedData",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Compress",
+  "id": "22",
+  "workingDir": "../bugs/Compress_22_tmp",
+  "bug_name": "Compress_22",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.compress.compressors.bzip2.PythonTruncatedBzip2Test",
+      "test_function": "testPartialReadTruncatedData",
+      "assertion_line": "92",
+      "exception": "java.io.IOException",
+      "message": "unexpected end of stream"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/compress/compressors/bzip2/BZip2CompressorInputStream.java",
+        "src/main/java/org/apache/commons/compress/compressors/bzip2/BZip2CompressorInputStream.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream:setupRandPartA:[]:int",
+            "org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream:setupRandPartC:[]:int",
+            "org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream:setupNoRandPartA:[]:int",
+            "org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream:setupNoRandPartC:[]:int",
+            "org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream:BZip2CompressorInputStream:[final InputStream in, final boolean decompressConcatenated]:null",
+            "org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream:read0:[]:int"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream:setupRandPartC:[]:int",
+            "org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream:BZip2CompressorInputStream:[final InputStream in, final boolean decompressConcatenated]:null",
+            "org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream:setupNoRandPartA:[]:int",
+            "org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream:setupRandPartA:[]:int",
+            "org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream:setupNoRandPartC:[]:int",
+            "org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream:read0:[]:int"
+          ],
+          "num": 6
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "66",
+            "133",
+            "202",
+            "208",
+            "211",
+            "217",
+            "220",
+            "844",
+            "861",
+            "902",
+            "930"
+          ],
+          "num": 11
+        },
+        {
+          "qualified_names": [
+            "67",
+            "135",
+            "199",
+            "205",
+            "211",
+            "212",
+            "215",
+            "216",
+            "222",
+            "223",
+            "226",
+            "227",
+            "232",
+            "853",
+            "871",
+            "913",
+            "942"
+          ],
+          "num": 17
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/compress/compressors/bzip2/BZip2CompressorInputStream.java b/src/main/java/org/apache/commons/compress/compressors/bzip2/BZip2CompressorInputStream.java\nindex 1cd6f91..4f89e0e 100644\n--- a/src/main/java/org/apache/commons/compress/compressors/bzip2/BZip2CompressorInputStream.java\n+++ b/src/main/java/org/apache/commons/compress/compressors/bzip2/BZip2CompressorInputStream.java\n@@ -64,6 +64,7 @@\n     private InputStream in;\n     private final boolean decompressConcatenated;\n \n+    private int currentChar \u003d -1;\n     private static final int EOF \u003d 0;\n     private static final int START_BLOCK_STATE \u003d 1;\n     private static final int RAND_PART_A_STATE \u003d 2;\n@@ -131,6 +132,7 @@\n \n         init(true);\n         initBlock();\n+        setupBlock();\n     }\n \n     @Override\n@@ -194,34 +196,40 @@\n     }\n \n     private int read0() throws IOException {\n+        final int retChar \u003d this.currentChar;\n         switch (currentState) {\n         case EOF:\n             return -1;\n \n         case START_BLOCK_STATE:\n-            return setupBlock();\n+            throw new IllegalStateException();\n \n         case RAND_PART_A_STATE:\n             throw new IllegalStateException();\n \n         case RAND_PART_B_STATE:\n-            return setupRandPartB();\n+            setupRandPartB();\n+            break;\n \n         case RAND_PART_C_STATE:\n-            return setupRandPartC();\n+            setupRandPartC();\n+            break;\n \n         case NO_RAND_PART_A_STATE:\n             throw new IllegalStateException();\n \n         case NO_RAND_PART_B_STATE:\n-            return setupNoRandPartB();\n+            setupNoRandPartB();\n+            break;\n \n         case NO_RAND_PART_C_STATE:\n-            return setupNoRandPartC();\n+            setupNoRandPartC();\n+            break;\n \n         default:\n             throw new IllegalStateException();\n         }\n+        return retChar;\n     }\n \n     private boolean init(boolean isFirstStream) throws IOException {\n@@ -842,6 +850,7 @@\n             }\n             this.su_ch2 \u003d su_ch2Shadow ^\u003d (this.su_rNToGo \u003d\u003d 1) ? 1 : 0;\n             this.su_i2++;\n+            this.currentChar \u003d su_ch2Shadow;\n             this.currentState \u003d RAND_PART_B_STATE;\n             this.crc.updateCRC(su_ch2Shadow);\n             return su_ch2Shadow;\n@@ -859,6 +868,7 @@\n             this.su_ch2 \u003d su_ch2Shadow;\n             this.su_tPos \u003d this.data.tt[this.su_tPos];\n             this.su_i2++;\n+            this.currentChar \u003d su_ch2Shadow;\n             this.currentState \u003d NO_RAND_PART_B_STATE;\n             this.crc.updateCRC(su_ch2Shadow);\n             return su_ch2Shadow;\n@@ -900,6 +910,7 @@\n \n     private int setupRandPartC() throws IOException {\n         if (this.su_j2 \u003c this.su_z) {\n+            this.currentChar \u003d this.su_ch2;\n             this.crc.updateCRC(this.su_ch2);\n             this.su_j2++;\n             return this.su_ch2;\n@@ -928,6 +939,7 @@\n     private int setupNoRandPartC() throws IOException {\n         if (this.su_j2 \u003c this.su_z) {\n             int su_ch2Shadow \u003d this.su_ch2;\n+            this.currentChar \u003d su_ch2Shadow;\n             this.crc.updateCRC(su_ch2Shadow);\n             this.su_j2++;\n             this.currentState \u003d NO_RAND_PART_C_STATE;\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [2041,2070]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [4533,4546]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [6267,6304]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [7042,7057]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ThrowStatement [6423,6457]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ExpressionStatement [6583,6600]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "BreakStatement [6613,6619]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ExpressionStatement [6665,6682]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "BreakStatement [6695,6701]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ExpressionStatement [6833,6852]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "BreakStatement [6865,6871]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ExpressionStatement [6920,6939]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "BreakStatement [6952,6958]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [27432,27464]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [28048,28080]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [29471,29502]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [30413,30445]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [6321,6341]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ReturnStatement [6467,6491]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ReturnStatement [6537,6561]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ReturnStatement [6693,6719]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ReturnStatement [6768,6794]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

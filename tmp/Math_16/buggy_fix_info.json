@@ -1,0 +1,233 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math3.util.FastMathTest::testMath905LargePositive,org.apache.commons.math3.util.FastMathTest::testMath905LargeNegative",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math3.util.FastMath",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "16",
+  "workingDir": "../bugs/Math_16_tmp",
+  "bug_name": "Math_16",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math3.util.FastMathTest",
+      "test_function": "testMath905LargePositive",
+      "assertion_line": "172",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c0.0\u003e but was:\u003cInfinity\u003e"
+    },
+    {
+      "test_class": "org.apache.commons.math3.util.FastMathTest",
+      "test_function": "testMath905LargeNegative",
+      "assertion_line": "194",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c0.0\u003e but was:\u003cInfinity\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math3/util/FastMath.java",
+        "src/main/java/org/apache/commons/math3/util/FastMath.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.util.FastMath:cosh:[double x]:double",
+            "org.apache.commons.math3.util.FastMath:sinh:[double x]:double"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math3.util.FastMath:sinh:[double x]:double",
+            "org.apache.commons.math3.util.FastMath:cosh:[double x]:double"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "82",
+            "395",
+            "397",
+            "398",
+            "399",
+            "402",
+            "403",
+            "405",
+            "406",
+            "407",
+            "409",
+            "465",
+            "467",
+            "468",
+            "469",
+            "472",
+            "473",
+            "475",
+            "476",
+            "477",
+            "479"
+          ],
+          "num": 21
+        },
+        {
+          "qualified_names": [
+            "81",
+            "397",
+            "458"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math3/util/FastMath.java b/src/main/java/org/apache/commons/math3/util/FastMath.java\nindex fd1ce2d..3778120 100644\n--- a/src/main/java/org/apache/commons/math3/util/FastMath.java\n+++ b/src/main/java/org/apache/commons/math3/util/FastMath.java\n@@ -79,7 +79,6 @@\n  */\n public class FastMath {\n     /** StrictMath.log(Double.MAX_VALUE): {@value} */\n-    private static final double LOG_MAX_VALUE \u003d StrictMath.log(Double.MAX_VALUE);\n \n     /** Archimede\u0027s constant PI, ratio of circle circumference to diameter. */\n     public static final double PI \u003d 105414357.0 / 33554432.0 + 1.984187159361080883e-9;\n@@ -392,21 +391,12 @@\n       // exp(-z) can be ignored in comparison with exp(z)\n \n       if (x \u003e 20) {\n-          if (x \u003e\u003d LOG_MAX_VALUE) {\n               // Avoid overflow (MATH-905).\n-              final double t \u003d exp(0.5 * x);\n-              return (0.5 * t) * t;\n-          } else {\n               return 0.5 * exp(x);\n           }\n-      } else if (x \u003c -20) {\n-          if (x \u003c\u003d -LOG_MAX_VALUE) {\n+      if (x \u003c -20) {\n               // Avoid overflow (MATH-905).\n-              final double t \u003d exp(-0.5 * x);\n-              return (0.5 * t) * t;\n-          } else {\n               return 0.5 * exp(-x);\n-          }\n       }\n \n       final double hiPrec[] \u003d new double[2];\n@@ -462,21 +452,12 @@\n       // exp(-z) can be ignored in comparison with exp(z)\n \n       if (x \u003e 20) {\n-          if (x \u003e\u003d LOG_MAX_VALUE) {\n               // Avoid overflow (MATH-905).\n-              final double t \u003d exp(0.5 * x);\n-              return (0.5 * t) * t;\n-          } else {\n               return 0.5 * exp(x);\n           }\n-      } else if (x \u003c -20) {\n-          if (x \u003c\u003d -LOG_MAX_VALUE) {\n+      if (x \u003c -20) {\n               // Avoid overflow (MATH-905).\n-              final double t \u003d exp(-0.5 * x);\n-              return (-0.5 * t) * t;\n-          } else {\n               return -0.5 * exp(-x);\n-          }\n       }\n \n       if (x \u003d\u003d 0) {\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [3411,3542]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [14442,14460]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [14462,14600]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [14606,14654]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [14438,14654]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [14697,14716]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [14718,14857]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [14863,14912]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [14693,14912]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [16298,16316]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [16318,16456]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [16462,16510]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [16294,16510]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [16553,16572]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [16574,16714]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [16720,16770]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [16549,16770]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

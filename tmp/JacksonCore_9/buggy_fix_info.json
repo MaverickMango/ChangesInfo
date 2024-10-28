@@ -1,0 +1,230 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.core.json.TestJsonParser::testGetValueAsTextBytes,com.fasterxml.jackson.core.json.TestJsonParser::testGetValueAsTextChars",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.core.base.ParserMinimalBase,com.fasterxml.jackson.core.json.ReaderBasedJsonParser,com.fasterxml.jackson.core.json.UTF8StreamJsonParser",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonCore",
+  "id": "9",
+  "workingDir": "../bugs/JacksonCore_9_tmp",
+  "bug_name": "JacksonCore_9",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.core.json.TestJsonParser",
+      "test_function": "testGetValueAsTextBytes",
+      "assertion_line": "518",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003ca\u003e but was:\u003cnull\u003e"
+    },
+    {
+      "test_class": "com.fasterxml.jackson.core.json.TestJsonParser",
+      "test_function": "testGetValueAsTextChars",
+      "assertion_line": "525",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003ca\u003e but was:\u003cnull\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/core/base/ParserMinimalBase.java",
+        "src/main/java/com/fasterxml/jackson/core/base/ParserMinimalBase.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.base.ParserMinimalBase:getValueAsString:[]:String",
+            "com.fasterxml.jackson.core.base.ParserMinimalBase:getValueAsString:[String defaultValue]:String"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.base.ParserMinimalBase:getValueAsString:[]:String"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "392",
+            "393",
+            "394",
+            "403",
+            "404",
+            "405"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "391",
+            "405"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/core/base/ParserMinimalBase.java b/src/main/java/com/fasterxml/jackson/core/base/ParserMinimalBase.java\nindex fbca28e..37c6503 100644\n--- a/src/main/java/com/fasterxml/jackson/core/base/ParserMinimalBase.java\n+++ b/src/main/java/com/fasterxml/jackson/core/base/ParserMinimalBase.java\n@@ -389,9 +389,6 @@\n         if (_currToken \u003d\u003d JsonToken.VALUE_STRING) {\n             return getText();\n         }\n-        if (_currToken \u003d\u003d JsonToken.FIELD_NAME) {\n-            return getCurrentName();\n-        }\n         return getValueAsString(null);\n     }\n     \n@@ -400,9 +397,6 @@\n         if (_currToken \u003d\u003d JsonToken.VALUE_STRING) {\n             return getText();\n         }\n-        if (_currToken \u003d\u003d JsonToken.FIELD_NAME) {\n-            return getCurrentName();\n-        }\n         if (_currToken \u003d\u003d null || _currToken \u003d\u003d JsonToken.VALUE_NULL || !_currToken.isScalarValue()) {\n             return defaultValue;\n         }\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [12558,12646]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [12888,12976]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java",
+        "src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.json.ReaderBasedJsonParser:getValueAsString:[String defValue]:String",
+            "com.fasterxml.jackson.core.json.ReaderBasedJsonParser:getValueAsString:[]:String"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.json.ReaderBasedJsonParser:getValueAsString:[]:String",
+            "com.fasterxml.jackson.core.json.ReaderBasedJsonParser:_getText2:[JsonToken t]:String"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "253",
+            "254",
+            "255",
+            "269",
+            "270",
+            "271"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "252",
+            "271"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java b/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java\nindex 4f0f753..b5b0051 100644\n--- a/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java\n+++ b/src/main/java/com/fasterxml/jackson/core/json/ReaderBasedJsonParser.java\n@@ -250,9 +250,6 @@\n             }\n             return _textBuffer.contentsAsString();\n         }\n-        if (_currToken \u003d\u003d JsonToken.FIELD_NAME) {\n-            return getCurrentName();\n-        }\n         return super.getValueAsString(null);\n     }\n     \n@@ -266,9 +263,6 @@\n             }\n             return _textBuffer.contentsAsString();\n         }\n-        if (_currToken \u003d\u003d JsonToken.FIELD_NAME) {\n-            return getCurrentName();\n-        }\n         return super.getValueAsString(defValue);\n     }\n \n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [8132,8220]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [8668,8756]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/core/json/UTF8StreamJsonParser.java",
+        "src/main/java/com/fasterxml/jackson/core/json/UTF8StreamJsonParser.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.json.UTF8StreamJsonParser:getValueAsString:[String defValue]:String",
+            "com.fasterxml.jackson.core.json.UTF8StreamJsonParser:getValueAsString:[]:String"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.json.UTF8StreamJsonParser:getValueAsString:[]:String",
+            "com.fasterxml.jackson.core.json.UTF8StreamJsonParser:getValueAsInt:[]:int"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "305",
+            "306",
+            "307",
+            "322",
+            "323",
+            "324"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "304",
+            "324"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/core/json/UTF8StreamJsonParser.java b/src/main/java/com/fasterxml/jackson/core/json/UTF8StreamJsonParser.java\nindex 2b83d18..2fe3683 100644\n--- a/src/main/java/com/fasterxml/jackson/core/json/UTF8StreamJsonParser.java\n+++ b/src/main/java/com/fasterxml/jackson/core/json/UTF8StreamJsonParser.java\n@@ -302,9 +302,6 @@\n             }\n             return _textBuffer.contentsAsString();\n         }\n-        if (_currToken \u003d\u003d JsonToken.FIELD_NAME) {\n-            return getCurrentName();\n-        }\n         return super.getValueAsString(null);\n     }\n     \n@@ -319,9 +316,6 @@\n             }\n             return _textBuffer.contentsAsString();\n         }\n-        if (_currToken \u003d\u003d JsonToken.FIELD_NAME) {\n-            return getCurrentName();\n-        }\n         return super.getValueAsString(defValue);\n     }\n \n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [9710,9798]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [10260,10348]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.core.json.UTF8StreamJsonParser:getValueAsInt:[]:int",
+        "com.fasterxml.jackson.core.json.ReaderBasedJsonParser:_getText2:[JsonToken t]:String"
+      ],
+      "num": 2
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.core.json.ReaderBasedJsonParser:getValueAsString:[String defValue]:String",
+        "com.fasterxml.jackson.core.base.ParserMinimalBase:getValueAsString:[String defaultValue]:String",
+        "com.fasterxml.jackson.core.json.UTF8StreamJsonParser:getValueAsString:[String defValue]:String"
+      ],
+      "num": 3
+    }
+  }
+}

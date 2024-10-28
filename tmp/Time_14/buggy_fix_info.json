@@ -1,0 +1,145 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.joda.time.TestMonthDay_Basics::testPlusMonths_int_negativeFromLeap,org.joda.time.TestMonthDay_Basics::testMinusDays_int_negativeFromLeap,org.joda.time.TestMonthDay_Basics::testPlusMonths_int_fromLeap,org.joda.time.TestMonthDay_Basics::testPlusMonths_int_negativeEndOfMonthAdjust,org.joda.time.TestMonthDay_Basics::testMinusMonths_int_endOfMonthAdjust,org.joda.time.TestMonthDay_Basics::testMinusMonths_int_negativeFromLeap,org.joda.time.TestMonthDay_Basics::testMinusMonths_int_fromLeap,org.joda.time.TestMonthDay_Basics::testPlusDays_int_fromLeap",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.joda.time.chrono.BasicMonthOfYearDateTimeField",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Time",
+  "id": "14",
+  "workingDir": "../bugs/Time_14_tmp",
+  "bug_name": "Time_14",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.joda.time.TestMonthDay_Basics",
+      "test_function": "testPlusMonths_int_negativeFromLeap",
+      "assertion_line": "460",
+      "exception": "org.joda.time.IllegalFieldValueException",
+      "message": "Value 29 for dayOfMonth must be in the range [1,28]"
+    },
+    {
+      "test_class": "org.joda.time.TestMonthDay_Basics",
+      "test_function": "testMinusDays_int_negativeFromLeap",
+      "assertion_line": "610",
+      "exception": "org.joda.time.IllegalFieldValueException",
+      "message": "Value 29 for dayOfMonth must be in the range [1,28]"
+    },
+    {
+      "test_class": "org.joda.time.TestMonthDay_Basics",
+      "test_function": "testPlusMonths_int_fromLeap",
+      "assertion_line": "453",
+      "exception": "org.joda.time.IllegalFieldValueException",
+      "message": "Value 29 for dayOfMonth must be in the range [1,28]"
+    },
+    {
+      "test_class": "org.joda.time.TestMonthDay_Basics",
+      "test_function": "testPlusMonths_int_negativeEndOfMonthAdjust",
+      "assertion_line": "476",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c--02-29\u003e but was:\u003c--02-28\u003e"
+    },
+    {
+      "test_class": "org.joda.time.TestMonthDay_Basics",
+      "test_function": "testMinusMonths_int_endOfMonthAdjust",
+      "assertion_line": "563",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c--02-29\u003e but was:\u003c--02-28\u003e"
+    },
+    {
+      "test_class": "org.joda.time.TestMonthDay_Basics",
+      "test_function": "testMinusMonths_int_negativeFromLeap",
+      "assertion_line": "554",
+      "exception": "org.joda.time.IllegalFieldValueException",
+      "message": "Value 29 for dayOfMonth must be in the range [1,28]"
+    },
+    {
+      "test_class": "org.joda.time.TestMonthDay_Basics",
+      "test_function": "testMinusMonths_int_fromLeap",
+      "assertion_line": "547",
+      "exception": "org.joda.time.IllegalFieldValueException",
+      "message": "Value 29 for dayOfMonth must be in the range [1,28]"
+    },
+    {
+      "test_class": "org.joda.time.TestMonthDay_Basics",
+      "test_function": "testPlusDays_int_fromLeap",
+      "assertion_line": "509",
+      "exception": "org.joda.time.IllegalFieldValueException",
+      "message": "Value 29 for dayOfMonth must be in the range [1,28]"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/joda/time/chrono/BasicMonthOfYearDateTimeField.java",
+        "src/main/java/org/joda/time/chrono/BasicMonthOfYearDateTimeField.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.joda.time.chrono.BasicMonthOfYearDateTimeField:add:[ReadablePartial partial, int fieldIndex, int[] values, int valueToAdd]:int[]"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.joda.time.chrono.BasicMonthOfYearDateTimeField:add:[ReadablePartial partial, int fieldIndex, int[] values, int valueToAdd]:int[]"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "209",
+            "211",
+            "212",
+            "213",
+            "214"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "208"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/joda/time/chrono/BasicMonthOfYearDateTimeField.java b/src/main/java/org/joda/time/chrono/BasicMonthOfYearDateTimeField.java\nindex 2892a2d..afca44e 100644\n--- a/src/main/java/org/joda/time/chrono/BasicMonthOfYearDateTimeField.java\n+++ b/src/main/java/org/joda/time/chrono/BasicMonthOfYearDateTimeField.java\n@@ -206,12 +206,7 @@\n         if (valueToAdd \u003d\u003d 0) {\n             return values;\n         }\n-        if (partial.size() \u003e 0 \u0026\u0026 partial.getFieldType(0).equals(DateTimeFieldType.monthOfYear()) \u0026\u0026 fieldIndex \u003d\u003d 0) {\n             // month is largest field and being added to, such as month-day\n-            int curMonth0 \u003d partial.getValue(0) - 1;\n-            int newMonth \u003d ((curMonth0 + (valueToAdd % 12) + 12) % 12) + 1;\n-            return set(partial, 0, values, newMonth);\n-        }\n         if (DateTimeUtils.isContiguous(partial)) {\n             long instant \u003d 0L;\n             for (int i \u003d 0, isize \u003d partial.size(); i \u003c isize; i++) {\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [7450,7830]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

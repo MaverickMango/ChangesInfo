@@ -1,0 +1,143 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.parsing.ParserTest::testDestructuringAssignForbidden4",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.parsing.IRFactory",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "84",
+  "workingDir": "../bugs/Closure_84_tmp",
+  "bug_name": "Closure_84",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.parsing.ParserTest",
+      "test_function": "testDestructuringAssignForbidden4",
+      "assertion_line": "625",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/parsing/IRFactory.java",
+        "src/com/google/javascript/jscomp/parsing/IRFactory.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.parsing.IRFactory\\$TransformDispatcher:processAssignment:[Assignment assignmentNode]:Node",
+            "com.google.javascript.jscomp.parsing.IRFactory\\$TransformDispatcher:processUnaryExpression:[UnaryExpression exprNode]:Node",
+            "com.google.javascript.jscomp.parsing.IRFactory\\$TransformDispatcher:validAssignmentTarget:[Node target]:boolean"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.parsing.IRFactory\\$TransformDispatcher:processAssignment:[Assignment assignmentNode]:Node",
+            "com.google.javascript.jscomp.parsing.IRFactory\\$TransformDispatcher:processVariableDeclaration:[VariableDeclaration declarationNode]:Node"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "341",
+            "342",
+            "343",
+            "344",
+            "345",
+            "346",
+            "347",
+            "804",
+            "805",
+            "806",
+            "807",
+            "808",
+            "809",
+            "810",
+            "811",
+            "812",
+            "813",
+            "814",
+            "824",
+            "825",
+            "826",
+            "827",
+            "828",
+            "829",
+            "830",
+            "831",
+            "832"
+          ],
+          "num": 27
+        },
+        {
+          "qualified_names": [
+            "340",
+            "810",
+            "841"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/parsing/IRFactory.java b/src/com/google/javascript/jscomp/parsing/IRFactory.java\nindex d2a4e5d..cca8d9b 100644\n--- a/src/com/google/javascript/jscomp/parsing/IRFactory.java\n+++ b/src/com/google/javascript/jscomp/parsing/IRFactory.java\n@@ -338,13 +338,6 @@\n     @Override\n     Node processAssignment(Assignment assignmentNode) {\n       Node assign \u003d processInfixExpression(assignmentNode);\n-      Node target \u003d assign.getFirstChild();\n-      if (!validAssignmentTarget(target)) {\n-        errorReporter.error(\n-          \"invalid assignment target\",\n-          sourceName,\n-          target.getLineno(), \"\", 0);\n-      }\n       return assign;\n     }\n \n@@ -801,17 +794,6 @@\n         operand.setDouble(-operand.getDouble());\n         return operand;\n       } else {\n-        if (type \u003d\u003d Token.INC || type \u003d\u003d Token.DEC) {\n-          if (!validAssignmentTarget(operand)) {\n-            String msg \u003d (type \u003d\u003d Token.INC)\n-                ? \"invalid increment target\"\n-                : \"invalid decrement target\";\n-            errorReporter.error(\n-              msg,\n-              sourceName,\n-              operand.getLineno(), \"\", 0);\n-          }\n-        }\n \n         Node node \u003d newNode(type, operand);\n         if (exprNode.isPostfix()) {\n@@ -821,15 +803,6 @@\n       }\n     }\n \n-    private boolean validAssignmentTarget(Node target) {\n-      switch (target.getType()) {\n-        case Token.NAME:\n-        case Token.GETPROP:\n-        case Token.GETELEM:\n-          return true;\n-      }\n-      return false;\n-    }\n \n     @Override\n     Node processVariableDeclaration(VariableDeclaration declarationNode) {\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [13170,13207]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [13214,13387]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [28187,28560]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [28749,28973]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.parsing.IRFactory\\$TransformDispatcher:processVariableDeclaration:[VariableDeclaration declarationNode]:Node"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.parsing.IRFactory\\$TransformDispatcher:processUnaryExpression:[UnaryExpression exprNode]:Node",
+        "com.google.javascript.jscomp.parsing.IRFactory\\$TransformDispatcher:validAssignmentTarget:[Node target]:boolean"
+      ],
+      "num": 2
+    }
+  }
+}

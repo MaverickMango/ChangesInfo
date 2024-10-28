@@ -1,0 +1,1500 @@
+diff -r -u original/src/com/google/javascript/jscomp/InlineVariables.java buggy/src/com/google/javascript/jscomp/InlineVariables.java
+--- original/src/com/google/javascript/jscomp/InlineVariables.java	2023-06-13 15:31:47.423120883 +0800
++++ buggy/src/com/google/javascript/jscomp/InlineVariables.java	2023-06-12 11:40:31.510483734 +0800
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright 2008 Google Inc.
++ * Copyright 2008 The Closure Compiler Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -21,19 +21,19 @@
+ import com.google.common.base.Predicates;
+ import com.google.common.collect.Maps;
+ import com.google.common.collect.Sets;
++import com.google.javascript.jscomp.CodingConvention.SubclassRelationship;
+ import com.google.javascript.jscomp.ReferenceCollectingCallback.Behavior;
+ import com.google.javascript.jscomp.ReferenceCollectingCallback.Reference;
+ import com.google.javascript.jscomp.ReferenceCollectingCallback.ReferenceCollection;
++import com.google.javascript.jscomp.ReferenceCollectingCallback.ReferenceMap;
+ import com.google.javascript.jscomp.Scope.Var;
+ import com.google.javascript.rhino.Node;
+-import com.google.javascript.rhino.Token;
+ 
+ import java.util.Iterator;
+ import java.util.List;
+ import java.util.Map;
+ import java.util.Set;
+ 
+-
+ /**
+  * Using the infrastructure provided by VariableReferencePass, identify
+  * variables that are used only once and in a way that is safe to move, and then
+@@ -48,47 +48,57 @@
+  *
+  * The approach of this pass is similar to {@link CrossModuleCodeMotion}
+  *
+-*
+-*
++ * @author kushal@google.com (Kushal Dave)
++ * @author nicksantos@google.com (Nick Santos)
+  */
+ class InlineVariables implements CompilerPass {
+ 
+   private final AbstractCompiler compiler;
+ 
+-  // Only inline things explicitly marked as constant.
+-  private final boolean onlyConstants;
++  enum Mode {
++    // Only inline things explicitly marked as constant.
++    CONSTANTS_ONLY,
++    // Locals only
++    LOCALS_ONLY,
++    ALL
++  }
++
++  private final Mode mode;
+ 
+   // Inlines all strings, even if they increase the size of the gzipped binary.
+   private final boolean inlineAllStrings;
+ 
+-  // All declared constant variables with immutable values.
+-  // These should be inlined even if we can't prove that they're written before
+-  // first use.
+-  private final Set<Var> declaredConstants = Sets.newHashSet();
+-
+   private final IdentifyConstants identifyConstants = new IdentifyConstants();
+ 
+-  InlineVariables(AbstractCompiler compiler, boolean onlyConstants,
++  InlineVariables(
++      AbstractCompiler compiler,
++      Mode mode,
+       boolean inlineAllStrings) {
+     this.compiler = compiler;
+-    this.onlyConstants = onlyConstants;
++    this.mode = mode;
+     this.inlineAllStrings = inlineAllStrings;
+   }
+ 
+   @Override
+   public void process(Node externs, Node root) {
+     ReferenceCollectingCallback callback = new ReferenceCollectingCallback(
+-        compiler, new InliningBehavior(),
+-        onlyConstants ?
+-            // Filter all constants, and put them in the declaredConstants map.
+-            identifyConstants :
+-            // Put all the constants in declaredConstants, but accept
+-            // all variables.
+-            Predicates.<Var>or(
+-                identifyConstants, Predicates.<Var>alwaysTrue()));
++        compiler, new InliningBehavior(), getFilterForMode());
+     callback.process(externs, root);
+   }
+ 
++  private Predicate<Var> getFilterForMode() {
++    switch (mode) {
++      case ALL:
++        return Predicates.<Var>alwaysTrue();
++      case LOCALS_ONLY:
++        return new IdentifyLocals();
++      case CONSTANTS_ONLY:
++        return new IdentifyConstants();
++      default:
++        throw new IllegalStateException();
++    }
++  }
++
+   /**
+    * Filters variables declared as "constant", and declares them in the outer
+    * declaredConstants map.
+@@ -100,28 +110,17 @@
+   private class IdentifyConstants implements Predicate<Var> {
+     @Override
+     public boolean apply(Var var) {
+-      if (declaredConstants.contains(var)) {
+-        return true;
+-      }
+-
+-      if (!var.isConst()) {
+-        return false;
+-      }
+-
+-      if (var.getInitialValue() == null) {
+-        // This constant is either externally defined or initialized shortly
+-        // after being declared (e.g. in an anonymous function used to hide
+-        // temporary variables), so the constant is ineligible for inlining.
+-        return false;
+-      }
+-
+-      // Is the constant's value immutable?
+-      if (!NodeUtil.isImmutableValue(var.getInitialValue())) {
+-        return false;
+-      }
++      return var.isConst();
++    }
++  }
+ 
+-      declaredConstants.add(var);
+-      return true;
++  /**
++   * Filters non-global variables.
++   */
++  private class IdentifyLocals implements Predicate<Var> {
++    @Override
++    public boolean apply(Var var) {
++      return var.scope.isLocal();
+     }
+   }
+ 
+@@ -156,8 +155,7 @@
+     final Map<Node, AliasCandidate> aliasCandidates = Maps.newHashMap();
+ 
+     @Override
+-    public void afterExitScope(NodeTraversal t,
+-        Map<Var, ReferenceCollection> referenceMap) {
++    public void afterExitScope(NodeTraversal t, ReferenceMap referenceMap) {
+       collectAliasCandidates(t, referenceMap);
+       doInlinesForScope(t, referenceMap);
+     }
+@@ -167,22 +165,21 @@
+      * mark them as aliasing candidates.
+      */
+     private void collectAliasCandidates(NodeTraversal t,
+-        Map<Var, ReferenceCollection> referenceMap) {
+-      if (!onlyConstants) {
++        ReferenceMap referenceMap) {
++      if (mode != Mode.CONSTANTS_ONLY) {
+         for (Iterator<Var> it = t.getScope().getVars(); it.hasNext();) {
+           Var v = it.next();
+-          ReferenceCollection referenceInfo = referenceMap.get(v);
++          ReferenceCollection referenceInfo = referenceMap.getReferences(v);
+ 
+           // NOTE(nicksantos): Don't handle variables that are never used.
+           // The tests are much easier to write if you don't, and there's
+           // another pass that handles unused variables much more elegantly.
+           if (referenceInfo != null && referenceInfo.references.size() >= 2 &&
+               referenceInfo.isWellDefined() &&
+-              referenceInfo.isNeverReassigned()) {
+-            Reference declaration = referenceInfo.references.get(0);
+-            Node value = declaration.getNameNode().getFirstChild();
+-            if (declaration.getParent().getType() == Token.VAR &&
+-                value != null && value.getType() == Token.NAME) {
++              referenceInfo.isAssignedOnceInLifetime()) {
++            Reference init = referenceInfo.getInitializingReference();
++            Node value = init.getAssignedValue();
++            if (value != null && value.isName()) {
+               aliasCandidates.put(value, new AliasCandidate(v, referenceInfo));
+             }
+           }
+@@ -194,58 +191,105 @@
+      * For all variables in this scope, see if they are only used once.
+      * If it looks safe to do so, inline them.
+      */
+-    private void doInlinesForScope(NodeTraversal t,
+-        Map<Var, ReferenceCollection> referenceMap) {
++    private void doInlinesForScope(NodeTraversal t, ReferenceMap referenceMap) {
+ 
++      boolean maybeModifiedArguments =
++          maybeEscapedOrModifiedArguments(t.getScope(), referenceMap);
+       for (Iterator<Var> it = t.getScope().getVars(); it.hasNext();) {
+         Var v = it.next();
+ 
+-        ReferenceCollection referenceInfo = referenceMap.get(v);
++        ReferenceCollection referenceInfo = referenceMap.getReferences(v);
+ 
+         // referenceInfo will be null if we're in constants-only mode
+         // and the variable is not a constant.
+-        if (referenceInfo == null || isVarInlineForbidden(v) ||
+-            staleVars.contains(v)) {
++        if (referenceInfo == null || isVarInlineForbidden(v)) {
+           // Never try to inline exported variables or variables that
+           // were not collected or variables that have already been inlined.
+           continue;
+-        } else if (isInlineableDeclaredConstant(v, referenceInfo.references)) {
+-          inlineDeclaredConstant(v, referenceInfo.references);
++        } else if (isInlineableDeclaredConstant(v, referenceInfo)) {
++          Reference init = referenceInfo.getInitializingReferenceForConstants();
++          Node value = init.getAssignedValue();
++          inlineDeclaredConstant(v, value, referenceInfo.references);
+           staleVars.add(v);
+-        } else if (onlyConstants) {
++        } else if (mode == Mode.CONSTANTS_ONLY) {
+           // If we're in constants-only mode, don't run more aggressive
+           // inlining heuristics. See InlineConstantsTest.
+           continue;
+         } else {
+-          inlineNonConstants(t.getScope(), v, referenceInfo);
++          inlineNonConstants(v, referenceInfo, maybeModifiedArguments);
+         }
+       }
+     }
+ 
+-    private void inlineNonConstants(Scope scope,
+-        Var v, ReferenceCollection referenceInfo) {
+-      if (referenceInfo.references.size() >= 2 &&
++    private boolean maybeEscapedOrModifiedArguments(
++        Scope scope, ReferenceMap referenceMap) {
++      if (scope.isLocal()) {
++        Var arguments = scope.getArgumentsVar();
++        ReferenceCollection refs = referenceMap.getReferences(arguments);
++        if (refs != null && !refs.references.isEmpty()) {
++          for (Reference ref : refs.references) {
++            Node refNode = ref.getNode();
++            Node refParent = ref.getParent();
++            // Any reference that is not a read of the arguments property
++            // consider a escape of the arguments object.
++            if (!(NodeUtil.isGet(refParent)
++                && refNode == ref.getParent().getFirstChild()
++                && !isLValue(refParent))) {
++              return true;
++            }
++          }
++        }
++      }
++      return false;
++    }
++
++    private boolean isLValue(Node n) {
++      Node parent = n.getParent();
++      return (parent.isInc()
++          || parent.isDec()
++          || (NodeUtil.isAssignmentOp(parent)
++          && parent.getFirstChild() == n));
++    }
++
++    private void inlineNonConstants(
++        Var v, ReferenceCollection referenceInfo,
++        boolean maybeModifiedArguments) {
++      int refCount = referenceInfo.references.size();
++      Reference declaration = referenceInfo.references.get(0);
++      Reference init = referenceInfo.getInitializingReference();
++      int firstRefAfterInit = (declaration == init) ? 2 : 3;
++
++      if (refCount > 1 &&
+           isImmutableAndWellDefinedVariable(v, referenceInfo)) {
+-        // if the variable is defined more than twice, we can only
++        // if the variable is referenced more than once, we can only
+         // inline it if it's immutable and never defined before referenced.
+-        inlineWellDefinedVariable(v, referenceInfo.references);
++        Node value;
++        if (init != null) {
++          value = init.getAssignedValue();
++        } else {
++          // Create a new node for variable that is never initialized.
++          Node srcLocation = declaration.getNode();
++          value = NodeUtil.newUndefinedNode(srcLocation);
++        }
++        Preconditions.checkNotNull(value);
++        inlineWellDefinedVariable(v, value, referenceInfo.references);
+         staleVars.add(v);
+-      } else if (referenceInfo.references.size() == 2) {
+-        // if the variable is only referenced once, we can try some more
++      } else if (refCount == firstRefAfterInit) {
++        // The variable likely only read once, try some more
+         // complex inlining heuristics.
+-        Reference declaration = referenceInfo.references.get(0);
+-        Reference reference = referenceInfo.references.get(1);
+-
+-        if (canInline(declaration, reference)) {
+-          // If the value being inlined contains references to variables
+-          // that have not yet been considered for inlining, we won't
+-          // be able to inline them later because the reference collection
+-          // will be wrong. So blacklist those variables from inlining.
+-          // We'll pick them up on the next pass.
+-          blacklistVarReferencesInTree(
+-              declaration.getNameNode().getFirstChild(), scope);
+-
+-          inline(v, declaration, reference);
++        Reference reference = referenceInfo.references.get(
++            firstRefAfterInit - 1);
++        if (canInline(declaration, init, reference)) {
++          inline(v, declaration, init, reference);
++          staleVars.add(v);
++        }
++      } else if (declaration != init && refCount == 2) {
++        if (isValidDeclaration(declaration) && isValidInitialization(init)) {
++          // The only reference is the initialization, remove the assignment and
++          // the variable declaration.
++          Node value = init.getAssignedValue();
++          Preconditions.checkNotNull(value);
++          inlineWellDefinedVariable(v, value, referenceInfo.references);
+           staleVars.add(v);
+         }
+       }
+@@ -254,16 +298,23 @@
+       // inline an alias of it. (If the variable was inlined, then the
+       // reference data is out of sync. We're better off just waiting for
+       // the next pass.)
+-      if (!staleVars.contains(v) && referenceInfo.isWellDefined() &&
+-          referenceInfo.isNeverReassigned()) {
++      if (!maybeModifiedArguments &&
++          !staleVars.contains(v) && referenceInfo.isWellDefined() &&
++          referenceInfo.isAssignedOnceInLifetime()) {
+         List<Reference> refs = referenceInfo.references;
+         for (int i = 1 /* start from a read */; i < refs.size(); i++) {
+-          Node nameNode = refs.get(i).getNameNode();
++          Node nameNode = refs.get(i).getNode();
+           if (aliasCandidates.containsKey(nameNode)) {
+             AliasCandidate candidate = aliasCandidates.get(nameNode);
+-            if (!staleVars.contains(candidate.alias)) {
+-              inlineWellDefinedVariable(
+-                  candidate.alias, candidate.refInfo.references);
++            if (!staleVars.contains(candidate.alias) &&
++                !isVarInlineForbidden(candidate.alias)) {
++              Reference aliasInit;
++              aliasInit = candidate.refInfo.getInitializingReference();
++              Node value = aliasInit.getAssignedValue();
++              Preconditions.checkNotNull(value);
++              inlineWellDefinedVariable(candidate.alias,
++                  value,
++                  candidate.refInfo.references);
+               staleVars.add(candidate.alias);
+             }
+           }
+@@ -280,7 +331,7 @@
+         blacklistVarReferencesInTree(c, scope);
+       }
+ 
+-      if (root.getType() == Token.NAME) {
++      if (root.isName()) {
+         staleVars.add(scope.getVar(root.getString()));
+       }
+     }
+@@ -294,32 +345,44 @@
+       // 2) A reference to the variable has been inlined. We're downstream
+       //    of the mechanism that creates variable references, so we don't
+       //    have a good way to update the reference. Just punt on it.
+-      return compiler.getCodingConvention().isExported(var.name) ||
+-          staleVars.contains(var);
++      // 3) Don't inline the special RENAME_PROPERTY_FUNCTION_NAME
++      return var.isExtern()
++          || compiler.getCodingConvention().isExported(var.name)
++          || RenameProperties.RENAME_PROPERTY_FUNCTION_NAME.equals(var.name)
++          || staleVars.contains(var);
+     }
+ 
+     /**
+      * Do the actual work of inlining a single declaration into a single
+      * reference.
+      */
+-    private void inline(Var v, Reference declaration, Reference reference) {
+-      Node name = declaration.getNameNode();
+-      Preconditions.checkState(name.getFirstChild() != null);
+-      Node value = name.removeFirstChild();
+-      inlineValue(v, reference, value);
+-      removeDeclaration(declaration);
++    private void inline(Var v, Reference decl, Reference init, Reference ref) {
++      Node value = init.getAssignedValue();
++      Preconditions.checkState(value != null);
++      // Check for function declarations before the value is moved in the AST.
++      boolean isFunctionDeclaration = NodeUtil.isFunctionDeclaration(value);
++      compiler.reportChangeToEnclosingScope(ref.getNode());
++      inlineValue(v, ref, value.detachFromParent());
++      if (decl != init) {
++        Node expressRoot = init.getGrandparent();
++        Preconditions.checkState(expressRoot.isExprResult());
++        NodeUtil.removeChild(expressRoot.getParent(), expressRoot);
++      }
++      // Function declarations have already been removed.
++      if (!isFunctionDeclaration) {
++        compiler.reportChangeToEnclosingScope(decl.getNode());
++        removeDeclaration(decl);
++      }
+     }
+ 
+     /**
+      * Inline an immutable variable into all of its references.
+      */
+-    private void inlineWellDefinedVariable(Var v,
++    private void inlineWellDefinedVariable(Var v, Node value,
+         List<Reference> refSet) {
+       Reference decl = refSet.get(0);
+-
+       for (int i = 1; i < refSet.size(); i++) {
+-        inlineValue(v, refSet.get(i),
+-            decl.getNameNode().getFirstChild().cloneTree());
++        inlineValue(v, refSet.get(i), value.cloneTree());
+       }
+       removeDeclaration(decl);
+     }
+@@ -327,15 +390,16 @@
+     /**
+      * Inline a declared constant.
+      */
+-    private void inlineDeclaredConstant(Var v, List<Reference> refSet) {
++    private void inlineDeclaredConstant(Var v, Node value,
++        List<Reference> refSet) {
+       // Replace the references with the constant value
+       Reference decl = null;
+ 
+       for (Reference r : refSet) {
+-        if (r.getNameNode() == v.getNameNode()) {
++        if (r.getNode() == v.getNameNode()) {
+           decl = r;
+         } else {
+-          inlineValue(v, r, v.getInitialValue().cloneTree());
++          inlineValue(v, r, value.cloneTree());
+         }
+       }
+ 
+@@ -345,19 +409,17 @@
+     /**
+      * Remove the given VAR declaration.
+      */
+-    private void removeDeclaration(Reference declaration) {
+-      Node varNode = declaration.getParent();
+-      varNode.removeChild(declaration.getNameNode());
++    private void removeDeclaration(Reference decl) {
++      Node varNode = decl.getParent();
++      Node grandparent = decl.getGrandparent();
+ 
++      compiler.reportChangeToEnclosingScope(decl.getNode());
++      varNode.removeChild(decl.getNode());
+       // Remove var node if empty
+       if (!varNode.hasChildren()) {
+-        Preconditions.checkState(varNode.getType() == Token.VAR);
+-
+-        Node grandparent = declaration.getGrandparent();
++        Preconditions.checkState(varNode.isVar());
+         NodeUtil.removeChild(grandparent, varNode);
+       }
+-
+-      compiler.reportCodeChange();
+     }
+ 
+     /**
+@@ -369,9 +431,14 @@
+      *     to re-parent.
+      */
+     private void inlineValue(Var v, Reference ref, Node value) {
+-      ref.getParent().replaceChild(ref.getNameNode(), value);
++      compiler.reportChangeToEnclosingScope(ref.getNode());
++      if (ref.isSimpleAssignmentToName()) {
++        // This is the initial assignment.
++        ref.getGrandparent().replaceChild(ref.getParent(), value);
++      } else {
++        ref.getParent().replaceChild(ref.getNode(), value);
++      }
+       blacklistVarReferencesInTree(value, v.scope);
+-      compiler.reportCodeChange();
+     }
+ 
+     /**
+@@ -379,14 +446,36 @@
+      * and may be inlined.
+      */
+     private boolean isInlineableDeclaredConstant(Var var,
+-        List<Reference> refs) {
++        ReferenceCollection refInfo) {
+       if (!identifyConstants.apply(var)) {
+         return false;
+       }
+ 
++      if (!refInfo.isAssignedOnceInLifetime()) {
++        return false;
++      }
++
++      Reference init = refInfo.getInitializingReferenceForConstants();
++      if (init == null) {
++        return false;
++      }
++
++      Node value = init.getAssignedValue();
++      if (value == null) {
++        // This constant is either externally defined or initialized indirectly
++        // (e.g. in an function expression used to hide
++        // temporary variables), so the constant is ineligible for inlining.
++        return false;
++      }
++
++      // Is the constant's value immutable?
++      if (!NodeUtil.isImmutableValue(value)) {
++        return false;
++      }
++
+       // Determine if we should really inline a String or not.
+-      return var.getInitialValue().getType() != Token.STRING ||
+-          isStringWorthInlining(var, refs);
++      return !value.isString() ||
++          isStringWorthInlining(var, refInfo.references);
+     }
+ 
+     /**
+@@ -421,41 +510,80 @@
+      * @return true if the provided reference and declaration can be safely
+      *         inlined according to our criteria
+      */
+-    private boolean canInline(Reference declaration, Reference reference) {
+-      if (!isValidDeclaration(declaration) || !isValidReference(reference)) {
++    private boolean canInline(
++        Reference declaration,
++        Reference initialization,
++        Reference reference) {
++      if (!isValidDeclaration(declaration)
++          || !isValidInitialization(initialization)
++          || !isValidReference(reference)) {
++        return false;
++      }
++
++      // If the value is read more than once, skip it.
++      // VAR declarations and EXPR_RESULT don't need the value, but other
++      // ASSIGN expressions parents do.
++      if (declaration != initialization &&
++          !initialization.getGrandparent().isExprResult()) {
+         return false;
+       }
+ 
+       // Be very conservative and do no cross control structures or
+       // scope boundaries
+-      if (declaration.getBasicBlock() != reference.getBasicBlock()) {
++      if (declaration.getBasicBlock() != initialization.getBasicBlock()
++          || declaration.getBasicBlock() != reference.getBasicBlock()) {
+         return false;
+       }
+ 
+       // Do not inline into a call node. This would change
+       // the context in which it was being called. For example,
+-      // var a = b.c;
+-      // a();
++      //   var a = b.c;
++      //   a();
+       // should not be inlined, because it calls a in the context of b
+       // rather than the context of the window.
+-      if (declaration.getNameNode().getFirstChild().getType() == Token.GETPROP
+-          && reference.getParent().getType() == Token.CALL) {
++      //   var a = b.c;
++      //   f(a)
++      // is OK.
++      Node value = initialization.getAssignedValue();
++      Preconditions.checkState(value != null);
++      if (value.isGetProp()
++          && reference.getParent().isCall()
++          && reference.getParent().getFirstChild() == reference.getNode()) {
+         return false;
+       }
+ 
+-      return canMoveAggressively(declaration) ||
+-          canMoveModerately(declaration, reference);
++      if (value.isFunction()) {
++        Node callNode = reference.getParent();
++        if (reference.getParent().isCall()) {
++          CodingConvention convention = compiler.getCodingConvention();
++          // Bug 2388531: Don't inline subclass definitions into class defining
++          // calls as this confused class removing logic.
++          SubclassRelationship relationship =
++              convention.getClassesDefinedByCall(callNode);
++          if (relationship != null) {
++            return false;
++          }
++
++          // issue 668: Don't inline singleton getter methods
++          // calls as this confused class removing logic.
++          if (convention.getSingletonGetterClassName(callNode) != null) {
++            return false;
++          }
++        }
++      }
++
++      return canMoveAggressively(value) ||
++          canMoveModerately(initialization, reference);
+     }
+ 
+     /**
+      * If the value is a literal, we can cross more boundaries to inline it.
+      */
+-    private boolean canMoveAggressively(Reference declaration) {
+-      // Anonymous functions and other mutable objects can move within 
++    private boolean canMoveAggressively(Node value) {
++      // Function expressions and other mutable objects can move within
+       // the same basic block.
+-      Node value = declaration.getNameNode().getFirstChild();
+-      return NodeUtil.isLiteralValue(value)
+-          || value.getType() == Token.FUNCTION;
++      return NodeUtil.isLiteralValue(value, true)
++          || value.isFunction();
+     }
+ 
+     /**
+@@ -463,15 +591,30 @@
+      * state. Therefore it cannot be moved past anything else that may modify
+      * the value being read or read values that are modified.
+      */
+-    private boolean canMoveModerately(Reference declaration,
++    private boolean canMoveModerately(
++        Reference initialization,
+         Reference reference) {
+       // Check if declaration can be inlined without passing
+       // any side-effect causing nodes.
+-      Iterator<Node> it = new NodeIterators.LocalVarMotion(
+-          declaration.getNameNode(),
+-          declaration.getParent(),
+-          declaration.getGrandparent());
+-      Node targetName = reference.getNameNode();
++      Iterator<Node> it;
++      if (initialization.getParent().isVar()) {
++        it = NodeIterators.LocalVarMotion.forVar(
++            initialization.getNode(),     // NAME
++            initialization.getParent(),       // VAR
++            initialization.getGrandparent()); // VAR container
++      } else if (initialization.getParent().isAssign()) {
++        Preconditions.checkState(
++            initialization.getGrandparent().isExprResult());
++        it = NodeIterators.LocalVarMotion.forAssign(
++            initialization.getNode(),     // NAME
++            initialization.getParent(),       // ASSIGN
++            initialization.getGrandparent(),  // EXPR_RESULT
++            initialization.getGrandparent().getParent()); // EXPR container
++      } else {
++        throw new IllegalStateException("Unexpected initialization parent " +
++            initialization.getParent().toStringTree());
++      }
++      Node targetName = reference.getNode();
+       while (it.hasNext()) {
+         Node curNode = it.next();
+         if (curNode == targetName) {
+@@ -483,12 +626,40 @@
+     }
+ 
+     /**
+-     * @return true if the reference is a normal VAR declaration with
+-     *    initial value. (Only normal VARs can be inlined.)
++     * @return true if the reference is a normal VAR or FUNCTION declaration.
+      */
+     private boolean isValidDeclaration(Reference declaration) {
+-      return declaration.isDeclaration() &&
+-          declaration.getNameNode().getFirstChild() != null;
++      return (declaration.getParent().isVar()
++          && !declaration.getGrandparent().isFor())
++          || NodeUtil.isFunctionDeclaration(declaration.getParent());
++    }
++
++    /**
++     * @return Whether there is a initial value.
++     */
++    private boolean isValidInitialization(Reference initialization) {
++      if (initialization == null) {
++        return false;
++      } else if (initialization.isDeclaration()) {
++        // The reference is a FUNCTION declaration or normal VAR declaration
++        // with a value.
++        if (!NodeUtil.isFunctionDeclaration(initialization.getParent())
++            && initialization.getNode().getFirstChild() == null) {
++          return false;
++        }
++      } else {
++        Node parent = initialization.getParent();
++        Preconditions.checkState(
++            parent.isAssign()
++            && parent.getFirstChild() == initialization.getNode());
++      }
++
++      Node n = initialization.getAssignedValue();
++      if (n.isFunction()) {
++        return compiler.getCodingConvention().isInlinableFunction(n);
++      }
++
++      return true;
+     }
+ 
+     /**
+@@ -506,25 +677,53 @@
+     private boolean isImmutableAndWellDefinedVariable(Var v,
+         ReferenceCollection refInfo) {
+       List<Reference> refSet = refInfo.references;
+-      if (!isValidDeclaration(refSet.get(0))) {
++      int startingReadRef = 1;
++      Reference refDecl = refSet.get(0);
++      if (!isValidDeclaration(refDecl)) {
+         return false;
+       }
+ 
+-      for (int i = 1; i < refSet.size(); i++) {
+-        Reference ref = refSet.get(i);
+-        if (!isValidReference(ref)) {
++      boolean isNeverAssigned = refInfo.isNeverAssigned();
++      // For values that are never assigned, only the references need to be
++      // checked.
++      if (!isNeverAssigned) {
++        Reference refInit = refInfo.getInitializingReference();
++        if (!isValidInitialization(refInit)) {
++          return false;
++        }
++
++        if (refDecl != refInit) {
++          Preconditions.checkState(refInit == refSet.get(1));
++          startingReadRef = 2;
++        }
++
++        if (!refInfo.isWellDefined()) {
++          return false;
++        }
++
++        Node value = refInit.getAssignedValue();
++        Preconditions.checkNotNull(value);
++
++        boolean isImmutableValueWorthInlining =
++            NodeUtil.isImmutableValue(value) &&
++            (!value.isString() ||
++                isStringWorthInlining(v, refInfo.references));
++        boolean isInlinableThisAlias =
++            value.isThis() &&
++            !refInfo.isEscaped();
++        if (!isImmutableValueWorthInlining && !isInlinableThisAlias) {
+           return false;
+         }
+       }
+ 
+-      if (!refInfo.isWellDefined()) {
+-        return false;
++      for (int i = startingReadRef; i < refSet.size(); i++) {
++        Reference ref = refSet.get(i);
++        if (!isValidReference(ref)) {
++          return false;
++        }
+       }
+ 
+-      Node value = refSet.get(0).getNameNode().getFirstChild();
+-      return NodeUtil.isImmutableValue(value) &&
+-          (value.getType() != Token.STRING ||
+-           isStringWorthInlining(v, refInfo.references));
++      return true;
+     }
+   }
+ }
+diff -r -u original/test/com/google/javascript/jscomp/InlineVariablesTest.java buggy/test/com/google/javascript/jscomp/InlineVariablesTest.java
+--- original/test/com/google/javascript/jscomp/InlineVariablesTest.java	2023-06-13 15:31:47.423120883 +0800
++++ buggy/test/com/google/javascript/jscomp/InlineVariablesTest.java	2023-06-12 11:40:31.510483734 +0800
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright 2008 Google Inc.
++ * Copyright 2008 The Closure Compiler Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -21,24 +21,36 @@
+  * Verifies that valid candidates for inlining are inlined, but
+  * that no dangerous inlining occurs.
+  *
+-*
++ * @author kushal@google.com (Kushal Dave)
+  */
+ public class InlineVariablesTest extends CompilerTestCase {
+ 
+   private boolean inlineAllStrings = false;
++  private boolean inlineLocalsOnly = false;
+ 
+   public InlineVariablesTest() {
+     enableNormalize();
+   }
+ 
+   @Override
++  public void setUp() {
++    super.enableLineNumberCheck(true);
++  }
++
++  @Override
+   protected CompilerPass getProcessor(final Compiler compiler) {
+-    return new InlineVariables(compiler, false, inlineAllStrings);
++    return new InlineVariables(
++        compiler,
++        (inlineLocalsOnly)
++            ? InlineVariables.Mode.LOCALS_ONLY
++            : InlineVariables.Mode.ALL,
++        inlineAllStrings);
+   }
+ 
+   @Override
+   public void tearDown() {
+     inlineAllStrings = false;
++    inlineLocalsOnly = false;
+   }
+ 
+   // Test respect for scopes and blocks
+@@ -51,6 +63,11 @@
+     testSame("var _x = 1; var z = _x;");
+   }
+ 
++  public void testNoInlineExportedName2() {
++    testSame("var f = function() {}; var _x = f;" +
++             "var y = function() { _x(); }; var _y = f;");
++  }
++
+   public void testDoNotInlineIncrement() {
+     testSame("var x = 1; x++;");
+   }
+@@ -114,11 +131,19 @@
+         new String[] { "", "var b = 2;" });
+   }
+ 
+-  public void testDoNotExitConditional() {
++  public void testDoNotExitConditional1() {
+     testSame("if (true) { var x = 1; } var z = x;");
++  }
++
++  public void testDoNotExitConditional2() {
+     testSame("if (true) var x = 1; var z = x;");
+   }
+ 
++
++  public void testDoNotExitConditional3() {
++    testSame("var x; if (true) x=1; var z = x;");
++  }
++
+   public void testDoNotExitLoop() {
+     testSame("while (z) { var x = 3; } var y = x;");
+   }
+@@ -159,6 +184,58 @@
+ 
+   public void testInsideIfConditional() {
+     test("var a = foo(); if (a) { alert(3); }", "if (foo()) { alert(3); }");
++    test("var a; a = foo(); if (a) { alert(3); }", "if (foo()) { alert(3); }");
++  }
++
++  public void testOnlyReadAtInitialization() {
++    test("var a; a = foo();", "foo();");
++    test("var a; if (a = foo()) { alert(3); }", "if (foo()) { alert(3); }");
++    test("var a; switch (a = foo()) {}", "switch(foo()) {}");
++    test("var a; function f(){ return a = foo(); }",
++         "function f(){ return foo(); }");
++    test("function f(){ var a; return a = foo(); }",
++         "function f(){ return foo(); }");
++    test("var a; with (a = foo()) { alert(3); }", "with (foo()) { alert(3); }");
++
++    test("var a; b = (a = foo());", "b = foo();");
++    test("var a; while(a = foo()) { alert(3); }",
++         "while(foo()) { alert(3); }");
++    test("var a; for(;a = foo();) { alert(3); }",
++         "for(;foo();) { alert(3); }");
++    test("var a; do {} while(a = foo()) { alert(3); }",
++         "do {} while(foo()) { alert(3); }");
++  }
++
++  public void testImmutableWithSingleReferenceAfterInitialzation() {
++    test("var a; a = 1;", "1;");
++    test("var a; if (a = 1) { alert(3); }", "if (1) { alert(3); }");
++    test("var a; switch (a = 1) {}", "switch(1) {}");
++    test("var a; function f(){ return a = 1; }",
++         "function f(){ return 1; }");
++    test("function f(){ var a; return a = 1; }",
++         "function f(){ return 1; }");
++    test("var a; with (a = 1) { alert(3); }", "with (1) { alert(3); }");
++
++    test("var a; b = (a = 1);", "b = 1;");
++    test("var a; while(a = 1) { alert(3); }",
++         "while(1) { alert(3); }");
++    test("var a; for(;a = 1;) { alert(3); }",
++         "for(;1;) { alert(3); }");
++    test("var a; do {} while(a = 1) { alert(3); }",
++         "do {} while(1) { alert(3); }");
++  }
++
++  public void testSingleReferenceAfterInitialzation() {
++    test("var a; a = foo();a;", "foo();");
++    testSame("var a; if (a = foo()) { alert(3); } a;");
++    testSame("var a; switch (a = foo()) {} a;");
++    testSame("var a; function f(){ return a = foo(); } a;");
++    testSame("function f(){ var a; return a = foo(); a;}");
++    testSame("var a; with (a = foo()) { alert(3); } a;");
++    testSame("var a; b = (a = foo()); a;");
++    testSame("var a; while(a = foo()) { alert(3); } a;");
++    testSame("var a; for(;a = foo();) { alert(3); } a;");
++    testSame("var a; do {} while(a = foo()) { alert(3); } a;");
+   }
+ 
+   public void testInsideIfBranch() {
+@@ -209,9 +286,14 @@
+     testSame(
+         new String[] { "var x = a;", "",
+             "(function() { a++; })(); var z = x;"});
++    test(
++        new String[] { "var x = a;", "",
++            "function cow() { a++; }; cow(); var z = x;"},
++        new String[] { "var x = a;", "",
++            ";(function cow(){ a++; })(); var z = x;"});
+     testSame(
+         new String[] { "var x = a;", "",
+-            "function cow() { a++; }; cow(); var z = x;"});
++            "cow(); var z = x; function cow() { a++; };"});
+   }
+ 
+   // Test movement of constant values
+@@ -263,7 +345,7 @@
+   // Test movement of values that are complex but lack side effects
+ 
+   public void testDoNotCrossAssignment() {
+-    testSame("var x = {};\nvar y = x.a;\nx.a = 1;\nvar z = y;");
++    testSame("var x = {}; var y = x.a; x.a = 1; var z = y;");
+     testSame("var a = this.id; foo(this.id = 3, a);");
+   }
+ 
+@@ -343,8 +425,12 @@
+     testSame("f(); var x = false; function f() { alert(x); };");
+   }
+ 
++  public void testInlineIntoNestedNonHoistedNamedFunctions() {
++    test("f(); var x = false; if (false) function f() { alert(x); };",
++         "f(); if (false) function f() { alert(false); };");
++  }
++
+   public void testNoInlineIntoNestedNamedFunctions() {
+-    testSame("f(); var x = false; if (false) function f() { alert(x); };");
+     testSame("f(); var x = false; function f() { if (false) { alert(x); } };");
+   }
+ 
+@@ -427,25 +513,39 @@
+ 
+   public void testNoInlineGetpropIntoCall() {
+     test("var a = b; a();", "b();");
++    test("var a = b.c; f(a);", "f(b.c);");
+     testSame("var a = b.c; a();");
+   }
+ 
+   public void testInlineFunctionDeclaration() {
+-    test("var f = function () {}; var a = f;", 
++    test("var f = function () {}; var a = f;",
+          "var a = function () {};");
+-    test("var f = function () {}; foo(); var a = f;", 
++    test("var f = function () {}; foo(); var a = f;",
+          "foo(); var a = function () {};");
+-    test("var f = function () {}; foo(f);", 
++    test("var f = function () {}; foo(f);",
+          "foo(function () {});");
+-    
+-    testSame("var f = function () {}; function g() {var a = f;}"); 
+-    testSame("var f = function () {}; function g() {h(f);}"); 
++
++    testSame("var f = function () {}; function g() {var a = f;}");
++    testSame("var f = function () {}; function g() {h(f);}");
++  }
++
++  public void test2388531() {
++    testSame("var f = function () {};" +
++             "var g = function () {};" +
++             "goog.inherits(f, g);");
++    testSame("var f = function () {};" +
++             "var g = function () {};" +
++             "goog$inherits(f, g);");
+   }
+-  
++
+   public void testRecursiveFunction1() {
+     testSame("var x = 0; (function x() { return x ? x() : 3; })();");
+   }
+ 
++  public void testRecursiveFunction2() {
++    testSame("function y() { return y(); }");
++  }
++
+   public void testUnreferencedBleedingFunction() {
+     testSame("var x = function y() {}");
+   }
+@@ -459,22 +559,97 @@
+          "var x = this.foo(); this.bar(); this.baz(x);");
+   }
+ 
++  public void testInlineAliases1b() {
++    test("var x = this.foo(); this.bar(); var y; y = x; this.baz(y);",
++         "var x = this.foo(); this.bar(); x; this.baz(x);");
++  }
++
++  public void testInlineAliases1c() {
++    test("var x; x = this.foo(); this.bar(); var y = x; this.baz(y);",
++         "var x; x = this.foo(); this.bar(); this.baz(x);");
++  }
++
++  public void testInlineAliases1d() {
++    test("var x; x = this.foo(); this.bar(); var y; y = x; this.baz(y);",
++         "var x; x = this.foo(); this.bar(); x; this.baz(x);");
++  }
++
+   public void testInlineAliases2() {
+     test("var x = this.foo(); this.bar(); " +
+          "function f() { var y = x; this.baz(y); }",
+          "var x = this.foo(); this.bar(); function f() { this.baz(x); }");
+   }
+ 
++  public void testInlineAliases2b() {
++    test("var x = this.foo(); this.bar(); " +
++         "function f() { var y; y = x; this.baz(y); }",
++         "var x = this.foo(); this.bar(); function f() { this.baz(x); }");
++  }
++
++  public void testInlineAliases2c() {
++    test("var x; x = this.foo(); this.bar(); " +
++         "function f() { var y = x; this.baz(y); }",
++         "var x; x = this.foo(); this.bar(); function f() { this.baz(x); }");
++  }
++
++  public void testInlineAliases2d() {
++    test("var x; x = this.foo(); this.bar(); " +
++         "function f() { var y; y = x; this.baz(y); }",
++         "var x; x = this.foo(); this.bar(); function f() { this.baz(x); }");
++  }
++
++  public void testInlineAliasesInLoop() {
++    test(
++        "function f() { " +
++        "  var x = extern();" +
++        "  for (var i = 0; i < 5; i++) {" +
++        "    (function() {" +
++        "       var y = x; window.setTimeout(function() { extern(y); }, 0);" +
++        "     })();" +
++        "  }" +
++        "}",
++        "function f() { " +
++        "  var x = extern();" +
++        "  for (var i = 0; i < 5; i++) {" +
++        "    (function() {" +
++        "       window.setTimeout(function() { extern(x); }, 0);" +
++        "     })();" +
++        "  }" +
++        "}");
++  }
++
++  public void testNoInlineAliasesInLoop() {
++    testSame(
++        "function f() { " +
++        "  for (var i = 0; i < 5; i++) {" +
++        "    var x = extern();" +
++        "    (function() {" +
++        "       var y = x; window.setTimeout(function() { extern(y); }, 0);" +
++        "     })();" +
++        "  }" +
++        "}");
++  }
++
+   public void testNoInlineAliases1() {
+     testSame(
+         "var x = this.foo(); this.bar(); var y = x; x = 3; this.baz(y);");
+   }
+ 
++  public void testNoInlineAliases1b() {
++    testSame(
++        "var x = this.foo(); this.bar(); var y; y = x; x = 3; this.baz(y);");
++  }
++
+   public void testNoInlineAliases2() {
+     testSame(
+         "var x = this.foo(); this.bar(); var y = x; y = 3; this.baz(y); ");
+   }
+ 
++  public void testNoInlineAliases2b() {
++    testSame(
++        "var x = this.foo(); this.bar(); var y; y = x; y = 3; this.baz(y); ");
++  }
++
+   public void testNoInlineAliases3() {
+     testSame(
+          "var x = this.foo(); this.bar(); " +
+@@ -482,33 +657,411 @@
+          "function g() { x = 3; }");
+   }
+ 
++  public void testNoInlineAliases3b() {
++    testSame(
++         "var x = this.foo(); this.bar(); " +
++         "function f() { var y; y = x; g(); this.baz(y); } " +
++         "function g() { x = 3; }");
++  }
++
+   public void testNoInlineAliases4() {
+     testSame(
+          "var x = this.foo(); this.bar(); " +
+          "function f() { var y = x; y = 3; this.baz(y); }");
+   }
+ 
++  public void testNoInlineAliases4b() {
++    testSame(
++         "var x = this.foo(); this.bar(); " +
++         "function f() { var y; y = x; y = 3; this.baz(y); }");
++  }
++
+   public void testNoInlineAliases5() {
+     testSame(
+         "var x = this.foo(); this.bar(); var y = x; this.bing();" +
+         "this.baz(y); x = 3;");
+   }
+ 
++  public void testNoInlineAliases5b() {
++    testSame(
++        "var x = this.foo(); this.bar(); var y; y = x; this.bing();" +
++        "this.baz(y); x = 3;");
++  }
++
+   public void testNoInlineAliases6() {
+     testSame(
+         "var x = this.foo(); this.bar(); var y = x; this.bing();" +
+         "this.baz(y); y = 3;");
+   }
+ 
++  public void testNoInlineAliases6b() {
++    testSame(
++        "var x = this.foo(); this.bar(); var y; y = x; this.bing();" +
++        "this.baz(y); y = 3;");
++  }
++
+   public void testNoInlineAliases7() {
+     testSame(
+          "var x = this.foo(); this.bar(); " +
+          "function f() { var y = x; this.bing(); this.baz(y); x = 3; }");
+   }
+ 
++  public void testNoInlineAliases7b() {
++    testSame(
++         "var x = this.foo(); this.bar(); " +
++         "function f() { var y; y = x; this.bing(); this.baz(y); x = 3; }");
++  }
++
+   public void testNoInlineAliases8() {
+     testSame(
+          "var x = this.foo(); this.bar(); " +
+          "function f() { var y = x; this.baz(y); y = 3; }");
+   }
++
++  public void testNoInlineAliases8b() {
++    testSame(
++         "var x = this.foo(); this.bar(); " +
++         "function f() { var y; y = x; this.baz(y); y = 3; }");
++  }
++
++  public void testSideEffectOrder() {
++    // z can not be changed by the call to y, so x can be inlined.
++    String EXTERNS = "var z; function f(){}";
++    test(EXTERNS,
++         "var x = f(y.a, y); z = x;",
++         "z = f(y.a, y);", null, null);
++    // z.b can be changed by the call to y, so x can not be inlined.
++    testSame(EXTERNS, "var x = f(y.a, y); z.b = x;", null, null);
++  }
++
++  public void testInlineParameterAlias1() {
++    test(
++      "function f(x) {" +
++      "  var y = x;" +
++      "  g();" +
++      "  y;y;" +
++      "}",
++      "function f(x) {" +
++      "  g();" +
++      "  x;x;" +
++      "}"
++      );
++  }
++
++  public void testInlineParameterAlias2() {
++    test(
++      "function f(x) {" +
++      "  var y; y = x;" +
++      "  g();" +
++      "  y;y;" +
++      "}",
++      "function f(x) {" +
++      "  x;" +
++      "  g();" +
++      "  x;x;" +
++      "}"
++      );
++  }
++
++  public void testInlineFunctionAlias1a() {
++    test(
++      "function f(x) {}" +
++      "var y = f;" +
++      "g();" +
++      "y();y();",
++      "var y = function f(x) {};" +
++      "g();" +
++      "y();y();"
++      );
++  }
++
++  public void testInlineFunctionAlias1b() {
++    test(
++      "function f(x) {};" +
++      "f;var y = f;" +
++      "g();" +
++      "y();y();",
++      "function f(x) {};" +
++      "f;g();" +
++      "f();f();"
++      );
++  }
++
++  public void testInlineFunctionAlias2a() {
++    test(
++      "function f(x) {}" +
++      "var y; y = f;" +
++      "g();" +
++      "y();y();",
++      "var y; y = function f(x) {};" +
++      "g();" +
++      "y();y();"
++      );
++  }
++
++  public void testInlineFunctionAlias2b() {
++    test(
++      "function f(x) {};" +
++      "f; var y; y = f;" +
++      "g();" +
++      "y();y();",
++      "function f(x) {};" +
++      "f; f;" +
++      "g();" +
++      "f();f();"
++      );
++  }
++
++  public void testInlineCatchAlias1() {
++    test(
++      "try {" +
++      "} catch (e) {" +
++      "  var y = e;" +
++      "  g();" +
++      "  y;y;" +
++      "}",
++      "try {" +
++      "} catch (e) {" +
++      "  g();" +
++      "  e;e;" +
++      "}"
++      );
++  }
++
++  public void testInlineCatchAlias2() {
++    test(
++      "try {" +
++      "} catch (e) {" +
++      "  var y; y = e;" +
++      "  g();" +
++      "  y;y;" +
++      "}",
++      "try {" +
++      "} catch (e) {" +
++      "  e;" +
++      "  g();" +
++      "  e;e;" +
++      "}"
++      );
++  }
++
++  public void testLocalsOnly1() {
++    inlineLocalsOnly = true;
++    test(
++        "var x=1; x; function f() {var x = 1; x;}",
++        "var x=1; x; function f() {1;}");
++  }
++
++  public void testLocalsOnly2() {
++    inlineLocalsOnly = true;
++    test(
++        "/** @const */\n" +
++        "var X=1; X;\n" +
++        "function f() {\n" +
++        "  /** @const */\n" +
++        "  var X = 1; X;\n" +
++        "}",
++        "var X=1; X; function f() {1;}");
++  }
++
++  public void testInlineUndefined1() {
++    test("var x; x;",
++         "void 0;");
++  }
++
++  public void testInlineUndefined2() {
++    testSame("var x; x++;");
++  }
++
++  public void testInlineUndefined3() {
++    testSame("var x; var x;");
++  }
++
++  public void testInlineUndefined4() {
++    test("var x; x; x;",
++         "void 0; void 0;");
++  }
++
++  public void testInlineUndefined5() {
++    test("var x; for(x in a) {}",
++         "var x; for(x in a) {}");
++  }
++
++  public void testIssue90() {
++    test("var x; x && alert(1)",
++         "void 0 && alert(1)");
++  }
++
++  public void testRenamePropertyFunction() {
++    testSame("var JSCompiler_renameProperty; " +
++             "JSCompiler_renameProperty('foo')");
++  }
++
++  public void testThisAlias() {
++    test("function f() { var a = this; a.y(); a.z(); }",
++         "function f() { this.y(); this.z(); }");
++  }
++
++  public void testThisEscapedAlias() {
++    testSame(
++        "function f() { var a = this; var g = function() { a.y(); }; a.z(); }");
++  }
++
++  public void testInlineNamedFunction() {
++    test("function f() {} f();", "(function f(){})()");
++  }
++
++  public void testIssue378ModifiedArguments1() {
++    testSame(
++        "function g(callback) {\n" +
++        "  var f = callback;\n" +
++        "  arguments[0] = this;\n" +
++        "  f.apply(this, arguments);\n" +
++        "}");
++  }
++
++  public void testIssue378ModifiedArguments2() {
++    testSame(
++        "function g(callback) {\n" +
++        "  /** @const */\n" +
++        "  var f = callback;\n" +
++        "  arguments[0] = this;\n" +
++        "  f.apply(this, arguments);\n" +
++        "}");
++  }
++
++  public void testIssue378EscapedArguments1() {
++    testSame(
++        "function g(callback) {\n" +
++        "  var f = callback;\n" +
++        "  h(arguments,this);\n" +
++        "  f.apply(this, arguments);\n" +
++        "}\n" +
++        "function h(a,b) {\n" +
++        "  a[0] = b;" +
++        "}");
++  }
++
++  public void testIssue378EscapedArguments2() {
++    testSame(
++        "function g(callback) {\n" +
++        "  /** @const */\n" +
++        "  var f = callback;\n" +
++        "  h(arguments,this);\n" +
++        "  f.apply(this);\n" +
++        "}\n" +
++        "function h(a,b) {\n" +
++        "  a[0] = b;" +
++        "}");
++  }
++
++  public void testIssue378EscapedArguments3() {
++    test(
++        "function g(callback) {\n" +
++        "  var f = callback;\n" +
++        "  f.apply(this, arguments);\n" +
++        "}\n",
++        "function g(callback) {\n" +
++        "  callback.apply(this, arguments);\n" +
++        "}\n");
++  }
++
++  public void testIssue378EscapedArguments4() {
++    testSame(
++        "function g(callback) {\n" +
++        "  var f = callback;\n" +
++        "  h(arguments[0],this);\n" +
++        "  f.apply(this, arguments);\n" +
++        "}\n" +
++        "function h(a,b) {\n" +
++        "  a[0] = b;" +
++        "}");
++  }
++
++  public void testIssue378ArgumentsRead1() {
++    test(
++        "function g(callback) {\n" +
++        "  var f = callback;\n" +
++        "  var g = arguments[0];\n" +
++        "  f.apply(this, arguments);\n" +
++        "}",
++        "function g(callback) {\n" +
++        "  var g = arguments[0];\n" +
++        "  callback.apply(this, arguments);\n" +
++        "}");
++  }
++
++  public void testIssue378ArgumentsRead2() {
++    test(
++        "function g(callback) {\n" +
++        "  var f = callback;\n" +
++        "  h(arguments[0],this);\n" +
++        "  f.apply(this, arguments[0]);\n" +
++        "}\n" +
++        "function h(a,b) {\n" +
++        "  a[0] = b;" +
++        "}",
++        "function g(callback) {\n" +
++        "  h(arguments[0],this);\n" +
++        "  callback.apply(this, arguments[0]);\n" +
++        "}\n" +
++        "function h(a,b) {\n" +
++        "  a[0] = b;" +
++        "}");
++  }
++
++  public void testArgumentsModifiedInOuterFunction() {
++    test(
++      "function g(callback) {\n" +
++      "  var f = callback;\n" +
++      "  arguments[0] = this;\n" +
++      "  f.apply(this, arguments);\n" +
++      "  function inner(callback) {" +
++      "    var x = callback;\n" +
++      "    x.apply(this);\n" +
++      "  }" +
++      "}",
++      "function g(callback) {\n" +
++      "  var f = callback;\n" +
++      "  arguments[0] = this;\n" +
++      "  f.apply(this, arguments);\n" +
++      "  function inner(callback) {" +
++      "    callback.apply(this);\n" +
++      "  }" +
++      "}");
++  }
++
++  public void testArgumentsModifiedInInnerFunction() {
++    test(
++      "function g(callback) {\n" +
++      "  var f = callback;\n" +
++      "  f.apply(this, arguments);\n" +
++      "  function inner(callback) {" +
++      "    var x = callback;\n" +
++      "    arguments[0] = this;\n" +
++      "    x.apply(this);\n" +
++      "  }" +
++      "}",
++      "function g(callback) {\n" +
++      "  callback.apply(this, arguments);\n" +
++      "  function inner(callback) {" +
++      "    var x = callback;\n" +
++      "    arguments[0] = this;\n" +
++      "    x.apply(this);\n" +
++      "  }" +
++      "}");
++  }
++
++  public void testNoInlineRedeclaredExterns() {
++    String externs = "var test = 1;";
++    String code = "/** @suppress {duplicate} */ var test = 2;alert(test);";
++    test(externs, code, code, null, null);
++  }
++
++  public void testBug6598844() {
++    testSame(
++        "function F() { this.a = 0; }" +
++        "F.prototype.inc = function() { this.a++; return 10; };" +
++        "F.prototype.bar = function() { var x = this.inc(); this.a += x; };");
++  }
+ }

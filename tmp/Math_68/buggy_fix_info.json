@@ -1,0 +1,216 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math.optimization.general.MinpackTest::testMinpackJennrichSampson,org.apache.commons.math.optimization.general.MinpackTest::testMinpackFreudensteinRoth",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math.optimization.general.LevenbergMarquardtOptimizer",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "68",
+  "workingDir": "../bugs/Math_68_tmp",
+  "bug_name": "Math_68",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math.optimization.general.MinpackTest",
+      "test_function": "testMinpackJennrichSampson",
+      "assertion_line": "325",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c0.2578330049\u003e but was:\u003c0.257819926636807\u003e"
+    },
+    {
+      "test_class": "org.apache.commons.math.optimization.general.MinpackTest",
+      "test_function": "testMinpackFreudensteinRoth",
+      "assertion_line": "152",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c11.4121122022341\u003e but was:\u003c11.41300466147456\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/optimization/general/LevenbergMarquardtOptimizer.java",
+        "src/main/java/org/apache/commons/math/optimization/general/LevenbergMarquardtOptimizer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.optimization.general.LevenbergMarquardtOptimizer:LevenbergMarquardtOptimizer:[]:null",
+            "org.apache.commons.math.optimization.general.LevenbergMarquardtOptimizer:doOptimize:[]:VectorialPointValuePair"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.optimization.general.LevenbergMarquardtOptimizer:doOptimize:[]:VectorialPointValuePair",
+            "org.apache.commons.math.optimization.general.LevenbergMarquardtOptimizer:LevenbergMarquardtOptimizer:[]:null"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "166",
+            "248",
+            "254",
+            "306",
+            "348",
+            "417",
+            "419",
+            "420",
+            "421",
+            "422",
+            "428",
+            "430"
+          ],
+          "num": 12
+        },
+        {
+          "qualified_names": [
+            "165",
+            "248",
+            "303",
+            "350",
+            "419"
+          ],
+          "num": 5
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/optimization/general/LevenbergMarquardtOptimizer.java b/src/main/java/org/apache/commons/math/optimization/general/LevenbergMarquardtOptimizer.java\nindex 28aee43..d1b36ea 100644\n--- a/src/main/java/org/apache/commons/math/optimization/general/LevenbergMarquardtOptimizer.java\n+++ b/src/main/java/org/apache/commons/math/optimization/general/LevenbergMarquardtOptimizer.java\n@@ -163,7 +163,6 @@\n         setMaxIterations(1000);\n \n         // default values for the tuning parameters\n-        setConvergenceChecker(null);\n         setInitialStepBoundFactor(100.0);\n         setCostRelativeTolerance(1.0e-10);\n         setParRelativeTolerance(1.0e-10);\n@@ -245,13 +244,11 @@\n         // outer loop\n         lmPar \u003d 0;\n         boolean firstIteration \u003d true;\n-        VectorialPointValuePair current \u003d new VectorialPointValuePair(point, objective);\n         while (true) {\n \n             incrementIterationsCounter();\n \n             // compute the Q.R. decomposition of the jacobian matrix\n-            VectorialPointValuePair previous \u003d current;\n             updateJacobian();\n             qrDecomposition();\n \n@@ -303,7 +300,7 @@\n             }\n             if (maxCosine \u003c\u003d orthoTolerance) {\n                 // convergence has been reached\n-                return current;\n+                return new VectorialPointValuePair(point, objective);\n             }\n \n             // rescale if necessary\n@@ -345,7 +342,6 @@\n \n                 // evaluate the function at x + p and calculate its norm\n                 updateResidualsAndCost();\n-                current \u003d new VectorialPointValuePair(point, objective);\n \n                 // compute the scaled actual reduction\n                 double actRed \u003d -1.0;\n@@ -414,20 +410,14 @@\n                 }\n \n                 // tests for convergence.\n-                if (checker !\u003d null) {\n                     // we use the vectorial convergence checker\n-                    if (checker.converged(getIterations(), previous, current)) {\n-                        return current;                        \n-                    }\n-                } else {\n                     // we use the Levenberg-Marquardt specific convergence parameters\n                     if (((Math.abs(actRed) \u003c\u003d costRelativeTolerance) \u0026\u0026\n                          (preRed \u003c\u003d costRelativeTolerance) \u0026\u0026\n                          (ratio \u003c\u003d 2.0)) ||\n                         (delta \u003c\u003d parRelativeTolerance * xNorm)) {\n-                        return current;\n+                        return new VectorialPointValuePair(point, objective);\n                     }\n-                }\n \n                 // tests for termination and stringent tolerances\n                 // (2.2204e-16 is the machine epsilon for IEEE754)\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ReturnStatement [12756,12809]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ReturnStatement [17542,17595]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [7604,7632]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [10798,10821]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: current [10822,10829]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [10822,10877]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [10798,10878]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [11027,11070]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [12938,12953]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: current [14486,14493]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ASSIGNMENT_OPERATOR: \u003d [14494,14495]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Assignment [14486,14541]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ExpressionStatement [14486,14542]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [17990,18005]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [17360,17375]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Block [17377,17627]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [17633,18045]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [17356,18045]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

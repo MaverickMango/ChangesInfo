@@ -1,0 +1,54 @@
+Only in data/changesInfo//Time_15/properties/modified_classes/inducing/JodaTime/src: java
+Only in data/changesInfo//Time_15/properties/modified_classes/inducing/JodaTime/src/test/org/joda/time: field
+diff -u -r data/changesInfo//Time_15/properties/modified_classes/inducing/JodaTime/src/test/org/joda/time/gj/TestGJYearDateTimeField.java data/changesInfo//Time_15/cleaned/inducing/JodaTime/src/test/org/joda/time/gj/TestGJYearDateTimeField.java
+--- data/changesInfo//Time_15/properties/modified_classes/inducing/JodaTime/src/test/org/joda/time/gj/TestGJYearDateTimeField.java	2023-08-08 22:10:27.118436628 -0700
++++ data/changesInfo//Time_15/cleaned/inducing/JodaTime/src/test/org/joda/time/gj/TestGJYearDateTimeField.java	2023-08-08 22:10:21.342000000 -0700
+@@ -202,5 +202,48 @@
+             assertEquals(iCalendar.isLeapYear(field.get(var[i])) ? 1 : 0, field.getLeapAmount(var[i]));
+         }
+     }
++
++    public void testSafeMultiplyLongInt() {
++        assertEquals(0L, FieldUtils.safeMultiply(0L, 0));
++
++        assertEquals(1L, FieldUtils.safeMultiply(1L, 1));
++        assertEquals(3L, FieldUtils.safeMultiply(1L, 3));
++        assertEquals(3L, FieldUtils.safeMultiply(3L, 1));
++
++        assertEquals(6L, FieldUtils.safeMultiply(2L, 3));
++        assertEquals(-6L, FieldUtils.safeMultiply(2L, -3));
++        assertEquals(-6L, FieldUtils.safeMultiply(-2L, 3));
++        assertEquals(6L, FieldUtils.safeMultiply(-2L, -3));
++
++        assertEquals(-1L * Integer.MIN_VALUE, FieldUtils.safeMultiply(-1L, Integer.MIN_VALUE));
++
++        assertEquals(Long.MAX_VALUE, FieldUtils.safeMultiply(Long.MAX_VALUE, 1));
++        assertEquals(Long.MIN_VALUE, FieldUtils.safeMultiply(Long.MIN_VALUE, 1));
++        assertEquals(-Long.MAX_VALUE, FieldUtils.safeMultiply(Long.MAX_VALUE, -1));
++
++        try {
++            FieldUtils.safeMultiply(Long.MIN_VALUE, -1);
++            fail();
++        } catch (ArithmeticException e) {
++        }
++
++        try {
++            FieldUtils.safeMultiply(Long.MIN_VALUE, 100);
++            fail();
++        } catch (ArithmeticException e) {
++        }
++
++        try {
++            FieldUtils.safeMultiply(Long.MIN_VALUE, Integer.MAX_VALUE);
++            fail();
++        } catch (ArithmeticException e) {
++        }
++
++        try {
++            FieldUtils.safeMultiply(Long.MAX_VALUE, Integer.MIN_VALUE);
++            fail();
++        } catch (ArithmeticException e) {
++        }
++    }
+     
+ }

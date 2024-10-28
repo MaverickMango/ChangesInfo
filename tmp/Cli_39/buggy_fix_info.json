@@ -1,0 +1,124 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.cli.PatternOptionBuilderTest::testExistingFilePattern,org.apache.commons.cli.PatternOptionBuilderTest::testExistingFilePatternFileNotExist",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.cli.TypeHandler",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Cli",
+  "id": "39",
+  "workingDir": "../bugs/Cli_39_tmp",
+  "bug_name": "Cli_39",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.cli.PatternOptionBuilderTest",
+      "test_function": "testExistingFilePattern",
+      "assertion_line": "171",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "option g not FileInputStream"
+    },
+    {
+      "test_class": "org.apache.commons.cli.PatternOptionBuilderTest",
+      "test_function": "testExistingFilePatternFileNotExist",
+      "assertion_line": "180",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "option f parsed expected null, but was:\u003cnon-existing.file\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/cli/TypeHandler.java",
+        "src/main/java/org/apache/commons/cli/TypeHandler.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.cli.TypeHandler:openFile:[String str]:FileInputStream",
+            "org.apache.commons.cli.TypeHandler:createValue:[final String str, final Class\u003c?\u003e clazz]:Object"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.cli.TypeHandler:createValue:[final String str, final Class\u003c?\u003e clazz]:Object"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "92",
+            "234",
+            "235",
+            "236",
+            "237",
+            "238",
+            "239",
+            "240",
+            "241",
+            "242",
+            "243",
+            "244"
+          ],
+          "num": 12
+        },
+        {
+          "qualified_names": [
+            "92",
+            "233"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/cli/TypeHandler.java b/src/main/java/org/apache/commons/cli/TypeHandler.java\nindex 68b4f02..93c0b73 100644\n--- a/src/main/java/org/apache/commons/cli/TypeHandler.java\n+++ b/src/main/java/org/apache/commons/cli/TypeHandler.java\n@@ -89,7 +89,7 @@\n         }\n         else if (PatternOptionBuilder.EXISTING_FILE_VALUE \u003d\u003d clazz)\n         {\n-            return openFile(str);\n+            return createFile(str);\n         }\n         else if (PatternOptionBuilder.FILES_VALUE \u003d\u003d clazz)\n         {\n@@ -231,17 +231,6 @@\n      * @return The file input stream represented by \u003ccode\u003estr\u003c/code\u003e.\n      * @throws ParseException if the file is not exist or not readable\n      */\n-    public static FileInputStream openFile(String str) throws ParseException\n-    {\n-        try\n-        {\n-            return new FileInputStream(str);\n-        }\n-        catch (FileNotFoundException e)\n-        {\n-            throw new ParseException(\"Unable to find file: \" + str);\n-        }\n-    }\n \n     /**\n      * Returns the File[] represented by \u003ccode\u003estr\u003c/code\u003e.\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [3140,3163]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [3140,3161]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [6882,7447]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.apache.commons.cli.TypeHandler:openFile:[String str]:FileInputStream"
+      ],
+      "num": 1
+    }
+  }
+}

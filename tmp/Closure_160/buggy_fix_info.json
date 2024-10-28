@@ -1,0 +1,134 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.CommandLineRunnerTest::testCheckSymbolsOverrideForQuiet",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.Compiler",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "160",
+  "workingDir": "../bugs/Closure_160_tmp",
+  "bug_name": "Closure_160",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.CommandLineRunnerTest",
+      "test_function": "testCheckSymbolsOverrideForQuiet",
+      "assertion_line": "230",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected exactly one warning or error Errors:"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/Compiler.java",
+        "src/com/google/javascript/jscomp/Compiler.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.Compiler:initOptions:[CompilerOptions options]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.Compiler:initOptions:[CompilerOptions options]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "268",
+            "276",
+            "277",
+            "281"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "267",
+            "275",
+            "276",
+            "277",
+            "281"
+          ],
+          "num": 5
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/Compiler.java b/src/com/google/javascript/jscomp/Compiler.java\nindex a4a41a8..1185021 100644\n--- a/src/com/google/javascript/jscomp/Compiler.java\n+++ b/src/com/google/javascript/jscomp/Compiler.java\n@@ -265,7 +265,6 @@\n             getDiagnosticGroups().getRegisteredGroups()));\n     guards.add(options.getWarningsGuard());\n \n-    ComposeWarningsGuard composedGuards \u003d new ComposeWarningsGuard(guards);\n \n     // All passes must run the variable check. This synthesizes\n     // variables later so that the compiler doesn\u0027t crash. It also\n@@ -273,12 +272,13 @@\n     // about missing variable declarations, we shut that specific\n     // error off.\n     if (!options.checkSymbols \u0026\u0026\n-        !composedGuards.enables(DiagnosticGroups.CHECK_VARIABLES)) {\n-      composedGuards.addGuard(new DiagnosticGroupWarningsGuard(\n+        (warningsGuard \u003d\u003d null || !warningsGuard.disables(\n+            DiagnosticGroups.CHECK_VARIABLES))) {\n+      guards.add(new DiagnosticGroupWarningsGuard(\n           DiagnosticGroups.CHECK_VARIABLES, CheckLevel.OFF));\n     }\n \n-    this.warningsGuard \u003d composedGuards;\n+    this.warningsGuard \u003d new ComposeWarningsGuard(guards);\n   }\n \n   /**\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [9128,9384]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [8841,8861]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: composedGuards [8862,8876]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationFragment [8862,8911]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "VariableDeclarationStatement [8841,8912]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [9204,9433]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: composedGuards [9460,9474]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,148 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.deser.TestJdkTypes::testLocale",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.deser.std.FromStringDeserializer",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "56",
+  "workingDir": "../bugs/JacksonDatabind_56_tmp",
+  "bug_name": "JacksonDatabind_56",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.deser.TestJdkTypes",
+      "test_function": "testLocale",
+      "assertion_line": "148",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003cen_US\u003e but was:\u003cen-us\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/deser/std/FromStringDeserializer.java",
+        "src/main/java/com/fasterxml/jackson/databind/deser/std/FromStringDeserializer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.std.FromStringDeserializer\\$Std:_deserialize:[String value, DeserializationContext ctxt]:Object",
+            "com.fasterxml.jackson.databind.deser.std.FromStringDeserializer\\$Std:_firstHyphenOrUnderscore:[String str]:int"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.std.FromStringDeserializer\\$Std:_deserialize:[String value, DeserializationContext ctxt]:Object"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "231",
+            "237",
+            "292",
+            "293",
+            "294",
+            "295",
+            "296",
+            "297",
+            "298",
+            "299",
+            "300",
+            "301"
+          ],
+          "num": 12
+        },
+        {
+          "qualified_names": [
+            "231",
+            "237",
+            "291"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/std/FromStringDeserializer.java b/src/main/java/com/fasterxml/jackson/databind/deser/std/FromStringDeserializer.java\nindex e27d6a9..c27ea72 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/deser/std/FromStringDeserializer.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/deser/std/FromStringDeserializer.java\n@@ -228,13 +228,13 @@\n                 return Pattern.compile(value);\n             case STD_LOCALE:\n                 {\n-                    int ix \u003d _firstHyphenOrUnderscore(value);\n+                    int ix \u003d value.indexOf(\u0027_\u0027);\n                     if (ix \u003c 0) { // single argument\n                         return new Locale(value);\n                     }\n                     String first \u003d value.substring(0, ix);\n                     value \u003d value.substring(ix+1);\n-                    ix \u003d _firstHyphenOrUnderscore(value);\n+                    ix \u003d value.indexOf(\u0027_\u0027);\n                     if (ix \u003c 0) { // two pieces\n                         return new Locale(first, value);\n                     }\n@@ -289,15 +289,5 @@\n         }\n \n \n-        protected int _firstHyphenOrUnderscore(String str)\n-        {\n-            for (int i \u003d 0, end \u003d str.length(); i \u003c end; ++i) {\n-                char c \u003d str.charAt(i);\n-                if (c \u003d\u003d \u0027_\u0027 || c \u003d\u003d \u0027-\u0027) {\n-                    return i;\n-                }\n-            }\n-            return -1;\n-        }\n     }\n }\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [8373,8378]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [8653,8658]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "CharacterLiteral: \u0027_\u0027 [8387,8390]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "CharacterLiteral: \u0027_\u0027 [8667,8670]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [10982,11285]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.deser.std.FromStringDeserializer\\$Std:_firstHyphenOrUnderscore:[String str]:int"
+      ],
+      "num": 1
+    }
+  }
+}

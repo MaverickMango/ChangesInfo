@@ -1,0 +1,103 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.mockitousage.bugs.ListenersLostOnResetMockTest::listener",
+    "test.dir": "test",
+    "clz.modified": "org.mockito.internal.util.MockUtil",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Mockito",
+  "id": "27",
+  "workingDir": "../bugs/Mockito_27_tmp",
+  "bug_name": "Mockito_27",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.mockitousage.bugs.ListenersLostOnResetMockTest",
+      "test_function": "listener",
+      "assertion_line": "23",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/org/mockito/internal/util/MockUtil.java",
+        "src/org/mockito/internal/util/MockUtil.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.mockito.internal.util.MockUtil:resetMock:[T mock]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.mockito.internal.util.MockUtil:resetMock:[T mock]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "64"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "64",
+            "65"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/org/mockito/internal/util/MockUtil.java b/src/org/mockito/internal/util/MockUtil.java\nindex d7c530c..3c20596 100644\n--- a/src/org/mockito/internal/util/MockUtil.java\n+++ b/src/org/mockito/internal/util/MockUtil.java\n@@ -61,7 +61,8 @@\n \r\n     public \u003cT\u003e void resetMock(T mock) {\r\n         MockHandlerInterface\u003cT\u003e oldMockHandler \u003d getMockHandler(mock);\r\n-        MethodInterceptorFilter newFilter \u003d newMethodInterceptorFilter(oldMockHandler.getMockSettings());\r\n+        MockHandler\u003cT\u003e newMockHandler \u003d new MockHandler\u003cT\u003e(oldMockHandler);\r\n+        MethodInterceptorFilter newFilter \u003d new MethodInterceptorFilter(newMockHandler, (MockSettingsImpl) org.mockito.Mockito.withSettings().defaultAnswer(org.mockito.Mockito.RETURNS_DEFAULTS));\r\n         ((Factory) mock).setCallback(0, newFilter);\r\n     }\r\n \r\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [2375,2442]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [2452,2639]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [2375,2472]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,485 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Time",
+  "id": "5",
+  "workingDir": "../bugs/Time_5_buggy",
+  "inducingCommit": "31de4ef49abf4eedd6a94e32023dcc301fc4aa14",
+  "originalCommit": "a13f93ca6656aea3adab03a2dea0704f860679cb",
+  "bug_name": "Time_5",
+  "derive": "defects4j",
+  "original_fixing_commit": "a6cb59ed2280ab0a32995fa8b5f1a7b0d47cb815",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "JodaTime/src/java/org/joda/time/Period.java",
+        "JodaTime/src/java/org/joda/time/Period.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "plus",
+            "minus"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "normalizedStandard",
+            "normalizedStandard",
+            "minus",
+            "plus"
+          ],
+          "num": 4
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "20",
+            "933",
+            "1112",
+            "1443"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "21",
+            "934",
+            "1113",
+            "1445",
+            "1446",
+            "1447",
+            "1448",
+            "1449",
+            "1450",
+            "1451",
+            "1452",
+            "1453",
+            "1454",
+            "1455",
+            "1456",
+            "1457",
+            "1458",
+            "1459",
+            "1460",
+            "1461",
+            "1462",
+            "1463",
+            "1464",
+            "1465",
+            "1466",
+            "1467",
+            "1468",
+            "1469",
+            "1470",
+            "1471",
+            "1472",
+            "1473",
+            "1474",
+            "1475",
+            "1476",
+            "1477",
+            "1478",
+            "1479",
+            "1480",
+            "1481",
+            "1482",
+            "1483",
+            "1484",
+            "1485",
+            "1486",
+            "1487",
+            "1488",
+            "1489",
+            "1490",
+            "1491",
+            "1492",
+            "1493",
+            "1494",
+            "1495",
+            "1496",
+            "1497",
+            "1498",
+            "1499",
+            "1500",
+            "1501",
+            "1502",
+            "1503",
+            "1504",
+            "1505",
+            "1506",
+            "1507",
+            "1508",
+            "1509",
+            "1510",
+            "1511",
+            "1512",
+            "1513",
+            "1514",
+            "1515",
+            "1516",
+            "1517",
+            "1518",
+            "1519",
+            "1520",
+            "1521",
+            "1522",
+            "1523",
+            "1524",
+            "1525",
+            "1526",
+            "1527",
+            "1528",
+            "1529"
+          ],
+          "num": 88
+        }
+      ],
+      "diff": "diff --git a/JodaTime/src/java/org/joda/time/Period.java b/JodaTime/src/java/org/joda/time/Period.java\nindex 8cb6ee4..d66b44a 100644\n--- a/JodaTime/src/java/org/joda/time/Period.java\n+++ b/JodaTime/src/java/org/joda/time/Period.java\n@@ -18,6 +18,7 @@\n import java.io.Serializable;\n \n import org.joda.time.base.BasePeriod;\n+import org.joda.time.chrono.ISOChronology;\n import org.joda.time.field.FieldUtils;\n \n /**\n@@ -930,7 +931,7 @@\n      * \u003cp\u003e\n      * Each field of the period is added separately. Thus a period of\n      * 2 hours 30 minutes plus 3 hours 40 minutes will produce a result\n-     * of 5 hours 70 minutes.\n+     * of 5 hours 70 minutes - see {@link #normalizedStandard()}.\n      * \u003cp\u003e\n      * If the period being added contains a non-zero amount for a field that\n      * is not supported in this period then an exception is thrown.\n@@ -1109,7 +1110,7 @@\n      * \u003cp\u003e\n      * Each field of the period is subtracted separately. Thus a period of\n      * 3 hours 30 minutes minus 2 hours 40 minutes will produce a result\n-     * of 1 hour and -10 minutes.\n+     * of 1 hour and -10 minutes - see {@link #normalizedStandard()}.\n      * \u003cp\u003e\n      * If the period being added contains a non-zero amount for a field that\n      * is not supported in this period then an exception is thrown.\n@@ -1441,4 +1442,89 @@\n         }\n     }\n \n+    //-----------------------------------------------------------------------\n+    /**\n+     * Normalizes this period using standard rules, assuming a 12 month year,\n+     * 7 day week, 24 hour day, 60 minute hour and 60 second minute.\n+     * \u003cp\u003e\n+     * This method allows you to normalize a period.\n+     * However to achieve this it makes the assumption that all years are\n+     * 12 months, all weeks are 7 days, all days are 24 hours,\n+     * all hours are 60 minutes and all minutes are 60 seconds. This is not\n+     * true when daylight savings time is considered, and may also not be true\n+     * for some chronologies. However, it is included as it is a useful operation\n+     * for many applications and business rules.\n+     * \u003cp\u003e\n+     * If the period contains years or months, then the months will be\n+     * normalized to be between 0 and 11. The days field and below will be\n+     * normalized as necessary, however this will not overflow into the months\n+     * field. Thus a period of 1 year 15 months will normalize to 2 years 3 months.\n+     * But a period of 1 month 40 days will remain as 1 month 40 days.\n+     * \u003cp\u003e\n+     * The result will always have a \u003ccode\u003ePeriodType\u003c/code\u003e of standard, thus\n+     * days will be grouped into weeks.\n+     * \n+     * @return a normalized period equivalent to this period\n+     * @throws ArithmeticException if any field is too large to be represented\n+     * @since 1.5\n+     */\n+    public Period normalizedStandard() {\n+        return normalizedStandard(PeriodType.standard());\n+    }\n+\n+    //-----------------------------------------------------------------------\n+    /**\n+     * Normalizes this period using standard rules, assuming a 12 month year,\n+     * 7 day week, 24 hour day, 60 minute hour and 60 second minute,\n+     * providing control over how the result is split into fields.\n+     * \u003cp\u003e\n+     * This method allows you to normalize a period.\n+     * However to achieve this it makes the assumption that all years are\n+     * 12 months, all weeks are 7 days, all days are 24 hours,\n+     * all hours are 60 minutes and all minutes are 60 seconds. This is not\n+     * true when daylight savings time is considered, and may also not be true\n+     * for some chronologies. However, it is included as it is a useful operation\n+     * for many applications and business rules.\n+     * \u003cp\u003e\n+     * If the period contains years or months, then the months will be\n+     * normalized to be between 0 and 11. The days field and below will be\n+     * normalized as necessary, however this will not overflow into the months\n+     * field. Thus a period of 1 year 15 months will normalize to 2 years 3 months.\n+     * But a period of 1 month 40 days will remain as 1 month 40 days.\n+     * \u003cp\u003e\n+     * The PeriodType parameter controls how the result is created. It allows\n+     * you to omit certain fields from the result if desired. For example,\n+     * you may not want the result to include weeks, in which case you pass\n+     * in \u003ccode\u003ePeriodType.yearMonthDayTime()\u003c/code\u003e.\n+     * \n+     * @param type  the period type of the new period, null means standard type\n+     * @return a normalized period equivalent to this period\n+     * @throws ArithmeticException if any field is too large to be represented\n+     * @throws UnsupportedOperationException if this period contains non-zero\n+     *  years or months but the specified period type does not support them\n+     * @since 1.5\n+     */\n+    public Period normalizedStandard(PeriodType type) {\n+        long millis \u003d getMillis();  // no overflow can happen, even with Integer.MAX_VALUEs\n+        millis +\u003d (((long) getSeconds()) * ((long) DateTimeConstants.MILLIS_PER_SECOND));\n+        millis +\u003d (((long) getMinutes()) * ((long) DateTimeConstants.MILLIS_PER_MINUTE));\n+        millis +\u003d (((long) getHours()) * ((long) DateTimeConstants.MILLIS_PER_HOUR));\n+        millis +\u003d (((long) getDays()) * ((long) DateTimeConstants.MILLIS_PER_DAY));\n+        millis +\u003d (((long) getWeeks()) * ((long) DateTimeConstants.MILLIS_PER_WEEK));\n+        Period result \u003d new Period(millis, DateTimeUtils.getPeriodType(type), ISOChronology.getInstanceUTC());\n+        int years \u003d getYears();\n+        int months \u003d getMonths();\n+        if (years !\u003d 0 || months !\u003d 0) {\n+            years \u003d FieldUtils.safeAdd(years, months / 12);\n+            months \u003d months % 12;\n+            if (years !\u003d 0) {\n+                result \u003d result.withYears(years);\n+            }\n+            if (months !\u003d 0) {\n+                result \u003d result.withMonths(months);\n+            }\n+        }\n+        return result;\n+    }\n+\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [709,751]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [61539,62976]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [63060,65983]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [37539,37568]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: . [37568,37569]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [45047,45076]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: . [45076,45077]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "JodaTime/src/java/org/joda/time/PeriodType.java",
+        "JodaTime/src/java/org/joda/time/PeriodType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "setIndexedField"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "setIndexedField"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "685",
+            "690"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "685",
+            "690"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/JodaTime/src/java/org/joda/time/PeriodType.java b/JodaTime/src/java/org/joda/time/PeriodType.java\nindex e4431f3..94c4118 100644\n--- a/JodaTime/src/java/org/joda/time/PeriodType.java\n+++ b/JodaTime/src/java/org/joda/time/PeriodType.java\n@@ -682,12 +682,12 @@\n      * @param index  the index to use\n      * @param values  the array to populate\n      * @param newValue  the value to set\n-     * @throws IllegalArgumentException if not supported\n+     * @throws UnsupportedOperationException if not supported\n      */\n     boolean setIndexedField(ReadablePeriod period, int index, int[] values, int newValue) {\n         int realIndex \u003d iIndices[index];\n         if (realIndex \u003d\u003d -1) {\n-            throw new IllegalArgumentException(\"Field is not supported\");\n+            throw new UnsupportedOperationException(\"Field is not supported\");\n         }\n         values[realIndex] \u003d newValue;\n         return true;\n",
+      "operations": [
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "normalizedStandard"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "JodaTime/src/java/org/joda/time/Period.java",
+        "JodaTime/src/java/org/joda/time/Period.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "normalizedStandard"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "normalizedStandard"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1514",
+            "1518",
+            "1519",
+            "1520",
+            "1521",
+            "1523",
+            "1524"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "1508",
+            "1515",
+            "1519",
+            "1520",
+            "1521",
+            "1522",
+            "1523",
+            "1525",
+            "1526",
+            "1527",
+            "1528",
+            "1529",
+            "1530",
+            "1531"
+          ],
+          "num": 14
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Time_5/properties/modified_classes/inducing/JodaTime/src/java/org/joda/time/Period.java data/changesInfo//Time_5/cleaned/fixing/JodaTime/src/java/org/joda/time/Period.java\n--- data/changesInfo//Time_5/properties/modified_classes/inducing/JodaTime/src/java/org/joda/time/Period.java\t2023-08-25 14:18:21.763439083 +0800\n+++ data/changesInfo//Time_5/cleaned/fixing/JodaTime/src/java/org/joda/time/Period.java\t2023-07-28 15:23:42.169566924 +0800\n@@ -1505,23 +1505,30 @@\n      * @since 1.5\n      */\n     public Period normalizedStandard(PeriodType type) {\n+        type \u003d DateTimeUtils.getPeriodType(type);\n         long millis \u003d getMillis();  // no overflow can happen, even with Integer.MAX_VALUEs\n         millis +\u003d (((long) getSeconds()) * ((long) DateTimeConstants.MILLIS_PER_SECOND));\n         millis +\u003d (((long) getMinutes()) * ((long) DateTimeConstants.MILLIS_PER_MINUTE));\n         millis +\u003d (((long) getHours()) * ((long) DateTimeConstants.MILLIS_PER_HOUR));\n         millis +\u003d (((long) getDays()) * ((long) DateTimeConstants.MILLIS_PER_DAY));\n         millis +\u003d (((long) getWeeks()) * ((long) DateTimeConstants.MILLIS_PER_WEEK));\n-        Period result \u003d new Period(millis, DateTimeUtils.getPeriodType(type), ISOChronology.getInstanceUTC());\n+        Period result \u003d new Period(millis, type, ISOChronology.getInstanceUTC());\n         int years \u003d getYears();\n         int months \u003d getMonths();\n         if (years !\u003d 0 || months !\u003d 0) {\n-            years \u003d FieldUtils.safeAdd(years, months / 12);\n-            months \u003d months % 12;\n-            if (years !\u003d 0) {\n-                result \u003d result.withYears(years);\n+            long totalMonths \u003d years * 12L + months;\n+            if (type.isSupported(DurationFieldType.YEARS_TYPE)) {\n+                int normalizedYears \u003d FieldUtils.safeToInt(totalMonths / 12);\n+                result \u003d result.withYears(normalizedYears);\n+                totalMonths \u003d totalMonths - (normalizedYears * 12);\n             }\n-            if (months !\u003d 0) {\n-                result \u003d result.withMonths(months);\n+            if (type.isSupported(DurationFieldType.MONTHS_TYPE)) {\n+                int normalizedMonths \u003d FieldUtils.safeToInt(totalMonths);\n+                result \u003d result.withYears(normalizedMonths);\n+                totalMonths \u003d totalMonths - normalizedMonths;\n+            }\n+            if (totalMonths !\u003d 0) {\n+                throw new UnsupportedOperationException(\"Unable to normalize as PeriodType is missing either years or months but period has a month/year amount: \" + toString());\n             }\n         }\n         return result;\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ExpressionStatement [64922,64963]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Assignment [64922,64962]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: type [64922,64926]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ASSIGNMENT_OPERATOR: \u003d [64927,64928]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [65693,65733]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [65746,66019]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [66032,66297]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [66310,66525]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [65750,65796]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [66036,66083]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [65816,65877]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [65954,66005]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [66103,66160]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [66238,66283]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [65672,65719]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [65732,65753]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [65770,65780]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [65766,65847]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [65864,65875]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [65860,65944]",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,152 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.dataformat.xml.lists.NestedUnwrappedLists180Test::testNestedUnwrappedLists180,com.fasterxml.jackson.dataformat.xml.lists.NestedUnwrappedListsTest::testNestedWithEmpty2,com.fasterxml.jackson.dataformat.xml.lists.NestedUnwrappedListsTest::testNestedWithEmpty",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.dataformat.xml.deser.FromXmlParser",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonXml",
+  "id": "1",
+  "workingDir": "../bugs/JacksonXml_1_tmp",
+  "bug_name": "JacksonXml_1",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.dataformat.xml.lists.NestedUnwrappedLists180Test",
+      "test_function": "testNestedUnwrappedLists180",
+      "assertion_line": "72",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    },
+    {
+      "test_class": "com.fasterxml.jackson.dataformat.xml.lists.NestedUnwrappedListsTest",
+      "test_function": "testNestedWithEmpty2",
+      "assertion_line": "122",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c1\u003e but was:\u003c0\u003e"
+    },
+    {
+      "test_class": "com.fasterxml.jackson.dataformat.xml.lists.NestedUnwrappedListsTest",
+      "test_function": "testNestedWithEmpty",
+      "assertion_line": "100",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c1\u003e but was:\u003c0\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/dataformat/xml/deser/FromXmlParser.java",
+        "src/main/java/com/fasterxml/jackson/dataformat/xml/deser/FromXmlParser.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.dataformat.xml.deser.FromXmlParser:nextToken:[]:JsonToken"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.dataformat.xml.deser.FromXmlParser:nextToken:[]:JsonToken"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "512",
+            "515",
+            "516",
+            "517",
+            "518",
+            "555",
+            "556",
+            "557"
+          ],
+          "num": 8
+        },
+        {
+          "qualified_names": [
+            "511",
+            "550",
+            "551",
+            "552",
+            "553"
+          ],
+          "num": 5
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/dataformat/xml/deser/FromXmlParser.java b/src/main/java/com/fasterxml/jackson/dataformat/xml/deser/FromXmlParser.java\nindex 58618b4..91b14dd 100644\n--- a/src/main/java/com/fasterxml/jackson/dataformat/xml/deser/FromXmlParser.java\n+++ b/src/main/java/com/fasterxml/jackson/dataformat/xml/deser/FromXmlParser.java\n@@ -509,13 +509,8 @@\n             // Simple, except that if this is a leaf, need to suppress end:\n             if (_mayBeLeaf) {\n                 _mayBeLeaf \u003d false;\n-                if (_parsingContext.inArray()) {\n                     // 06-Jan-2015, tatu: as per [dataformat-xml#180], need to\n                     //    expose as empty Object, not null\n-                    _nextToken \u003d JsonToken.END_OBJECT;\n-                    _parsingContext \u003d _parsingContext.createChildObjectContext(-1, -1);\n-                    return (_currToken \u003d JsonToken.START_OBJECT);\n-                }\n                 return (_currToken \u003d JsonToken.VALUE_NULL);\n             }\n             _currToken \u003d _parsingContext.inArray() ? JsonToken.END_ARRAY : JsonToken.END_OBJECT;\n@@ -552,9 +547,10 @@\n                         // 06-Jan-2015, tatu: as per [dataformat-xml#180], need to\n                         //    expose as empty Object, not null (or, worse, as used to\n                         //    be done, by swallowing the token)\n-                        _nextToken \u003d JsonToken.END_OBJECT;\n-                        _parsingContext \u003d _parsingContext.createChildObjectContext(-1, -1);\n-                        return (_currToken \u003d JsonToken.START_OBJECT);\n+                        _currToken \u003d JsonToken.END_ARRAY;\n+                        _parsingContext \u003d _parsingContext.getParent();\n+                        _namesToWrap \u003d _parsingContext.getNamesToWrap();\n+                        return _currToken;\n                     }\n                 }\n                 return (_currToken \u003d JsonToken.VALUE_STRING);\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [18875,18923]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ReturnStatement [18948,18966]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [16724,17121]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_ARGUMENTS [19140,19146]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ReturnStatement [19173,19218]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

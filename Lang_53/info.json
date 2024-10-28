@@ -1,0 +1,278 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Lang",
+  "id": "53",
+  "workingDir": "../bugs/Lang_53_buggy",
+  "inducingCommit": "bb1671667d9085fb76bd06af7f7ad91d2c1c8389",
+  "originalCommit": "c8fc5f3dff9491b076a1f76ed5a2584908b1db4f",
+  "bug_name": "Lang_53",
+  "derive": "defects4j",
+  "original_fixing_commit": "d3b1163073c7aeb6011a5b65bfadad15bfc0f108",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/lang/time/DateUtils.java",
+        "src/java/org/apache/commons/lang/time/DateUtils.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "modify"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "modify"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "623",
+            "692"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "624",
+            "625",
+            "626",
+            "627",
+            "628",
+            "629",
+            "630",
+            "631",
+            "632",
+            "633",
+            "634",
+            "635",
+            "636",
+            "637",
+            "638",
+            "639",
+            "640",
+            "641",
+            "642",
+            "643",
+            "644",
+            "645",
+            "646",
+            "647",
+            "648",
+            "649",
+            "650",
+            "651",
+            "652",
+            "653",
+            "654",
+            "655",
+            "656",
+            "657",
+            "658",
+            "659",
+            "660",
+            "661",
+            "662",
+            "663",
+            "664",
+            "665",
+            "666",
+            "667",
+            "668",
+            "737",
+            "738",
+            "739"
+          ],
+          "num": 48
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/lang/time/DateUtils.java b/src/java/org/apache/commons/lang/time/DateUtils.java\nindex f042237..79c13f0 100644\n--- a/src/java/org/apache/commons/lang/time/DateUtils.java\n+++ b/src/java/org/apache/commons/lang/time/DateUtils.java\n@@ -621,6 +621,51 @@\n             throw new ArithmeticException(\"Calendar value too large for accurate calculations\");\n         }\n         \n+        if (field \u003d\u003d Calendar.MILLISECOND) {\n+            return;\n+        }\n+\n+        // ----------------- Fix for LANG-59 ---------------------- START ---------------\n+        // see http://issues.apache.org/jira/browse/LANG-59\n+        //\n+        // Manually truncate milliseconds, seconds and minutes, rather than using\n+        // Calendar methods.\n+\n+        Date date \u003d val.getTime();\n+        long time \u003d date.getTime();\n+        boolean done \u003d false;\n+\n+        // truncate milliseconds\n+        int millisecs \u003d val.get(Calendar.MILLISECOND);\n+        if (!round || millisecs \u003c 500) {\n+            time \u003d time - millisecs;\n+            if (field \u003d\u003d Calendar.SECOND) {\n+                done \u003d true;\n+            }\n+        }\n+\n+        // truncate seconds\n+        int seconds \u003d val.get(Calendar.SECOND);\n+        if (!done \u0026\u0026 (!round || seconds \u003c 30)) {\n+            time \u003d time - (seconds * 1000L);\n+            if (field \u003d\u003d Calendar.MINUTE) {\n+                done \u003d true;\n+            }\n+        }\n+\n+        // truncate minutes\n+        int minutes \u003d val.get(Calendar.MINUTE);\n+        if (!done \u0026\u0026 (!round || minutes \u003c 30)) {\n+            time \u003d time - (minutes * 60000L);\n+        }\n+\n+        // reset time\n+        if (date.getTime() !\u003d time) {\n+            date.setTime(time);\n+            val.setTime(date);\n+        }\n+        // ----------------- Fix for LANG-59 ----------------------- END ----------------\n+\n         boolean roundUp \u003d false;\n         for (int i \u003d 0; i \u003c fields.length; i++) {\n             for (int j \u003d 0; j \u003c fields[i].length; j++) {\n@@ -689,7 +734,9 @@\n                 roundUp \u003d offset \u003e ((max - min) / 2);\n             }\n             //We need to remove this field\n-            val.set(fields[i][0], val.get(fields[i][0]) - offset);\n+            if (offset !\u003d 0) {\n+                val.set(fields[i][0], val.get(fields[i][0]) - offset);\n+            }\n         }\n         throw new IllegalArgumentException(\"The field \" + field + \" is not supported\");\n \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [24656,24722]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [25005,25031]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [25040,25067]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [25076,25097]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [25140,25186]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [25195,25361]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [25399,25438]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [25447,25629]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [25667,25706]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [25715,25811]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [25843,25945]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [29435,29538]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [29439,29450]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [29452,29538]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/lang/time/DateUtils.java",
+        "src/java/org/apache/commons/lang/time/DateUtils.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "modify"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "modify"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "642",
+            "643",
+            "644",
+            "651",
+            "652",
+            "653"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "642",
+            "643",
+            "644",
+            "651",
+            "652",
+            "653"
+          ],
+          "num": 6
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Lang_53/properties/modified_classes/inducing/src/java/org/apache/commons/lang/time/DateUtils.java data/changesInfo//Lang_53/cleaned/fixing/src/java/org/apache/commons/lang/time/DateUtils.java\n--- data/changesInfo//Lang_53/properties/modified_classes/inducing/src/java/org/apache/commons/lang/time/DateUtils.java\t2023-08-25 13:40:36.905953927 +0800\n+++ data/changesInfo//Lang_53/cleaned/fixing/src/java/org/apache/commons/lang/time/DateUtils.java\t2023-06-20 22:03:38.571838305 +0800\n@@ -639,18 +639,18 @@\n         int millisecs \u003d val.get(Calendar.MILLISECOND);\n         if (!round || millisecs \u003c 500) {\n             time \u003d time - millisecs;\n-            if (field \u003d\u003d Calendar.SECOND) {\n-                done \u003d true;\n-            }\n+        }\n+        if (field \u003d\u003d Calendar.SECOND) {\n+            done \u003d true;\n         }\n \n         // truncate seconds\n         int seconds \u003d val.get(Calendar.SECOND);\n         if (!done \u0026\u0026 (!round || seconds \u003c 30)) {\n             time \u003d time - (seconds * 1000L);\n-            if (field \u003d\u003d Calendar.MINUTE) {\n-                done \u003d true;\n-            }\n+        }\n+        if (field \u003d\u003d Calendar.MINUTE) {\n+            done \u003d true;\n         }\n \n         // truncate minutes\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

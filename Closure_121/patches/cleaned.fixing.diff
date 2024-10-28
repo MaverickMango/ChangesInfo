@@ -1,0 +1,127 @@
+Only in data/changesInfo//Closure_121/properties/modified_classes/inducing/src/com/google/javascript/jscomp: AbstractCompilerRunner.java
+Only in data/changesInfo//Closure_121/properties/modified_classes/inducing/src/com/google/javascript/jscomp: CollapseProperties.java
+Only in data/changesInfo//Closure_121/properties/modified_classes/inducing/src/com/google/javascript/jscomp: ExpressionDecomposer.java
+Only in data/changesInfo//Closure_121/properties/modified_classes/inducing/src/com/google/javascript/jscomp: FunctionArgumentInjector.java
+diff -u -r data/changesInfo//Closure_121/properties/modified_classes/inducing/src/com/google/javascript/jscomp/InlineVariables.java data/changesInfo//Closure_121/cleaned/fixing/src/com/google/javascript/jscomp/InlineVariables.java
+--- data/changesInfo//Closure_121/properties/modified_classes/inducing/src/com/google/javascript/jscomp/InlineVariables.java	2023-12-27 22:44:17.590288776 -0800
++++ data/changesInfo//Closure_121/cleaned/fixing/src/com/google/javascript/jscomp/InlineVariables.java	2023-06-15 05:34:15.015657916 -0700
+@@ -233,7 +233,9 @@
+       // reference data is out of sync. We're better off just waiting for
+       // the next pass.)
+       if (!staleVars.contains(v) && referenceInfo.isWellDefined() &&
+-          referenceInfo.isAssignedOnce()) {
++          referenceInfo.isAssignedOnce() &&
++          (isInlineableDeclaredConstant(v, referenceInfo) ||
++            referenceInfo.isOnlyAssignmentSameScopeAsDeclaration())) {
+         List<Reference> refs = referenceInfo.references;
+         for (int i = 1 /* start from a read */; i < refs.size(); i++) {
+           Node nameNode = refs.get(i).getNameNode();
+Only in data/changesInfo//Closure_121/properties/modified_classes/inducing/src/com/google/javascript/jscomp: NodeIterators.java
+Only in data/changesInfo//Closure_121/properties/modified_classes/inducing/src/com/google/javascript/jscomp: NodeUtil.java
+Only in data/changesInfo//Closure_121/properties/modified_classes/inducing/src/com/google/javascript/jscomp: Normalize.java
+diff -u -r data/changesInfo//Closure_121/properties/modified_classes/inducing/src/com/google/javascript/jscomp/ReferenceCollectingCallback.java data/changesInfo//Closure_121/cleaned/fixing/src/com/google/javascript/jscomp/ReferenceCollectingCallback.java
+--- data/changesInfo//Closure_121/properties/modified_classes/inducing/src/com/google/javascript/jscomp/ReferenceCollectingCallback.java	2023-12-27 22:44:17.590288776 -0800
++++ data/changesInfo//Closure_121/cleaned/fixing/src/com/google/javascript/jscomp/ReferenceCollectingCallback.java	2023-06-15 05:56:49.878745209 -0700
+@@ -333,6 +333,49 @@
+     }
+ 
+     /**
++     * @return Whether the variable is only assigned a value once for its
++     *     lifetime.
++     */
++    boolean isOnlyAssignmentSameScopeAsDeclaration() {
++      Reference ref = getOneAndOnlyAssignment();
++      Preconditions.checkNotNull(ref);
++
++      // Make sure the declaration is the same scope as the assignment.
++      // Otherwise, the variable can be assigned multiple times and possibly
++      // with a different variable.
++      for (BasicBlock block = ref.getBasicBlock();
++           block != null; block = block.getParent()) {
++        if (block.isFunction) {
++          if (ref.getSymbol().scope != ref.scope) {
++            return false;
++          }
++        }
++      }
++
++      return true;
++    }
++
++    /**
++     * @return The one and only assignment. Returns if there are 0 or 2+
++     *    assignments.
++     */
++    private Reference getOneAndOnlyAssignment() {
++      Reference assignment = null;
++      int size = references.size();
++      for (int i = 0; i < size; i++) {
++        Reference ref = references.get(i);
++        if (ref.isLvalue() || ref.isInitializingDeclaration()) {
++          if (assignment == null) {
++            assignment = ref;
++          } else {
++            return null;
++          }
++        }
++      }
++      return assignment;
++    }
++
++    /**
+      * @return Whether the variable is only assigned a value once.
+      */
+     boolean isAssignedOnce() {
+@@ -358,6 +401,7 @@
+       }
+       return false;
+     }
++
+   }
+ 
+   /**
+@@ -399,6 +443,10 @@
+       this.sourceName = sourceName;
+     }
+ 
++    public Var getSymbol() {
++      return scope.getVar(nameNode.getString());
++    }
++
+     boolean isDeclaration() {
+       return DECLARATION_PARENTS.contains(parent.getType()) ||
+           parent.getType() == Token.LP &&
+@@ -425,7 +473,7 @@
+           (parent.getType() != Token.VAR || nameNode.getFirstChild() != null);
+     }
+ 
+-   /**
++    /**
+     * @return For an assignment or variable declaration return the assigned
+     * value, otherwise null.
+     */
+@@ -500,6 +548,11 @@
+     private final boolean mayBeHoisted;
+ 
+     /**
++     * Whether this block denotes a function scope.
++     */
++    private final boolean isFunction;
++
++    /**
+      * Creates a new block.
+      * @param parent The containing block.
+      * @param root The root node of the block.
+@@ -510,6 +563,8 @@
+       // only named functions may be hoisted.
+       this.mayBeHoisted = (root.getType() == Token.FUNCTION) &&
+           !NodeUtil.isFunctionAnonymous(root);
++
++      this.isFunction = root.getType() == Token.FUNCTION;
+     }
+ 
+     BasicBlock getParent() {
+Only in data/changesInfo//Closure_121/properties/modified_classes/inducing/src/com/google/javascript/jscomp: Scope.java
+Only in data/changesInfo//Closure_121/properties/modified_classes/inducing/src/com/google/javascript/jscomp: VarCheck.java
+Only in data/changesInfo//Closure_121/properties/modified_classes/inducing/src/com/google/javascript/jscomp: VariableReferenceCheck.java
+Only in data/changesInfo//Closure_121/properties/modified_classes/inducing/: test

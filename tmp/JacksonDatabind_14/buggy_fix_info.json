@@ -1,0 +1,119 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.convert.TestUpdateValue::testIssue744",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.ObjectReader",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "14",
+  "workingDir": "../bugs/JacksonDatabind_14_tmp",
+  "bug_name": "JacksonDatabind_14",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.convert.TestUpdateValue",
+      "test_function": "testIssue744",
+      "assertion_line": "63",
+      "exception": "com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException",
+      "message": "Unrecognized field \"i\" (class com.fasterxml.jackson.databind.convert.TestUpdateValue$DataB), not marked as ignorable (2 known properties: \"da\", \"k\"])"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/ObjectReader.java",
+        "src/main/java/com/fasterxml/jackson/databind/ObjectReader.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ObjectReader:_bindAsTree:[JsonParser jp]:JsonNode",
+            "com.fasterxml.jackson.databind.ObjectReader:_findTreeDeserializer:[DeserializationContext ctxt]:JsonDeserializer\u003cObject\u003e"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.ObjectReader:_bindAsTree:[JsonParser jp]:JsonNode"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1476",
+            "1577",
+            "1578",
+            "1579",
+            "1580",
+            "1581",
+            "1583",
+            "1584",
+            "1585",
+            "1586",
+            "1587",
+            "1588",
+            "1589",
+            "1590"
+          ],
+          "num": 14
+        },
+        {
+          "qualified_names": [
+            "1476",
+            "1576"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/ObjectReader.java b/src/main/java/com/fasterxml/jackson/databind/ObjectReader.java\nindex 05098fd..e684b10 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/ObjectReader.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/ObjectReader.java\n@@ -1473,7 +1473,7 @@\n             result \u003d NullNode.instance;\n         } else {\n             DeserializationContext ctxt \u003d createDeserializationContext(jp, _config);\n-            JsonDeserializer\u003cObject\u003e deser \u003d _findTreeDeserializer(ctxt);\n+            JsonDeserializer\u003cObject\u003e deser \u003d _findRootDeserializer(ctxt, JSON_NODE_TYPE);\n             if (_unwrapRoot) {\n                 result \u003d (JsonNode) _unwrapAndDeserialize(jp, ctxt, JSON_NODE_TYPE, deser);\n             } else {\n@@ -1574,20 +1574,7 @@\n     /**\n      * @since 2.6\n      */\n-    protected JsonDeserializer\u003cObject\u003e _findTreeDeserializer(DeserializationContext ctxt)\n-        throws JsonMappingException\n-    {\n-        JsonDeserializer\u003cObject\u003e deser \u003d _rootDeserializers.get(JSON_NODE_TYPE);\n-        if (deser \u003d\u003d null) {\n             // Nope: need to ask provider to resolve it\n-            deser \u003d ctxt.findRootValueDeserializer(JSON_NODE_TYPE);\n-            if (deser \u003d\u003d null) { // can this happen?\n-                throw new JsonMappingException(\"Can not find a deserializer for type \"+JSON_NODE_TYPE);\n-            }\n-            _rootDeserializers.put(JSON_NODE_TYPE, deser);\n-        }\n-        return deser;\n-    }\n \n     /**\n      * Method called to locate deserializer ahead of time, if permitted\n",
+      "operations": [
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: JSON_NODE_TYPE [52500,52514]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [56325,56988]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.ObjectReader:_findTreeDeserializer:[DeserializationContext ctxt]:JsonDeserializer\u003cObject\u003e"
+      ],
+      "num": 1
+    }
+  }
+}

@@ -1,0 +1,478 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.gson.internal.UnsafeAllocatorInstantiationTest::testInterfaceInstantiation,com.google.gson.internal.UnsafeAllocatorInstantiationTest::testAbstractClassInstantiation",
+    "test.dir": "gson/src/test/java",
+    "clz.modified": "com.google.gson.internal.UnsafeAllocator",
+    "src.dir": "gson/src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Gson",
+  "id": "8",
+  "workingDir": "../bugs/Gson_8_tmp",
+  "bug_name": "Gson_8",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.gson.internal.UnsafeAllocatorInstantiationTest",
+      "test_function": "testInterfaceInstantiation",
+      "assertion_line": "45",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003cclass java.lang.reflect.InvocationTargetException\u003e but was:\u003cclass java.lang.UnsupportedOperationException\u003e"
+    },
+    {
+      "test_class": "com.google.gson.internal.UnsafeAllocatorInstantiationTest",
+      "test_function": "testAbstractClassInstantiation",
+      "assertion_line": "59",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003cclass java.lang.reflect.InvocationTargetException\u003e but was:\u003cclass java.lang.UnsupportedOperationException\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "gson/src/main/java/com/google/gson/internal/UnsafeAllocator.java",
+        "gson/src/main/java/com/google/gson/internal/UnsafeAllocator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.gson.internal.UnsafeAllocator:assertInstantiable:[Class\u003c?\u003e c]:void",
+            "com.google.gson.internal.UnsafeAllocator:create:[]:UnsafeAllocator"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.google.gson.internal.UnsafeAllocator:create:[]:UnsafeAllocator"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "23",
+            "49",
+            "73",
+            "93",
+            "114",
+            "115",
+            "116",
+            "117",
+            "118",
+            "119",
+            "120",
+            "121",
+            "122"
+          ],
+          "num": 13
+        },
+        {
+          "qualified_names": [
+            "22",
+            "49",
+            "74",
+            "95",
+            "117"
+          ],
+          "num": 5
+        }
+      ],
+      "diff": "diff --git a/gson/src/main/java/com/google/gson/internal/UnsafeAllocator.java b/gson/src/main/java/com/google/gson/internal/UnsafeAllocator.java\nindex 41e7cd1..49fdf7f 100644\n--- a/gson/src/main/java/com/google/gson/internal/UnsafeAllocator.java\n+++ b/gson/src/main/java/com/google/gson/internal/UnsafeAllocator.java\n@@ -20,7 +20,6 @@\n import java.io.ObjectStreamClass;\n import java.lang.reflect.Field;\n import java.lang.reflect.Method;\n-import java.lang.reflect.Modifier;\n \n /**\n  * Do sneaky things to allocate objects without invoking their constructors.\n@@ -46,7 +45,6 @@\n         @Override\n         @SuppressWarnings(\"unchecked\")\n         public \u003cT\u003e T newInstance(Class\u003cT\u003e c) throws Exception {\n-          assertInstantiable(c);\n           return (T) allocateInstance.invoke(unsafe, c);\n         }\n       };\n@@ -70,7 +68,6 @@\n         @Override\n         @SuppressWarnings(\"unchecked\")\n         public \u003cT\u003e T newInstance(Class\u003cT\u003e c) throws Exception {\n-          assertInstantiable(c);\n           return (T) newInstance.invoke(null, c, constructorId);\n         }\n       };\n@@ -90,7 +87,6 @@\n         @Override\n         @SuppressWarnings(\"unchecked\")\n         public \u003cT\u003e T newInstance(Class\u003cT\u003e c) throws Exception {\n-          assertInstantiable(c);\n           return (T) newInstance.invoke(null, c, Object.class);\n         }\n       };\n@@ -111,13 +107,4 @@\n    * throw an {@link java.lang.UnsupportedOperationException}\n    * @param c instance of the class to be checked\n    */\n-  private static void assertInstantiable(Class\u003c?\u003e c) {\n-    int modifiers \u003d c.getModifiers();\n-    if (Modifier.isInterface(modifiers)) {\n-      throw new UnsupportedOperationException(\"Interface can\u0027t be instantiated! Interface name: \" + c.getName());\n-    }\n-    if (Modifier.isAbstract(modifiers)) {\n-      throw new UnsupportedOperationException(\"Abstract class can\u0027t be instantiated! Class name: \" + c.getName());\n-    }\n-  }\n }\n",
+      "operations": [
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [764,798]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [1658,1680]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [2637,2659]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [3335,3357]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [3688,4349]",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.gson.internal.UnsafeAllocator:assertInstantiable:[Class\u003c?\u003e c]:void"
+      ],
+      "num": 1
+    }
+  }
+}

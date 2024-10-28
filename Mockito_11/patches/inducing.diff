@@ -1,0 +1,208 @@
+diff --git a/src/org/mockito/internal/creation/DelegatingMethod.java b/src/org/mockito/internal/creation/DelegatingMethod.java
+new file mode 100644
+index 0000000..1f4239a
+--- /dev/null
++++ b/src/org/mockito/internal/creation/DelegatingMethod.java
+@@ -0,0 +1,49 @@
++package org.mockito.internal.creation;
++
++import java.lang.reflect.Method;
++
++import org.mockito.internal.invocation.MockitoMethod;
++
++public class DelegatingMethod implements MockitoMethod {
++
++    private final Method method;
++
++    public DelegatingMethod(Method method) {
++        assert method != null : "Method cannot be null";
++        this.method = method;
++    }
++
++    public Class<?>[] getExceptionTypes() {
++        return method.getExceptionTypes();
++    }
++
++    public Method getJavaMethod() {
++        return method;
++    }
++
++    public String getName() {
++        return method.getName();
++    }
++
++    public Class<?>[] getParameterTypes() {
++        return method.getParameterTypes();
++    }
++
++    public Class<?> getReturnType() {
++        return method.getReturnType();
++    }
++
++    public boolean isVarArgs() {
++        return method.isVarArgs();
++    }
++    
++    @Override
++    public int hashCode() {
++        throw new RuntimeException("hashCode() not implemented");
++    }
++    
++    @Override
++    public boolean equals(Object obj) {
++        return method.equals(obj);
++    }
++}
+\ No newline at end of file
+diff --git a/src/org/mockito/internal/creation/MethodInterceptorFilter.java b/src/org/mockito/internal/creation/MethodInterceptorFilter.java
+index d89eb3c..8115507 100644
+--- a/src/org/mockito/internal/creation/MethodInterceptorFilter.java
++++ b/src/org/mockito/internal/creation/MethodInterceptorFilter.java
+@@ -38,15 +38,15 @@
+         }
+         
+         MockitoMethodProxy mockitoMethodProxy = createMockitoMethodProxy(methodProxy);
+-        
+         cglibHacker.setMockitoNamingPolicy(mockitoMethodProxy);
+         
++        MockitoMethod mockitoMethod = createMockitoMethod(method);
++        
+         FilteredCGLIBProxyRealMethod realMethod = new FilteredCGLIBProxyRealMethod(mockitoMethodProxy);
+-        SerializableMethod serializableMethod = new SerializableMethod(method);
+-        Invocation invocation = new Invocation(proxy, serializableMethod, args, SequenceNumber.next(), realMethod);
++        Invocation invocation = new Invocation(proxy, mockitoMethod, args, SequenceNumber.next(), realMethod);
+         return mockHandler.handle(invocation);
+     }
+-    
++   
+     public IMockHandler getMockHandler() {
+         return mockHandler;
+     }
+@@ -60,4 +60,12 @@
+             return new SerializableMockitoMethodProxy(methodProxy);
+         return new DelegatingMockitoMethodProxy(methodProxy);
+     }
++    
++    public MockitoMethod createMockitoMethod(Method method) {
++        if (mockSettings.isSerializable()) {
++            return new SerializableMethod(method);
++        } else {
++            return new DelegatingMethod(method); 
++        }
++    }
+ }
+\ No newline at end of file
+diff --git a/src/org/mockito/internal/invocation/Invocation.java b/src/org/mockito/internal/invocation/Invocation.java
+index e5df694..7957847 100644
+--- a/src/org/mockito/internal/invocation/Invocation.java
++++ b/src/org/mockito/internal/invocation/Invocation.java
+@@ -39,7 +39,7 @@
+     private static final int MAX_LINE_LENGTH = 45;
+     private final int sequenceNumber;
+     private final Object mock;
+-    private final SerializableMethod method;
++    private final MockitoMethod method;
+     private final Object[] arguments;
+     private final Object[] rawArguments;
+ 
+@@ -49,11 +49,11 @@
+ 
+     final RealMethod realMethod;
+ 
+-    public Invocation(Object mock, SerializableMethod serializableMethod, Object[] args, int sequenceNumber, RealMethod realMethod) {
+-        this.method = serializableMethod;
++    public Invocation(Object mock, MockitoMethod mockitoMethod, Object[] args, int sequenceNumber, RealMethod realMethod) {
++        this.method = mockitoMethod;
+         this.mock = mock;
+         this.realMethod = realMethod;
+-        this.arguments = expandVarArgs(serializableMethod.isVarArgs(), args);
++        this.arguments = expandVarArgs(mockitoMethod.isVarArgs(), args);
+         this.rawArguments = args;
+         this.sequenceNumber = sequenceNumber;
+         this.location = new Location();
+diff --git a/src/org/mockito/internal/invocation/MockitoMethod.java b/src/org/mockito/internal/invocation/MockitoMethod.java
+new file mode 100644
+index 0000000..87678cb
+--- /dev/null
++++ b/src/org/mockito/internal/invocation/MockitoMethod.java
+@@ -0,0 +1,18 @@
++package org.mockito.internal.invocation;
++
++import java.lang.reflect.Method;
++
++public interface MockitoMethod {
++
++    public String getName();
++
++    public Class<?> getReturnType();
++
++    public Class<?>[] getParameterTypes();
++
++    public Class<?>[] getExceptionTypes();
++
++    public boolean isVarArgs();
++
++    public Method getJavaMethod();
++}
+diff --git a/src/org/mockito/internal/invocation/SerializableMethod.java b/src/org/mockito/internal/invocation/SerializableMethod.java
+index af180f1..3f98cc2 100644
+--- a/src/org/mockito/internal/invocation/SerializableMethod.java
++++ b/src/org/mockito/internal/invocation/SerializableMethod.java
+@@ -6,9 +6,10 @@
+ 
+ import org.mockito.exceptions.base.MockitoException;
+ 
+-public class SerializableMethod implements Serializable {
++public class SerializableMethod implements Serializable, MockitoMethod {
+ 
+     private static final long serialVersionUID = 6005610965006048445L;
++    
+     private Class<?> declaringClass;
+     private String methodName;
+     private Class<?>[] parameterTypes;
+diff --git a/src/org/mockito/internal/util/ObjectMethodsGuru.java b/src/org/mockito/internal/util/ObjectMethodsGuru.java
+index 5686abb..5f5152c 100644
+--- a/src/org/mockito/internal/util/ObjectMethodsGuru.java
++++ b/src/org/mockito/internal/util/ObjectMethodsGuru.java
+@@ -3,6 +3,7 @@
+ import java.io.Serializable;
+ import java.lang.reflect.Method;
+ 
++import org.mockito.internal.invocation.MockitoMethod;
+ import org.mockito.internal.invocation.SerializableMethod;
+ 
+ public class ObjectMethodsGuru implements Serializable {
+@@ -13,7 +14,7 @@
+         return isToString(new SerializableMethod(method));
+     }
+ 
+-    public boolean isToString(SerializableMethod method) {
++    public boolean isToString(MockitoMethod method) {
+         return method.getReturnType() == String.class && method.getParameterTypes().length == 0
+                 && method.getName().equals("toString");
+     }
+diff --git a/test/org/mockito/internal/creation/MethodInterceptorFilterTest.java b/test/org/mockito/internal/creation/MethodInterceptorFilterTest.java
+index f48bbac..feb6b1a 100644
+--- a/test/org/mockito/internal/creation/MethodInterceptorFilterTest.java
++++ b/test/org/mockito/internal/creation/MethodInterceptorFilterTest.java
+@@ -54,6 +54,7 @@
+         Mockito.verify(mockHanlder, never()).handle(any(Invocation.class));
+     }
+     
++    //TODO: move to separate factory
+     @Test
+     public void shouldCreateSerializableMethodProxyIfIsSerializableMock() throws Exception {
+         MethodInterceptorFilter filter = new MethodInterceptorFilter(mockHanlder, (MockSettingsImpl) withSettings().serializable());
+diff --git a/test/org/mockito/internal/invocation/SerializableMethodTest.java b/test/org/mockito/internal/invocation/SerializableMethodTest.java
+index b805faf..47ce6b6 100644
+--- a/test/org/mockito/internal/invocation/SerializableMethodTest.java
++++ b/test/org/mockito/internal/invocation/SerializableMethodTest.java
+@@ -13,7 +13,7 @@
+ 
+ public class SerializableMethodTest extends TestBase {
+ 
+-    private SerializableMethod method;
++    private MockitoMethod method;
+     private Method toStringMethod;
+     private Class<?>[] args;
+ 

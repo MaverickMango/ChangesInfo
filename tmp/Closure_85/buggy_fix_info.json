@@ -1,0 +1,159 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.UnreachableCodeEliminationTest::testCascadedRemovalOfUnlessUnconditonalJumps,com.google.javascript.jscomp.UnreachableCodeEliminationTest::testIssue311",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.UnreachableCodeElimination",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "85",
+  "workingDir": "../bugs/Closure_85_tmp",
+  "bug_name": "Closure_85",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.UnreachableCodeEliminationTest",
+      "test_function": "testCascadedRemovalOfUnlessUnconditonalJumps",
+      "assertion_line": "235",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: switch(a){case \"a\":break;case \"b\":case \"c\":}\nResult: switch(a){case \"a\":case \"b\":case \"c\":}"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.UnreachableCodeEliminationTest",
+      "test_function": "testIssue311",
+      "assertion_line": "253",
+      "exception": "java.lang.RuntimeException",
+      "message": "INTERNAL COMPILER ERROR."
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/UnreachableCodeElimination.java",
+        "src/com/google/javascript/jscomp/UnreachableCodeElimination.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.UnreachableCodeElimination:computeFollowing:[Node n]:Node",
+            "com.google.javascript.jscomp.UnreachableCodeElimination:tryRemoveUnconditionalBranching:[Node n]:Node"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.UnreachableCodeElimination:tryRemoveUnconditionalBranching:[Node n]:Node"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "152",
+            "170",
+            "183",
+            "184",
+            "185",
+            "186",
+            "187",
+            "188",
+            "189"
+          ],
+          "num": 9
+        },
+        {
+          "qualified_names": [
+            "153",
+            "154",
+            "155",
+            "156",
+            "157",
+            "158",
+            "160",
+            "161",
+            "162",
+            "163",
+            "164",
+            "165",
+            "166",
+            "169",
+            "183"
+          ],
+          "num": 15
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/UnreachableCodeElimination.java b/src/com/google/javascript/jscomp/UnreachableCodeElimination.java\nindex e6d4320..c2150b1 100644\n--- a/src/com/google/javascript/jscomp/UnreachableCodeElimination.java\n+++ b/src/com/google/javascript/jscomp/UnreachableCodeElimination.java\n@@ -150,7 +150,20 @@\n       return n;\n     }\n \n+    if (n.getParent() \u003d\u003d null) {\n+      List\u003cDiGraphEdge\u003cNode,Branch\u003e\u003e outEdges \u003d gNode.getOutEdges();\n+      if (outEdges.size() \u003d\u003d 1) {\n+        return tryRemoveUnconditionalBranching(outEdges.get(0).getDestination().getValue());\n+      }\n+    }\n     switch (n.getType()) {\n+      case Token.BLOCK:\n+        if (n.hasChildren()) {\n+          Node first \u003d n.getFirstChild();\n+          return tryRemoveUnconditionalBranching(first);\n+        } else {\n+          return tryRemoveUnconditionalBranching(ControlFlowAnalysis.computeFollowNode(n));\n+        }\n       case Token.RETURN:\n         if (n.hasChildren()) {\n           break;\n@@ -167,7 +180,7 @@\n             (n.getNext() \u003d\u003d null || n.getNext().getType() \u003d\u003d Token.FUNCTION)) {\n \n           Preconditions.checkState(outEdges.get(0).getValue() \u003d\u003d Branch.UNCOND);\n-          Node fallThrough \u003d computeFollowing(n);\n+          Node fallThrough \u003d tryRemoveUnconditionalBranching(computeFollowing(n));\n           Node nextCfgNode \u003d outEdges.get(0).getDestination().getValue();\n           if (nextCfgNode \u003d\u003d fallThrough) {\n             removeDeadExprStatementSafely(n);\n@@ -180,13 +193,6 @@\n \n   private Node computeFollowing(Node n) {\n     Node next \u003d ControlFlowAnalysis.computeFollowNode(n);\n-    while (next !\u003d null \u0026\u0026 next.getType() \u003d\u003d Token.BLOCK) {\n-      if (next.hasChildren()) {\n-        next \u003d next.getFirstChild();\n-      } else {\n-        next \u003d computeFollowing(next);\n-      }\n-    }\n     return next;\n   }\n \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [5394,5632]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SwitchCase [5666,5683]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [5692,5932]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [6663,6715]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: tryRemoveUnconditionalBranching [6663,6694]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [6695,6714]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "WhileStatement [6515,6707]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.UnreachableCodeElimination:computeFollowing:[Node n]:Node"
+      ],
+      "num": 1
+    }
+  }
+}

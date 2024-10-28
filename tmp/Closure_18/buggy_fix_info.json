@@ -1,0 +1,107 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.IntegrationTest::testDependencySorting",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.Compiler",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "18",
+  "workingDir": "../bugs/Closure_18_tmp",
+  "bug_name": "Closure_18",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.IntegrationTest",
+      "test_function": "testDependencySorting",
+      "assertion_line": "2107",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: goog.provide(\"x\");goog.require(\"x\")\nResult: goog.require(\"x\");goog.provide(\"x\")"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/Compiler.java",
+        "src/com/google/javascript/jscomp/Compiler.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.Compiler:parseInputs:[]:Node"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.Compiler:parseInputs:[]:Node"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1288"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "1288"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/Compiler.java b/src/com/google/javascript/jscomp/Compiler.java\nindex 3756b99..8898f77 100644\n--- a/src/com/google/javascript/jscomp/Compiler.java\n+++ b/src/com/google/javascript/jscomp/Compiler.java\n@@ -1285,7 +1285,7 @@\n \n       // Check if the sources need to be re-ordered.\n       boolean staleInputs \u003d false;\n-      if (options.dependencyOptions.needsManagement()) {\n+      if (options.dependencyOptions.needsManagement() \u0026\u0026 options.closurePass) {\n         for (CompilerInput input : inputs) {\n           // Forward-declare all the provided types, so that they\n           // are not flagged even if they are dropped from the process.\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [39388,39454]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [39432,39434]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "QualifiedName: options.closurePass [39435,39454]"
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

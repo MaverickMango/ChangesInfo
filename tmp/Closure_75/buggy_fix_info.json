@@ -1,0 +1,103 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.PeepholeFoldConstantsTest::testIEString",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.NodeUtil",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "75",
+  "workingDir": "../bugs/Closure_75_tmp",
+  "bug_name": "Closure_75",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.PeepholeFoldConstantsTest",
+      "test_function": "testIEString",
+      "assertion_line": "992",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: !+\"\\u000b1\"\nResult: !1"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/NodeUtil.java",
+        "src/com/google/javascript/jscomp/NodeUtil.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.NodeUtil:getStringNumberValue:[String rawJsString]:Double",
+            "com.google.javascript.jscomp.NodeUtil:isStrWhiteSpaceChar:[int c]:TernaryValue"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.NodeUtil:isStrWhiteSpaceChar:[int c]:TernaryValue",
+            "com.google.javascript.jscomp.NodeUtil:getStringNumberValue:[String rawJsString]:Double"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "313",
+            "315",
+            "316",
+            "378"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "312",
+            "375"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/NodeUtil.java b/src/com/google/javascript/jscomp/NodeUtil.java\nindex c97e091..7a882de 100644\n--- a/src/com/google/javascript/jscomp/NodeUtil.java\n+++ b/src/com/google/javascript/jscomp/NodeUtil.java\n@@ -310,10 +310,7 @@\n   }\n \n   static Double getStringNumberValue(String rawJsString) {\n-    if (rawJsString.contains(\"\\u000b\")) {\n       // vertical tab is not always whitespace\n-      return null;\n-    }\n \n     String s \u003d trimJsWhiteSpace(rawJsString);\n     // return ScriptRuntime.toNumber(s);\n@@ -375,7 +372,7 @@\n   static TernaryValue isStrWhiteSpaceChar(int c) {\n     switch (c) {\n       case \u0027\\u000B\u0027: // \u003cVT\u003e\n-        return TernaryValue.UNKNOWN;  // IE says \"no\", EcmaScript says \"yes\"\n+        return TernaryValue.TRUE;\n       case \u0027 \u0027: // \u003cSP\u003e\n       case \u0027\\n\u0027: // \u003cLF\u003e\n       case \u0027\\r\u0027: // \u003cCR\u003e\n",
+      "operations": [
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [9429,9538]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

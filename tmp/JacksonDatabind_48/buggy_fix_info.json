@@ -1,0 +1,155 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.ser.TestFeatures::testVisibilityFeatures",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.DeserializationConfig,com.fasterxml.jackson.databind.SerializationConfig",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "48",
+  "workingDir": "../bugs/JacksonDatabind_48_tmp",
+  "bug_name": "JacksonDatabind_48",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.ser.TestFeatures",
+      "test_function": "testVisibilityFeatures",
+      "assertion_line": "300",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Should find 1 property, not 2; properties \u003d [[Property \u0027name\u0027; ctors: null, field(s): null, getter(s): null, setter(s): [method com.fasterxml.jackson.databind.ser.TestFeatures$TCls#setName(1 params)][visible\u003dtrue,ignore\u003dfalse,explicitName\u003dfalse]], [Property \u0027groupname\u0027; ctors: null, field(s): [field com.fasterxml.jackson.databind.ser.TestFeatures$TCls#groupname][visible\u003dtrue,ignore\u003dfalse,explicitName\u003dtrue], getter(s): null, setter(s): null]]"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/DeserializationConfig.java",
+        "src/main/java/com/fasterxml/jackson/databind/DeserializationConfig.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.DeserializationConfig:getDefaultVisibilityChecker:[]:VisibilityChecker\u003c?\u003e"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.DeserializationConfig:getDefaultVisibilityChecker:[]:VisibilityChecker\u003c?\u003e"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "780",
+            "781",
+            "782",
+            "783",
+            "784",
+            "785"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "779"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/DeserializationConfig.java b/src/main/java/com/fasterxml/jackson/databind/DeserializationConfig.java\nindex 58487eb..e01b7dd 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/DeserializationConfig.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/DeserializationConfig.java\n@@ -777,12 +777,6 @@\n         if (!isEnabled(MapperFeature.AUTO_DETECT_CREATORS)) {\n             vchecker \u003d vchecker.withCreatorVisibility(Visibility.NONE);\n         }\n-        if (!isEnabled(MapperFeature.AUTO_DETECT_GETTERS)) {\n-            vchecker \u003d vchecker.withGetterVisibility(Visibility.NONE);\n-        }\n-        if (!isEnabled(MapperFeature.AUTO_DETECT_IS_GETTERS)) {\n-            vchecker \u003d vchecker.withIsGetterVisibility(Visibility.NONE);\n-        }\n         if (!isEnabled(MapperFeature.AUTO_DETECT_FIELDS)) {\n             vchecker \u003d vchecker.withFieldVisibility(Visibility.NONE);\n         }\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [29051,29184]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [29193,29331]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/SerializationConfig.java",
+        "src/main/java/com/fasterxml/jackson/databind/SerializationConfig.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.SerializationConfig:getDefaultVisibilityChecker:[]:VisibilityChecker\u003c?\u003e"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.SerializationConfig:getDefaultVisibilityChecker:[]:VisibilityChecker\u003c?\u003e"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "865",
+            "866",
+            "867",
+            "868",
+            "869",
+            "870"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "864"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/SerializationConfig.java b/src/main/java/com/fasterxml/jackson/databind/SerializationConfig.java\nindex bf0c3f0..da192ee 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/SerializationConfig.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/SerializationConfig.java\n@@ -862,12 +862,6 @@\n     {\n         VisibilityChecker\u003c?\u003e vchecker \u003d super.getDefaultVisibilityChecker();\n         // then global overrides (disabling)\n-        if (!isEnabled(MapperFeature.AUTO_DETECT_SETTERS)) {\n-            vchecker \u003d vchecker.withSetterVisibility(Visibility.NONE);\n-        }\n-        if (!isEnabled(MapperFeature.AUTO_DETECT_CREATORS)) {\n-            vchecker \u003d vchecker.withCreatorVisibility(Visibility.NONE);\n-        }\n         if (!isEnabled(MapperFeature.AUTO_DETECT_GETTERS)) {\n             vchecker \u003d vchecker.withGetterVisibility(Visibility.NONE);\n         }\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [32815,32948]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [32957,33092]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

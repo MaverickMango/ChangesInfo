@@ -1,0 +1,939 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "/home/liumengjiao/Desktop/CI/Benchmark/data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.NormalizeTest::testDuplicateVarInExterns,com.google.javascript.jscomp.NormalizeTest::testMakeLocalNamesUnique",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.Normalize,com.google.javascript.jscomp.SyntacticScopeCreator",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "153",
+  "workingDir": "../bugs/Closure_153_buggy",
+  "buggyCommit": "ff1a3d71ca63efdfc79112b6212fd10bd9aecce8",
+  "inducingCommit": "b9bc1534921f1e98da5a373e39ea2d71a4a39175",
+  "originalCommit": "28cb80c7b5768c6381a72c5f500ec85bc4d798d2",
+  "bug_name": "Closure_153",
+  "derive": "defects4j",
+  "original_fixing_commit": "86caf52b53f53d8b83e9c1092f4b15ddeb6ca5bb",
+  "buildFiles_changed": false,
+  "regression": true,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/Normalize.java",
+        "src/com/google/javascript/jscomp/Normalize.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.Normalize:process:[Node externs, Node root]:void",
+            "com.google.javascript.jscomp.Normalize:removeDuplicateDeclarations:[Node root]:void"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.Normalize:process:[Node externs, Node root]:void",
+            "com.google.javascript.jscomp.Normalize:removeDuplicateDeclarations:[Node externs, Node root]:void"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "127",
+            "551",
+            "556"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "127",
+            "551",
+            "556"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/Normalize.java b/src/com/google/javascript/jscomp/Normalize.java\nindex ef59237..d93860d 100644\n--- a/src/com/google/javascript/jscomp/Normalize.java\n+++ b/src/com/google/javascript/jscomp/Normalize.java\n@@ -124,7 +124,7 @@\n     //   }\n     // otherwise \u0027var e \u003d 1\u0027 would be rewritten as \u0027e \u003d 1\u0027.\n     // TODO(johnlenz): Introduce a seperate scope for catch nodes.\n-    removeDuplicateDeclarations(root);\n+    removeDuplicateDeclarations(externs, root);\n     new PropogateConstantAnnotations(compiler, assertOnChange)\n         .process(externs, root);\n \n@@ -548,12 +548,12 @@\n   /**\n    * Remove duplicate VAR declarations.\n    */\n-  private void removeDuplicateDeclarations(Node root) {\n+  private void removeDuplicateDeclarations(Node externs, Node root) {\n     Callback tickler \u003d new ScopeTicklingCallback();\n     ScopeCreator scopeCreator \u003d  new SyntacticScopeCreator(\n         compiler, new DuplicateDeclarationHandler());\n     NodeTraversal t \u003d new NodeTraversal(compiler, tickler, scopeCreator);\n-    t.traverse(root);\n+    t.traverseRoots(externs, root);\n   }\n \n   /**\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [18878,18890]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: externs [4960,4967]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: externs [19165,19172]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/VarCheck.java",
+        "src/com/google/javascript/jscomp/VarCheck.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.VarCheck:process:[Node externs, Node root]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.VarCheck:process:[Node externs, Node root]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "100"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "100",
+            "101",
+            "102",
+            "103",
+            "104",
+            "105",
+            "106"
+          ],
+          "num": 7
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/VarCheck.java b/src/com/google/javascript/jscomp/VarCheck.java\nindex 1595e43..2c98ec7 100644\n--- a/src/com/google/javascript/jscomp/VarCheck.java\n+++ b/src/com/google/javascript/jscomp/VarCheck.java\n@@ -97,7 +97,13 @@\n \n   @Override\n   public void process(Node externs, Node root) {\n-    NodeTraversal.traverse(compiler, externs, new NameRefInExternsCheck());\n+    // Don\u0027t run externs-checking in sanity check mode. Normalization will\n+    // remove duplicate VAR declarations, which will make\n+    // externs look like they have assigns.\n+    if (!sanityCheck) {\n+      NodeTraversal.traverse(compiler, externs, new NameRefInExternsCheck());\n+    }\n+\n     NodeTraversal.traverseRoots(\n         compiler, Lists.newArrayList(externs, root), this);\n     for (String varName : varsToDeclareInExterns) {\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [3731,3834]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PrefixExpression [3735,3747]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [3749,3834]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.Normalize:removeDuplicateDeclarations:[Node externs, Node root]:void"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.Normalize:removeDuplicateDeclarations:[Node root]:void"
+      ],
+      "num": 1
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.NormalizeTest",
+      "test_function": "testDuplicateVarInExterns",
+      "assertion_line": "95",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: var extern\u003d3\nResult: extern\u003d3"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.NormalizeTest",
+      "test_function": "testMakeLocalNamesUnique",
+      "assertion_line": "259",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: var window\nResult: "
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/AliasExternals.java",
+        "src/com/google/javascript/jscomp/AliasExternals.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.AliasExternals\\$GlobalGatherer:visit:[NodeTraversal t, Node n, Node parent]:void",
+            "com.google.javascript.jscomp.AliasExternals:aliasGlobals:[Node externs, Node root]:void"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.AliasExternals:aliasGlobals:[Node externs, Node root]:void",
+            "com.google.javascript.jscomp.AliasExternals\\$GlobalGatherer:visit:[NodeTraversal t, Node n, Node parent]:void"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "112",
+            "115",
+            "116",
+            "117",
+            "593",
+            "594",
+            "595",
+            "596",
+            "661",
+            "677",
+            "750"
+          ],
+          "num": 11
+        },
+        {
+          "qualified_names": [
+            "112",
+            "591",
+            "592",
+            "593",
+            "658",
+            "659",
+            "660",
+            "661",
+            "662",
+            "663",
+            "664",
+            "680",
+            "754",
+            "755"
+          ],
+          "num": 14
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/AliasExternals.java b/src/com/google/javascript/jscomp/AliasExternals.java\nindex f6069c6..195a0cc 100644\n--- a/src/com/google/javascript/jscomp/AliasExternals.java\n+++ b/src/com/google/javascript/jscomp/AliasExternals.java\n@@ -109,12 +109,9 @@\n   private final Map\u003cNode, Node\u003e replacementMap \u003d\n     new IdentityHashMap\u003cNode, Node\u003e();\n \n-  /** Map of all globals that we may aliasing */\n+  /** Map of all globals that we may alias */\n   private final Map\u003cString, Symbol\u003e globals \u003d Maps.newHashMap();\n \n-  /** Holds all of the globals that can be aliased to GLOBAL_ */\n-  private final List\u003cNode\u003e globalUses \u003d Lists.newArrayList();\n-\n   /** Reference to JS Compiler */\n   private final AbstractCompiler compiler;\n \n@@ -590,11 +587,10 @@\n     }\n \n     // Change the references to the globals\n-    for (Node globalUse : globalUses) {\n-      replaceGlobalUse(globalUse);\n-    }\n-\n     for (Symbol global : globals.values()) {\n+      for (Node globalUse : global.uses) {\n+        replaceGlobalUse(globalUse);\n+      }\n       if (global.aliasAccessor) {\n         addGlobalAliasNode(global,\n                            getAddingRoot(global.deepestModuleAccess));\n@@ -659,6 +655,13 @@\n \n         Symbol global \u003d globals.get(name);\n         if (global !\u003d null) {\n+          // If a variable is declared in both externs and normal source,\n+          // don\u0027t alias it.\n+          if (n.getParent().getType() \u003d\u003d Token.VAR ||\n+              n.getParent().getType() \u003d\u003d Token.FUNCTION) {\n+            globals.remove(name);\n+          }\n+\n           boolean isFirst \u003d parent.getFirstChild() \u003d\u003d n;\n           // If a global is being assigned to or otherwise modified, then we\n           // don\u0027t want to alias it.\n@@ -674,7 +677,7 @@\n             global.recordAccessor(t);\n           }\n \n-          globalUses.add(n);\n+          global.uses.add(n);\n         }\n       }\n     }\n@@ -748,6 +751,8 @@\n     JSModule deepestModuleAccess \u003d null;\n     JSModule deepestModuleMutate \u003d null;\n \n+    List\u003cNode\u003e uses \u003d Lists.newArrayList();\n+\n     private Symbol(String name, boolean isConstant) {\n       this.name \u003d name;\n       this.isConstant \u003d isConstant;\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [4425,4468]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [25192,25231]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "QualifiedName: global.uses [20165,20176]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [22318,22466]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [23194,23213]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "Javadoc [4425,4471]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [4540,4664]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: globalUses [20249,20259]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [23056,23074]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/Normalize.java",
+        "src/com/google/javascript/jscomp/Normalize.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.Normalize\\$DuplicateDeclarationHandler:onRedeclaration:[Scope s, String name, Node n, Node parent, Node gramps, Node nodeWithLineNumber]:void"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.Normalize\\$DuplicateDeclarationHandler:onRedeclaration:[Scope s, String name, Node n, CompilerInput input]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "20",
+            "29",
+            "635",
+            "636",
+            "660",
+            "672"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "21",
+            "31",
+            "631",
+            "632",
+            "639",
+            "641",
+            "643",
+            "644",
+            "645",
+            "646",
+            "647",
+            "648",
+            "649",
+            "650",
+            "651",
+            "652",
+            "653",
+            "654",
+            "655",
+            "677",
+            "689"
+          ],
+          "num": 21
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/Normalize.java b/src/com/google/javascript/jscomp/Normalize.java\nindex 4217f39..c14ac8f 100644\n--- a/src/com/google/javascript/jscomp/Normalize.java\n+++ b/src/com/google/javascript/jscomp/Normalize.java\n@@ -18,6 +18,7 @@\n import com.google.common.base.Preconditions;\n import com.google.common.collect.Lists;\n import com.google.common.collect.Maps;\n+import com.google.common.collect.Sets;\n import com.google.javascript.jscomp.MakeDeclaredNamesUnique.BoilerplateRenamer;\n import com.google.javascript.jscomp.NodeTraversal.AbstractPostOrderCallback;\n import com.google.javascript.jscomp.NodeTraversal.Callback;\n@@ -27,6 +28,7 @@\n import com.google.javascript.rhino.Token;\n \n import java.util.Map;\n+import java.util.Set;\n \n /**\n  * The goal with this pass is to simplify the other passes,\n@@ -626,16 +628,31 @@\n   private final class DuplicateDeclarationHandler implements\n       SyntacticScopeCreator.RedeclarationHandler {\n \n+    private Set\u003cVar\u003e hasOkDuplicateDeclaration \u003d Sets.newHashSet();\n+\n     /**\n      * Remove duplicate VAR declarations encountered discovered during\n      * scope creation.\n      */\n     @Override\n     public void onRedeclaration(\n-        Scope s, String name, Node n, Node parent, Node gramps,\n-        Node nodeWithLineNumber) {\n+        Scope s, String name, Node n, CompilerInput input) {\n       Preconditions.checkState(n.getType() \u003d\u003d Token.NAME);\n+      Node parent \u003d n.getParent();\n       Var v \u003d s.getVar(name);\n+\n+      if (v !\u003d null \u0026\u0026 s.isGlobal()) {\n+        // We allow variables to be duplicate declared if one\n+        // declaration appears in source and the other in externs.\n+        // This deals with issues where a browser built-in is declared\n+        // in one browser but not in another.\n+        if (v.isExtern() \u0026\u0026 !input.isExtern()) {\n+          if (hasOkDuplicateDeclaration.add(v)) {\n+            return;\n+          }\n+        }\n+      }\n+\n       // If name is \"arguments\", Var maybe null.\n       if (v !\u003d null \u0026\u0026 v.getParentNode().getType() \u003d\u003d Token.CATCH) {\n         // Redeclaration of a catch expression variable is hard to model\n@@ -657,7 +674,7 @@\n             name);\n         compiler.report(\n             JSError.make(\n-                NodeUtil.getSourceName(nodeWithLineNumber), nodeWithLineNumber,\n+                input.getName(), n,\n                 CATCH_BLOCK_VAR_ERROR, name));\n       } else if (v !\u003d null \u0026\u0026 parent.getType() \u003d\u003d Token.FUNCTION) {\n         if (v.getParentNode().getType() \u003d\u003d Token.VAR) {\n@@ -669,7 +686,7 @@\n       } else if (parent.getType() \u003d\u003d Token.VAR) {\n         Preconditions.checkState(parent.hasOneChild());\n \n-        replaceVarWithAssignment(n, parent, gramps);\n+        replaceVarWithAssignment(n, parent, parent.getParent());\n       }\n     }\n \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [776,814]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [1231,1252]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [21866,21929]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [22126,22145]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [22214,22242]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [22280,22707]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [24341,24359]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [21996,22007]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [22009,22020]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [22030,22053]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_ARGUMENTS [23252,23270]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: gramps [23822,23828]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/SyntacticScopeCreator.java",
+        "src/com/google/javascript/jscomp/SyntacticScopeCreator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.SyntacticScopeCreator\\$DefaultRedeclarationHandler:onRedeclaration:[Scope s, String name, Node n, Node parent, Node gramps, Node nodeWithLineNumber]:void",
+            "com.google.javascript.jscomp.SyntacticScopeCreator:scanRoot:[Node n, Scope parent]:void",
+            "com.google.javascript.jscomp.SyntacticScopeCreator:scanVars:[Node n, Node parent]:void",
+            "com.google.javascript.jscomp.SyntacticScopeCreator:declareVar:[String name, Node n, Node parent, Node gramps, JSType declaredType, Node nodeWithLineNumber]:void",
+            "com.google.javascript.jscomp.SyntacticScopeCreator\\$RedeclarationHandler:onRedeclaration:[Scope s, String name, Node n, Node parent, Node gramps, Node nodeWithLineNumber]:void"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.SyntacticScopeCreator:scanVars:[Node n, Node parent]:void",
+            "com.google.javascript.jscomp.SyntacticScopeCreator\\$DefaultRedeclarationHandler:onRedeclaration:[Scope s, String name, Node n, CompilerInput input]:void",
+            "com.google.javascript.jscomp.SyntacticScopeCreator:scanRoot:[Node n, Scope parent]:void",
+            "com.google.javascript.jscomp.SyntacticScopeCreator\\$RedeclarationHandler:onRedeclaration:[Scope s, String name, Node n, CompilerInput input]:void",
+            "com.google.javascript.jscomp.SyntacticScopeCreator:declareVar:[Node n]:void"
+          ],
+          "num": 5
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "23",
+            "95",
+            "103",
+            "125",
+            "126",
+            "127",
+            "128",
+            "143",
+            "155",
+            "181",
+            "182",
+            "190",
+            "191",
+            "212",
+            "223",
+            "232",
+            "233",
+            "234",
+            "235",
+            "237",
+            "238",
+            "240",
+            "241",
+            "242",
+            "246",
+            "248"
+          ],
+          "num": 26
+        },
+        {
+          "qualified_names": [
+            "22",
+            "94",
+            "102",
+            "124",
+            "139",
+            "151",
+            "177",
+            "185",
+            "186",
+            "187",
+            "208",
+            "219",
+            "228",
+            "231",
+            "232",
+            "233",
+            "234",
+            "235",
+            "239",
+            "241"
+          ],
+          "num": 20
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/SyntacticScopeCreator.java b/src/com/google/javascript/jscomp/SyntacticScopeCreator.java\nindex 6dfc288..eb6e1ea 100644\n--- a/src/com/google/javascript/jscomp/SyntacticScopeCreator.java\n+++ b/src/com/google/javascript/jscomp/SyntacticScopeCreator.java\n@@ -20,7 +20,6 @@\n import com.google.javascript.rhino.JSDocInfo;\n import com.google.javascript.rhino.Node;\n import com.google.javascript.rhino.Token;\n-import com.google.javascript.rhino.jstype.JSType;\n \n \n /**\n@@ -92,7 +91,7 @@\n       // been declared in the outer scope.\n       String fnName \u003d fnNameNode.getString();\n       if (!fnName.isEmpty() \u0026\u0026 NodeUtil.isFunctionExpression(n)) {\n-        declareVar(fnName, fnNameNode, n, null, null, n);\n+        declareVar(fnNameNode);\n       }\n \n       // Args: Declare function variables\n@@ -100,7 +99,7 @@\n       for (Node a \u003d args.getFirstChild(); a !\u003d null;\n            a \u003d a.getNext()) {\n         Preconditions.checkState(a.getType() \u003d\u003d Token.NAME);\n-        declareVar(a.getString(), a, args, n, null, n);\n+        declareVar(a);\n       }\n \n       // Body\n@@ -122,10 +121,7 @@\n         for (Node child \u003d n.getFirstChild();\n              child !\u003d null;) {\n           Node next \u003d child.getNext();\n-          Preconditions.checkState(child.getType() \u003d\u003d Token.NAME);\n-\n-          String name \u003d child.getString();\n-          declareVar(name, child, n, parent, null, n);\n+          declareVar(child);\n           child \u003d next;\n         }\n         return;\n@@ -140,7 +136,7 @@\n           // This is invalid, but allow it so the checks can catch it.\n           return;\n         }\n-        declareVar(fnName, n.getFirstChild(), n, parent, null, n);\n+        declareVar(n.getFirstChild());\n         return;   // should not examine function\u0027s children\n \n       case Token.CATCH:\n@@ -152,7 +148,7 @@\n         final Node var \u003d n.getFirstChild();\n         final Node block \u003d var.getNext();\n \n-        declareVar(var.getString(), var, n, parent, null, n);\n+        declareVar(var);\n         scanVars(block, n);\n         return;  // only one child to scan\n \n@@ -178,8 +174,7 @@\n    */\n   interface RedeclarationHandler {\n     void onRedeclaration(\n-        Scope s, String name,\n-        Node n, Node parent, Node gramps, Node nodeWithLineNumber);\n+        Scope s, String name, Node n, CompilerInput input);\n   }\n \n   /**\n@@ -187,8 +182,9 @@\n    */\n   private class DefaultRedeclarationHandler implements RedeclarationHandler {\n     public void onRedeclaration(\n-        Scope s, String name,\n-        Node n, Node parent, Node gramps, Node nodeWithLineNumber) {\n+        Scope s, String name, Node n, CompilerInput input) {\n+      Node parent \u003d n.getParent();\n+\n       // Don\u0027t allow multiple variables to be declared at the top level scope\n       if (scope.isGlobal()) {\n         Scope.Var origVar \u003d scope.getVar(name);\n@@ -209,7 +205,7 @@\n \n         if (!allowDupe) {\n           compiler.report(\n-              JSError.make(sourceName, nodeWithLineNumber,\n+              JSError.make(sourceName, n,\n                            VAR_MULTIPLY_DECLARED_ERROR,\n                            name,\n                            (origVar.input !\u003d null\n@@ -220,7 +216,7 @@\n         // Disallow shadowing \"arguments\" as we can\u0027t handle with our current\n         // scope modeling.\n         compiler.report(\n-            JSError.make(sourceName, nodeWithLineNumber,\n+            JSError.make(sourceName, n,\n                 VAR_ARGUMENTS_SHADOWED_ERROR));\n       }\n     }\n@@ -229,23 +225,20 @@\n   /**\n    * Declares a variable.\n    *\n-   * @param name The variable name\n-   * @param n The node corresponding to the variable name (usually a NAME node)\n-   * @param parent The parent node of {@code n}\n-   * @param gramps The parent node of {@code parent}\n+   * @param n The node corresponding to the variable name.\n    * @param declaredType The variable\u0027s type, according to JSDoc\n-   * @param nodeWithLineNumber The node to use to access the line number of\n-   *     the variable declaration, if needed\n    */\n-  private void declareVar(String name, Node n, Node parent,\n-                          Node gramps, JSType declaredType,\n-                          Node nodeWithLineNumber) {\n+  private void declareVar(Node n) {\n+    Preconditions.checkState(n.getType() \u003d\u003d Token.NAME);\n+\n+    CompilerInput input \u003d compiler.getInput(sourceName);\n+    String name \u003d n.getString();\n     if (scope.isDeclared(name, false)\n         || (scope.isLocal() \u0026\u0026 name.equals(ARGUMENTS))) {\n       redeclarationHandler.onRedeclaration(\n-          scope, name, n, parent, gramps, nodeWithLineNumber);\n+          scope, name, n, input);\n     } else {\n-      scope.declare(name, n, declaredType, compiler.getInput(sourceName));\n+      scope.declare(name, n, null, input);\n     }\n   }\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [5350,5431]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Javadoc [6997,7161]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [5651,5670]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [7202,7254]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [7260,7312]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [7317,7345]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [5680,5708]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [7260,7273]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [7274,7311]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: input [7274,7279]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "NullLiteral [7562,7566]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [827,876]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: fnName [3086,3092]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: n [3106,3107]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NullLiteral [3109,3113]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NullLiteral [3115,3119]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: n [3121,3122]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [3399,3412]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: args [3417,3421]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: n [3423,3424]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NullLiteral [3426,3430]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: n [3432,3433]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [3970,4026]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [4038,4070]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: name [4092,4096]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: n [4105,4106]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: parent [4108,4114]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NullLiteral [4116,4120]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: n [4122,4123]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: fnName [4486,4492]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: n [4513,4514]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: parent [4516,4522]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NullLiteral [4524,4528]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: n [4530,4531]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [4954,4969]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: n [4976,4977]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: parent [4979,4985]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NullLiteral [4987,4991]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: n [4993,4994]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [5661,5780]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [6008,6019]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [6021,6032]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [6034,6057]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [7422,7451]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [7537,7579]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [7585,7632]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [7703,7818]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Javadoc [7382,7824]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [7851,7862]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [7872,7876]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SingleVariableDeclaration [7872,7883]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [7911,7915]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SingleVariableDeclaration [7911,7922]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SingleVariableDeclaration [7924,7943]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "SimpleType [7971,7975]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SingleVariableDeclaration [7971,7994]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: gramps [8172,8178]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: nodeWithLineNumber [8180,8198]",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.Normalize\\$DuplicateDeclarationHandler:onRedeclaration:[Scope s, String name, Node n, CompilerInput input]:void",
+        "com.google.javascript.jscomp.SyntacticScopeCreator:declareVar:[Node n]:void",
+        "com.google.javascript.jscomp.SyntacticScopeCreator\\$RedeclarationHandler:onRedeclaration:[Scope s, String name, Node n, CompilerInput input]:void",
+        "com.google.javascript.jscomp.SyntacticScopeCreator\\$DefaultRedeclarationHandler:onRedeclaration:[Scope s, String name, Node n, CompilerInput input]:void"
+      ],
+      "num": 4
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.SyntacticScopeCreator\\$DefaultRedeclarationHandler:onRedeclaration:[Scope s, String name, Node n, Node parent, Node gramps, Node nodeWithLineNumber]:void",
+        "com.google.javascript.jscomp.SyntacticScopeCreator\\$RedeclarationHandler:onRedeclaration:[Scope s, String name, Node n, Node parent, Node gramps, Node nodeWithLineNumber]:void",
+        "com.google.javascript.jscomp.Normalize\\$DuplicateDeclarationHandler:onRedeclaration:[Scope s, String name, Node n, Node parent, Node gramps, Node nodeWithLineNumber]:void",
+        "com.google.javascript.jscomp.SyntacticScopeCreator:declareVar:[String name, Node n, Node parent, Node gramps, JSType declaredType, Node nodeWithLineNumber]:void"
+      ],
+      "num": 4
+    }
+  },
+  "patch_changed_mths": {
+    "qualified_names": [
+      "com.google.javascript.jscomp.AliasExternals\\$GlobalGatherer:visit(Lcom/google/javascript/jscomp/NodeTraversal;Lcom/google/javascript/rhino/Node;Lcom/google/javascript/rhino/Node;)V:regression",
+      "com.google.javascript.jscomp.AliasExternals:aliasGlobals(Lcom/google/javascript/rhino/Node;Lcom/google/javascript/rhino/Node;)V:regression",
+      "com.google.javascript.jscomp.SyntacticScopeCreator:scanRoot(Lcom/google/javascript/rhino/Node;Lcom/google/javascript/jscomp/Scope;)V:regression",
+      "com.google.javascript.jscomp.SyntacticScopeCreator:scanVars(Lcom/google/javascript/rhino/Node;Lcom/google/javascript/rhino/Node;)V:regression"
+    ],
+    "num": 4
+  }
+}

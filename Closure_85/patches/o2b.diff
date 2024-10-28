@@ -1,0 +1,294 @@
+diff -r -u original/src/com/google/javascript/jscomp/UnreachableCodeElimination.java buggy/src/com/google/javascript/jscomp/UnreachableCodeElimination.java
+--- original/src/com/google/javascript/jscomp/UnreachableCodeElimination.java	2023-06-13 15:31:43.843103250 +0800
++++ buggy/src/com/google/javascript/jscomp/UnreachableCodeElimination.java	2023-06-12 11:40:27.578663685 +0800
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright 2008 Google Inc.
++ * Copyright 2008 The Closure Compiler Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -43,7 +43,6 @@
+  *    prototype properties can be annotated using JSDoc without actually
+  *    being initialized.
+  *
+-*
+  */
+ class UnreachableCodeElimination extends AbstractPostOrderCallback
+     implements CompilerPass, ScopedCallback  {
+@@ -69,7 +68,7 @@
+     Scope scope = t.getScope();
+ 
+     // Computes the control flow graph.
+-    ControlFlowAnalysis cfa = new ControlFlowAnalysis(compiler, false);
++    ControlFlowAnalysis cfa = new ControlFlowAnalysis(compiler, false, false);
+     cfa.process(null, scope.getRootNode());
+     cfgStack.push(curCfg);
+     curCfg = cfa.getCfg();
+@@ -88,7 +87,6 @@
+     NodeTraversal.traverse(compiler, root, this);
+   }
+ 
+-  @SuppressWarnings("fallthrough")
+   @Override
+   public void visit(NodeTraversal t, Node n, Node parent) {
+     if (parent == null) {
+@@ -97,32 +95,40 @@
+     if (n.getType() == Token.FUNCTION || n.getType() == Token.SCRIPT) {
+       return;
+     }
+-    // Removes TRYs that had its CATCH removed and/or empty FINALLY.
+-    // TODO(dcc): Move the parts of this that don't require a control flow
+-    // graph to PeepholeRemoveDeadCode
+-    if (n.getType() == Token.TRY) {
+-      Node body = n.getFirstChild();
+-      Node catchOrFinallyBlock = body.getNext();
+-      Node finallyBlock = catchOrFinallyBlock.getNext();
+-
+-      if (!catchOrFinallyBlock.hasChildren() &&
+-          (finallyBlock == null || !finallyBlock.hasChildren())) {
+-        n.removeChild(body);
+-        parent.replaceChild(n, body);
+-        compiler.reportCodeChange();
+-        n = body;
+-      }
+-    }
++
+     DiGraphNode<Node, Branch> gNode = curCfg.getDirectedGraphNode(n);
+     if (gNode == null) { // Not in CFG.
+       return;
+     }
+     if (gNode.getAnnotation() != GraphReachability.REACHABLE ||
+         (removeNoOpStatements && !NodeUtil.mayHaveSideEffects(n))) {
+-      removeDeadExprStatementSafely(n, parent);
++      removeDeadExprStatementSafely(n);
+       return;
+     }
+ 
++    tryRemoveUnconditionalBranching(n);
++  }
++
++  /**
++   * Tries to remove n if an unconditional branch node (break, continue or
++   * return) if the target of n is the same as the the follow of n. That is, if
++   * we remove n, the control flow remains the same. Also if n targets to
++   * another unconditional branch, this function will recursively try to remove
++   * the target branch as well. The reason why we want to cascade this removal
++   * is because we only run this pass once. If we have code such as
++   *
++   * break -> break -> break
++   *
++   * where all 3 break's are useless. The order of removal matters. When we
++   * first look at the first break, we see that it branches to the 2nd break.
++   * However, if we remove the last break, the 2nd break becomes useless and
++   * finally the first break becomes useless as well.
++   *
++   * @return The target of this jump. If the target is also useless jump,
++   *     the target of that useless jump recursively.
++   */
++  @SuppressWarnings("fallthrough")
++  private Node tryRemoveUnconditionalBranching(Node n) {
+     /*
+      * For each of the unconditional branching control flow node, check to see
+      * if the ControlFlowAnalysis.computeFollowNode of that node is same as
+@@ -132,7 +138,39 @@
+      * if-else conversion but it handles more complicated switch statements
+      * much nicer.
+      */
++
++    // If n is null the target is the end of the function, nothing to do.
++    if (n == null) {
++       return n;
++    }
++
++    DiGraphNode<Node, Branch> gNode = curCfg.getDirectedGraphNode(n);
++
++    if (gNode == null) {
++      return n;
++    }
++
++    // If the parent is null, this mean whatever node it was there is now
++    // useless and it has been removed by other logics in this pass. That node
++    // while no longer exists in the AST, is still in the CFG because we
++    // never update the graph as nodes are removed.
++    if (n.getParent() == null) {
++      List<DiGraphEdge<Node,Branch>> outEdges = gNode.getOutEdges();
++      if (outEdges.size() == 1) {
++        return tryRemoveUnconditionalBranching(
++          outEdges.get(0).getDestination().getValue());
++      }
++    }
++
+     switch (n.getType()) {
++      case Token.BLOCK:
++        if (n.hasChildren()) {
++          Node first = n.getFirstChild();
++          return tryRemoveUnconditionalBranching(first);
++        } else {
++          return tryRemoveUnconditionalBranching(
++            ControlFlowAnalysis.computeFollowNode(n));
++        }
+       case Token.RETURN:
+         if (n.hasChildren()) {
+           break;
+@@ -149,29 +187,46 @@
+             // If there is a next node, there is no chance this jump is useless.
+             (n.getNext() == null || n.getNext().getType() == Token.FUNCTION)) {
+           Preconditions.checkState(outEdges.get(0).getValue() == Branch.UNCOND);
+-          Node fallThrough = ControlFlowAnalysis.computeFollowNode(n);
+-          if (outEdges.get(0).getDestination().getValue() == fallThrough) {
+-            removeDeadExprStatementSafely(n, parent);
++          Node fallThrough = tryRemoveUnconditionalBranching(
++            ControlFlowAnalysis.computeFollowNode(n));
++          Node nextCfgNode = outEdges.get(0).getDestination().getValue();
++          if (nextCfgNode == fallThrough) {
++            removeDeadExprStatementSafely(n);
++            return fallThrough;
+           }
+         }
+     }
++    return n;
+   }
+ 
+-  private void removeDeadExprStatementSafely(Node n, Node parent) {
++  private void removeDeadExprStatementSafely(Node n) {
++    Node parent = n.getParent();
+     if (n.getType() == Token.EMPTY ||
+         (n.getType() == Token.BLOCK && !n.hasChildren())) {
+       // Not always trivial to remove, let FoldContants work its magic later.
+       return;
+     }
+-    // Removing an unreachable DO node is messy because it means we still have
+-    // to execute one iteration. If the DO's body has breaks in the middle, it
+-    // can get even more trickier and code size might actually increase.
++
+     switch (n.getType()) {
++      // Removing an unreachable DO node is messy because it means we still have
++      // to execute one iteration. If the DO's body has breaks in the middle, it
++      // can get even more trickier and code size might actually increase.
+       case Token.DO:
+-      case Token.TRY:
+-      case Token.CATCH:
+-      case Token.FINALLY:
+         return;
++
++      case Token.BLOCK:
++        // BLOCKs are used in several ways including wrapping CATCH blocks in TRYs
++        if (parent.getType() == Token.TRY) {
++          if (NodeUtil.isTryCatchNodeContainer(n)) {
++            return;
++          }
++        }
++        break;
++
++      case Token.CATCH:
++        Node tryNode = parent.getParent();
++        NodeUtil.maybeAddFinally(tryNode);
++        break;
+     }
+ 
+     NodeUtil.redeclareVarsInsideBranch(n);
+@@ -179,6 +234,6 @@
+     if (logger.isLoggable(Level.FINE)) {
+       logger.fine("Removing " + n.toString());
+     }
+-    NodeUtil.removeChild(parent, n);
++    NodeUtil.removeChild(n.getParent(), n);
+   }
+ }
+diff -r -u original/test/com/google/javascript/jscomp/UnreachableCodeEliminationTest.java buggy/test/com/google/javascript/jscomp/UnreachableCodeEliminationTest.java
+--- original/test/com/google/javascript/jscomp/UnreachableCodeEliminationTest.java	2023-06-13 15:31:43.843103250 +0800
++++ buggy/test/com/google/javascript/jscomp/UnreachableCodeEliminationTest.java	2023-06-12 11:40:27.582663501 +0800
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright 2008 Google Inc.
++ * Copyright 2008 The Closure Compiler Authors.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+@@ -19,7 +19,6 @@
+ /**
+  * Test for {@link UnreachableCodeElimination}.
+  *
+-*
+  */
+ public class UnreachableCodeEliminationTest extends CompilerTestCase {
+   private boolean removeNoOpStatements = true;
+@@ -39,7 +38,7 @@
+     test("function foo(){switch(foo){case 1:x=1;return;break;" +
+          "case 2:{x=2;return;break}default:}}",
+          "function foo(){switch(foo){case 1:x=1;return;" +
+-         "case 2:{x=2;return}default:}}");
++         "case 2:{x=2}default:}}");
+ 
+     // if/else statements with returns
+     test("function bar(){if(foo)x=1;else if(bar){return;x=2}" +
+@@ -149,15 +148,15 @@
+   public void testTryCatchFinally() {
+     testSame("try {foo()} catch (e) {bar()}");
+     testSame("try { try {foo()} catch (e) {bar()}} catch (x) {bar()}");
+-    test("try {var x = 1} catch (e) {e()}", "{var x = 1}");
++    test("try {var x = 1} catch (e) {e()}", "try {var x = 1} finally {}");
+     test("try {var x = 1} catch (e) {e()} finally {x()}",
+         " try {var x = 1}                 finally {x()}");
+     test("try {var x = 1} catch (e) {e()} finally {}",
+-        "     {var x = 1}");
++        "try {var x = 1} finally {}");
+     testSame("try {var x = 1} finally {x()}");
+-    test("try {var x = 1} finally {}", "{var x = 1}");
+-    test("function f() { return; try{var x = 1}catch(e){} }",
+-        "function f() { var x; return; {}}");
++    testSame("try {var x = 1} finally {}");
++    test("function f() {return; try{var x = 1}catch(e){} }",
++         "function f() {var x;}");
+   }
+ 
+   public void testRemovalRequiresRedeclaration() {
+@@ -190,7 +189,7 @@
+ 
+     test("function() {switch (a) { case 'a': return}}",
+          "function() {switch (a) { case 'a': }}");
+-    testSame("function() {switch (a) { case 'a': return; case foo(): }}");
++    testSame("function() {switch (a) { case 'a': case foo(): }}");
+     testSame("function() {switch (a) { default: return; case 'a': alert(1)}}");
+     testSame("function() {switch (a) { case 'a': return; default: alert(1)}}");
+   }
+@@ -208,9 +207,13 @@
+ 
+   public void testUnlessUnconditonalBreak() {
+     test("switch (a) { case 'a': break }", "switch (a) { case 'a': }");
+-    testSame("switch (a) { case 'a': break; case foo(): }");
+-    testSame("switch (a) { default: break; case 'a': }");
+-    testSame("switch (a) { case 'a': break; default: }");
++    test("switch (a) { case 'a': break; case foo(): }",
++         "switch (a) { case 'a':        case foo(): }");
++    test("switch (a) { default: break; case 'a': }",
++         "switch (a) { default:        case 'a': }");
++
++    testSame("switch (a) { case 'a': alert(a); break; default: alert(a); }");
++    testSame("switch (a) { default: alert(a); break; case 'a': alert(a); }");
+ 
+ 
+     test("X: {switch (a) { case 'a': break X}}",
+@@ -223,11 +226,18 @@
+     test("X: {switch (a) { case 'a': if (a()) {break X}}}",
+          "X: {switch (a) { case 'a': if (a()) {}}}");
+ 
+-    // TODO(user): Optimize these better.
+-    test("switch (a) { case 'a': break; case 'b': break; case 'c': break }",
+-         "switch (a) { case 'a': break; case 'b': break; case 'c': }");
+ 
+     testSame("do { break } while(1);");
+     testSame("for(;1;) { break }");
+   }
++
++  public void testCascadedRemovalOfUnlessUnconditonalJumps() {
++    test("switch (a) { case 'a': break; case 'b': break; case 'c': break }",
++         "switch (a) { case 'a': case 'b': case 'c': }");
++    test("function foo() {" +
++         "  switch (a) { case 'a':return; case 'b':return; case 'c':return }}",
++         "function foo() { switch (a) { case 'a': case 'b': case 'c': }}");
++    testSame("function foo() {" +
++             "switch (a) { case 'a':return 2; case 'b':return 1}}");
++  }
+ }

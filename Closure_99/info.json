@@ -1,0 +1,1255 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Closure",
+  "id": "99",
+  "workingDir": "../bugs/Closure_99_buggy",
+  "inducingCommit": "6d00ac1a68612aade8a19d7ecc9b180f00ae5234",
+  "originalCommit": "7e0d71b3d68ad4788a094d8618e2b0aa474cf3db",
+  "bug_name": "Closure_99",
+  "derive": "defects4j",
+  "original_fixing_commit": "8aa879a4eeb18cfc8d13e6c843a32b7f41ccd516",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/AbstractCommandLineRunner.java",
+        "src/com/google/javascript/jscomp/AbstractCommandLineRunner.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "outputSourceMap"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "outputSourceMap"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "753",
+            "754"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "752"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/AbstractCommandLineRunner.java b/src/com/google/javascript/jscomp/AbstractCommandLineRunner.java\nindex dd9a87d..4e0d0d8 100644\n--- a/src/com/google/javascript/jscomp/AbstractCommandLineRunner.java\n+++ b/src/com/google/javascript/jscomp/AbstractCommandLineRunner.java\n@@ -750,8 +750,6 @@\n    * exists.\n    *\n    * @param options The options to the Compiler.\n-   * @param path The path of the generated file for which the source map was\n-   *        created.\n    */\n   private void outputSourceMap(B options)\n       throws IOException {\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "TagElement [23567,23659]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CheckGlobalThis.java",
+        "src/com/google/javascript/jscomp/CheckGlobalThis.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "shouldTraverse",
+            "visit"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "visit",
+            "shouldTraverse",
+            "shouldReportThis"
+          ],
+          "num": 3
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "29",
+            "31",
+            "65",
+            "83",
+            "92",
+            "118",
+            "123",
+            "130"
+          ],
+          "num": 8
+        },
+        {
+          "qualified_names": [
+            "29",
+            "31",
+            "36",
+            "37",
+            "67",
+            "85",
+            "93",
+            "94",
+            "95",
+            "96",
+            "97",
+            "98",
+            "99",
+            "100",
+            "101",
+            "102",
+            "103",
+            "104",
+            "105",
+            "107",
+            "133",
+            "138",
+            "146",
+            "147",
+            "148",
+            "149",
+            "150",
+            "151",
+            "152",
+            "153",
+            "154",
+            "155"
+          ],
+          "num": 32
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/CheckGlobalThis.java b/src/com/google/javascript/jscomp/CheckGlobalThis.java\nindex 94c9411..1b6c93f 100644\n--- a/src/com/google/javascript/jscomp/CheckGlobalThis.java\n+++ b/src/com/google/javascript/jscomp/CheckGlobalThis.java\n@@ -26,13 +26,15 @@\n  * Checks for certain uses of the {@code this} keyword that are considered\n  * unsafe because they are likely to reference the global {@code this} object\n  * unintentionally.\n- * \n+ *\n  * \u003cp\u003eA use of {@code this} is considered unsafe if it\u0027s on the left side of an\n- * assignment and not inside one of the following:\n+ * assignment or a property access, and not inside one of the following:\n  * \u003col\u003e\n  * \u003cli\u003ea prototype method\n  * \u003cli\u003ea function annotated with {@code @constructor}\n  * \u003cli\u003ea function annotated with {@code @this}.\n+ * \u003cli\u003ea function where there\u0027s no logical place to put a\n+ *     {@code this} annotation.\n  * \u003c/ol\u003e\n  *\n  * \u003cp\u003eNote that this check does not track assignments of {@code this} to\n@@ -62,7 +64,7 @@\n \n   private final AbstractCompiler compiler;\n   private final CheckLevel level;\n-\n+  \n   /**\n    * If {@code assignLhsChild !\u003d null}, then the node being traversed is\n    * a descendant of the first child of an ASSIGN node. assignLhsChild\u0027s\n@@ -80,7 +82,7 @@\n    * is encountered, there is no reason to traverse non global contexts.\n    */\n   public boolean shouldTraverse(NodeTraversal t, Node n, Node parent) {\n-    \n+\n     if (n.getType() \u003d\u003d Token.FUNCTION) {\n       // Don\u0027t traverse functions that are constructors or have the @this\n       // annotation.\n@@ -88,8 +90,21 @@\n       if (jsDoc !\u003d null \u0026\u0026 (jsDoc.isConstructor() || jsDoc.hasThisType())) {\n         return false;\n       }\n+\n+      // Don\u0027t traverse functions unless they would normally\n+      // be able to have a @this annotation associated with them. e.g.,\n+      // var a \u003d function() { }; // or\n+      // function a() {} // or\n+      // a.x \u003d function() {};\n+      int pType \u003d parent.getType();\n+      if (!(pType \u003d\u003d Token.BLOCK ||\n+            pType \u003d\u003d Token.SCRIPT ||\n+            pType \u003d\u003d Token.NAME ||\n+            pType \u003d\u003d Token.ASSIGN)) {\n+        return false;\n+      }\n     }\n-    \n+\n     if (parent !\u003d null \u0026\u0026 parent.getType() \u003d\u003d Token.ASSIGN) {\n       Node lhs \u003d parent.getFirstChild();\n       Node rhs \u003d lhs.getNext();\n@@ -115,12 +130,12 @@\n         }\n       }\n     }\n-    \n+\n     return true;\n   }\n \n   public void visit(NodeTraversal t, Node n, Node parent) {\n-    if (assignLhsChild !\u003d null \u0026\u0026 n.getType() \u003d\u003d Token.THIS) {\n+    if (n.getType() \u003d\u003d Token.THIS \u0026\u0026 shouldReportThis(n, parent)) {\n       compiler.report(t.makeError(n, level, GLOBAL_THIS));\n     }\n     if (n \u003d\u003d assignLhsChild) {\n@@ -128,6 +143,16 @@\n     }\n   }\n \n+  private boolean shouldReportThis(Node n, Node parent) {\n+    if (assignLhsChild !\u003d null) {\n+      // Always report a THIS on the left side of an assign.\n+      return true;\n+    }\n+\n+    // Also report a THIS with a property access.\n+    return parent !\u003d null \u0026\u0026 NodeUtil.isGet(parent);\n+  }\n+\n   /**\n    * Gets a function\u0027s JSDoc information, if it has any. Checks for a few\n    * patterns (ellipses show where JSDoc would be):\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [4637,4920]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: \u003cli\u003ea function where there\u0027s no logical place to put a [1345,1399]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [1407,1419]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement:  annotation. [1419,1431]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [3228,3257]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [3264,3433]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodInvocation [4468,4495]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [3892,3914]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CodingConvention.java",
+        "src/com/google/javascript/jscomp/CodingConvention.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "25"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "24"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/CodingConvention.java b/src/com/google/javascript/jscomp/CodingConvention.java\nindex a410ed8..02148cd 100644\n--- a/src/com/google/javascript/jscomp/CodingConvention.java\n+++ b/src/com/google/javascript/jscomp/CodingConvention.java\n@@ -22,7 +22,6 @@\n import com.google.javascript.rhino.jstype.ObjectType;\n \n import java.util.Collection;\n-import java.util.Collections;\n import java.util.List;\n \n /**\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [929,958]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/DefaultCodingConvention.java",
+        "src/com/google/javascript/jscomp/DefaultCodingConvention.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "18"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "17"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/DefaultCodingConvention.java b/src/com/google/javascript/jscomp/DefaultCodingConvention.java\nindex 814b01c..82a9636 100644\n--- a/src/com/google/javascript/jscomp/DefaultCodingConvention.java\n+++ b/src/com/google/javascript/jscomp/DefaultCodingConvention.java\n@@ -15,7 +15,6 @@\n  */\n package com.google.javascript.jscomp;\n \n-import com.google.javascript.jscomp.CodingConvention.AssertionFunctionSpec;\n import com.google.javascript.rhino.Node;\n import com.google.javascript.rhino.jstype.FunctionType;\n import com.google.javascript.rhino.jstype.JSTypeRegistry;\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [634,709]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/JsMessageExtractor.java",
+        "src/com/google/javascript/jscomp/JsMessageExtractor.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "22"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "21"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/JsMessageExtractor.java b/src/com/google/javascript/jscomp/JsMessageExtractor.java\nindex 0315635..7412463 100644\n--- a/src/com/google/javascript/jscomp/JsMessageExtractor.java\n+++ b/src/com/google/javascript/jscomp/JsMessageExtractor.java\n@@ -19,7 +19,6 @@\n import com.google.common.collect.ImmutableList;\n import com.google.common.collect.Iterables;\n import com.google.common.collect.Lists;\n-import com.google.common.collect.Sets;\n import com.google.javascript.rhino.Node;\n \n import java.io.IOException;\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [767,805]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/LinkedFlowScope.java",
+        "src/com/google/javascript/jscomp/LinkedFlowScope.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "getOwnSlot"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "151"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "150"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/LinkedFlowScope.java b/src/com/google/javascript/jscomp/LinkedFlowScope.java\nindex 47b0a5e..3747e09 100644\n--- a/src/com/google/javascript/jscomp/LinkedFlowScope.java\n+++ b/src/com/google/javascript/jscomp/LinkedFlowScope.java\n@@ -148,7 +148,6 @@\n     return cache.getSlot(name);\n   }\n \n-  /** @inheritDoc */\n   @Override\n   public StaticSlot\u003cJSType\u003e getOwnSlot(String name) {\n     throw new UnsupportedOperationException();\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "Javadoc [4546,4564]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/SanityCheck.java",
+        "src/com/google/javascript/jscomp/SanityCheck.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "21"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "20"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/SanityCheck.java b/src/com/google/javascript/jscomp/SanityCheck.java\nindex aa55427..a363a9b 100644\n--- a/src/com/google/javascript/jscomp/SanityCheck.java\n+++ b/src/com/google/javascript/jscomp/SanityCheck.java\n@@ -18,7 +18,6 @@\n \n import com.google.common.base.Preconditions;\n import com.google.javascript.rhino.Node;\n-import com.google.javascript.rhino.Token;\n \n /**\n  * A compiler pass that verifies the structure of the AST conforms\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [721,762]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/SourceFile.java",
+        "src/com/google/javascript/jscomp/SourceFile.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "getCodeReader"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "getCodeReader"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "373"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "374"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/SourceFile.java b/src/com/google/javascript/jscomp/SourceFile.java\nindex f13ac25..0c40f03 100644\n--- a/src/com/google/javascript/jscomp/SourceFile.java\n+++ b/src/com/google/javascript/jscomp/SourceFile.java\n@@ -371,6 +371,7 @@\n     /**\n      * Gets a reader for the code in this source file.\n      */\n+    @Override\n     public Reader getCodeReader() throws IOException {\n       if (hasSourceInMemory()) {\n         return super.getCodeReader();\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MarkerAnnotation [10884,10893]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/deps/DependencyInfo.java",
+        "src/com/google/javascript/jscomp/deps/DependencyInfo.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "20",
+            "21"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "19"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/deps/DependencyInfo.java b/src/com/google/javascript/jscomp/deps/DependencyInfo.java\nindex e65a03f..52e04cd 100644\n--- a/src/com/google/javascript/jscomp/deps/DependencyInfo.java\n+++ b/src/com/google/javascript/jscomp/deps/DependencyInfo.java\n@@ -17,8 +17,6 @@\n package com.google.javascript.jscomp.deps;\n \n import java.util.Collection;\n-import java.util.Collections;\n-import java.util.List;\n \n /**\n  * A data structure for JS dependency information for a single .js file.\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [669,698]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [699,721]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/deps/DepsFileParser.java",
+        "src/com/google/javascript/jscomp/deps/DepsFileParser.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "20",
+            "22",
+            "25"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "19"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/deps/DepsFileParser.java b/src/com/google/javascript/jscomp/deps/DepsFileParser.java\nindex e67a6ed..ef1a9d7 100644\n--- a/src/com/google/javascript/jscomp/deps/DepsFileParser.java\n+++ b/src/com/google/javascript/jscomp/deps/DepsFileParser.java\n@@ -17,12 +17,9 @@\n package com.google.javascript.jscomp.deps;\n \n import com.google.common.base.CharMatcher;\n-import com.google.common.base.Charsets;\n import com.google.common.collect.Lists;\n-import com.google.common.io.Files;\n import com.google.javascript.jscomp.ErrorManager;\n \n-import java.io.File;\n import java.io.FileReader;\n import java.io.IOException;\n import java.io.Reader;\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [683,722]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [763,797]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [849,869]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/deps/JsFileLineParser.java",
+        "src/com/google/javascript/jscomp/deps/JsFileLineParser.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "28"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "27"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/deps/JsFileLineParser.java b/src/com/google/javascript/jscomp/deps/JsFileLineParser.java\nindex 238f804..06c9c1a 100644\n--- a/src/com/google/javascript/jscomp/deps/JsFileLineParser.java\n+++ b/src/com/google/javascript/jscomp/deps/JsFileLineParser.java\n@@ -25,7 +25,6 @@\n import java.io.BufferedReader;\n import java.io.IOException;\n import java.io.Reader;\n-import java.io.StringReader;\n import java.util.List;\n import java.util.regex.Matcher;\n import java.util.regex.Pattern;\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [958,986]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/deps/JsFileParser.java",
+        "src/com/google/javascript/jscomp/deps/JsFileParser.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "20",
+            "22",
+            "25",
+            "26"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "19"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/deps/JsFileParser.java b/src/com/google/javascript/jscomp/deps/JsFileParser.java\nindex a06bf81..0f8ab48 100644\n--- a/src/com/google/javascript/jscomp/deps/JsFileParser.java\n+++ b/src/com/google/javascript/jscomp/deps/JsFileParser.java\n@@ -17,13 +17,9 @@\n package com.google.javascript.jscomp.deps;\n \n import com.google.common.base.CharMatcher;\n-import com.google.common.base.Charsets;\n import com.google.common.collect.Lists;\n-import com.google.common.io.Files;\n import com.google.javascript.jscomp.ErrorManager;\n \n-import java.io.BufferedReader;\n-import java.io.File;\n import java.io.FileReader;\n import java.io.IOException;\n import java.io.Reader;\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [683,722]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [763,797]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [849,879]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [880,900]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/deps/SimpleDependencyInfo.java",
+        "src/com/google/javascript/jscomp/deps/SimpleDependencyInfo.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "20",
+            "21"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "19"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/deps/SimpleDependencyInfo.java b/src/com/google/javascript/jscomp/deps/SimpleDependencyInfo.java\nindex 399cc7f..8dc5364 100644\n--- a/src/com/google/javascript/jscomp/deps/SimpleDependencyInfo.java\n+++ b/src/com/google/javascript/jscomp/deps/SimpleDependencyInfo.java\n@@ -17,8 +17,6 @@\n package com.google.javascript.jscomp.deps;\n \n import com.google.common.base.Objects;\n-import com.google.common.collect.ImmutableList;\n-import com.google.common.collect.Lists;\n \n import java.util.Collection;\n import java.util.Collections;\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [679,726]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [727,766]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/deps/SortedDependencies.java",
+        "src/com/google/javascript/jscomp/deps/SortedDependencies.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "41",
+            "42"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "40"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/deps/SortedDependencies.java b/src/com/google/javascript/jscomp/deps/SortedDependencies.java\nindex 60cbec8..adb6d81 100644\n--- a/src/com/google/javascript/jscomp/deps/SortedDependencies.java\n+++ b/src/com/google/javascript/jscomp/deps/SortedDependencies.java\n@@ -38,8 +38,6 @@\n import java.util.Map;\n import java.util.PriorityQueue;\n import java.util.Set;\n-import java.util.SortedSet;\n-import java.util.TreeSet;\n \n /**\n  * A sorted list of inputs with dependency information. Uses a stable\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1406,1433]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1434,1459]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java",
+        "src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "getString",
+            "getToken"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "ExtractionInfo"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "1037",
+            "1038",
+            "1039",
+            "1040",
+            "1041",
+            "1042",
+            "1043",
+            "1044"
+          ],
+          "num": 8
+        },
+        {
+          "qualified_names": [
+            "1036"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java b/src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java\nindex a0f264b..477b287 100644\n--- a/src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java\n+++ b/src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java\n@@ -1034,14 +1034,6 @@\n       this.string \u003d string;\n       this.token \u003d token;\n     }\n-\n-    public String getString() {\n-      return string;\n-    }\n-\n-    public JsDocToken getToken() {\n-      return token;\n-    }\n   }\n \n   /**\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [36717,36771]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [36777,36833]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/parsing/ParserRunner.java",
+        "src/com/google/javascript/jscomp/parsing/ParserRunner.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "28"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "27"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/parsing/ParserRunner.java b/src/com/google/javascript/jscomp/parsing/ParserRunner.java\nindex 7007f03..72a6668 100644\n--- a/src/com/google/javascript/jscomp/parsing/ParserRunner.java\n+++ b/src/com/google/javascript/jscomp/parsing/ParserRunner.java\n@@ -25,7 +25,6 @@\n import com.google.javascript.jscomp.mozilla.rhino.Parser;\n import com.google.javascript.jscomp.mozilla.rhino.ast.AstRoot;\n import com.google.javascript.rhino.Node;\n-import com.google.javascript.rhino.jstype.JSTypeRegistry;\n \n import java.io.IOException;\n import java.util.ResourceBundle;\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1153,1210]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/FunctionPrototypeType.java",
+        "src/com/google/javascript/rhino/jstype/FunctionPrototypeType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "42",
+            "45",
+            "46",
+            "47"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "41"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/FunctionPrototypeType.java b/src/com/google/javascript/rhino/jstype/FunctionPrototypeType.java\nindex f1aeb7b..b4f44fe 100644\n--- a/src/com/google/javascript/rhino/jstype/FunctionPrototypeType.java\n+++ b/src/com/google/javascript/rhino/jstype/FunctionPrototypeType.java\n@@ -39,12 +39,8 @@\n \n package com.google.javascript.rhino.jstype;\n \n-import com.google.javascript.rhino.ErrorReporter;\n import com.google.javascript.rhino.jstype.ObjectType;\n \n-import java.util.List;\n-import java.util.Set;\n-\n /**\n  * Represents the prototype of a {@link FunctionType}.\n  * @author nicksantos@google.com (Nick Santos)\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1628,1677]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1733,1755]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1756,1777]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/FunctionType.java",
+        "src/com/google/javascript/rhino/jstype/FunctionType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "createArrowType"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "toDebugHashCodeString"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "44",
+            "45",
+            "825",
+            "826",
+            "827",
+            "828",
+            "829"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "43",
+            "826"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/FunctionType.java b/src/com/google/javascript/rhino/jstype/FunctionType.java\nindex cbd4dc2..48e0f07 100644\n--- a/src/com/google/javascript/rhino/jstype/FunctionType.java\n+++ b/src/com/google/javascript/rhino/jstype/FunctionType.java\n@@ -41,8 +41,6 @@\n \n import static com.google.javascript.rhino.jstype.JSTypeNative.U2U_CONSTRUCTOR_TYPE;\n \n-import com.google.common.annotations.VisibleForTesting;\n-import com.google.common.base.Objects;\n import com.google.common.base.Preconditions;\n import com.google.common.collect.ImmutableList;\n import com.google.common.collect.Iterables;\n@@ -822,11 +820,6 @@\n     return super.resolveInternal(t, scope);\n   }\n \n-  // A helper method for creating arrow types.\n-  private ArrowType createArrowType(Node parameters, JSType returnType) {\n-    return registry.createArrowType(parameters, returnType);\n-  }\n-\n   @Override\n   public String toDebugHashCodeString() {\n     if (this \u003d\u003d registry.getNativeType(JSTypeNative.FUNCTION_INSTANCE_TYPE)) {\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1713,1768]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1769,1807]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [26413,26549]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/InstanceObjectType.java",
+        "src/com/google/javascript/rhino/jstype/InstanceObjectType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "44",
+            "45",
+            "46",
+            "47"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "43"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/InstanceObjectType.java b/src/com/google/javascript/rhino/jstype/InstanceObjectType.java\nindex ba1e47b..256f014 100644\n--- a/src/com/google/javascript/rhino/jstype/InstanceObjectType.java\n+++ b/src/com/google/javascript/rhino/jstype/InstanceObjectType.java\n@@ -41,10 +41,6 @@\n \n \n import com.google.common.base.Preconditions;\n-import com.google.javascript.rhino.ErrorReporter;\n-\n-import java.util.List;\n-import java.util.Set;\n \n /**\n  * An object type that is an instance of some function constructor.\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1676,1725]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1727,1749]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1750,1771]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/NamedType.java",
+        "src/com/google/javascript/rhino/jstype/NamedType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [
+            "forgiveUnknownNames"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "112"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "113"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/NamedType.java b/src/com/google/javascript/rhino/jstype/NamedType.java\nindex b67876c..6af723c 100644\n--- a/src/com/google/javascript/rhino/jstype/NamedType.java\n+++ b/src/com/google/javascript/rhino/jstype/NamedType.java\n@@ -110,6 +110,7 @@\n     this.charno \u003d charno;\n   }\n \n+  @Override\n   void forgiveUnknownNames() {\n     forgiving \u003d true;\n   }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MarkerAnnotation [4382,4391]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/ObjectType.java",
+        "src/com/google/javascript/rhino/jstype/ObjectType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "45",
+            "51"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "44"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/ObjectType.java b/src/com/google/javascript/rhino/jstype/ObjectType.java\nindex 2fcc8cf..78583fe 100644\n--- a/src/com/google/javascript/rhino/jstype/ObjectType.java\n+++ b/src/com/google/javascript/rhino/jstype/ObjectType.java\n@@ -42,13 +42,11 @@\n import static com.google.javascript.rhino.jstype.TernaryValue.FALSE;\n import static com.google.javascript.rhino.jstype.TernaryValue.UNKNOWN;\n \n-import com.google.common.collect.ImmutableList;\n import com.google.common.collect.ImmutableSet;\n import com.google.common.collect.Sets;\n import com.google.javascript.rhino.JSDocInfo;\n \n import java.util.HashSet;\n-import java.util.List;\n import java.util.Set;\n \n /**\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1769,1816]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1976,1998]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/ProxyObjectType.java",
+        "src/com/google/javascript/rhino/jstype/ProxyObjectType.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "45"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "44"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/ProxyObjectType.java b/src/com/google/javascript/rhino/jstype/ProxyObjectType.java\nindex 8761a53..bd23c71 100644\n--- a/src/com/google/javascript/rhino/jstype/ProxyObjectType.java\n+++ b/src/com/google/javascript/rhino/jstype/ProxyObjectType.java\n@@ -42,7 +42,6 @@\n import com.google.javascript.rhino.ErrorReporter;\n import com.google.javascript.rhino.JSDocInfo;\n \n-import java.util.List;\n import java.util.Set;\n \n /**\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1727,1749]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/RecordTypeBuilder.java",
+        "src/com/google/javascript/rhino/jstype/RecordTypeBuilder.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "43",
+            "44",
+            "45"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "42"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/RecordTypeBuilder.java b/src/com/google/javascript/rhino/jstype/RecordTypeBuilder.java\nindex 95fc082..e9deda4 100644\n--- a/src/com/google/javascript/rhino/jstype/RecordTypeBuilder.java\n+++ b/src/com/google/javascript/rhino/jstype/RecordTypeBuilder.java\n@@ -40,9 +40,6 @@\n package com.google.javascript.rhino.jstype;\n \n import com.google.common.collect.ImmutableMap;\n-import com.google.common.collect.Maps;\n-\n-import java.util.Map;\n \n /**\n  * A builder for record types.\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1677,1715]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1717,1738]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/jstype/UnresolvedTypeExpression.java",
+        "src/com/google/javascript/rhino/jstype/UnresolvedTypeExpression.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "44"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "43"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/jstype/UnresolvedTypeExpression.java b/src/com/google/javascript/rhino/jstype/UnresolvedTypeExpression.java\nindex 275c751..e485054 100644\n--- a/src/com/google/javascript/rhino/jstype/UnresolvedTypeExpression.java\n+++ b/src/com/google/javascript/rhino/jstype/UnresolvedTypeExpression.java\n@@ -41,7 +41,6 @@\n \n import com.google.common.base.Preconditions;\n import com.google.javascript.rhino.ErrorReporter;\n-import com.google.javascript.rhino.JSTypeExpression;\n import com.google.javascript.rhino.Node;\n \n /**\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [1725,1777]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "ExtractionInfo",
+        "shouldReportThis",
+        "forgiveUnknownNames",
+        "toDebugHashCodeString"
+      ],
+      "num": 4
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "createArrowType",
+        "getToken",
+        "getOwnSlot",
+        "getString"
+      ],
+      "num": 4
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.CheckGlobalThisTest",
+      "test_function": "testPropertyOfMethod",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "There should be one error.  expected:\u003c1\u003e but was:\u003c0\u003e"
+    },
+    {
+      "test_class": "com.google.javascript.jscomp.CheckGlobalThisTest",
+      "test_function": "testMethod4",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Unexpected error(s): JSC_USED_GLOBAL_THIS. dangerous use of the global this object at testcode line 1 : 39 expected:\u003c0\u003e but was:\u003c1\u003e"
+    }
+  ],
+  "fixing_changes": [],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

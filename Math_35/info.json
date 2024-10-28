@@ -1,0 +1,1241 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Math",
+  "id": "35",
+  "workingDir": "../bugs/Math_35_buggy",
+  "inducingCommit": "602e3fec32294ab720a30c11b743cd04140f3ff7",
+  "originalCommit": "62bed05b1491a68d1416392e3e4cb2665f995010",
+  "bug_name": "Math_35",
+  "derive": "defects4j",
+  "original_fixing_commit": "a5d8d115cb85149c62059a23e8f4d318cac0e903",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/math/genetics/Chromosome.java",
+        "src/java/org/apache/commons/math/genetics/Chromosome.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "getFitness"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "compareTo",
+            "getFitness",
+            "findSameChromosome",
+            "searchForFitnessUpdate",
+            "isSame"
+          ],
+          "num": 5
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "21",
+            "23",
+            "25",
+            "29"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "21",
+            "22",
+            "23",
+            "24",
+            "25",
+            "26",
+            "28",
+            "29",
+            "31",
+            "32",
+            "33",
+            "34",
+            "35",
+            "36",
+            "37",
+            "38",
+            "39",
+            "40",
+            "44",
+            "45",
+            "46",
+            "47",
+            "48",
+            "49",
+            "50",
+            "51",
+            "52",
+            "53",
+            "54",
+            "55",
+            "56",
+            "57",
+            "58",
+            "59",
+            "60",
+            "61",
+            "62",
+            "63",
+            "64",
+            "65",
+            "66",
+            "67",
+            "68",
+            "69",
+            "70",
+            "71",
+            "72",
+            "73",
+            "74",
+            "75",
+            "76",
+            "77",
+            "78",
+            "79",
+            "80",
+            "81",
+            "82",
+            "83",
+            "84",
+            "85",
+            "86",
+            "87",
+            "88",
+            "89",
+            "90",
+            "91",
+            "92",
+            "93",
+            "94",
+            "95",
+            "96",
+            "97",
+            "98",
+            "99",
+            "100",
+            "101",
+            "102",
+            "103",
+            "104",
+            "105",
+            "106",
+            "107",
+            "108",
+            "109",
+            "110"
+          ],
+          "num": 85
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/math/genetics/Chromosome.java b/src/java/org/apache/commons/math/genetics/Chromosome.java\nindex 5dcbcc2..d66333b 100644\n--- a/src/java/org/apache/commons/math/genetics/Chromosome.java\n+++ b/src/java/org/apache/commons/math/genetics/Chromosome.java\n@@ -18,13 +18,94 @@\n \n /**\n  * Individual in a population. Chromosomes are compared based on their fitness.\n- * @version $Revision$ $Date$\n+ * \n+ * The chromosomes are IMMUTABLE, and so their fitness is also immutable and\n+ * therefore it can be cached.\n+ * \n+ * @since 2.0\n+ * @version $Revision:$ $Date:$\n  */\n-public interface Chromosome {\n+public abstract class Chromosome implements Comparable\u003cChromosome\u003e,Fitness {\n+    \n     /**\n-     * Access the fitness of this chromosome.\n+     * Cached value of the fitness of this chromosome.\n+     */\n+    private double fitness \u003d Double.MIN_VALUE;\n+    \n+    /**\n+     * Access the fitness of this chromosome. The bigger the fitness, the better\n+     * the chromosome.\n+     * \n+     * Computation of fitness is usually very time-consuming task, therefore the\n+     * fitness is cached.\n      * \n      * @return the fitness.\n      */\n-    Fitness getFitness();\n+    public double getFitness() {\n+        if (this.fitness \u003d\u003d Double.MIN_VALUE) {\n+            // no cache - compute the fitness\n+            this.fitness \u003d fitness();\n+        }\n+        return this.fitness;\n+    }\n+        \n+    /**\n+     * Compares two chromosomes based on their fitness. The bigger the fitness,\n+     * the better the chromosome.\n+     * \n+     * @param another another chromosome to compare\n+     * @return\n+     * \u003cul\u003e\n+     *     \u003cli\u003e-1 if \u003ccode\u003eanother\u003c/code\u003e is better than \u003ccode\u003ethis\u003c/code\u003e\u003c/li\u003e\n+     *     \u003cli\u003e1 if \u003ccode\u003eanother\u003c/code\u003e is worse than \u003ccode\u003ethis\u003c/code\u003e\u003c/li\u003e\n+     *     \u003cli\u003e0 if the two chromosomes have the same fitness\u003c/li\u003e\n+     * \u003c/ul\u003e\n+     */\n+    public int compareTo(Chromosome another) {\n+        return ((Double)this.getFitness()).compareTo(another.getFitness());\n+    }\n+\n+    /**\n+     * Returns \u003ccode\u003etrue\u003ccode\u003e iff \u003ccode\u003eanother\u003c/code\u003e has the same\n+     * representation and therefore the same fitness. By default, it returns\n+     * false -- override it in your implementation if you need it. \n+     * @param another chromosome to compare\n+     * @return true if \u003ccode\u003eanother\u003c/code\u003e is equivalent to this chromosome\n+     */\n+    protected boolean isSame(Chromosome another) {\n+        return false;\n+    }\n+\n+    /**\n+     * Searches the \u003ccode\u003epopulation\u003c/code\u003e for another chromosome with the same\n+     * representation. If such chromosome is found, it is returned, if no such\n+     * chromosome exists, returns \u003ccode\u003enull\u003c/code\u003e.\n+     * \n+     * @param population\n+     *            Population to search\n+     * @return Chromosome with the same representation, or \u003ccode\u003enull\u003c/code\u003e if\n+     *         no such chromosome exists.\n+     */\n+    protected Chromosome findSameChromosome(Population population) {\n+        for (Chromosome anotherChr : population) {\n+            if (this.isSame(anotherChr))\n+                return anotherChr;\n+        }\n+        return null;\n+    }\n+\n+    /**\n+     * Searches the population for a chromosome representing the same solution,\n+     * and if it finds one, updates the fitness to its value.\n+     * \n+     * @param population\n+     *            Population to search\n+     */\n+    public void searchForFitnessUpdate(Population population) {\n+        Chromosome sameChromosome \u003d findSameChromosome(population);\n+        if (sameChromosome !\u003d null) {\n+            fitness \u003d sameChromosome.getFitness();\n+        }\n+    }\n+    \n }\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Javadoc [846,1095]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: abstract [1103,1111]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ParameterizedType [1140,1162]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [1163,1170]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [1182,1295]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [1305,1781]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [1795,2374]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [2380,2806]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [2812,3463]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [3469,3931]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [1049,1059]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [1063,1091]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: The chromosomes are IMMUTABLE, and so their fitness is also immutable and [937,1010]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "TextElement: therefore it can be cached. [1014,1041]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [933,959]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Javadoc [846,963]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [998,1117]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/math/genetics/ChromosomePair.java",
+        "src/java/org/apache/commons/math/genetics/ChromosomePair.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "getSecond",
+            "ChromosomePair"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "ChromosomePair",
+            "toString"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "25",
+            "28",
+            "36",
+            "58"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "21",
+            "22",
+            "27",
+            "30",
+            "38",
+            "61",
+            "62",
+            "63",
+            "64",
+            "65",
+            "66",
+            "67",
+            "68"
+          ],
+          "num": 13
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/math/genetics/ChromosomePair.java b/src/java/org/apache/commons/math/genetics/ChromosomePair.java\nindex 0cb095c..bf56076 100644\n--- a/src/java/org/apache/commons/math/genetics/ChromosomePair.java\n+++ b/src/java/org/apache/commons/math/genetics/ChromosomePair.java\n@@ -18,14 +18,16 @@\n \n /**\n  * A pair of {@link Chromosome} objects.\n+ * @since 2.0\n+ * \n  * @version $Revision$ $Date$\n  */\n public class ChromosomePair {\n     /** the first chromosome in the pair. */\n-    private Chromosome first;\n+    private final Chromosome first;\n \n     /** the second chromosome in the pair. */\n-    private Chromosome second;\n+    private final Chromosome second;\n \n     /**\n      * Create a chromosome pair.\n@@ -33,7 +35,7 @@\n      * @param c1 the first chromosome.\n      * @param c2 the second chromosome.\n      */\n-    public ChromosomePair(Chromosome c1, Chromosome c2) {\n+    public ChromosomePair(final Chromosome c1, final Chromosome c2) {\n         super();\n         first \u003d c1;\n         second \u003d c2;\n@@ -56,4 +58,12 @@\n     public Chromosome getSecond() {\n         return second;\n     }\n+    \n+    /**\n+     * {@inheritDoc}\n+     */\n+    @Override\n+    public String toString() {        \n+        return String.format(\"(%s,%s)\", getFirst(), getSecond());\n+    }\n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [1744,1901]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [894,904]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: final [1030,1035]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: final [1113,1118]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: final [1301,1306]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: final [1322,1327]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/math/genetics/CrossoverPolicy.java",
+        "src/java/org/apache/commons/math/genetics/CrossoverPolicy.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "21"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "22",
+            "23"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/math/genetics/CrossoverPolicy.java b/src/java/org/apache/commons/math/genetics/CrossoverPolicy.java\nindex 1f19120..f79e2a0 100644\n--- a/src/java/org/apache/commons/math/genetics/CrossoverPolicy.java\n+++ b/src/java/org/apache/commons/math/genetics/CrossoverPolicy.java\n@@ -19,6 +19,8 @@\n /**\n  * Policy used to create a pair of new chromosomes by performing a crossover\n  * operation on a source pair of chromosomes.\n+ * \n+ * @since 2.0\n  * @version $Revision$ $Date$\n  */\n public interface CrossoverPolicy {\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [980,990]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/math/genetics/Fitness.java",
+        "src/java/org/apache/commons/math/genetics/Fitness.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [
+            "fitness"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "20",
+            "21",
+            "24"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "20",
+            "21",
+            "22",
+            "25",
+            "26",
+            "27",
+            "28",
+            "29",
+            "30",
+            "31",
+            "32"
+          ],
+          "num": 11
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/math/genetics/Fitness.java b/src/java/org/apache/commons/math/genetics/Fitness.java\nindex 1fc7db8..286e793 100644\n--- a/src/java/org/apache/commons/math/genetics/Fitness.java\n+++ b/src/java/org/apache/commons/math/genetics/Fitness.java\n@@ -17,9 +17,17 @@\n package org.apache.commons.math.genetics;\n \n /**\n- * Interface used to compare chromosomes.\n- * @version $Revision$ $Date$\n+ * Fitness of a chromosome.\n+ *\n+ * @version $Revision:$ $Date:$\n  * @since 2.0\n  */\n-public interface Fitness extends Comparable\u003cFitness\u003e {\n+public interface Fitness {\n+    /**\n+     * Compute the fitness. This is usually very time-consuming, so the value\n+     * should be cached.\n+     * \n+     * @return fitness\n+     */\n+    public double fitness();\n }\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Javadoc [846,930]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [962,1136]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [853,877]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [884,912]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [853,891]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [895,921]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Javadoc [846,939]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ParameterizedType [973,992]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/math/genetics/GeneticAlgorithm.java",
+        "src/java/org/apache/commons/math/genetics/GeneticAlgorithm.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "getMutationRate",
+            "setMutationPolicy",
+            "getCrossoverRate",
+            "setCrossoverPolicy",
+            "getSelectionPolicy",
+            "setCrossoverRate",
+            "getCrossoverPolicy",
+            "setSelectionPolicy",
+            "getMutationPolicy",
+            "nextGeneration",
+            "setMutationRate"
+          ],
+          "num": 11
+        },
+        {
+          "qualified_names": [
+            "setRandomGenerator",
+            "getSelectionPolicy",
+            "getCrossoverPolicy",
+            "getMutationPolicy",
+            "getRandomGenerator",
+            "GeneticAlgorithm",
+            "nextGeneration",
+            "getMutationRate",
+            "getCrossoverRate"
+          ],
+          "num": 9
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "22",
+            "23",
+            "27",
+            "30",
+            "33",
+            "36",
+            "39",
+            "40",
+            "58",
+            "59",
+            "60",
+            "61",
+            "62",
+            "63",
+            "64",
+            "65",
+            "66",
+            "67",
+            "68",
+            "69",
+            "70",
+            "71",
+            "72",
+            "73",
+            "74",
+            "75",
+            "76",
+            "77",
+            "78",
+            "79",
+            "80",
+            "81",
+            "82",
+            "83",
+            "84",
+            "85",
+            "86",
+            "87",
+            "88",
+            "89",
+            "90",
+            "91",
+            "92",
+            "93",
+            "94",
+            "95",
+            "96",
+            "97",
+            "98",
+            "99",
+            "100",
+            "101",
+            "102",
+            "121",
+            "125",
+            "128",
+            "129",
+            "134",
+            "136",
+            "137",
+            "141",
+            "144",
+            "145",
+            "146",
+            "152",
+            "153",
+            "163",
+            "164",
+            "165",
+            "167",
+            "168",
+            "172",
+            "173",
+            "174",
+            "176",
+            "177",
+            "181",
+            "182",
+            "183",
+            "185",
+            "186",
+            "190",
+            "191",
+            "192",
+            "194",
+            "195",
+            "197",
+            "198",
+            "199",
+            "200",
+            "201",
+            "202",
+            "203",
+            "204",
+            "205"
+          ],
+          "num": 95
+        },
+        {
+          "qualified_names": [
+            "2",
+            "19",
+            "20",
+            "21",
+            "25",
+            "26",
+            "27",
+            "30",
+            "31",
+            "32",
+            "33",
+            "34",
+            "35",
+            "36",
+            "37",
+            "38",
+            "39",
+            "40",
+            "41",
+            "42",
+            "43",
+            "44",
+            "45",
+            "46",
+            "47",
+            "48",
+            "49",
+            "50",
+            "51",
+            "52",
+            "53",
+            "54",
+            "55",
+            "56",
+            "58",
+            "61",
+            "64",
+            "67",
+            "70",
+            "71",
+            "72",
+            "73",
+            "74",
+            "75",
+            "76",
+            "77",
+            "78",
+            "79",
+            "80",
+            "81",
+            "82",
+            "83",
+            "84",
+            "85",
+            "86",
+            "87",
+            "88",
+            "89",
+            "90",
+            "91",
+            "92",
+            "93",
+            "94",
+            "95",
+            "134",
+            "137",
+            "142",
+            "144",
+            "148",
+            "151",
+            "152",
+            "158",
+            "165",
+            "166",
+            "167",
+            "168",
+            "169",
+            "170",
+            "171",
+            "172",
+            "176",
+            "177",
+            "179",
+            "180",
+            "184",
+            "185",
+            "187",
+            "188",
+            "192",
+            "193",
+            "195",
+            "196",
+            "200",
+            "201",
+            "203",
+            "204",
+            "206"
+          ],
+          "num": 97
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/math/genetics/GeneticAlgorithm.java b/src/java/org/apache/commons/math/genetics/GeneticAlgorithm.java\nindex b913d05..95ebbde 100644\n--- a/src/java/org/apache/commons/math/genetics/GeneticAlgorithm.java\n+++ b/src/java/org/apache/commons/math/genetics/GeneticAlgorithm.java\n@@ -16,28 +16,83 @@\n  */\n package org.apache.commons.math.genetics;\n \n+import org.apache.commons.math.random.RandomGenerator;\n+import org.apache.commons.math.random.JDKRandomGenerator;\n+\n /**\n  * Implementation of a genetic algorithm. All factors that govern the operation\n  * of the algorithm can be configured for a specific problem.\n- * \n- * @version $Revision$ $Date$\n+ *\n+ * @since 2.0\n+ * @version $Revision:$ $Date:$\n  */\n public class GeneticAlgorithm {\n+\n+    /**\n+     * Static random number generator shared by GA implementation classes.\n+     * Set the randomGenerator seed to get reproducible results.  \n+     * Use {@link #setRandomGenerator(RandomGenerator)} to supply an alternative\n+     * to the default JDK-provided PRNG.\n+     */\n+    private static RandomGenerator randomGenerator \u003d new JDKRandomGenerator();\n+    \n+    /**\n+     * Set the (static) random generator.\n+     * \n+     * @param random random generator\n+     */\n+    public synchronized static void setRandomGenerator(RandomGenerator random) {\n+        randomGenerator \u003d random;\n+    }\n+    \n+    /**\n+     * Returns the (static) random generator.\n+     * \n+     * @return the static random generator shared by GA implementation classes\n+     */\n+    public synchronized static RandomGenerator getRandomGenerator() {\n+        return randomGenerator;\n+    }\n+      \n     /** the crossover policy used by the algorithm. */\n-    private CrossoverPolicy crossoverPolicy;\n+    protected final CrossoverPolicy crossoverPolicy;\n \n     /** the rate of crossover for the algorithm. */\n-    private double crossoverRate;\n+    protected final double crossoverRate;\n \n     /** the mutation policy used by the algorithm. */\n-    private MutationPolicy mutationPolicy;\n+    protected final MutationPolicy mutationPolicy;\n \n     /** the rate of mutation for the algorithm. */\n-    private double mutationRate;\n+    protected final double mutationRate;\n \n     /** the selection policy used by the algorithm. */\n-    private SelectionPolicy selectionPolicy;\n-\n+    protected final SelectionPolicy selectionPolicy;\n+    \n+    /**\n+     * @param crossoverPolicy The {@link CrossoverPolicy}\n+     * @param crossoverRate The crossover rate as a percentage (0-1 inclusive)\n+     * @param mutationPolicy The {@link MutationPolicy}\n+     * @param mutationRate The mutation rate as a percentage (0-1 inclusive)\n+     * @param selectionPolicy The {@link selectionPolicy}\n+     */\n+    public GeneticAlgorithm(\n+            CrossoverPolicy crossoverPolicy, double crossoverRate,\n+            MutationPolicy mutationPolicy, double mutationRate,\n+            SelectionPolicy selectionPolicy) {\n+        if (crossoverRate \u003c 0 || crossoverRate \u003e 1) {\n+            throw new IllegalArgumentException(\"crossoverRate must be between 0 and 1\");\n+        }\n+        if (mutationRate \u003c 0 || mutationRate \u003e 1) {\n+            throw new IllegalArgumentException(\"mutationRate must be between 0 and 1\");\n+        }\n+        this.crossoverPolicy \u003d crossoverPolicy;\n+        this.crossoverRate \u003d crossoverRate;\n+        this.mutationPolicy \u003d mutationPolicy;\n+        this.mutationRate \u003d mutationRate;\n+        this.selectionPolicy \u003d selectionPolicy;\n+    }\n+    \n     /**\n      * Evolve the given population. Evolution stops when the stopping condition\n      * is satisfied.\n@@ -55,51 +110,6 @@\n     }\n \n     /**\n-     * Access the crossover policy.\n-     * \n-     * @return the crossover policy.\n-     */\n-    private CrossoverPolicy getCrossoverPolicy() {\n-        return crossoverPolicy;\n-    }\n-\n-    /**\n-     * Access the crossover rate.\n-     * \n-     * @return the crossover rate.\n-     */\n-    private double getCrossoverRate() {\n-        return crossoverRate;\n-    }\n-\n-    /**\n-     * Access the mutation policy.\n-     * \n-     * @return the mutation policy.\n-     */\n-    private MutationPolicy getMutationPolicy() {\n-        return mutationPolicy;\n-    }\n-\n-    /**\n-     * Access the mutation rate.\n-     * \n-     * @return the mutation rate.\n-     */\n-    private double getMutationRate() {\n-        return mutationRate;\n-    }\n-\n-    /**\n-     * Access the selection policy.\n-     * \n-     * @return the selection policy.\n-     */\n-    private SelectionPolicy getSelectionPolicy() {\n-        return selectionPolicy;\n-    }\n-\n-    /**\n      * \u003cp\u003eEvolve the given population into the next generation.\u003c/p\u003e\n      * \u003cp\u003e\u003col\u003e\n      *    \u003cli\u003eGet nextGeneration population to fill from \u003ccode\u003ecurrent\u003c/code\u003e\n@@ -118,89 +128,80 @@\n      *    \u003c/ol\u003e\n      * \u003c/p\u003e\n      * \n-     * \n      * @param current the current population.\n      * @return the population for the next generation.\n      */\n-    private Population nextGeneration(Population current) {\n+    public Population nextGeneration(Population current) {\n         Population nextGeneration \u003d current.nextGeneration();\n \n-        while (nextGeneration.getPopulationSize() \u003c nextGeneration\n-                .getPopulationLimit()) {\n+        while (nextGeneration.getPopulationSize() \u003c nextGeneration.getPopulationLimit()) {\n             // select parent chromosomes\n             ChromosomePair pair \u003d getSelectionPolicy().select(current);\n \n             // crossover?\n-            if (Math.random() \u003c getCrossoverRate()) {\n+            if (randomGenerator.nextDouble() \u003c getCrossoverRate()) {\n                 // apply crossover policy to create two offspring\n-                pair \u003d getCrossoverPolicy().crossover(pair.getFirst(),\n-                        pair.getSecond());\n+                pair \u003d getCrossoverPolicy().crossover(pair.getFirst(), pair.getSecond());\n             }\n \n             // mutation?\n-            if (Math.random() \u003c getMutationRate()) {\n+            if (randomGenerator.nextDouble() \u003c getMutationRate()) {\n                 // apply mutation policy to the chromosomes\n                 pair \u003d new ChromosomePair(\n-                              getMutationPolicy().mutate(pair.getFirst()),\n-                              getMutationPolicy().mutate(pair.getSecond())\n-                           );\n+                    getMutationPolicy().mutate(pair.getFirst()),\n+                    getMutationPolicy().mutate(pair.getSecond()));\n             }\n \n             // add the first chromosome to the population\n             nextGeneration.addChromosome(pair.getFirst());\n             // is there still a place for the second chromosome?\n-            if (nextGeneration.getPopulationSize() \u003c nextGeneration\n-                    .getPopulationLimit()) {\n+            if (nextGeneration.getPopulationSize() \u003c nextGeneration.getPopulationLimit()) {\n                 // add the second chromosome to the population\n                 nextGeneration.addChromosome(pair.getSecond());\n             }\n         }\n \n         return nextGeneration;\n+    }    \n+    \n+    /**\n+     * Returns the crossover policy.\n+     * @return crossover policy\n+     */\n+    public CrossoverPolicy getCrossoverPolicy() {\n+        return crossoverPolicy;\n     }\n \n     /**\n-     * Modify the crossover policy.\n-     * \n-     * @param value the new crossover policy.\n+     * Returns the crossover rate.\n+     * @return crossover rate\n      */\n-    public void setCrossoverPolicy(CrossoverPolicy value) {\n-        this.crossoverPolicy \u003d value;\n+    public double getCrossoverRate() {\n+        return crossoverRate;\n     }\n \n     /**\n-     * Modify the crossover rate.\n-     * \n-     * @param value the new crossover rate.\n+     * Returns the mutation policy.\n+     * @return mutation policy\n      */\n-    public void setCrossoverRate(double value) {\n-        this.crossoverRate \u003d value;\n+    public MutationPolicy getMutationPolicy() {\n+        return mutationPolicy;\n     }\n \n     /**\n-     * Modify the mutation policy.\n-     * \n-     * @param value the new mutation policy.\n+     * Returns the mutation rate.\n+     * @return mutation rate\n      */\n-    public void setMutationPolicy(MutationPolicy value) {\n-        this.mutationPolicy \u003d value;\n+    public double getMutationRate() {\n+        return mutationRate;\n     }\n \n     /**\n-     * Modify the mutation rate.\n-     * \n-     * @param value the new mutation rate.\n+     * Returns the selection policy.\n+     * @return selection policy\n      */\n-    public void setMutationRate(double value) {\n-        this.mutationRate \u003d value;\n+    public SelectionPolicy getSelectionPolicy() {\n+        return selectionPolicy;\n     }\n-\n-    /**\n-     * Modify the selection policy.\n-     * \n-     * @param value the new selection policy.\n-     */\n-    public void setSelectionPolicy(SelectionPolicy value) {\n-        this.selectionPolicy \u003d value;\n-    }\n+        \n }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [846,900]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [901,958]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [1196,1550]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [1560,1780]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [1790,2042]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [2570,3653]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [1126,1154]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: final [2119,2124]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: final [2225,2230]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: final [2322,2327]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: final [2425,2430]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: final [2522,2527]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [6660,6740]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [6834,6910]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [6991,7069]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [7160,7234]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [7313,7393]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Javadoc [2111,2203]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Javadoc [2298,2386]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Javadoc [2468,2558]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Javadoc [2650,2736]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "Javadoc [2816,2908]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [5508,5713]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [5719,5907]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [5913,6113]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [6119,6303]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [6309,6514]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/math/genetics/MutationPolicy.java",
+        "src/java/org/apache/commons/math/genetics/MutationPolicy.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "20"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "21",
+            "22"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/math/genetics/MutationPolicy.java b/src/java/org/apache/commons/math/genetics/MutationPolicy.java\nindex 06fff0a..beaf63c 100644\n--- a/src/java/org/apache/commons/math/genetics/MutationPolicy.java\n+++ b/src/java/org/apache/commons/math/genetics/MutationPolicy.java\n@@ -18,6 +18,8 @@\n \n /**\n  * Algorithm used to mutate a chrommosome.\n+ * \n+ * @since 2.0\n  * @version $Revision$ $Date$\n  */\n public interface MutationPolicy {\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [900,910]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/math/genetics/Population.java",
+        "src/java/org/apache/commons/math/genetics/Population.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "21",
+            "23"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "21",
+            "22",
+            "23",
+            "25"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/math/genetics/Population.java b/src/java/org/apache/commons/math/genetics/Population.java\nindex 36fdbb7..1804242 100644\n--- a/src/java/org/apache/commons/math/genetics/Population.java\n+++ b/src/java/org/apache/commons/math/genetics/Population.java\n@@ -18,9 +18,11 @@\n \n /**\n  * A collection of chromosomes that facilitates generational evolution.\n- * @version $Revision$ $Date$\n+ * \n+ * @since 2.0\n+ * @version $Revision:$ $Date:$\n  */\n-public interface Population {\n+public interface Population extends Iterable\u003cChromosome\u003e {\n     /**\n      * Access the current population size.\n      * @return the current population size.\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Javadoc [846,975]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ParameterizedType [1012,1032]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [929,939]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [943,971]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [925,951]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Javadoc [846,955]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/math/genetics/SelectionPolicy.java",
+        "src/java/org/apache/commons/math/genetics/SelectionPolicy.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "21"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "21",
+            "22",
+            "23"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/math/genetics/SelectionPolicy.java b/src/java/org/apache/commons/math/genetics/SelectionPolicy.java\nindex 2b28184..a6a2b90 100644\n--- a/src/java/org/apache/commons/math/genetics/SelectionPolicy.java\n+++ b/src/java/org/apache/commons/math/genetics/SelectionPolicy.java\n@@ -18,7 +18,9 @@\n \n /**\n  * Algorithm used to select a chromosome pair from a population.\n- * @version $Revision$ $Date$\n+ * \n+ * @since 2.0\n+ * @version $Revision:$ $Date:$\n  */\n public interface SelectionPolicy {\n     /**\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Javadoc [846,968]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [922,932]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [936,964]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [918,944]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Javadoc [846,948]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/math/genetics/StoppingCondition.java",
+        "src/java/org/apache/commons/math/genetics/StoppingCondition.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "21"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "21",
+            "22",
+            "23"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/math/genetics/StoppingCondition.java b/src/java/org/apache/commons/math/genetics/StoppingCondition.java\nindex 2904554..d40a52a 100644\n--- a/src/java/org/apache/commons/math/genetics/StoppingCondition.java\n+++ b/src/java/org/apache/commons/math/genetics/StoppingCondition.java\n@@ -18,7 +18,9 @@\n \n /**\n  * Algorithm used to determine when to stop evolution.\n- * @version $Revision$ $Date$\n+ * \n+ * @since 2.0\n+ * @version $Revision:$ $Date:$\n  */\n public interface StoppingCondition {\n     /**\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Javadoc [846,958]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [912,922]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "TagElement [926,954]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "TagElement [908,934]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Javadoc [846,938]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [
+        "src/java/org/apache/commons/math/genetics/AbstractListChromosome.java",
+        "src/java/org/apache/commons/math/genetics/BinaryChromosome.java",
+        "src/java/org/apache/commons/math/genetics/BinaryMutation.java",
+        "src/java/org/apache/commons/math/genetics/ElitisticListPopulation.java",
+        "src/java/org/apache/commons/math/genetics/FixedGenerationCount.java",
+        "src/java/org/apache/commons/math/genetics/InvalidRepresentationException.java",
+        "src/java/org/apache/commons/math/genetics/ListPopulation.java",
+        "src/java/org/apache/commons/math/genetics/OnePointCrossover.java",
+        "src/java/org/apache/commons/math/genetics/PermutationChromosome.java",
+        "src/java/org/apache/commons/math/genetics/RandomKey.java",
+        "src/java/org/apache/commons/math/genetics/RandomKeyMutation.java",
+        "src/java/org/apache/commons/math/genetics/TournamentSelection.java"
+      ],
+      "num": 12
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "fitness",
+        "getRandomGenerator",
+        "isSame",
+        "toString",
+        "compareTo",
+        "findSameChromosome",
+        "searchForFitnessUpdate",
+        "setRandomGenerator",
+        "GeneticAlgorithm"
+      ],
+      "num": 9
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "setMutationRate",
+        "setCrossoverPolicy",
+        "getSecond",
+        "setCrossoverRate",
+        "setMutationPolicy",
+        "setSelectionPolicy"
+      ],
+      "num": 6
+    }
+  },
+  "trigger_tests": [],
+  "fixing_changes": [],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

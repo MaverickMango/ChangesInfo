@@ -1,0 +1,123 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.deser.TestEnumDeserialization::testEnumWithJsonPropertyRename",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "21",
+  "workingDir": "../bugs/JacksonDatabind_21_tmp",
+  "bug_name": "JacksonDatabind_21",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.deser.TestEnumDeserialization",
+      "test_function": "testEnumWithJsonPropertyRename",
+      "assertion_line": "475",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003c[\"[b\",\"a]\"]\u003e but was:\u003c[\"[B\",\"A]\"]\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/introspect/JacksonAnnotationIntrospector.java",
+        "src/main/java/com/fasterxml/jackson/databind/introspect/JacksonAnnotationIntrospector.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector:findEnumValue:[Enum\u003c?\u003e value]:String"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector:findRootName:[AnnotatedClass ac]:PropertyName"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "4",
+            "65",
+            "66",
+            "67",
+            "71",
+            "73",
+            "74",
+            "75",
+            "76",
+            "77",
+            "78",
+            "79",
+            "80",
+            "81",
+            "83",
+            "84",
+            "85"
+          ],
+          "num": 17
+        },
+        {
+          "qualified_names": [
+            "3",
+            "65"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/introspect/JacksonAnnotationIntrospector.java b/src/main/java/com/fasterxml/jackson/databind/introspect/JacksonAnnotationIntrospector.java\nindex ca3966a..624c08d 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/introspect/JacksonAnnotationIntrospector.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/introspect/JacksonAnnotationIntrospector.java\n@@ -1,7 +1,6 @@\n package com.fasterxml.jackson.databind.introspect;\n \n import java.lang.annotation.Annotation;\n-import java.lang.reflect.Field;\n import java.util.*;\n \n import com.fasterxml.jackson.annotation.*;\n@@ -62,27 +61,11 @@\n      * Since 2.6, we have supported use of {@link JsonProperty} for specifying\n      * explicit serialized name\n      */\n-    @Override\n-    public String findEnumValue(Enum\u003c?\u003e value)\n-    {\n         // 11-Jun-2015, tatu: As per [databind#677], need to allow explicit naming.\n         //   Unfortunately can not quite use standard AnnotatedClass here (due to various\n         //   reasons, including odd representation JVM uses); has to do for now\n-        try {\n             // We know that values are actually static fields with matching name so:\n-            Field f \u003d value.getClass().getField(value.name());\n-            if (f !\u003d null) {\n-                JsonProperty prop \u003d f.getAnnotation(JsonProperty.class);\n-                String n \u003d prop.value();\n-                if (n !\u003d null \u0026\u0026 !n.isEmpty()) {\n-                    return n;\n-                }\n-            }\n-        } catch (Exception e) {\n             // no such field, or access; neither which we can do much about\n-        }\n-        return value.name();\n-    }\n \n     /*\n     /**********************************************************\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [2078,2200]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [92,123]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [2110,3122]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector:findRootName:[AnnotatedClass ac]:PropertyName"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector:findEnumValue:[Enum\u003c?\u003e value]:String"
+      ],
+      "num": 1
+    }
+  }
+}

@@ -1,0 +1,171 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Math",
+  "id": "88",
+  "workingDir": "../bugs/Math_88_buggy",
+  "inducingCommit": "b03d68547460332b861044db80ccd08edec361a1",
+  "originalCommit": "2ada3c15d0bf9373a1ade3ad7bfadf29714986f1",
+  "bug_name": "Math_88",
+  "derive": "defects4j",
+  "original_fixing_commit": "24a6a2692e942969f5c39bd88d3d12ac0f0bf0d9",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/math/optimization/linear/SimplexTableau.java",
+        "src/java/org/apache/commons/math/optimization/linear/SimplexTableau.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "getDecisionVariableValue"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "getDecisionVariableValue"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "330",
+            "331",
+            "332"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "330",
+            "331",
+            "332",
+            "333",
+            "334",
+            "335",
+            "336",
+            "337",
+            "338",
+            "339",
+            "340",
+            "341",
+            "342",
+            "343"
+          ],
+          "num": 14
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/math/optimization/linear/SimplexTableau.java b/src/java/org/apache/commons/math/optimization/linear/SimplexTableau.java\nindex fd7b24b..5a9a38d 100644\n--- a/src/java/org/apache/commons/math/optimization/linear/SimplexTableau.java\n+++ b/src/java/org/apache/commons/math/optimization/linear/SimplexTableau.java\n@@ -327,9 +327,20 @@\n      * @return The value of the given decision variable.\n      */\n     protected double getDecisionVariableValue(final int decisionVariable) {\n-        Integer basicRow \u003d getBasicRow(getNumObjectiveFunctions() + decisionVariable);\n-        return basicRow \u003d\u003d null ? 0 : getEntry(basicRow, getRhsOffset()); \n-    }\n+      int col \u003d getNumObjectiveFunctions() + decisionVariable;  \n+      Integer basicRow \u003d getBasicRow(col);\n+      if (basicRow \u003d\u003d null) {\n+          return 0;\n+      }\n+      // if there are multiple variables that can take the value on the RHS\n+      // then we\u0027ll give the first variable that value\n+      for (int i \u003d getNumObjectiveFunctions(); i \u003c col; i++) {\n+          if (tableau.getEntry(basicRow, i) \u003d\u003d 1) {\n+              return 0;\n+          }\n+      }\n+      return getEntry(basicRow, getRhsOffset()); \n+  }\n \n     /**\n      * Subtracts a multiple of one row from another.\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [12975,13031]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [13083,13134]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ForStatement [13272,13424]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrimitiveType: int [12975,12978]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [12979,13030]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: col [12979,12982]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: col [13071,13074]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [13071,13087]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "NumberLiteral: 0 [13090,13091]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ConditionalExpression [13071,13128]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [],
+  "fixing_changes": [],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,81 @@
+diff -r -u inducing/src/test/java/org/apache/commons/math3/optimization/univariate/BrentOptimizerTest.java buggy/src/test/java/org/apache/commons/math3/optimization/univariate/BrentOptimizerTest.java
+--- inducing/src/test/java/org/apache/commons/math3/optimization/univariate/BrentOptimizerTest.java	2023-06-12 11:40:43.381949986 +0800
++++ buggy/src/test/java/org/apache/commons/math3/optimization/univariate/BrentOptimizerTest.java	2023-06-12 11:40:43.077963466 +0800
+@@ -17,15 +17,16 @@
+ package org.apache.commons.math3.optimization.univariate;
+ 
+ 
++import org.apache.commons.math3.analysis.QuinticFunction;
++import org.apache.commons.math3.analysis.UnivariateFunction;
++import org.apache.commons.math3.analysis.function.Sin;
+ import org.apache.commons.math3.exception.NumberIsTooLargeException;
+ import org.apache.commons.math3.exception.NumberIsTooSmallException;
+ import org.apache.commons.math3.exception.TooManyEvaluationsException;
+-import org.apache.commons.math3.analysis.QuinticFunction;
+-import org.apache.commons.math3.analysis.SinFunction;
+-import org.apache.commons.math3.analysis.UnivariateFunction;
+-import org.apache.commons.math3.optimization.GoalType;
+ import org.apache.commons.math3.optimization.ConvergenceChecker;
++import org.apache.commons.math3.optimization.GoalType;
+ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
++import org.apache.commons.math3.util.FastMath;
+ import org.junit.Assert;
+ import org.junit.Test;
+ 
+@@ -36,7 +37,7 @@
+ 
+     @Test
+     public void testSinMin() {
+-        UnivariateFunction f = new SinFunction();
++        UnivariateFunction f = new Sin();
+         UnivariateOptimizer optimizer = new BrentOptimizer(1e-10, 1e-14);
+         Assert.assertEquals(3 * Math.PI / 2, optimizer.optimize(200, f, GoalType.MINIMIZE, 4, 5).getPoint(),1e-8);
+         Assert.assertTrue(optimizer.getEvaluations() <= 50);
+@@ -54,8 +55,8 @@
+ 
+     @Test
+     public void testSinMinWithValueChecker() {
+-        final UnivariateFunction f = new SinFunction();
+-        final ConvergenceChecker checker = new SimpleUnivariateValueChecker(1e-5, 1e-14);
++        final UnivariateFunction f = new Sin();
++        final ConvergenceChecker<UnivariatePointValuePair> checker = new SimpleUnivariateValueChecker(1e-5, 1e-14);
+         // The default stopping criterion of Brent's algorithm should not
+         // pass, but the search will stop at the given relative tolerance
+         // for the function value.
+@@ -147,7 +148,7 @@
+ 
+     @Test
+     public void testMinEndpoints() {
+-        UnivariateFunction f = new SinFunction();
++        UnivariateFunction f = new Sin();
+         UnivariateOptimizer optimizer = new BrentOptimizer(1e-8, 1e-14);
+ 
+         // endpoint is minimum
+@@ -157,4 +158,27 @@
+         result = optimizer.optimize(50, f, GoalType.MINIMIZE, 4, 3 * Math.PI / 2).getPoint();
+         Assert.assertEquals(3 * Math.PI / 2, result, 1e-6);
+     }
++
++    @Test
++    public void testMath832() {
++        final UnivariateFunction f = new UnivariateFunction() {
++                public double value(double x) {
++                    final double sqrtX = FastMath.sqrt(x);
++                    final double a = 1e2 * sqrtX;
++                    final double b = 1e6 / x;
++                    final double c = 1e4 / sqrtX;
++
++                    return a + b + c;
++                }
++            };
++
++        UnivariateOptimizer optimizer = new BrentOptimizer(1e-10, 1e-8);
++        final double result = optimizer.optimize(1483,
++                                                 f,
++                                                 GoalType.MINIMIZE,
++                                                 Double.MIN_VALUE,
++                                                 Double.MAX_VALUE).getPoint();
++
++        Assert.assertEquals(804.9355825, result, 1e-6);
++    }
+ }

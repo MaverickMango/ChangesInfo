@@ -1,0 +1,40 @@
+diff -u -r data/changesInfo//Math_88/properties/modified_classes/inducing/src/java/org/apache/commons/math/optimization/linear/SimplexTableau.java data/changesInfo//Math_88/cleaned/fixing/src/java/org/apache/commons/math/optimization/linear/SimplexTableau.java
+--- data/changesInfo//Math_88/properties/modified_classes/inducing/src/java/org/apache/commons/math/optimization/linear/SimplexTableau.java	2023-12-27 22:48:16.909969275 -0800
++++ data/changesInfo//Math_88/cleaned/fixing/src/java/org/apache/commons/math/optimization/linear/SimplexTableau.java	2023-12-12 22:49:44.873761296 -0800
+@@ -20,7 +20,9 @@
+ import java.io.Serializable;
+ import java.util.ArrayList;
+ import java.util.Collection;
++import java.util.HashSet;
+ import java.util.List;
++import java.util.Set;
+ 
+ import org.apache.commons.math.linear.RealMatrix;
+ import org.apache.commons.math.linear.RealMatrixImpl;
+@@ -310,10 +312,22 @@
+      */
+     protected RealPointValuePair getSolution() {
+         double[] coefficients = new double[getOriginalNumDecisionVariables()];
+-        double mostNegative = getDecisionVariableValue(getOriginalNumDecisionVariables());
++        Integer basicRow =
++                getBasicRow(getNumObjectiveFunctions() + getOriginalNumDecisionVariables());
++        double mostNegative = basicRow == null ? 0 : getEntry(basicRow, getRhsOffset());
++        Set<Integer> basicRows = new HashSet<Integer>();
+         for (int i = 0; i < coefficients.length; i++) {
+-            coefficients[i] =
+-                getDecisionVariableValue(i) - (restrictToNonNegative ? 0 : mostNegative); 
++            basicRow = getBasicRow(getNumObjectiveFunctions() + i);
++            if (basicRows.contains(basicRow)) {
++                // if multiple variables can take a given value
++                // then we choose the first and set the rest equal to 0
++                coefficients[i] = 0;
++            } else {
++                basicRows.add(basicRow);
++                coefficients[i] =
++                        (basicRow == null ? 0 : getEntry(basicRow, getRhsOffset())) -
++                                (restrictToNonNegative ? 0 : mostNegative);
++            }
+         }
+         return new RealPointValuePair(coefficients, f.getValue(coefficients));
+     }
+Only in data/changesInfo//Math_88/properties/modified_classes/inducing/src: test

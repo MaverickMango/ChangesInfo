@@ -1,0 +1,141 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.RemoveUnusedVarsTest::testIssue618_1",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.RemoveUnusedVars",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "45",
+  "workingDir": "../bugs/Closure_45_tmp",
+  "bug_name": "Closure_45",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.RemoveUnusedVarsTest",
+      "test_function": "testIssue618_1",
+      "assertion_line": "741",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected: function f(){var a\u003d[];var b;a.push(b\u003d[]);b[0]\u003d1;return a}\nResult: function f(){var a\u003d[];a.push([]);return a}"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/RemoveUnusedVars.java",
+        "src/com/google/javascript/jscomp/RemoveUnusedVars.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.RemoveUnusedVars\\$Assign:Assign:[Node assignNode, Node nameNode, boolean isPropertyAssign]:null",
+            "com.google.javascript.jscomp.RemoveUnusedVars:interpretAssigns:[]:void"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.RemoveUnusedVars\\$Assign:Assign:[Node assignNode, Node nameNode, boolean isPropertyAssign]:null",
+            "com.google.javascript.jscomp.RemoveUnusedVars:interpretAssigns:[]:void"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "732",
+            "740",
+            "741",
+            "742",
+            "745",
+            "908"
+          ],
+          "num": 6
+        },
+        {
+          "qualified_names": [
+            "731",
+            "741",
+            "904"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/RemoveUnusedVars.java b/src/com/google/javascript/jscomp/RemoveUnusedVars.java\nindex c93a073..be72a58 100644\n--- a/src/com/google/javascript/jscomp/RemoveUnusedVars.java\n+++ b/src/com/google/javascript/jscomp/RemoveUnusedVars.java\n@@ -729,7 +729,6 @@\n             assignedToUnknownValue \u003d true;\n           }\n \n-          boolean maybeEscaped \u003d false;\n           for (Assign assign : assignsByVar.get(var)) {\n             if (assign.isPropertyAssign) {\n               hasPropertyAssign \u003d true;\n@@ -737,12 +736,9 @@\n                 assign.assignNode.getLastChild(), true)) {\n               assignedToUnknownValue \u003d true;\n             }\n-            if (assign.maybeAliased) {\n-              maybeEscaped \u003d true;\n-            }\n           }\n \n-          if ((assignedToUnknownValue || maybeEscaped) \u0026\u0026 hasPropertyAssign) {\n+          if (assignedToUnknownValue \u0026\u0026 hasPropertyAssign) {\n             changes \u003d markReferencedVar(var) || changes;\n             maybeUnreferenced.remove(current);\n             current--;\n@@ -905,7 +901,7 @@\n       this.nameNode \u003d nameNode;\n       this.isPropertyAssign \u003d isPropertyAssign;\n \n-      this.maybeAliased \u003d NodeUtil.isExpressionResultUsed(assignNode);\n+      this.maybeAliased \u003d !assignNode.getParent().isExprResult();\n       this.mayHaveSecondarySideEffects \u003d\n           maybeAliased ||\n           NodeUtil.mayHaveSideEffects(assignNode.getFirstChild()) ||\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [31541,31600]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [25790,25819]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [26138,26213]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: || [26265,26267]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: maybeEscaped [26268,26280]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [26242,26280]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ParenthesizedExpression [26241,26281]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [31687,31751]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

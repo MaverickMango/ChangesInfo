@@ -1,0 +1,213 @@
+diff --git a/CHANGES b/CHANGES
+index 7948b84..bdb4550 100644
+--- a/CHANGES
++++ b/CHANGES
+@@ -1,5 +1,9 @@
+ jsoup changelog
+ 
++*** Release 1.2.3 [PENDING]
++ * Now automatically detects the encoding character set when parsing HTML from a File or URL. The parser checks
++   the content-type header, then the meta http-equiv tag, and finally falls back to UTF-8.
++
+ *** Release 1.2.2 [2010-Jul-11]
+  
+  * Performance optimisation:
+diff --git a/src/main/java/org/jsoup/DataUtil.java b/src/main/java/org/jsoup/DataUtil.java
+index 906b75a..d8ee2ef 100644
+--- a/src/main/java/org/jsoup/DataUtil.java
++++ b/src/main/java/org/jsoup/DataUtil.java
+@@ -1,16 +1,25 @@
+ package org.jsoup;
+ 
+ import org.apache.commons.lang.Validate;
++import org.jsoup.nodes.Document;
++import org.jsoup.nodes.Element;
+ 
+ import java.io.*;
+ import java.net.URL;
+ import java.net.HttpURLConnection;
++import java.nio.ByteBuffer;
++import java.nio.charset.Charset;
++import java.util.regex.Matcher;
++import java.util.regex.Pattern;
+ 
+ /**
+  * Internal static utilities for handling data.
+  *
+  */
+ class DataUtil {
++    private static final Pattern charsetPattern = Pattern.compile("(?i)\\bcharset=([^\\s;]*)");
++    private static final String defaultCharset = "UTF-8"; // used if not found in header or http-equiv
++    private static final int bufferSize = 0x20000; // ~130K.
+     
+     /**
+      * Loads a file to a String.
+@@ -53,27 +62,57 @@
+                     contentType, url.toString()));
+         
+         InputStream inStream = new BufferedInputStream(conn.getInputStream());
+-        String charSet = "UTF-8"; // todo[must]: get from content-encoding, or http-equiv (two-pass?)
++        String charSet = getCharsetFromContentType(contentType); // may be null, readInputStream deals with it
+ 
+         String data = readInputStream(inStream, charSet);
+         inStream.close();
+         return data;
+     }
+ 
++    // reads bytes first into a buffer, then decodes with the appropriate charset. done this way to support
++    // switching the chartset midstream when a meta http-equiv tag defines the charset.
+     private static String readInputStream(InputStream inStream, String charsetName) throws IOException {
+-        char[] buffer = new char[0x20000]; // ~ 130K
+-        StringBuilder data = new StringBuilder(0x20000);
+-        Reader inReader = new InputStreamReader(inStream, charsetName);
++        byte[] buffer = new byte[bufferSize];
++        ByteArrayOutputStream outStream = new ByteArrayOutputStream(bufferSize);
+         int read;
+-        do {
+-            read = inReader.read(buffer, 0, buffer.length);
+-            if (read > 0) {
+-                data.append(buffer, 0, read);
++        while(true) {
++            read  = inStream.read(buffer);
++            if (read == -1) break;
++            outStream.write(buffer, 0, read);
++        }
++        ByteBuffer byteData = ByteBuffer.wrap(outStream.toByteArray());
++        
++        String docData;
++        if (charsetName == null) { // determine from http-equiv. safe parse as UTF-8
++            docData = Charset.forName(defaultCharset).decode(byteData).toString();
++            Document doc = Jsoup.parse(docData);
++            Element httpEquiv = doc.select("meta[http-equiv]").first();
++            if (httpEquiv != null) { // if not found, will keep utf-8 as best attempt
++                String foundCharset = getCharsetFromContentType(httpEquiv.attr("content"));
++                if (foundCharset != null && !foundCharset.equals(defaultCharset)) { // need to re-decode
++                    byteData.rewind();
++                    docData = Charset.forName(foundCharset).decode(byteData).toString();
++                }
+             }
+-
+-        } while (read >= 0);
+-
+-        return data.toString();
++        } else { // specified by content type header (or by user on file load)
++            docData = Charset.forName(charsetName).decode(byteData).toString();
++        }
++        return docData;
++    }
++    
++    /**
++     * Parse out a charset from a content type header.
++     * @param contentType e.g. "text/html; charset=EUC-JP"
++     * @return "EUC-JP", or null if not found. Charset is trimmed and uppercased.
++     */
++    static String getCharsetFromContentType(String contentType) {
++        if (contentType == null) return null;
++        
++        Matcher m = charsetPattern.matcher(contentType);
++        if (m.find()) {
++            return m.group(1).trim().toUpperCase();
++        }
++        return null;
+     }
+     
+     
+diff --git a/src/main/java/org/jsoup/Jsoup.java b/src/main/java/org/jsoup/Jsoup.java
+index f1af368..efe3791 100644
+--- a/src/main/java/org/jsoup/Jsoup.java
++++ b/src/main/java/org/jsoup/Jsoup.java
+@@ -43,6 +43,8 @@
+ 
+     /**
+      Fetch a URL, and parse it as HTML.
++     <p>
++     The encoding character set is determined by the content-type header or http-equiv meta tag, or falls back to {@code UTF-8}.
+ 
+      @param url           URL to fetch (with a GET). The protocol must be {@code http} or {@code https}.
+      @param timeoutMillis Connection and read timeout, in milliseconds. If exceeded, IOException is thrown.
+@@ -60,7 +62,8 @@
+      Parse the contents of a file as HTML.
+ 
+      @param in          file to load HTML from
+-     @param charsetName character set of file contents. If you don't know the charset, generally the best guess is {@code UTF-8}.
++     @param charsetName (optional) character set of file contents. Set to null to determine from http-equiv meta tag, if
++     present, or fall back to {@code UTF-8} (which is often safe to do).
+      @param baseUri     The URL where the HTML was retrieved from, to generate absolute URLs relative to.
+      @return sane HTML
+ 
+@@ -75,7 +78,8 @@
+      Parse the contents of a file as HTML. The location of the file is used as the base URI to qualify relative URLs.
+ 
+      @param in          file to load HTML from
+-     @param charsetName character set of file contents. If you don't know the charset, generally the best guess is {@code UTF-8}.
++     @param charsetName (optional) character set of file contents. Set to null to determine from http-equiv meta tag, if
++     present, or fall back to {@code UTF-8} (which is often safe to do).
+      @return sane HTML
+ 
+      @throws IOException if the file could not be found, or read, or if the charsetName is invalid.
+diff --git a/src/test/java/org/jsoup/DataUtilTest.java b/src/test/java/org/jsoup/DataUtilTest.java
+new file mode 100644
+index 0000000..5401bd5
+--- /dev/null
++++ b/src/test/java/org/jsoup/DataUtilTest.java
+@@ -0,0 +1,15 @@
++package org.jsoup;
++
++import org.junit.Test;
++
++import static org.junit.Assert.*;
++
++public class DataUtilTest {
++    @Test public void testCharset() {
++        assertEquals("UTF-8", DataUtil.getCharsetFromContentType("text/html;charset=utf-8 "));
++        assertEquals("UTF-8", DataUtil.getCharsetFromContentType("text/html; charset=UTF-8"));
++        assertEquals("ISO-8859-1", DataUtil.getCharsetFromContentType("text/html; charset=ISO-8859-1"));
++        assertEquals(null, DataUtil.getCharsetFromContentType("text/html"));
++        assertEquals(null, DataUtil.getCharsetFromContentType(null));
++    }
++}
+diff --git a/src/test/java/org/jsoup/integration/ParseTest.java b/src/test/java/org/jsoup/integration/ParseTest.java
+index 29f0e4d..11a0707 100644
+--- a/src/test/java/org/jsoup/integration/ParseTest.java
++++ b/src/test/java/org/jsoup/integration/ParseTest.java
+@@ -75,6 +75,19 @@
+         assertEquals("全国、人気の駅ランキング", a.text());
+     }
+     
++    @Test public void testBaidu() throws IOException {
++        File in = getFile("/htmltests/baidu-cn-home.html");
++        Document doc = Jsoup.parse(in, null, "http://www.baidu.com/"); // http charset is gb2312, but NOT specifying it, to test http-equiv parse
++        Element submit = doc.select("#su").first();
++        assertEquals("百度一下", submit.attr("value"));
++        
++        // test from attribute match
++        submit = doc.select("input[value=百度一下]").first();
++        assertEquals("su", submit.id());
++        Element newsLink = doc.select("a:contains(新)").first();
++        assertEquals("http://news.baidu.com", newsLink.absUrl("href"));
++    }
++    
+     File getFile(String resourceName) {
+         try {
+             File file = new File(ParseTest.class.getResource(resourceName).toURI());
+diff --git a/src/test/resources/htmltests/README b/src/test/resources/htmltests/README
+index dd7b5ba..201b448 100644
+--- a/src/test/resources/htmltests/README
++++ b/src/test/resources/htmltests/README
+@@ -16,4 +16,4 @@
+ * news-com-au-home.html   http://www.news.com.au/	11-Jan-2010
+ * google-ipod.html		  http://www.google.com/search?hl=en&q=ipod&aq=f&oq=&aqi=g10	11-Jan-2010
+ * yahoo-jp.html			  http://www.yahoo.co.jp/index.html	12-Jan-2010
+-
++* baidu-cn-home.html	  http://www.baidu.com/ 15-Jul-2010
+diff --git a/src/test/resources/htmltests/baidu-cn-home.html b/src/test/resources/htmltests/baidu-cn-home.html
+new file mode 100644
+index 0000000..d8e197c
+--- /dev/null
++++ b/src/test/resources/htmltests/baidu-cn-home.html
+@@ -0,0 +1,4 @@
++<!doctype html><html><head><meta http-equiv="Content-Type" content="text/html;charset=gb2312"><title>�ٶ�һ�£����֪��      </title><style>body{font:12px arial;text-align:center;background:#fff}body,p,form{margin:0;padding:0}body,form,#lg{position:relative}td{text-align:left}img{border:0}a{color:#00c}a:active{color:#f60}#u{padding:7px 10px 3px 0;text-align:right}#m{width:650px;margin:0 auto}#nv{font-size:16px;margin:0 0 4px -32px}#nv a,#nv b,#su,#lk{font-size:14px}#lg{margin:-17px 0 9px}#fm{padding-left:111px;text-align:left}#kw{width:391px;line-height:16px;padding:3px 1px;margin:0 6px 0 0;font:16px arial}#su{width:78px;height:28px;line-height:24px}#kw,#su{vertical-align:middle}#lk{margin:33px 0}#lk span{font:14px "����"}#lm{height:60px}#lh{margin:16px 0 5px;font:12px "����"}#lh a{font:12px arial}#hp{position:absolute;line-height:14px;margin:0 0 0 6px;top:-1px;*top:2px}#cp,#cp a{color:#77c}#sx{color:#00C;text-decoration:underline;cursor:pointer;}</style></head>
++<body><p id="u"><a href="http://passport.baidu.com/?login&tpl=mn">��¼</a></p><div id="m"><p id="lg"><img src="http://www.baidu.com/img/baidu_logo.gif" width="270" height="129" usemap="#mp"></p><p id="nv"><a href="http://news.baidu.com">��&nbsp;��</a>��<b>��&nbsp;ҳ</b>��<a href="http://tieba.baidu.com">��&nbsp;��</a>��<a href="http://zhidao.baidu.com">֪&nbsp;��</a>��<a href="http://mp3.baidu.com">MP3</a>��<a href="http://image.baidu.com">ͼ&nbsp;Ƭ</a>��<a href="http://video.baidu.com">��&nbsp;Ƶ</a>��<a href="http://map.baidu.com">��&nbsp;ͼ</a></p><div id="fm"><form name="f" action="s"><input type="text" name="wd" id="kw" maxlength="100"><input type="submit" value="�ٶ�һ��" id="su"><span id="hp"><a href="/gaoji/preferences.html">����</a><br><span id="sx">��д</span></span></form></div>
++<p id="lk"><a href="http://hi.baidu.com">�ռ�</a>��<a href="http://baike.baidu.com">�ٿ�</a>��<a href="http://www.hao123.com">hao123</a><span> | <a href="/more/">����&gt;&gt;</a></span></p><p id="lm"></p><p><a id="st" onClick="this.style.behavior='url(#default#homepage)';this.setHomePage('http://www.baidu.com')" href="http://utility.baidu.com/traf/click.php?id=215&url=http://www.baidu.com">�Ѱٶ���Ϊ��ҳ</a></p><p id="lh"><a href="http://e.baidu.com/?refer=888">����ٶ��ƹ�</a> | <a href="http://top.baidu.com">�������ư�</a> | <a href="http://home.baidu.com">���ڰٶ�</a> | <a href="http://ir.baidu.com">About Baidu</a></p><p id="cp">&copy;2010 Baidu <a href="/duty/">ʹ�ðٶ�ǰ�ض�</a> <a href="http://www.miibeian.gov.cn" target="_blank">��ICP֤030173��</a> <img src="http://gimg.baidu.com/img/gs.gif"></p></div><map name="mp"><area shape="rect" coords="43,22,227,91" href="http://hi.baidu.com/baidu/" target="_blank" title="��˽��� �ٶȵĿռ�"></map></body>
++<script>var w=window,d=document,n=navigator,k=d.f.wd,a=d.getElementById("nv").getElementsByTagName("a");if(n.userAgent.indexOf("MSIE")==-1||window.opera){d.getElementById("st").style.display="none"};for(var i=0;i<a.length;i++){a[i].onclick=function(){if(k.value.length>0){var o=this,h=o.href,q=encodeURIComponent(k.value);if(h.indexOf("q=")!=-1){o.href=h.replace(/q=[^&$]*/,"q="+q)}else{this.href+="?q="+q}}}};(function(){if(/q=([^&]+)/.test(location.search)){k.value=decodeURIComponent(RegExp.$1)}})();if(n.cookieEnabled&&!/sug?=0/.test(d.cookie)){d.write('<script src=http://www.baidu.com/js/bdsug.js?v=1.0.3.0><\/script>')};if(w.attachEvent){w.attachEvent("onload",function(){k.focus();})}else{w.addEventListener('load',function(){k.focus()},true)};w.onunload=function(){};var hw={};hw.i=d.getElementById("sx");var il=false;if(/msie (\d+\.\d)/i.test(n.userAgent)){hw.i.setAttribute("unselectable","on")}else{var sL=k.value.length;k.selectionStart=sL;k.selectionEnd=sL}hw.i.onclick=function(B){var B=B||w.event;B.stopPropagation?B.stopPropagation():(B.cancelBubble=true);if(d.selection&&d.activeElement.id&&d.activeElement.id=="kw"){hw.hasF=1}else{if(!d.selection){hw.hasF=1}}if(!il){var A=d.createElement("script");A.setAttribute("src","http://www.baidu.com/hw/hwInput.js");d.getElementsByTagName("head")[0].appendChild(A);il=true;setTimeout(function(){if(baidu){baidu.sug.initial()}},1000)}};</script></html><!--67703e841e07cfba-->
+\ No newline at end of file

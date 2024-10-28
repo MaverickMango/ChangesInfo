@@ -1,0 +1,105 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.lang3.math.NumberUtilsTest::testCreateNumber",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.lang3.math.NumberUtils",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Lang",
+  "id": "7",
+  "workingDir": "../bugs/Lang_7_tmp",
+  "bug_name": "Lang_7",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.lang3.math.NumberUtilsTest",
+      "test_function": "testCreateNumber",
+      "assertion_line": "242",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected NumberFormatException"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/lang3/math/NumberUtils.java",
+        "src/main/java/org/apache/commons/lang3/math/NumberUtils.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.lang3.math.NumberUtils:createNumber:[String str]:Number",
+            "org.apache.commons.lang3.math.NumberUtils:createBigDecimal:[String str]:BigDecimal"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.lang3.math.NumberUtils:createNumber:[String str]:Number",
+            "org.apache.commons.lang3.math.NumberUtils:createBigDecimal:[String str]:BigDecimal"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "451",
+            "718",
+            "723",
+            "724"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "452",
+            "453",
+            "454",
+            "714"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/lang3/math/NumberUtils.java b/src/main/java/org/apache/commons/lang3/math/NumberUtils.java\nindex 064f547..d49da7f 100644\n--- a/src/main/java/org/apache/commons/lang3/math/NumberUtils.java\n+++ b/src/main/java/org/apache/commons/lang3/math/NumberUtils.java\n@@ -449,6 +449,9 @@\n         if (StringUtils.isBlank(str)) {\n             throw new NumberFormatException(\"A blank string is not a valid number\");\n         }  \n+        if (str.startsWith(\"--\")) {\n+            return null;\n+        }\n         if (str.startsWith(\"0x\") || str.startsWith(\"-0x\") || str.startsWith(\"0X\") || str.startsWith(\"-0X\")) {\n             int hexDigits \u003d str.length() - 2; // drop 0x\n             if (str.startsWith(\"-\")) { // drop -\n@@ -715,13 +718,10 @@\n         if (StringUtils.isBlank(str)) {\n             throw new NumberFormatException(\"A blank string is not a valid number\");\n         }\n-        if (str.trim().startsWith(\"--\")) {\n             // this is protection for poorness in java.lang.BigDecimal.\n             // it accepts this as a legal value, but it does not appear \n             // to be in specification of class. OS X Java parses it to \n             // a wrong value.\n-            throw new NumberFormatException(str + \" is not a valid number.\");\n-        }\n         return new BigDecimal(str);\n     }\n \n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [16028,16090]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [26035,26404]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

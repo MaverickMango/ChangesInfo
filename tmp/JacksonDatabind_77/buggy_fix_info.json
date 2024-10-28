@@ -1,0 +1,115 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.interop.IllegalTypesCheckTest::testIssue1599",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.deser.BeanDeserializerFactory",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "77",
+  "workingDir": "../bugs/JacksonDatabind_77_tmp",
+  "bug_name": "JacksonDatabind_77",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.interop.IllegalTypesCheckTest",
+      "test_function": "testIssue1599",
+      "assertion_line": "35",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "Expected an exception with one of substrings ([Illegal type]): got one with message \"N/A"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java",
+        "src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.BeanDeserializerFactory:createBeanDeserializer:[DeserializationContext ctxt, JavaType type, BeanDescription beanDesc]:JsonDeserializer\u003cObject\u003e",
+            "com.fasterxml.jackson.databind.deser.BeanDeserializerFactory:checkIllegalTypes:[DeserializationContext ctxt, JavaType type, BeanDescription beanDesc]:void"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.BeanDeserializerFactory:createBeanDeserializer:[DeserializationContext ctxt, JavaType type, BeanDescription beanDesc]:JsonDeserializer\u003cObject\u003e"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "143",
+            "843",
+            "844",
+            "845",
+            "846",
+            "849",
+            "850",
+            "852",
+            "853",
+            "854",
+            "855",
+            "856",
+            "857",
+            "858",
+            "859"
+          ],
+          "num": 15
+        },
+        {
+          "qualified_names": [
+            "142",
+            "843"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java\nindex ad37dd1..a8f42c8 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/deser/BeanDeserializerFactory.java\n@@ -140,7 +140,6 @@\n             return null;\n         }\n         // For checks like [databind#1599]\n-        checkIllegalTypes(ctxt, type, beanDesc);\n         // Use generic bean introspection to build deserializer\n         return buildBeanDeserializer(ctxt, type, beanDesc);\n     }\n@@ -840,21 +839,7 @@\n     /**\n      * @since 2.8.9\n      */\n-    protected void checkIllegalTypes(DeserializationContext ctxt, JavaType type,\n-            BeanDescription beanDesc)\n-        throws JsonMappingException\n-    {\n         // There are certain nasty classes that could cause problems, mostly\n         // via default typing -- catch them here.\n-        Class\u003c?\u003e raw \u003d type.getRawClass();\n-        String name \u003d raw.getSimpleName();\n \n-        if (\"TemplatesImpl\".equals(name)) { // [databind#1599] \n-            if (raw.getName().startsWith(\"com.sun.org.apache.xalan\")) {\n-                throw JsonMappingException.from(ctxt,\n-                        String.format(\"Illegal type (%s) to deserialize: prevented for security reasons\",\n-                                name));\n-            }\n-        }\n-    }\n }\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [6030,6070]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [38732,39504]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.fasterxml.jackson.databind.deser.BeanDeserializerFactory:checkIllegalTypes:[DeserializationContext ctxt, JavaType type, BeanDescription beanDesc]:void"
+      ],
+      "num": 1
+    }
+  }
+}

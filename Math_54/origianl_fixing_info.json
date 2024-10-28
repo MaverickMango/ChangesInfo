@@ -1,0 +1,185 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "/home/liumengjiao/Desktop/CI/Benchmark/data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.math.dfp.DfpTest::testIssue567",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.math.dfp.Dfp",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Math",
+  "id": "54",
+  "workingDir": "../bugs/Math_54_buggy",
+  "buggyCommit": "804309e5c5726ad22b0c74dfccdb1ed318f0a108",
+  "inducingCommit": "1eb0c0d7421823470de3a901643ae3be2c9e0a8e",
+  "originalCommit": "c2e02c98fd01a8395cdc441015860cc4dcb52bc6",
+  "bug_name": "Math_54",
+  "derive": "defects4j",
+  "original_fixing_commit": "c00ac8120a4215125e49775cd9351e689586b467",
+  "buildFiles_changed": false,
+  "regression": true,
+  "inducing_changes": [],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [
+        "src/main/java/org/apache/commons/math/dfp/Dfp.java",
+        "src/main/java/org/apache/commons/math/dfp/DfpDec.java",
+        "src/main/java/org/apache/commons/math/dfp/DfpField.java",
+        "src/main/java/org/apache/commons/math/dfp/DfpMath.java"
+      ],
+      "num": 4
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.math.dfp.DfpTest",
+      "test_function": "testIssue567",
+      "assertion_line": "1512",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c0.0\u003e but was:\u003c-Infinity\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/math/dfp/Dfp.java",
+        "src/main/java/org/apache/commons/math/dfp/Dfp.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.math.dfp.Dfp:toDouble:[]:double",
+            "org.apache.commons.math.dfp.Dfp:Dfp:[final DfpField field, double x]:null"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.math.dfp.Dfp:toDouble:[]:double",
+            "org.apache.commons.math.dfp.Dfp:Dfp:[final DfpField field, double x]:null"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "166",
+            "271",
+            "2318"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "166",
+            "272",
+            "273",
+            "274",
+            "275",
+            "2322",
+            "2323",
+            "2324",
+            "2325"
+          ],
+          "num": 9
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/math/dfp/Dfp.java b/src/main/java/org/apache/commons/math/dfp/Dfp.java\nindex 04e6613..54aabc4 100644\n--- a/src/main/java/org/apache/commons/math/dfp/Dfp.java\n+++ b/src/main/java/org/apache/commons/math/dfp/Dfp.java\n@@ -163,7 +163,7 @@\n     /** Mantissa. */\n     protected int[] mant;\n \n-    /** Sign bit: \u0026 for positive, -1 for negative. */\n+    /** Sign bit: 1 for positive, -1 for negative. */\n     protected byte sign;\n \n     /** Exponent. */\n@@ -269,6 +269,10 @@\n         if (exponent \u003d\u003d -1023) {\n             // Zero or sub-normal\n             if (x \u003d\u003d 0) {\n+                // make sure 0 has the right sign\n+                if ((bits \u0026 0x8000000000000000L) !\u003d 0) {\n+                    sign \u003d -1;\n+                }\n                 return;\n             }\n \n@@ -2315,7 +2319,10 @@\n \n         Dfp y \u003d this;\n         boolean negate \u003d false;\n-        if (lessThan(getZero())) {\n+        int cmp0 \u003d compare(this, getZero());\n+        if (cmp0 \u003d\u003d 0) {\n+            return sign \u003c 0 ? -0.0 : +0.0;\n+        } else if (cmp0 \u003c 0) {\n             y \u003d negate();\n             negate \u003d true;\n         }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [6729,6778]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [71507,71543]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [71552,71705]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [71556,71565]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Block [71567,71621]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [71631,71639]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [9852,9941]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "Javadoc [6729,6778]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [71355,71374]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "patch_changed_mths": {
+    "qualified_names": [
+      "org.apache.commons.math.dfp.Dfp:toDouble()D:regression"
+    ],
+    "num": 1
+  }
+}

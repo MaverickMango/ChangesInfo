@@ -1,0 +1,243 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "timeoutSecond": 300,
+  "proj": "Mockito",
+  "id": "12",
+  "workingDir": "../bugs/Mockito_12_buggy",
+  "inducingCommit": "2eb41dde4e2ded14d86cee801e6b73867ed12110",
+  "originalCommit": "75e15e432ce0caed960387dbdf363b6872794d90",
+  "bug_name": "Mockito_12",
+  "derive": "defects4j",
+  "original_fixing_commit": "7a647a702c8af81ccf5d37b09c11529c6c0cb1b7",
+  "buildFiles_changed": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/org/mockito/internal/configuration/DefaultAnnotationEngine.java",
+        "src/org/mockito/internal/configuration/DefaultAnnotationEngine.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "typeToClass",
+            "processAnnotationOn"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "processAnnotationOn"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "9",
+            "10",
+            "21",
+            "68",
+            "76",
+            "77",
+            "78",
+            "79",
+            "80",
+            "81",
+            "82",
+            "83",
+            "84",
+            "85",
+            "86",
+            "87",
+            "88",
+            "89"
+          ],
+          "num": 18
+        },
+        {
+          "qualified_names": [
+            "8",
+            "20",
+            "27",
+            "68",
+            "76",
+            "77",
+            "78"
+          ],
+          "num": 7
+        }
+      ],
+      "diff": "diff --git a/src/org/mockito/internal/configuration/DefaultAnnotationEngine.java b/src/org/mockito/internal/configuration/DefaultAnnotationEngine.java\nindex a0492c6..d6849ec 100644\n--- a/src/org/mockito/internal/configuration/DefaultAnnotationEngine.java\n+++ b/src/org/mockito/internal/configuration/DefaultAnnotationEngine.java\n@@ -6,8 +6,6 @@\n \r\n import java.lang.annotation.Annotation;\r\n import java.lang.reflect.Field;\r\n-import java.lang.reflect.ParameterizedType;\r\n-import java.lang.reflect.Type;\r\n \r\n import org.mockito.ArgumentCaptor;\r\n import org.mockito.Captor;\r\n@@ -19,12 +17,14 @@\n import org.mockito.exceptions.Reporter;\r\n import org.mockito.exceptions.base.MockitoException;\r\n import org.mockito.internal.util.reflection.FieldSetter;\r\n+import org.mockito.internal.util.reflection.GenericMaster;\r\n \r\n /**\r\n  * Initializes fields annotated with \u0026#64;{@link org.mockito.Mock} or \u0026#64;{@link org.mockito.Captor}.\r\n  * \u003cp/\u003e\r\n  * See {@link MockitoAnnotations}\r\n  */\r\n+@SuppressWarnings(\"unchecked\")\r\n public class DefaultAnnotationEngine implements AnnotationEngine {\r\n \r\n     /* (non-Javadoc)\r\n@@ -65,7 +65,7 @@\n     private Object processAnnotationOn(org.mockito.MockitoAnnotations.Mock annotation, Field field) {\r\n         return Mockito.mock(field.getType(), field.getName());\r\n     }\r\n-\r\n+    \r\n     private Object processAnnotationOn(Captor annotation, Field field) {\r\n         Class\u003c?\u003e type \u003d field.getType();\r\n         if (!ArgumentCaptor.class.isAssignableFrom(type)) {\r\n@@ -73,20 +73,9 @@\n                     + field.getName() + \"\u0027 has wrong type\\n\"\r\n                     + \"For info how to use @Captor annotations see examples in javadoc for MockitoAnnotations class.\");\r\n         }\r\n-        Type generic \u003d field.getGenericType();\r\n-        if (generic !\u003d null \u0026\u0026 generic instanceof ParameterizedType) {\r\n-            Type actual \u003d ((ParameterizedType) generic).getActualTypeArguments()[0];\r\n-            return ArgumentCaptor.forClass(typeToClass(actual));\r\n-        }\r\n-        return ArgumentCaptor.forClass(Object.class);    \r\n-    }       \r\n-\r\n-    private Class typeToClass(Type actual) {\r\n-        if (actual.equals(Double.class)) {\r\n-            return Double.class;\r\n-        }\r\n-        return Object.class;\r\n-    }\r\n+        Class cls \u003d new GenericMaster().getGenericType(field);        \r\n+        return ArgumentCaptor.forClass(cls);    \r\n+    }           \r\n \r\n     @Override\r\n     public void process(Class\u003c?\u003e clazz, Object testClass) {\r\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [645,703]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleMemberAnnotation [865,895]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [3013,3067]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: cls [3116,3119]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [245,288]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [290,320]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [2994,3032]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [3042,3267]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "TypeLiteral [3308,3320]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [3348,3514]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [
+        "src/org/mockito/internal/util/reflection/GenericMaster.java"
+      ],
+      "num": 1
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "typeToClass"
+      ],
+      "num": 1
+    }
+  },
+  "trigger_tests": [],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/org/mockito/internal/util/reflection/GenericMaster.java",
+        "src/org/mockito/internal/util/reflection/GenericMaster.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "getGenericType"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "getGenericType"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "20"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "20",
+            "21",
+            "22",
+            "23",
+            "24",
+            "25"
+          ],
+          "num": 6
+        }
+      ],
+      "diff": "diff -u -r data/changesInfo//Mockito_12/properties/modified_classes/inducing/src/org/mockito/internal/util/reflection/GenericMaster.java data/changesInfo//Mockito_12/cleaned/fixing/src/org/mockito/internal/util/reflection/GenericMaster.java\n--- data/changesInfo//Mockito_12/properties/modified_classes/inducing/src/org/mockito/internal/util/reflection/GenericMaster.java\t2023-07-24 22:09:14.247939564 +0800\n+++ data/changesInfo//Mockito_12/cleaned/fixing/src/org/mockito/internal/util/reflection/GenericMaster.java\t2023-08-03 18:31:00.401665457 +0800\n@@ -17,7 +17,12 @@\n         Type generic \u003d field.getGenericType();\n         if (generic !\u003d null \u0026\u0026 generic instanceof ParameterizedType) {\n             Type actual \u003d ((ParameterizedType) generic).getActualTypeArguments()[0];\n-            return (Class) actual;\n+            if (actual instanceof Class) {\n+                return (Class) actual;\n+            } else if (actual instanceof ParameterizedType) {\n+                //in case of nested generics we don\u0027t go deep\n+                return (Class) ((ParameterizedType) actual).getRawType();\n+            }\n         }\n         \n         return Object.class;\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [682,968]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InstanceofExpression [686,709]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [711,767]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [773,968]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

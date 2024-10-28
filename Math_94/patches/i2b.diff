@@ -1,0 +1,2685 @@
+diff -r -u inducing/src/java/org/apache/commons/math/util/MathUtils.java buggy/src/java/org/apache/commons/math/util/MathUtils.java
+--- inducing/src/java/org/apache/commons/math/util/MathUtils.java	2023-06-12 11:40:48.181738215 +0800
++++ buggy/src/java/org/apache/commons/math/util/MathUtils.java	2023-06-12 11:40:48.097741899 +0800
+@@ -1,9 +1,10 @@
+ /*
+- * Copyright 2003-2005 The Apache Software Foundation.
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
++ * Licensed to the Apache Software Foundation (ASF) under one or more
++ * contributor license agreements.  See the NOTICE file distributed with
++ * this work for additional information regarding copyright ownership.
++ * The ASF licenses this file to You under the Apache License, Version 2.0
++ * (the "License"); you may not use this file except in compliance with
++ * the License.  You may obtain a copy of the License at
+  *
+  *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+@@ -17,282 +18,148 @@
+ package org.apache.commons.math.util;
+ 
+ import java.math.BigDecimal;
++import java.util.Arrays;
+ 
+ /**
+  * Some useful additions to the built-in functions in {@link Math}.
+- *
+  * @version $Revision$ $Date$
+  */
+ public final class MathUtils {
+-    
+-    /** 0.0 cast as a byte. */
+-    private static final byte ZB = (byte) 0;
+-    
++
++    /** Smallest positive number such that 1 - EPSILON is not numerically equal to 1. */
++    public static final double EPSILON = 0x1.0p-53;
++
++    /** Safe minimum, such that 1 / SAFE_MIN does not overflow.
++     * <p>In IEEE 754 arithmetic, this is also the smallest normalized
++     * number 2<sup>-1022</sup>.</p>
++     */
++    public static final double SAFE_MIN = 0x1.0p-1022;
++
+     /** -1.0 cast as a byte. */
+-    private static final byte NB = (byte) -1;
+-    
+-    /** 1.0 cast as a byte. */
+-    private static final byte PB = (byte) 1;
+-    
+-    /** 0.0 cast as a short. */
+-    private static final short ZS = (short) 0;
+-    
++    private static final byte  NB = (byte)-1;
++
+     /** -1.0 cast as a short. */
+-    private static final short NS = (short) -1;
+-    
++    private static final short NS = (short)-1;
++
++    /** 1.0 cast as a byte. */
++    private static final byte  PB = (byte)1;
++
+     /** 1.0 cast as a short. */
+-    private static final short PS = (short) 1;
+-    
++    private static final short PS = (short)1;
++
++    /** 0.0 cast as a byte. */
++    private static final byte  ZB = (byte)0;
++
++    /** 0.0 cast as a short. */
++    private static final short ZS = (short)0;
++
++    /** 2 &pi;. */
++    private static final double TWO_PI = 2 * Math.PI;
++
+     /**
+      * Private Constructor
+      */
+     private MathUtils() {
+-    }
+-    
+-    /**
+-     * Round the given value to the specified number of decimal places.  The
+-     * value is rounded using the {@link BigDecimal#ROUND_HALF_UP} method.
+-     * @param x the value to round.
+-     * @param scale the number of digits to the right of the decimal point.
+-     * @return the rounded value.
+-     */
+-    public static double round(double x, int scale) {
+-        return round(x, scale, BigDecimal.ROUND_HALF_UP);
++        super();
+     }
+ 
+     /**
+-     * Round the given value to the specified number of decimal places.  The
+-     * value is rounded using the given method which is any method defined in
+-     * {@link BigDecimal}.
+-     * @param x the value to round.
+-     * @param scale the number of digits to the right of the decimal point.
+-     * @param roundingMethod the rounding method as defined in
+-     *        {@link BigDecimal}. 
+-     * @return the rounded value.
+-     */
+-    public static double round(
+-        double x, int scale, int roundingMethod)
+-    {
+-        return (new BigDecimal(x).setScale(scale, roundingMethod))
+-            .doubleValue();
+-    }
+-    
+-    /**
+-     * Round the given value to the specified number of decimal places.  The
+-     * value is rounding using the {@link BigDecimal#ROUND_HALF_UP} method.
+-     * @param x the value to round.
+-     * @param scale the number of digits to the right of the decimal point.
+-     * @return the rounded value.
+-     */
+-    public static float round(float x, int scale) {
+-        return round(x, scale, BigDecimal.ROUND_HALF_UP);
+-    }
+-
+-    /**
+-     * Round the given value to the specified number of decimal places.  The
+-     * value is rounded using the given method which is any method defined in
+-     * {@link BigDecimal}.
+-     * @param x the value to round.
+-     * @param scale the number of digits to the right of the decimal point.
+-     * @param roundingMethod the rounding method as defined in
+-     *        {@link BigDecimal}. 
+-     * @return the rounded value.
+-     */
+-    public static float round(float x, int scale, int roundingMethod) {
+-        return (new BigDecimal(x).setScale(scale, roundingMethod)).floatValue();
+-    }
+-    
+-    /**
+-     * Returns the <a href="http://mathworld.wolfram.com/Sign.html">
+-     * sign</a> for double precision <code>x</code>.
+-     *
+-     * <p>
+-     * For a double value <code>x</code>, this method returns <code>+1.0</code>
+-     * if <code>x > 0</code>, <code>0.0</code> if <code>x = 0.0</code>,
+-     * and <code>-1.0</code> if <code>x < 0</code>.  Returns <code>NaN</code> 
+-     * if <code>x</code> is <code>NaN</code>.
+-     *
+-     * @param x the value, a double
+-     * @return +1.0, 0.0, or -1.0, depending on the sign of x
+-     */
+-    public static double sign(final double x) {
+-        if (Double.isNaN(x)) {
+-            return Double.NaN;
+-        }
+-        return (x == 0.0) ? 0.0 : (x > 0.0) ? 1.0 : -1.0;
+-    }
+-    
+-    /**
+-     * Returns the <a href="http://mathworld.wolfram.com/Sign.html">
+-     * sign</a> for float value <code>x</code>.
+-     *
+-     * <p>
+-     * For a float value x, this method returns +1.0F if x > 0, 0.0F if
+-     * x = 0.0F, and -1.0F if x < 0.  Returns <code>NaN</code> 
+-     * if <code>x</code> is <code>NaN</code>.
+-     *
+-     * @param x the value, a float
+-     * @return +1.0F, 0.0F, or -1.0F, depending on the sign of x
++     * Add two integers, checking for overflow.
++     * 
++     * @param x an addend
++     * @param y an addend
++     * @return the sum <code>x+y</code>
++     * @throws ArithmeticException if the result can not be represented as an
++     *         int
++     * @since 1.1
+      */
+-    public static float sign(final float x) {
+-        if (Float.isNaN(x)) {
+-            return Float.NaN;
++    public static int addAndCheck(int x, int y) {
++        long s = (long)x + (long)y;
++        if (s < Integer.MIN_VALUE || s > Integer.MAX_VALUE) {
++            throw new ArithmeticException("overflow: add");
+         }
+-        return (x == 0.0F) ? 0.0F : (x > 0.0F) ? 1.0F : -1.0F;
+-    }
+-    
+-    /**
+-     * Returns the <a href="http://mathworld.wolfram.com/Sign.html">
+-     * sign</a> for byte value <code>x</code>.
+-     *
+-     * <p>
+-     * For a byte value x, this method returns (byte)(+1) if x > 0, (byte)(0)
+-     * if x = 0, and (byte)(-1) if x < 0.
+-     *
+-     * @param x the value, a byte
+-     * @return (byte)(+1), (byte)(0), or (byte)(-1), depending on the sign of x
+-     */
+-    public static byte sign(final byte x) {
+-        return (x == ZB) ? ZB : (x > ZB) ? PB : NB;
+-    }
+-    
+-    /**
+-     * Returns the <a href="http://mathworld.wolfram.com/Sign.html">
+-     * sign</a> for short value <code>x</code>.
+-     *
+-     * <p>
+-     * For a short value x, this method returns (short)(+1) if x > 0, (short)(0)
+-     * if x = 0, and (short)(-1) if x < 0.
+-     *
+-     * @param x the value, a short
+-     * @return (short)(+1), (short)(0), or (short)(-1), depending on the sign
+-     * of x
+-     */
+-    public static short sign(final short x) {
+-        return (x == ZS) ? ZS : (x > ZS) ? PS : NS;
+-    }
+-    
+-    /**
+-     * Returns the <a href="http://mathworld.wolfram.com/Sign.html">
+-     * sign</a> for int value <code>x</code>.
+-     *
+-     * <p>
+-     * For an int value x, this method returns +1 if x > 0, 0 if x = 0,
+-     * and -1 if x < 0.
+-     *
+-     * @param x the value, an int
+-     * @return +1, 0, or -1, depending on the sign of x
+-     */
+-    public static int sign(final int x) {
+-        return (x == 0) ? 0 : (x > 0) ? 1 : -1;
+-    }
+-    
+-    /**
+-     * Returns the <a href="http://mathworld.wolfram.com/Sign.html">
+-     * sign</a> for long value <code>x</code>.
+-     *
+-     * <p>
+-     * For a long value x, this method returns +1L if x > 0, 0L if x = 0,
+-     * and -1L if x < 0.
+-     *
+-     * @param x the value, a long
+-     * @return +1L, 0L, or -1L, depending on the sign of x
+-     */
+-    public static long sign(final long x) {
+-        return (x == 0L) ? 0L : (x > 0L) ? 1L : -1L;
++        return (int)s;
+     }
+-    
++
+     /**
+-     * For a double precision value x, this method returns +1.0 if x >= 0
+-     * and -1.0 if x < 0.   Returns <code>NaN</code> 
+-     * if <code>x</code> is <code>NaN</code>.
+-     *
+-     * @param x the value, a double
+-     * @return +1.0 or -1.0, depending on the sign of x
++     * Add two long integers, checking for overflow.
++     * 
++     * @param a an addend
++     * @param b an addend
++     * @return the sum <code>a+b</code>
++     * @throws ArithmeticException if the result can not be represented as an
++     *         long
++     * @since 1.2
+      */
+-    public static double indicator(final double x) {
+-        if (Double.isNaN(x)) {
+-            return Double.NaN;
+-        }
+-        return (x >= 0.0) ? 1.0 : -1.0;
++    public static long addAndCheck(long a, long b) {
++        return addAndCheck(a, b, "overflow: add");
+     }
+     
+     /**
+-     * For a float value x, this method returns +1.0F if x >= 0
+-     * and -1.0F if x < 0.   Returns <code>NaN</code> 
+-     * if <code>x</code> is <code>NaN</code>.
+-     *
+-     * @param x the value, a float
+-     * @return +1.0F or -1.0F, depending on the sign of x
+-     */
+-    public static float indicator(final float x) {
+-        if (Float.isNaN(x)) {
+-            return Float.NaN;
++     * Add two long integers, checking for overflow.
++     * 
++     * @param a an addend
++     * @param b an addend
++     * @param msg the message to use for any thrown exception.
++     * @return the sum <code>a+b</code>
++     * @throws ArithmeticException if the result can not be represented as an
++     *         long
++     * @since 1.2
++     */
++    private static long addAndCheck(long a, long b, String msg) {
++        long ret;
++        if (a > b) {
++            // use symmetry to reduce boundry cases
++            ret = addAndCheck(b, a, msg);
++        } else {
++            // assert a <= b
++            
++            if (a < 0) {
++                if (b < 0) {
++                    // check for negative overflow
++                    if (Long.MIN_VALUE - b <= a) {
++                        ret = a + b;
++                    } else {
++                        throw new ArithmeticException(msg);
++                    }
++                } else {
++                    // oppisite sign addition is always safe
++                    ret = a + b;
++                }
++            } else {
++                // assert a >= 0
++                // assert b >= 0
++
++                // check for positive overflow
++                if (a <= Long.MAX_VALUE - b) {
++                    ret = a + b;
++                } else {
++                    throw new ArithmeticException(msg);
++                }
++            }
+         }
+-        return (x >= 0.0F) ? 1.0F : -1.0F;
+-    }
+-    
+-    /**
+-     * For a byte value x, this method returns (byte)(+1) if x >= 0
+-     * and (byte)(-1) if x < 0.
+-     *
+-     * @param x the value, a byte
+-     * @return (byte)(+1) or (byte)(-1), depending on the sign of x
+-     */
+-    public static byte indicator(final byte x) {
+-        return (x >= ZB) ? PB : NB;
+-    }
+-    
+-    /**
+-     * For a short value x, this method returns (short)(+1) if x >= 0
+-     * and (short)(-1) if x < 0.
+-     *
+-     * @param x the value, a short
+-     * @return (short)(+1) or (short)(-1), depending on the sign of x
+-     */
+-    public static short indicator(final short x) {
+-        return (x >= ZS) ? PS : NS;
+-    }
+-    
+-    /**
+-     * For an int value x, this method returns +1 if x >= 0
+-     * and -1 if x < 0.
+-     *
+-     * @param x the value, an int
+-     * @return +1 or -1, depending on the sign of x
+-     */
+-    public static int indicator(final int x) {
+-        return (x >= 0) ? 1 : -1;
+-    }
+-    
+-    /**
+-     * For a long value x, this method returns +1L if x >= 0
+-     * and -1L if x < 0.
+-     *
+-     * @param x the value, a long
+-     * @return +1L or -1L, depending on the sign of x
+-     */
+-    public static long indicator(final long x) {
+-        return (x >= 0L) ? 1L : -1L;
++        return ret;
+     }
+     
+     /**
+-     * Returns an exact representation of the
+-     * <a href="http://mathworld.wolfram.com/BinomialCoefficient.html">
+-     * Binomial Coefficient</a>,  "<code>n choose k</code>",
+-     * the number of <code>k</code>-element subsets that can be selected from
+-     * an <code>n</code>-element set.
++     * Returns an exact representation of the <a
++     * href="http://mathworld.wolfram.com/BinomialCoefficient.html"> Binomial
++     * Coefficient</a>, "<code>n choose k</code>", the number of
++     * <code>k</code>-element subsets that can be selected from an
++     * <code>n</code>-element set.
+      * <p>
+-     * <Strong>Preconditions</strong>:<ul>
++     * <Strong>Preconditions</strong>:
++     * <ul>
+      * <li> <code>0 <= k <= n </code> (otherwise
+-     *      <code>IllegalArgumentException</code> is thrown)</li>
+-     * <li> The result is small enough to fit into a <code>long</code>.  The
+-     *      largest value of <code>n</code> for which all coefficients are
+-     *      <code> < Long.MAX_VALUE</code> is 66.  If the computed value
+-     *      exceeds <code>Long.MAX_VALUE</code> an <code>ArithMeticException
+-     *      </code> is thrown.</li>
+-     * </ul>
+-     *
++     * <code>IllegalArgumentException</code> is thrown)</li>
++     * <li> The result is small enough to fit into a <code>long</code>. The
++     * largest value of <code>n</code> for which all coefficients are
++     * <code> < Long.MAX_VALUE</code> is 66. If the computed value exceeds
++     * <code>Long.MAX_VALUE</code> an <code>ArithMeticException
++     *      </code> is
++     * thrown.</li>
++     * </ul></p>
++     * 
+      * @param n the size of the set
+      * @param k the size of the subsets to be counted
+      * @return <code>n choose k</code>
+@@ -303,11 +170,11 @@
+     public static long binomialCoefficient(final int n, final int k) {
+         if (n < k) {
+             throw new IllegalArgumentException(
+-            "must have n >= k for binomial coefficient (n,k)");
++                "must have n >= k for binomial coefficient (n,k)");
+         }
+         if (n < 0) {
+             throw new IllegalArgumentException(
+-            "must have n >= 0 for binomial coefficient (n,k)");
++                "must have n >= 0 for binomial coefficient (n,k)");
+         }
+         if ((n == k) || (k == 0)) {
+             return 1;
+@@ -315,31 +182,32 @@
+         if ((k == 1) || (k == n - 1)) {
+             return n;
+         }
+-        
++
+         long result = Math.round(binomialCoefficientDouble(n, k));
+         if (result == Long.MAX_VALUE) {
+             throw new ArithmeticException(
+-            "result too large to represent in a long integer");
++                "result too large to represent in a long integer");
+         }
+         return result;
+     }
+-    
++
+     /**
+-     * Returns a <code>double</code> representation of the
+-     * <a href="http://mathworld.wolfram.com/BinomialCoefficient.html">
+-     * Binomial Coefficient</a>,  "<code>n choose k</code>",
+-     * the number of <code>k</code>-element subsets that can be selected from
+-     * an <code>n</code>-element set.
++     * Returns a <code>double</code> representation of the <a
++     * href="http://mathworld.wolfram.com/BinomialCoefficient.html"> Binomial
++     * Coefficient</a>, "<code>n choose k</code>", the number of
++     * <code>k</code>-element subsets that can be selected from an
++     * <code>n</code>-element set.
+      * <p>
+-     * <Strong>Preconditions</strong>:<ul>
++     * <Strong>Preconditions</strong>:
++     * <ul>
+      * <li> <code>0 <= k <= n </code> (otherwise
+-     *      <code>IllegalArgumentException</code> is thrown)</li>
+-     * <li> The result is small enough to fit into a <code>double</code>.
+-     *      The largest value of <code>n</code> for which all coefficients are
+-     *      < Double.MAX_VALUE is 1029.  If the computed value exceeds
+-     *      Double.MAX_VALUE, Double.POSITIVE_INFINITY is returned</li>
+-     * </ul>
+-     *
++     * <code>IllegalArgumentException</code> is thrown)</li>
++     * <li> The result is small enough to fit into a <code>double</code>. The
++     * largest value of <code>n</code> for which all coefficients are <
++     * Double.MAX_VALUE is 1029. If the computed value exceeds Double.MAX_VALUE,
++     * Double.POSITIVE_INFINITY is returned</li>
++     * </ul></p>
++     * 
+      * @param n the size of the set
+      * @param k the size of the subsets to be counted
+      * @return <code>n choose k</code>
+@@ -350,17 +218,18 @@
+     }
+     
+     /**
+-     * Returns the natural <code>log</code> of the
+-     * <a href="http://mathworld.wolfram.com/BinomialCoefficient.html">
+-     * Binomial Coefficient</a>,  "<code>n choose k</code>",
+-     * the number of <code>k</code>-element subsets that can be selected from
+-     * an <code>n</code>-element set.
++     * Returns the natural <code>log</code> of the <a
++     * href="http://mathworld.wolfram.com/BinomialCoefficient.html"> Binomial
++     * Coefficient</a>, "<code>n choose k</code>", the number of
++     * <code>k</code>-element subsets that can be selected from an
++     * <code>n</code>-element set.
+      * <p>
+-     * <Strong>Preconditions</strong>:<ul>
++     * <Strong>Preconditions</strong>:
++     * <ul>
+      * <li> <code>0 <= k <= n </code> (otherwise
+-     *      <code>IllegalArgumentException</code> is thrown)</li>
+-     * </ul>
+-     *
++     * <code>IllegalArgumentException</code> is thrown)</li>
++     * </ul></p>
++     * 
+      * @param n the size of the set
+      * @param k the size of the subsets to be counted
+      * @return <code>n choose k</code>
+@@ -369,50 +238,97 @@
+     public static double binomialCoefficientLog(final int n, final int k) {
+         if (n < k) {
+             throw new IllegalArgumentException(
+-            "must have n >= k for binomial coefficient (n,k)");
++                "must have n >= k for binomial coefficient (n,k)");
+         }
+         if (n < 0) {
+             throw new IllegalArgumentException(
+-            "must have n >= 0 for binomial coefficient (n,k)");
++                "must have n >= 0 for binomial coefficient (n,k)");
+         }
+         if ((n == k) || (k == 0)) {
+             return 0;
+         }
+         if ((k == 1) || (k == n - 1)) {
+-            return Math.log((double) n);
++            return Math.log((double)n);
+         }
+         double logSum = 0;
+-        
++
+         // n!/k!
+         for (int i = k + 1; i <= n; i++) {
+-            logSum += Math.log((double) i);
++            logSum += Math.log((double)i);
+         }
+-        
++
+         // divide by (n-k)!
+         for (int i = 2; i <= n - k; i++) {
+-            logSum -= Math.log((double) i);
++            logSum -= Math.log((double)i);
+         }
+-        
++
+         return logSum;
+     }
+     
+     /**
+-     * Returns n!.  Shorthand for <code>n</code>
+-     * <a href="http://mathworld.wolfram.com/Factorial.html">
+-     * Factorial</a>, the product of the numbers <code>1,...,n</code>.
+-     *
++     * Returns the <a href="http://mathworld.wolfram.com/HyperbolicCosine.html">
++     * hyperbolic cosine</a> of x.
++     * 
++     * @param x double value for which to find the hyperbolic cosine
++     * @return hyperbolic cosine of x
++     */
++    public static double cosh(double x) {
++        return (Math.exp(x) + Math.exp(-x)) / 2.0;
++    }
++    
++    /**
++     * Returns true iff both arguments are NaN or neither is NaN and they are
++     * equal
++     * 
++     * @param x first value
++     * @param y second value
++     * @return true if the values are equal or both are NaN
++     */
++    public static boolean equals(double x, double y) {
++        return ((Double.isNaN(x) && Double.isNaN(y)) || x == y);
++    }
++
++    /**
++     * Returns true iff both arguments are null or have same dimensions
++     * and all their elements are {@link #equals(double,double) equals}
++     * 
++     * @param x first array
++     * @param y second array
++     * @return true if the values are both null or have same dimension
++     * and equal elements
++     * @since 1.2
++     */
++    public static boolean equals(double[] x, double[] y) {
++        if ((x == null) || (y == null)) {
++            return !((x == null) ^ (y == null));
++        }
++        if (x.length != y.length) {
++            return false;
++        }
++        for (int i = 0; i < x.length; ++i) {
++            if (!equals(x[i], y[i])) {
++                return false;
++            }
++        }
++        return true;
++    }
++
++    /**
++     * Returns n!. Shorthand for <code>n</code> <a
++     * href="http://mathworld.wolfram.com/Factorial.html"> Factorial</a>, the
++     * product of the numbers <code>1,...,n</code>.
+      * <p>
+-     * <Strong>Preconditions</strong>:<ul>
++     * <Strong>Preconditions</strong>:
++     * <ul>
+      * <li> <code>n >= 0</code> (otherwise
+-     *      <code>IllegalArgumentException</code> is thrown)</li>
+-     * <li> The result is small enough to fit into a <code>long</code>.  The
+-     *      largest value of <code>n</code> for which <code>n!</code>
+-     *      < Long.MAX_VALUE</code> is 20.  If the computed value
+-     *      exceeds <code>Long.MAX_VALUE</code> an <code>ArithMeticException
+-     *      </code> is thrown.</li>
++     * <code>IllegalArgumentException</code> is thrown)</li>
++     * <li> The result is small enough to fit into a <code>long</code>. The
++     * largest value of <code>n</code> for which <code>n!</code> <
++     * Long.MAX_VALUE</code> is 20. If the computed value exceeds <code>Long.MAX_VALUE</code>
++     * an <code>ArithMeticException </code> is thrown.</li>
+      * </ul>
+      * </p>
+-     *
++     * 
+      * @param n argument
+      * @return <code>n!</code>
+      * @throws ArithmeticException if the result is too large to be represented
+@@ -423,28 +339,27 @@
+         long result = Math.round(factorialDouble(n));
+         if (result == Long.MAX_VALUE) {
+             throw new ArithmeticException(
+-            "result too large to represent in a long integer");
++                "result too large to represent in a long integer");
+         }
+         return result;
+     }
+-    
++
+     /**
+-     * Returns n!.  Shorthand for <code>n</code>
+-     * <a href="http://mathworld.wolfram.com/Factorial.html">
+-     * Factorial</a>, the product of the numbers <code>1,...,n</code> as a
+-     * <code>double</code>.
+-     *
++     * Returns n!. Shorthand for <code>n</code> <a
++     * href="http://mathworld.wolfram.com/Factorial.html"> Factorial</a>, the
++     * product of the numbers <code>1,...,n</code> as a <code>double</code>.
+      * <p>
+-     * <Strong>Preconditions</strong>:<ul>
++     * <Strong>Preconditions</strong>:
++     * <ul>
+      * <li> <code>n >= 0</code> (otherwise
+-     *      <code>IllegalArgumentException</code> is thrown)</li>
+-     * <li> The result is small enough to fit into a <code>double</code>.  The
+-     *      largest value of <code>n</code> for which <code>n!</code>
+-     *      < Double.MAX_VALUE</code> is 170.  If the computed value exceeds
+-     *      Double.MAX_VALUE, Double.POSITIVE_INFINITY is returned</li>
++     * <code>IllegalArgumentException</code> is thrown)</li>
++     * <li> The result is small enough to fit into a <code>double</code>. The
++     * largest value of <code>n</code> for which <code>n!</code> <
++     * Double.MAX_VALUE</code> is 170. If the computed value exceeds
++     * Double.MAX_VALUE, Double.POSITIVE_INFINITY is returned</li>
+      * </ul>
+      * </p>
+-     *
++     * 
+      * @param n argument
+      * @return <code>n!</code>
+      * @throws IllegalArgumentException if n < 0
+@@ -455,15 +370,16 @@
+         }
+         return Math.floor(Math.exp(factorialLog(n)) + 0.5);
+     }
+-    
++
+     /**
+      * Returns the natural logarithm of n!.
+      * <p>
+-     * <Strong>Preconditions</strong>:<ul>
++     * <Strong>Preconditions</strong>:
++     * <ul>
+      * <li> <code>n >= 0</code> (otherwise
+-     *      <code>IllegalArgumentException</code> is thrown)</li>
+-     * </ul>
+-     *
++     * <code>IllegalArgumentException</code> is thrown)</li>
++     * </ul></p>
++     * 
+      * @param n argument
+      * @return <code>n!</code>
+      * @throws IllegalArgumentException if preconditions are not met.
+@@ -474,75 +390,23 @@
+         }
+         double logSum = 0;
+         for (int i = 2; i <= n; i++) {
+-            logSum += Math.log((double) i);
++            logSum += Math.log((double)i);
+         }
+         return logSum;
+     }
+-    
+-    /**
+-     * Returns the <a href="http://mathworld.wolfram.com/HyperbolicCosine.html">
+-     * hyperbolic cosine</a> of x.
+-     *
+-     * @param x double value for which to find the hyperbolic cosine
+-     * @return hyperbolic cosine of x
+-     */
+-    public static double cosh(double x) {
+-        return (Math.exp(x) + Math.exp(-x)) / 2.0;
+-    }
+-    
+-    /**
+-     * Returns the <a href="http://mathworld.wolfram.com/HyperbolicSine.html">
+-     * hyperbolic sine</a> of x.
+-     *
+-     * @param x double value for which to find the hyperbolic sine
+-     * @return hyperbolic sine of x
+-     */
+-    public static double sinh(double x) {
+-        return (Math.exp(x) - Math.exp(-x)) / 2.0;
+-    }
+-    
+-    /**
+-     * Returns an integer hash code representing the given double value.
+-     *
+-     * @param value  the value to be hashed
+-     * @return the hash code
+-     */
+-    public static int hash(double value) {
+-        long bits = Double.doubleToLongBits(value);
+-        return (int)(bits ^ (bits >>> 32));
+-    }
+-    
+-    /**
+-     * Returns true iff both arguments are NaN or
+-     * neither is NaN and they are equal
+-     *
+-     * @param x first value
+-     * @param y second value
+-     * @return true if the values are equal or both are NaN
+-     */
+-    public static boolean equals(double x, double y) {
+-        return ((Double.isNaN(x) && Double.isNaN(y)) || x == y);
+-    }
+ 
+     /**
+-     * Returns the least common multiple between two integer values.
+-     * @param a the first integer value.
+-     * @param b the second integer value.
+-     * @return the least common multiple between a and b.
+-     */
+-    public static int lcm(int a, int b) {
+-        return Math.abs(a / gcd(a, b) * b);
+-    }
+-
+-    /**
+-     * <p>Gets the greatest common divisor of the absolute value of
+-     * two numbers, using the "binary gcd" method which avoids
+-     * division and modulo operations.  See Knuth 4.5.2 algorithm B.
+-     * This algorithm is due to Josef Stein (1961).</p>
+-     *
+-     * @param u  a non-zero number
+-     * @param v  a non-zero number
++     * <p>
++     * Gets the greatest common divisor of the absolute value of two numbers,
++     * using the "binary gcd" method which avoids division and modulo
++     * operations. See Knuth 4.5.2 algorithm B. This algorithm is due to Josef
++     * Stein (1961).
++     * </p>
++     * 
++     * @param u a non-zero number
++     * @param v a non-zero number
+      * @return the greatest common divisor, never zero
++     * @since 1.1
+      */
+     public static int gcd(int u, int v) {
+         if (u * v == 0) {
+@@ -553,92 +417,654 @@
+         // (i.e. we can't necessarily negate a negative number without
+         // overflow)
+         /* assert u!=0 && v!=0; */
+-        if (u>0) { u=-u; } // make u negative
+-        if (v>0) { v=-v; } // make v negative
++        if (u > 0) {
++            u = -u;
++        } // make u negative
++        if (v > 0) {
++            v = -v;
++        } // make v negative
+         // B1. [Find power of 2]
+-        int k=0;
+-        while ((u&1)==0 && (v&1)==0 && k<31) { // while u and v are both even...
+-            u/=2; v/=2; k++; // cast out twos.
++        int k = 0;
++        while ((u & 1) == 0 && (v & 1) == 0 && k < 31) { // while u and v are
++                                                            // both even...
++            u /= 2;
++            v /= 2;
++            k++; // cast out twos.
+         }
+-        if (k==31) {
++        if (k == 31) {
+             throw new ArithmeticException("overflow: gcd is 2^31");
+         }
+         // B2. Initialize: u and v have been divided by 2^k and at least
+-        //     one is odd.
+-        int t = ((u&1)==1) ? v : -(u/2)/*B3*/;
++        // one is odd.
++        int t = ((u & 1) == 1) ? v : -(u / 2)/* B3 */;
+         // t negative: u was odd, v may be even (t replaces v)
+         // t positive: u was even, v is odd (t replaces u)
+         do {
+             /* assert u<0 && v<0; */
+             // B4/B3: cast out twos from t.
+-            while ((t&1)==0) { // while t is even..
+-                t/=2; // cast out twos
++            while ((t & 1) == 0) { // while t is even..
++                t /= 2; // cast out twos
+             }
+             // B5 [reset max(u,v)]
+-            if (t>0) {
++            if (t > 0) {
+                 u = -t;
+             } else {
+                 v = t;
+             }
+             // B6/B3. at this point both u and v should be odd.
+-            t = (v - u)/2;
++            t = (v - u) / 2;
+             // |u| larger: t positive (replace u)
+             // |v| larger: t negative (replace v)
+-        } while (t!=0);
+-        return -u*(1<<k); // gcd is u*2^k
++        } while (t != 0);
++        return -u * (1 << k); // gcd is u*2^k
++    }
++
++    /**
++     * Returns an integer hash code representing the given double value.
++     * 
++     * @param value the value to be hashed
++     * @return the hash code
++     */
++    public static int hash(double value) {
++        return new Double(value).hashCode();
++    }
++
++    /**
++     * Returns an integer hash code representing the given double array.
++     * 
++     * @param value the value to be hashed (may be null)
++     * @return the hash code
++     * @since 1.2
++     */
++    public static int hash(double[] value) {
++        return Arrays.hashCode(value);
++    }
++
++    /**
++     * For a byte value x, this method returns (byte)(+1) if x >= 0 and
++     * (byte)(-1) if x < 0.
++     * 
++     * @param x the value, a byte
++     * @return (byte)(+1) or (byte)(-1), depending on the sign of x
++     */
++    public static byte indicator(final byte x) {
++        return (x >= ZB) ? PB : NB;
++    }
++
++    /**
++     * For a double precision value x, this method returns +1.0 if x >= 0 and
++     * -1.0 if x < 0. Returns <code>NaN</code> if <code>x</code> is
++     * <code>NaN</code>.
++     * 
++     * @param x the value, a double
++     * @return +1.0 or -1.0, depending on the sign of x
++     */
++    public static double indicator(final double x) {
++        if (Double.isNaN(x)) {
++            return Double.NaN;
++        }
++        return (x >= 0.0) ? 1.0 : -1.0;
++    }
++
++    /**
++     * For a float value x, this method returns +1.0F if x >= 0 and -1.0F if x <
++     * 0. Returns <code>NaN</code> if <code>x</code> is <code>NaN</code>.
++     * 
++     * @param x the value, a float
++     * @return +1.0F or -1.0F, depending on the sign of x
++     */
++    public static float indicator(final float x) {
++        if (Float.isNaN(x)) {
++            return Float.NaN;
++        }
++        return (x >= 0.0F) ? 1.0F : -1.0F;
++    }
++
++    /**
++     * For an int value x, this method returns +1 if x >= 0 and -1 if x < 0.
++     * 
++     * @param x the value, an int
++     * @return +1 or -1, depending on the sign of x
++     */
++    public static int indicator(final int x) {
++        return (x >= 0) ? 1 : -1;
++    }
++
++    /**
++     * For a long value x, this method returns +1L if x >= 0 and -1L if x < 0.
++     * 
++     * @param x the value, a long
++     * @return +1L or -1L, depending on the sign of x
++     */
++    public static long indicator(final long x) {
++        return (x >= 0L) ? 1L : -1L;
++    }
++
++    /**
++     * For a short value x, this method returns (short)(+1) if x >= 0 and
++     * (short)(-1) if x < 0.
++     * 
++     * @param x the value, a short
++     * @return (short)(+1) or (short)(-1), depending on the sign of x
++     */
++    public static short indicator(final short x) {
++        return (x >= ZS) ? PS : NS;
++    }
++
++    /**
++     * Returns the least common multiple between two integer values.
++     * 
++     * @param a the first integer value.
++     * @param b the second integer value.
++     * @return the least common multiple between a and b.
++     * @throws ArithmeticException if the lcm is too large to store as an int
++     * @since 1.1
++     */
++    public static int lcm(int a, int b) {
++        return Math.abs(mulAndCheck(a / gcd(a, b), b));
+     }
+ 
+     /** 
++     * <p>Returns the 
++     * <a href="http://mathworld.wolfram.com/Logarithm.html">logarithm</a>
++     * for base <code>b</code> of <code>x</code>.
++     * </p>
++     * <p>Returns <code>NaN<code> if either argument is negative.  If 
++     * <code>base</code> is 0 and <code>x</code> is positive, 0 is returned.
++     * If <code>base</code> is positive and <code>x</code> is 0, 
++     * <code>Double.NEGATIVE_INFINITY</code> is returned.  If both arguments
++     * are 0, the result is <code>NaN</code>.</p>
++     * 
++     * @param base the base of the logarithm, must be greater than 0
++     * @param x argument, must be greater than 0
++     * @return the value of the logarithm - the number y such that base^y = x.
++     * @since 1.2
++     */ 
++    public static double log(double base, double x) {
++        return Math.log(x)/Math.log(base);
++    }
++
++    /**
+      * Multiply two integers, checking for overflow.
+      * 
+      * @param x a factor
+      * @param y a factor
+      * @return the product <code>x*y</code>
+-     * @throws ArithmeticException if the result can not be represented as
+-     *                             an int
++     * @throws ArithmeticException if the result can not be represented as an
++     *         int
++     * @since 1.1
+      */
+     public static int mulAndCheck(int x, int y) {
+-        long m = ((long)x)*((long)y);
+-        if (m < Integer.MIN_VALUE ||
+-                m > Integer.MAX_VALUE) {
++        long m = ((long)x) * ((long)y);
++        if (m < Integer.MIN_VALUE || m > Integer.MAX_VALUE) {
+             throw new ArithmeticException("overflow: mul");
+         }
+         return (int)m;
+     }
+-    
+-    /** 
+-     * Add two integers, checking for overflow.
++
++    /**
++     * Multiply two long integers, checking for overflow.
+      * 
+-     * @param x an addend
+-     * @param y an addend
+-     * @return the sum <code>x+y</code>
+-     * @throws ArithmeticException if the result can not be represented as
+-     * an int
++     * @param a first value
++     * @param b second value
++     * @return the product <code>a * b</code>
++     * @throws ArithmeticException if the result can not be represented as an
++     *         long
++     * @since 1.2
++     */
++    public static long mulAndCheck(long a, long b) {
++        long ret;
++        String msg = "overflow: multiply";
++        if (a > b) {
++            // use symmetry to reduce boundry cases
++            ret = mulAndCheck(b, a);
++        } else {
++            if (a < 0) {
++                if (b < 0) {
++                    // check for positive overflow with negative a, negative b
++                    if (a >= Long.MAX_VALUE / b) {
++                        ret = a * b;
++                    } else {
++                        throw new ArithmeticException(msg);
++                    }
++                } else if (b > 0) {
++                    // check for negative overflow with negative a, positive b
++                    if (Long.MIN_VALUE / b <= a) {
++                        ret = a * b;
++                    } else {
++                        throw new ArithmeticException(msg);
++                        
++                    }
++                } else {
++                    // assert b == 0
++                    ret = 0;
++                }
++            } else if (a > 0) {
++                // assert a > 0
++                // assert b > 0
++                
++                // check for positive overflow with positive a, positive b
++                if (a <= Long.MAX_VALUE / b) {
++                    ret = a * b;
++                } else {
++                    throw new ArithmeticException(msg);
++                }
++            } else {
++                // assert a == 0
++                ret = 0;
++            }
++        }
++        return ret;
++    }
++
++    /**
++     * Get the next machine representable number after a number, moving
++     * in the direction of another number.
++     * <p>
++     * If <code>direction</code> is greater than or equal to<code>d</code>,
++     * the smallest machine representable number strictly greater than
++     * <code>d</code> is returned; otherwise the largest representable number
++     * strictly less than <code>d</code> is returned.</p>
++     * <p>
++     * If <code>d</code> is NaN or Infinite, it is returned unchanged.</p>
++     * 
++     * @param d base number
++     * @param direction (the only important thing is whether
++     * direction is greater or smaller than d)
++     * @return the next machine representable number in the specified direction
++     * @since 1.2
+      */
+-    public static int addAndCheck(int x, int y) {
+-        long s = (long)x+(long)y;
+-        if (s < Integer.MIN_VALUE ||
+-                s > Integer.MAX_VALUE) {
+-            throw new ArithmeticException("overflow: add");
++    public static double nextAfter(double d, double direction) {
++
++        // handling of some important special cases
++        if (Double.isNaN(d) || Double.isInfinite(d)) {
++                return d;
++        } else if (d == 0) {
++                return (direction < 0) ? -Double.MIN_VALUE : Double.MIN_VALUE;
+         }
+-        return (int)s;
++        // special cases MAX_VALUE to infinity and  MIN_VALUE to 0
++        // are handled just as normal numbers
++
++        // split the double in raw components
++        long bits     = Double.doubleToLongBits(d);
++        long sign     = bits & 0x8000000000000000L;
++        long exponent = bits & 0x7ff0000000000000L;
++        long mantissa = bits & 0x000fffffffffffffL;
++
++        if (d * (direction - d) >= 0) {
++                // we should increase the mantissa
++                if (mantissa == 0x000fffffffffffffL) {
++                        return Double.longBitsToDouble(sign |
++                                        (exponent + 0x0010000000000000L));
++                } else {
++                        return Double.longBitsToDouble(sign |
++                                        exponent | (mantissa + 1));
++                }
++        } else {
++                // we should decrease the mantissa
++                if (mantissa == 0L) {
++                        return Double.longBitsToDouble(sign |
++                                        (exponent - 0x0010000000000000L) |
++                                        0x000fffffffffffffL);
++                } else {
++                        return Double.longBitsToDouble(sign |
++                                        exponent | (mantissa - 1));
++                }
++        }
++
+     }
+-    
+-    /** 
++
++    /**
++     * Scale a number by 2<sup>scaleFactor</sup>.
++     * <p>If <code>d</code> is 0 or NaN or Infinite, it is returned unchanged.</p>
++     * 
++     * @param d base number
++     * @param scaleFactor power of two by which d sould be multiplied
++     * @return d &times; 2<sup>scaleFactor</sup>
++     * @since 2.0
++     */
++    public static double scalb(final double d, final int scaleFactor) {
++
++        // handling of some important special cases
++        if ((d == 0) || Double.isNaN(d) || Double.isInfinite(d)) {
++            return d;
++        }
++
++        // split the double in raw components
++        final long bits     = Double.doubleToLongBits(d);
++        final long exponent = bits & 0x7ff0000000000000L;
++        final long rest     = bits & 0x800fffffffffffffL;
++
++        // shift the exponent
++        final long newBits = rest | (exponent + (((long) scaleFactor) << 52));
++        return Double.longBitsToDouble(newBits);
++
++    }
++
++    /**
++     * Normalize an angle in a 2&pi wide interval around a center value.
++     * <p>This method has three main uses:</p>
++     * <ul>
++     *   <li>normalize an angle between 0 and 2&pi;:<br/>
++     *       <code>a = MathUtils.normalizeAngle(a, Math.PI);</code></li>
++     *   <li>normalize an angle between -&pi; and +&pi;<br/>
++     *       <code>a = MathUtils.normalizeAngle(a, 0.0);</code></li>
++     *   <li>compute the angle between two defining angular positions:<br>
++     *       <code>angle = MathUtils.normalizeAngle(end, start) - start;</code></li>
++     * </ul>
++     * <p>Note that due to numerical accuracy and since &pi; cannot be represented
++     * exactly, the result interval is <em>closed</em>, it cannot be half-closed
++     * as would be more satisfactory in a purely mathematical view.</p>
++     * @param a angle to normalize
++     * @param center center of the desired 2&pi; interval for the result
++     * @return a-2k&pi; with integer k and center-&pi; &lt;= a-2k&pi; &lt;= center+&pi;
++     * @since 1.2
++     */
++     public static double normalizeAngle(double a, double center) {
++         return a - TWO_PI * Math.floor((a + Math.PI - center) / TWO_PI);
++     }
++
++    /**
++     * Round the given value to the specified number of decimal places. The
++     * value is rounded using the {@link BigDecimal#ROUND_HALF_UP} method.
++     * 
++     * @param x the value to round.
++     * @param scale the number of digits to the right of the decimal point.
++     * @return the rounded value.
++     * @since 1.1
++     */
++    public static double round(double x, int scale) {
++        return round(x, scale, BigDecimal.ROUND_HALF_UP);
++    }
++
++    /**
++     * Round the given value to the specified number of decimal places. The
++     * value is rounded using the given method which is any method defined in
++     * {@link BigDecimal}.
++     * 
++     * @param x the value to round.
++     * @param scale the number of digits to the right of the decimal point.
++     * @param roundingMethod the rounding method as defined in
++     *        {@link BigDecimal}.
++     * @return the rounded value.
++     * @since 1.1
++     */
++    public static double round(double x, int scale, int roundingMethod) {
++        try {
++            return (new BigDecimal
++                   (Double.toString(x))
++                   .setScale(scale, roundingMethod))
++                   .doubleValue();
++        } catch (NumberFormatException ex) {
++            if (Double.isInfinite(x)) {
++                return x;          
++            } else {
++                return Double.NaN;
++            }
++        }
++    }
++
++    /**
++     * Round the given value to the specified number of decimal places. The
++     * value is rounding using the {@link BigDecimal#ROUND_HALF_UP} method.
++     * 
++     * @param x the value to round.
++     * @param scale the number of digits to the right of the decimal point.
++     * @return the rounded value.
++     * @since 1.1
++     */
++    public static float round(float x, int scale) {
++        return round(x, scale, BigDecimal.ROUND_HALF_UP);
++    }
++
++    /**
++     * Round the given value to the specified number of decimal places. The
++     * value is rounded using the given method which is any method defined in
++     * {@link BigDecimal}.
++     * 
++     * @param x the value to round.
++     * @param scale the number of digits to the right of the decimal point.
++     * @param roundingMethod the rounding method as defined in
++     *        {@link BigDecimal}.
++     * @return the rounded value.
++     * @since 1.1
++     */
++    public static float round(float x, int scale, int roundingMethod) {
++        float sign = indicator(x);
++        float factor = (float)Math.pow(10.0f, scale) * sign;
++        return (float)roundUnscaled(x * factor, sign, roundingMethod) / factor;
++    }
++
++    /**
++     * Round the given non-negative, value to the "nearest" integer. Nearest is
++     * determined by the rounding method specified. Rounding methods are defined
++     * in {@link BigDecimal}.
++     * 
++     * @param unscaled the value to round.
++     * @param sign the sign of the original, scaled value.
++     * @param roundingMethod the rounding method as defined in
++     *        {@link BigDecimal}.
++     * @return the rounded value.
++     * @since 1.1
++     */
++    private static double roundUnscaled(double unscaled, double sign,
++        int roundingMethod) {
++        switch (roundingMethod) {
++        case BigDecimal.ROUND_CEILING :
++            if (sign == -1) {
++                unscaled = Math.floor(nextAfter(unscaled, Double.NEGATIVE_INFINITY));
++            } else {
++                unscaled = Math.ceil(nextAfter(unscaled, Double.POSITIVE_INFINITY));
++            }
++            break;
++        case BigDecimal.ROUND_DOWN :
++            unscaled = Math.floor(nextAfter(unscaled, Double.NEGATIVE_INFINITY));
++            break;
++        case BigDecimal.ROUND_FLOOR :
++            if (sign == -1) {
++                unscaled = Math.ceil(nextAfter(unscaled, Double.POSITIVE_INFINITY));
++            } else {
++                unscaled = Math.floor(nextAfter(unscaled, Double.NEGATIVE_INFINITY));
++            }
++            break;
++        case BigDecimal.ROUND_HALF_DOWN : {
++            unscaled = nextAfter(unscaled, Double.NEGATIVE_INFINITY);
++            double fraction = unscaled - Math.floor(unscaled);
++            if (fraction > 0.5) {
++                unscaled = Math.ceil(unscaled);
++            } else {
++                unscaled = Math.floor(unscaled);
++            }
++            break;
++        }
++        case BigDecimal.ROUND_HALF_EVEN : {
++            double fraction = unscaled - Math.floor(unscaled);
++            if (fraction > 0.5) {
++                unscaled = Math.ceil(unscaled);
++            } else if (fraction < 0.5) {
++                unscaled = Math.floor(unscaled);
++            } else {
++                // The following equality test is intentional and needed for rounding purposes
++                if (Math.floor(unscaled) / 2.0 == Math.floor(Math
++                    .floor(unscaled) / 2.0)) { // even
++                    unscaled = Math.floor(unscaled);
++                } else { // odd
++                    unscaled = Math.ceil(unscaled);
++                }
++            }
++            break;
++        }
++        case BigDecimal.ROUND_HALF_UP : {
++            unscaled = nextAfter(unscaled, Double.POSITIVE_INFINITY);
++            double fraction = unscaled - Math.floor(unscaled);
++            if (fraction >= 0.5) {
++                unscaled = Math.ceil(unscaled);
++            } else {
++                unscaled = Math.floor(unscaled);
++            }
++            break;
++        }
++        case BigDecimal.ROUND_UNNECESSARY :
++            if (unscaled != Math.floor(unscaled)) {
++                throw new ArithmeticException("Inexact result from rounding");
++            }
++            break;
++        case BigDecimal.ROUND_UP :
++            unscaled = Math.ceil(nextAfter(unscaled,  Double.POSITIVE_INFINITY));
++            break;
++        default :
++            throw new IllegalArgumentException("Invalid rounding method.");
++        }
++        return unscaled;
++    }
++
++    /**
++     * Returns the <a href="http://mathworld.wolfram.com/Sign.html"> sign</a>
++     * for byte value <code>x</code>.
++     * <p>
++     * For a byte value x, this method returns (byte)(+1) if x > 0, (byte)(0) if
++     * x = 0, and (byte)(-1) if x < 0.</p>
++     * 
++     * @param x the value, a byte
++     * @return (byte)(+1), (byte)(0), or (byte)(-1), depending on the sign of x
++     */
++    public static byte sign(final byte x) {
++        return (x == ZB) ? ZB : (x > ZB) ? PB : NB;
++    }
++
++    /**
++     * Returns the <a href="http://mathworld.wolfram.com/Sign.html"> sign</a>
++     * for double precision <code>x</code>.
++     * <p>
++     * For a double value <code>x</code>, this method returns
++     * <code>+1.0</code> if <code>x > 0</code>, <code>0.0</code> if
++     * <code>x = 0.0</code>, and <code>-1.0</code> if <code>x < 0</code>.
++     * Returns <code>NaN</code> if <code>x</code> is <code>NaN</code>.</p>
++     * 
++     * @param x the value, a double
++     * @return +1.0, 0.0, or -1.0, depending on the sign of x
++     */
++    public static double sign(final double x) {
++        if (Double.isNaN(x)) {
++            return Double.NaN;
++        }
++        return (x == 0.0) ? 0.0 : (x > 0.0) ? 1.0 : -1.0;
++    }
++
++    /**
++     * Returns the <a href="http://mathworld.wolfram.com/Sign.html"> sign</a>
++     * for float value <code>x</code>.
++     * <p>
++     * For a float value x, this method returns +1.0F if x > 0, 0.0F if x =
++     * 0.0F, and -1.0F if x < 0. Returns <code>NaN</code> if <code>x</code>
++     * is <code>NaN</code>.</p>
++     * 
++     * @param x the value, a float
++     * @return +1.0F, 0.0F, or -1.0F, depending on the sign of x
++     */
++    public static float sign(final float x) {
++        if (Float.isNaN(x)) {
++            return Float.NaN;
++        }
++        return (x == 0.0F) ? 0.0F : (x > 0.0F) ? 1.0F : -1.0F;
++    }
++
++    /**
++     * Returns the <a href="http://mathworld.wolfram.com/Sign.html"> sign</a>
++     * for int value <code>x</code>.
++     * <p>
++     * For an int value x, this method returns +1 if x > 0, 0 if x = 0, and -1
++     * if x < 0.</p>
++     * 
++     * @param x the value, an int
++     * @return +1, 0, or -1, depending on the sign of x
++     */
++    public static int sign(final int x) {
++        return (x == 0) ? 0 : (x > 0) ? 1 : -1;
++    }
++
++    /**
++     * Returns the <a href="http://mathworld.wolfram.com/Sign.html"> sign</a>
++     * for long value <code>x</code>.
++     * <p>
++     * For a long value x, this method returns +1L if x > 0, 0L if x = 0, and
++     * -1L if x < 0.</p>
++     * 
++     * @param x the value, a long
++     * @return +1L, 0L, or -1L, depending on the sign of x
++     */
++    public static long sign(final long x) {
++        return (x == 0L) ? 0L : (x > 0L) ? 1L : -1L;
++    }
++
++    /**
++     * Returns the <a href="http://mathworld.wolfram.com/Sign.html"> sign</a>
++     * for short value <code>x</code>.
++     * <p>
++     * For a short value x, this method returns (short)(+1) if x > 0, (short)(0)
++     * if x = 0, and (short)(-1) if x < 0.</p>
++     * 
++     * @param x the value, a short
++     * @return (short)(+1), (short)(0), or (short)(-1), depending on the sign of
++     *         x
++     */
++    public static short sign(final short x) {
++        return (x == ZS) ? ZS : (x > ZS) ? PS : NS;
++    }
++
++    /**
++     * Returns the <a href="http://mathworld.wolfram.com/HyperbolicSine.html">
++     * hyperbolic sine</a> of x.
++     * 
++     * @param x double value for which to find the hyperbolic sine
++     * @return hyperbolic sine of x
++     */
++    public static double sinh(double x) {
++        return (Math.exp(x) - Math.exp(-x)) / 2.0;
++    }
++
++    /**
+      * Subtract two integers, checking for overflow.
+      * 
+      * @param x the minuend
+      * @param y the subtrahend
+      * @return the difference <code>x-y</code>
+-     * @throws ArithmeticException if the result can not be represented as
+-     * an int
++     * @throws ArithmeticException if the result can not be represented as an
++     *         int
++     * @since 1.1
+      */
+     public static int subAndCheck(int x, int y) {
+-        long s = (long)x-(long)y;
+-        if (s < Integer.MIN_VALUE ||
+-                s > Integer.MAX_VALUE) {
+-            throw new ArithmeticException("overflow: add");
++        long s = (long)x - (long)y;
++        if (s < Integer.MIN_VALUE || s > Integer.MAX_VALUE) {
++            throw new ArithmeticException("overflow: subtract");
+         }
+         return (int)s;
+     }
++
++    /**
++     * Subtract two long integers, checking for overflow.
++     * 
++     * @param a first value
++     * @param b second value
++     * @return the difference <code>a-b</code>
++     * @throws ArithmeticException if the result can not be represented as an
++     *         long
++     * @since 1.2
++     */
++    public static long subAndCheck(long a, long b) {
++        long ret;
++        String msg = "overflow: subtract";
++        if (b == Long.MIN_VALUE) {
++            if (a < 0) {
++                ret = a - b;
++            } else {
++                throw new ArithmeticException(msg);
++            }
++        } else {
++            // use additive inverse
++            ret = addAndCheck(a, -b, msg);
++        }
++        return ret;
++    }
++
+ }
+diff -r -u inducing/src/test/org/apache/commons/math/util/MathUtilsTest.java buggy/src/test/org/apache/commons/math/util/MathUtilsTest.java
+--- inducing/src/test/org/apache/commons/math/util/MathUtilsTest.java	2023-06-12 11:40:48.181738215 +0800
++++ buggy/src/test/org/apache/commons/math/util/MathUtilsTest.java	2023-06-12 11:40:48.097741899 +0800
+@@ -1,17 +1,15 @@
+ /*
+- * Copyright 2003-2005 The Apache Software Foundation.
+- * 
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
++ * Licensed to the Apache Software Foundation (ASF) under one or more
++ * contributor license agreements. See the NOTICE file distributed with this
++ * work for additional information regarding copyright ownership. The ASF
++ * licenses this file to You under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+- * 
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- * 
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
++ * http://www.apache.org/licenses/LICENSE-2.0 Unless required by applicable law
++ * or agreed to in writing, software distributed under the License is
++ * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied. See the License for the specific language
++ * governing permissions and limitations under the License.
+  */
+ package org.apache.commons.math.util;
+ 
+@@ -21,10 +19,13 @@
+ import junit.framework.TestCase;
+ import junit.framework.TestSuite;
+ 
++import org.apache.commons.math.random.RandomDataImpl;
++import org.apache.commons.math.TestUtils;
++
+ /**
+  * Test cases for the MathUtils class.
+- *
+- * @version $Revision$ $Date$
++ * @version $Revision$ $Date: 2007-08-16 15:36:33 -0500 (Thu, 16 Aug
++ *          2007) $
+  */
+ public final class MathUtilsTest extends TestCase {
+ 
+@@ -32,130 +33,209 @@
+         super(name);
+     }
+ 
+-    public void setUp() {
+-    }
+-
+     public static Test suite() {
+         TestSuite suite = new TestSuite(MathUtilsTest.class);
+         suite.setName("MathUtils Tests");
+         return suite;
+     }
+-    
++
++    /**
++     * Exact recursive implementation to test against
++     */
++    private long binomialCoefficient(int n, int k) {
++        if ((n == k) || (k == 0)) {
++            return 1;
++        }
++        if ((k == 1) || (k == n - 1)) {
++            return n;
++        }
++        return binomialCoefficient(n - 1, k - 1) + binomialCoefficient(n - 1, k);
++    }
++
++    /**
++     * Exact direct multiplication implementation to test against
++     */
++    private long factorial(int n) {
++        long result = 1;
++        for (int i = 2; i <= n; i++) {
++            result *= i;
++        }
++        return result;
++    }
++
++    /** Verify that b(0,0) = 1 */
++    public void test0Choose0() {
++        assertEquals(MathUtils.binomialCoefficientDouble(0, 0), 1d, 0);
++        assertEquals(MathUtils.binomialCoefficientLog(0, 0), 0d, 0);
++        assertEquals(MathUtils.binomialCoefficient(0, 0), 1);
++    }
++
+     public void testAddAndCheck() {
+         int big = Integer.MAX_VALUE;
+         int bigNeg = Integer.MIN_VALUE;
+         assertEquals(big, MathUtils.addAndCheck(big, 0));
+         try {
+-            int res = MathUtils.addAndCheck(big, 1);
+-        } catch (ArithmeticException ex) {}
++            MathUtils.addAndCheck(big, 1);
++            fail("Expecting ArithmeticException");
++        } catch (ArithmeticException ex) {
++        }
+         try {
+-            int res = MathUtils.addAndCheck(bigNeg, -1);
+-        } catch (ArithmeticException ex) {}
++            MathUtils.addAndCheck(bigNeg, -1);
++            fail("Expecting ArithmeticException");
++        } catch (ArithmeticException ex) {
++        }
+     }
+-    
+-    public void testMulAndCheck() {
+-        int big = Integer.MAX_VALUE;
+-        int bigNeg = Integer.MIN_VALUE;
+-        assertEquals(big, MathUtils.mulAndCheck(big, 1));
+-        try {
+-            int res = MathUtils.mulAndCheck(big, 2);
+-        } catch (ArithmeticException ex) {}
+-        try {
+-            int res = MathUtils.mulAndCheck(bigNeg, 2);
+-        } catch (ArithmeticException ex) {}
++
++    public void testAddAndCheckLong() {
++        long max = Long.MAX_VALUE;
++        long min = Long.MIN_VALUE;
++        assertEquals(max, MathUtils.addAndCheck(max, 0L));
++        assertEquals(min, MathUtils.addAndCheck(min, 0L));
++        assertEquals(max, MathUtils.addAndCheck(0L, max));
++        assertEquals(min, MathUtils.addAndCheck(0L, min));
++        assertEquals(1, MathUtils.addAndCheck(-1L, 2L));
++        assertEquals(1, MathUtils.addAndCheck(2L, -1L));
++        testAddAndCheckLongFailure(max, 1L);
++        testAddAndCheckLongFailure(min, -1L);
++        testAddAndCheckLongFailure(1L, max);
++        testAddAndCheckLongFailure(-1L, min);
+     }
+-    
+-    public void testSubAndCheck() {
+-        int big = Integer.MAX_VALUE;
+-        int bigNeg = Integer.MIN_VALUE;
+-        assertEquals(big, MathUtils.subAndCheck(big, 0));
+-        try {
+-            int res = MathUtils.subAndCheck(big, -1);
+-        } catch (ArithmeticException ex) {}
++
++    private void testAddAndCheckLongFailure(long a, long b) {
+         try {
+-            int res = MathUtils.subAndCheck(bigNeg, 1);
+-        } catch (ArithmeticException ex) {}
++            MathUtils.addAndCheck(a, b);
++            fail("Expecting ArithmeticException");
++        } catch (ArithmeticException ex) {
++            // success
++        }
+     }
+-    
++
+     public void testBinomialCoefficient() {
+-        long[] bcoef5 = {1,5,10,10,5,1};
+-        long[] bcoef6 = {1,6,15,20,15,6,1};
++        long[] bcoef5 = {
++            1,
++            5,
++            10,
++            10,
++            5,
++            1 };
++        long[] bcoef6 = {
++            1,
++            6,
++            15,
++            20,
++            15,
++            6,
++            1 };
+         for (int i = 0; i < 6; i++) {
+-            assertEquals("5 choose " + i, bcoef5[i], 
+-                MathUtils.binomialCoefficient(5,i));
++            assertEquals("5 choose " + i, bcoef5[i], MathUtils.binomialCoefficient(5, i));
+         }
+         for (int i = 0; i < 7; i++) {
+-            assertEquals("6 choose " + i, bcoef6[i], 
+-                MathUtils.binomialCoefficient(6,i));
++            assertEquals("6 choose " + i, bcoef6[i], MathUtils.binomialCoefficient(6, i));
+         }
+-        
++
+         for (int n = 1; n < 10; n++) {
+             for (int k = 0; k <= n; k++) {
+-                assertEquals(n + " choose " + k, binomialCoefficient(n, k), 
+-                    MathUtils.binomialCoefficient(n, k));
+-                assertEquals(n + " choose " + k,(double) binomialCoefficient(n, k), 
+-                    MathUtils.binomialCoefficientDouble(n, k),Double.MIN_VALUE);
+-                assertEquals(n + " choose " + k,
+-                    Math.log((double) binomialCoefficient(n, k)), 
+-                    MathUtils.binomialCoefficientLog(n, k),10E-12);
++                assertEquals(n + " choose " + k, binomialCoefficient(n, k), MathUtils.binomialCoefficient(n, k));
++                assertEquals(n + " choose " + k, (double)binomialCoefficient(n, k), MathUtils.binomialCoefficientDouble(n, k), Double.MIN_VALUE);
++                assertEquals(n + " choose " + k, Math.log((double)binomialCoefficient(n, k)), MathUtils.binomialCoefficientLog(n, k), 10E-12);
+             }
+         }
+-      
+-      /* 
+-       * Takes a long time for recursion to unwind, but succeeds 
+-       * and yields exact value = 2,333,606,220
+-        
+-        assertEquals(MathUtils.binomialCoefficient(34,17),
+-            binomialCoefficient(34,17));
+-       */
+-    }
+-    
+-    /** Verify that b(0,0) = 1 */
+-    public void test0Choose0() {
+-        assertEquals(MathUtils.binomialCoefficientDouble(0, 0), 1d, 0);
+-        assertEquals(MathUtils.binomialCoefficientLog(0, 0), 0d, 0);
+-        assertEquals(MathUtils.binomialCoefficient(0, 0), 1);
++
++        /*
++         * Takes a long time for recursion to unwind, but succeeds and yields
++         * exact value = 2,333,606,220
++         * assertEquals(MathUtils.binomialCoefficient(34,17),
++         * binomialCoefficient(34,17));
++         */
+     }
+-    
++
+     public void testBinomialCoefficientFail() {
+         try {
+-            long x = MathUtils.binomialCoefficient(4,5);
+-            fail ("expecting IllegalArgumentException");
++            MathUtils.binomialCoefficient(4, 5);
++            fail("expecting IllegalArgumentException");
+         } catch (IllegalArgumentException ex) {
+             ;
+         }
+-        
++
+         try {
+-            double x = MathUtils.binomialCoefficientDouble(4,5);
+-            fail ("expecting IllegalArgumentException");
++            MathUtils.binomialCoefficientDouble(4, 5);
++            fail("expecting IllegalArgumentException");
+         } catch (IllegalArgumentException ex) {
+             ;
+         }
+-        
++
+         try {
+-            double x = MathUtils.binomialCoefficientLog(4,5);
+-            fail ("expecting IllegalArgumentException");
++            MathUtils.binomialCoefficientLog(4, 5);
++            fail("expecting IllegalArgumentException");
+         } catch (IllegalArgumentException ex) {
+             ;
+         }
+         try {
+-            long x = MathUtils.binomialCoefficient(67,34);
+-            fail ("expecting ArithmeticException");
++            MathUtils.binomialCoefficient(67, 34);
++            fail("expecting ArithmeticException");
+         } catch (ArithmeticException ex) {
+             ;
+         }
+-        double x = MathUtils.binomialCoefficientDouble(1030,515);
+-        assertTrue("expecting infinite binomial coefficient",
+-            Double.isInfinite(x));
++        double x = MathUtils.binomialCoefficientDouble(1030, 515);
++        assertTrue("expecting infinite binomial coefficient", Double.isInfinite(x));
++    }
++
++    public void testCosh() {
++        double x = 3.0;
++        double expected = 10.06766;
++        assertEquals(expected, MathUtils.cosh(x), 1.0e-5);
++    }
++
++    public void testCoshNaN() {
++        assertTrue(Double.isNaN(MathUtils.cosh(Double.NaN)));
++    }
++
++    public void testEquals() {
++        double[] testArray = {
++            Double.NaN,
++            Double.POSITIVE_INFINITY,
++            Double.NEGATIVE_INFINITY,
++            1d,
++            0d };
++        for (int i = 0; i < testArray.length; i++) {
++            for (int j = 0; j < testArray.length; j++) {
++                if (i == j) {
++                    assertTrue(MathUtils.equals(testArray[i], testArray[j]));
++                    assertTrue(MathUtils.equals(testArray[j], testArray[i]));
++                } else {
++                    assertTrue(!MathUtils.equals(testArray[i], testArray[j]));
++                    assertTrue(!MathUtils.equals(testArray[j], testArray[i]));
++                }
++            }
++        }
++    }
++
++    public void testArrayEquals() {
++        assertFalse(MathUtils.equals(new double[] { 1d }, null));
++        assertFalse(MathUtils.equals(null, new double[] { 1d }));
++        assertTrue(MathUtils.equals((double[]) null, (double[]) null));
++
++        assertFalse(MathUtils.equals(new double[] { 1d }, new double[0]));
++        assertTrue(MathUtils.equals(new double[] { 1d }, new double[] { 1d }));
++        assertTrue(MathUtils.equals(new double[] {
++                                      Double.NaN, Double.POSITIVE_INFINITY,
++                                      Double.NEGATIVE_INFINITY, 1d, 0d
++                                    }, new double[] {
++                                      Double.NaN, Double.POSITIVE_INFINITY,
++                                      Double.NEGATIVE_INFINITY, 1d, 0d
++                                    }));
++        assertFalse(MathUtils.equals(new double[] { Double.POSITIVE_INFINITY },
++                                     new double[] { Double.NEGATIVE_INFINITY }));
++        assertFalse(MathUtils.equals(new double[] { 1d },
++                                     new double[] { MathUtils.nextAfter(1d, 2d) }));
++
+     }
+ 
+     public void testFactorial() {
+         for (int i = 1; i < 10; i++) {
+-            assertEquals(i + "! ",factorial(i),MathUtils.factorial(i));
+-            assertEquals(i + "! ",(double)factorial(i),
+-                MathUtils.factorialDouble(i),Double.MIN_VALUE);
+-            assertEquals(i + "! ",Math.log((double)factorial(i)),
+-                MathUtils.factorialLog(i),10E-12);
++            assertEquals(i + "! ", factorial(i), MathUtils.factorial(i));
++            assertEquals(i + "! ", (double)factorial(i), MathUtils.factorialDouble(i), Double.MIN_VALUE);
++            assertEquals(i + "! ", Math.log((double)factorial(i)), MathUtils.factorialLog(i), 10E-12);
+         }
+         assertEquals("0", 1, MathUtils.factorial(0));
+         assertEquals("0", 1.0d, MathUtils.factorialDouble(0), 1E-14);
+@@ -164,326 +244,625 @@
+ 
+     public void testFactorialFail() {
+         try {
+-            long x = MathUtils.factorial(-1);
+-            fail ("expecting IllegalArgumentException");
++            MathUtils.factorial(-1);
++            fail("expecting IllegalArgumentException");
+         } catch (IllegalArgumentException ex) {
+             ;
+         }
+         try {
+-            double x = MathUtils.factorialDouble(-1);
+-            fail ("expecting IllegalArgumentException");
++            MathUtils.factorialDouble(-1);
++            fail("expecting IllegalArgumentException");
+         } catch (IllegalArgumentException ex) {
+             ;
+         }
+         try {
+-            double x = MathUtils.factorialLog(-1);
+-            fail ("expecting IllegalArgumentException");
++            MathUtils.factorialLog(-1);
++            fail("expecting IllegalArgumentException");
+         } catch (IllegalArgumentException ex) {
+             ;
+         }
+         try {
+-            double x = MathUtils.factorial(21);
+-            fail ("expecting ArithmeticException");
++            MathUtils.factorial(21);
++            fail("expecting ArithmeticException");
+         } catch (ArithmeticException ex) {
+             ;
+         }
+-        assertTrue("expecting infinite factorial value",
+-            Double.isInfinite(MathUtils.factorialDouble(171)));
++        assertTrue("expecting infinite factorial value", Double.isInfinite(MathUtils.factorialDouble(171)));
++    }
++
++    public void testGcd() {
++        int a = 30;
++        int b = 50;
++        int c = 77;
++
++        assertEquals(0, MathUtils.gcd(0, 0));
++
++        assertEquals(b, MathUtils.gcd(0, b));
++        assertEquals(a, MathUtils.gcd(a, 0));
++        assertEquals(b, MathUtils.gcd(0, -b));
++        assertEquals(a, MathUtils.gcd(-a, 0));
++
++        assertEquals(10, MathUtils.gcd(a, b));
++        assertEquals(10, MathUtils.gcd(-a, b));
++        assertEquals(10, MathUtils.gcd(a, -b));
++        assertEquals(10, MathUtils.gcd(-a, -b));
++
++        assertEquals(1, MathUtils.gcd(a, c));
++        assertEquals(1, MathUtils.gcd(-a, c));
++        assertEquals(1, MathUtils.gcd(a, -c));
++        assertEquals(1, MathUtils.gcd(-a, -c));
+     }
+ 
++    public void testHash() {
++        double[] testArray = {
++            Double.NaN,
++            Double.POSITIVE_INFINITY,
++            Double.NEGATIVE_INFINITY,
++            1d,
++            0d,
++            1E-14,
++            (1 + 1E-14),
++            Double.MIN_VALUE,
++            Double.MAX_VALUE };
++        for (int i = 0; i < testArray.length; i++) {
++            for (int j = 0; j < testArray.length; j++) {
++                if (i == j) {
++                    assertEquals(MathUtils.hash(testArray[i]), MathUtils.hash(testArray[j]));
++                    assertEquals(MathUtils.hash(testArray[j]), MathUtils.hash(testArray[i]));
++                } else {
++                    assertTrue(MathUtils.hash(testArray[i]) != MathUtils.hash(testArray[j]));
++                    assertTrue(MathUtils.hash(testArray[j]) != MathUtils.hash(testArray[i]));
++                }
++            }
++        }
++    }
+ 
++    public void testArrayHash() {
++        assertEquals(0, MathUtils.hash((double[]) null));
++        assertEquals(MathUtils.hash(new double[] {
++                                      Double.NaN, Double.POSITIVE_INFINITY,
++                                      Double.NEGATIVE_INFINITY, 1d, 0d
++                                    }),
++                     MathUtils.hash(new double[] {
++                                      Double.NaN, Double.POSITIVE_INFINITY,
++                                      Double.NEGATIVE_INFINITY, 1d, 0d
++                                    }));
++        assertFalse(MathUtils.hash(new double[] { 1d }) ==
++                    MathUtils.hash(new double[] { MathUtils.nextAfter(1d, 2d) }));
++        assertFalse(MathUtils.hash(new double[] { 1d }) ==
++                    MathUtils.hash(new double[] { 1d, 1d }));
++    }
++    
+     /**
+-     * Exact recursive implementation to test against
++     * Make sure that permuted arrays do not hash to the same value.
+      */
+-    private long binomialCoefficient(int n, int k) {
+-        if ((n == k) || (k == 0)) {
+-            return 1;
++    public void testPermutedArrayHash() {
++        double[] original = new double[10];
++        double[] permuted = new double[10];
++        RandomDataImpl random = new RandomDataImpl();
++        
++        // Generate 10 distinct random values
++        for (int i = 0; i < 10; i++) {
++            original[i] = random.nextUniform((double)i + 0.5, (double)i + 0.75);
+         }
+-        if ((k == 1) || (k == n - 1)) {
+-            return n;
++        
++        // Generate a random permutation, making sure it is not the identity
++        boolean isIdentity = true;
++        do {
++            int[] permutation = random.nextPermutation(10, 10);
++            for (int i = 0; i < 10; i++) {
++                if (i != permutation[i]) {
++                    isIdentity = false;
++                }
++                permuted[i] = original[permutation[i]];
++            }
++        } while (isIdentity);
++        
++        // Verify that permuted array has different hash
++        assertFalse(MathUtils.hash(original) == MathUtils.hash(permuted));
++    }
++
++    public void testIndicatorByte() {
++        assertEquals((byte)1, MathUtils.indicator((byte)2));
++        assertEquals((byte)1, MathUtils.indicator((byte)0));
++        assertEquals((byte)(-1), MathUtils.indicator((byte)(-2)));
++    }
++
++    public void testIndicatorDouble() {
++        double delta = 0.0;
++        assertEquals(1.0, MathUtils.indicator(2.0), delta);
++        assertEquals(1.0, MathUtils.indicator(0.0), delta);
++        assertEquals(-1.0, MathUtils.indicator(-2.0), delta);
++    }
++
++    public void testIndicatorFloat() {
++        float delta = 0.0F;
++        assertEquals(1.0F, MathUtils.indicator(2.0F), delta);
++        assertEquals(1.0F, MathUtils.indicator(0.0F), delta);
++        assertEquals(-1.0F, MathUtils.indicator(-2.0F), delta);
++    }
++
++    public void testIndicatorInt() {
++        assertEquals((int)1, MathUtils.indicator((int)(2)));
++        assertEquals((int)1, MathUtils.indicator((int)(0)));
++        assertEquals((int)(-1), MathUtils.indicator((int)(-2)));
++    }
++
++    public void testIndicatorLong() {
++        assertEquals(1L, MathUtils.indicator(2L));
++        assertEquals(1L, MathUtils.indicator(0L));
++        assertEquals(-1L, MathUtils.indicator(-2L));
++    }
++
++    public void testIndicatorShort() {
++        assertEquals((short)1, MathUtils.indicator((short)2));
++        assertEquals((short)1, MathUtils.indicator((short)0));
++        assertEquals((short)(-1), MathUtils.indicator((short)(-2)));
++    }
++
++    public void testLcm() {
++        int a = 30;
++        int b = 50;
++        int c = 77;
++
++        assertEquals(0, MathUtils.lcm(0, b));
++        assertEquals(0, MathUtils.lcm(a, 0));
++        assertEquals(b, MathUtils.lcm(1, b));
++        assertEquals(a, MathUtils.lcm(a, 1));
++        assertEquals(150, MathUtils.lcm(a, b));
++        assertEquals(150, MathUtils.lcm(-a, b));
++        assertEquals(150, MathUtils.lcm(a, -b));
++        assertEquals(2310, MathUtils.lcm(a, c));
++
++        try {
++            MathUtils.lcm(Integer.MAX_VALUE, Integer.MAX_VALUE - 1);
++            fail("Expecting ArithmeticException");
++        } catch (ArithmeticException ex) {
++            // expected
+         }
+-        return binomialCoefficient(n - 1, k - 1) +
+-            binomialCoefficient(n - 1, k);
+     }
+ 
+-    /**
+-     * Finds the largest values of n for which binomialCoefficient and
+-     * binomialCoefficientDouble will return values that fit in a long, double,
+-     * resp.  Remove comments around test below to get this in test-report
+-     *
+-        public void testLimits() {
+-            findBinomialLimits();
++    public void testLog() {
++        assertEquals(2.0, MathUtils.log(2, 4), 0);
++        assertEquals(3.0, MathUtils.log(2, 8), 0);
++        assertTrue(Double.isNaN(MathUtils.log(-1, 1)));
++        assertTrue(Double.isNaN(MathUtils.log(1, -1)));
++        assertTrue(Double.isNaN(MathUtils.log(0, 0)));
++        assertEquals(0, MathUtils.log(0, 10), 0);
++        assertEquals(Double.NEGATIVE_INFINITY, MathUtils.log(10, 0), 0);
++    }
++
++    public void testMulAndCheck() {
++        int big = Integer.MAX_VALUE;
++        int bigNeg = Integer.MIN_VALUE;
++        assertEquals(big, MathUtils.mulAndCheck(big, 1));
++        try {
++            MathUtils.mulAndCheck(big, 2);
++            fail("Expecting ArithmeticException");
++        } catch (ArithmeticException ex) {
+         }
+-     */
++        try {
++            MathUtils.mulAndCheck(bigNeg, 2);
++            fail("Expecting ArithmeticException");
++        } catch (ArithmeticException ex) {
++        }
++    }
+ 
+-    private void findBinomialLimits() {
+-        /**
+-         * will kick out 66 as the limit for long
+-         */
+-        boolean foundLimit = false;
+-        int test = 10;
+-        while (!foundLimit) {
+-            try {
+-                double x = MathUtils.binomialCoefficient(test, test / 2);
+-            } catch (ArithmeticException ex) {
+-                foundLimit = true;
+-                System.out.println
+-                    ("largest n for binomialCoefficient = " + (test - 1) );
+-            }
+-            test++;
++    public void testMulAndCheckLong() {
++        long max = Long.MAX_VALUE;
++        long min = Long.MIN_VALUE;
++        assertEquals(max, MathUtils.mulAndCheck(max, 1L));
++        assertEquals(min, MathUtils.mulAndCheck(min, 1L));
++        assertEquals(0L, MathUtils.mulAndCheck(max, 0L));
++        assertEquals(0L, MathUtils.mulAndCheck(min, 0L));
++        assertEquals(max, MathUtils.mulAndCheck(1L, max));
++        assertEquals(min, MathUtils.mulAndCheck(1L, min));
++        assertEquals(0L, MathUtils.mulAndCheck(0L, max));
++        assertEquals(0L, MathUtils.mulAndCheck(0L, min));
++        testMulAndCheckLongFailure(max, 2L);
++        testMulAndCheckLongFailure(2L, max);
++        testMulAndCheckLongFailure(min, 2L);
++        testMulAndCheckLongFailure(2L, min);
++        testMulAndCheckLongFailure(min, -1L);
++        testMulAndCheckLongFailure(-1L, min);
++    }
++
++    private void testMulAndCheckLongFailure(long a, long b) {
++        try {
++            MathUtils.mulAndCheck(a, b);
++            fail("Expecting ArithmeticException");
++        } catch (ArithmeticException ex) {
++            // success
+         }
++    }
++
++    public void testNextAfter() {
++        // 0x402fffffffffffff 0x404123456789abcd -> 4030000000000000
++        assertEquals(16.0, MathUtils.nextAfter(15.999999999999998, 34.27555555555555), 0.0);
++
++        // 0xc02fffffffffffff 0x404123456789abcd -> c02ffffffffffffe
++        assertEquals(-15.999999999999996, MathUtils.nextAfter(-15.999999999999998, 34.27555555555555), 0.0);
++
++        // 0x402fffffffffffff 0x400123456789abcd -> 402ffffffffffffe
++        assertEquals(15.999999999999996, MathUtils.nextAfter(15.999999999999998, 2.142222222222222), 0.0);
++
++        // 0xc02fffffffffffff 0x400123456789abcd -> c02ffffffffffffe
++        assertEquals(-15.999999999999996, MathUtils.nextAfter(-15.999999999999998, 2.142222222222222), 0.0);
++
++        // 0x4020000000000000 0x404123456789abcd -> 4020000000000001
++        assertEquals(8.000000000000002, MathUtils.nextAfter(8.0, 34.27555555555555), 0.0);
++
++        // 0xc020000000000000 0x404123456789abcd -> c01fffffffffffff
++        assertEquals(-7.999999999999999, MathUtils.nextAfter(-8.0, 34.27555555555555), 0.0);
++
++        // 0x4020000000000000 0x400123456789abcd -> 401fffffffffffff
++        assertEquals(7.999999999999999, MathUtils.nextAfter(8.0, 2.142222222222222), 0.0);
++
++        // 0xc020000000000000 0x400123456789abcd -> c01fffffffffffff
++        assertEquals(-7.999999999999999, MathUtils.nextAfter(-8.0, 2.142222222222222), 0.0);
++
++        // 0x3f2e43753d36a223 0x3f2e43753d36a224 -> 3f2e43753d36a224
++        assertEquals(2.308922399667661E-4, MathUtils.nextAfter(2.3089223996676606E-4, 2.308922399667661E-4), 0.0);
++
++        // 0x3f2e43753d36a223 0x3f2e43753d36a223 -> 3f2e43753d36a224
++        assertEquals(2.308922399667661E-4, MathUtils.nextAfter(2.3089223996676606E-4, 2.3089223996676606E-4), 0.0);
++
++        // 0x3f2e43753d36a223 0x3f2e43753d36a222 -> 3f2e43753d36a222
++        assertEquals(2.3089223996676603E-4, MathUtils.nextAfter(2.3089223996676606E-4, 2.3089223996676603E-4), 0.0);
++
++        // 0x3f2e43753d36a223 0xbf2e43753d36a224 -> 3f2e43753d36a222
++        assertEquals(2.3089223996676603E-4, MathUtils.nextAfter(2.3089223996676606E-4, -2.308922399667661E-4), 0.0);
++
++        // 0x3f2e43753d36a223 0xbf2e43753d36a223 -> 3f2e43753d36a222
++        assertEquals(2.3089223996676603E-4, MathUtils.nextAfter(2.3089223996676606E-4, -2.3089223996676606E-4), 0.0);
++
++        // 0x3f2e43753d36a223 0xbf2e43753d36a222 -> 3f2e43753d36a222
++        assertEquals(2.3089223996676603E-4, MathUtils.nextAfter(2.3089223996676606E-4, -2.3089223996676603E-4), 0.0);
++
++        // 0xbf2e43753d36a223 0x3f2e43753d36a224 -> bf2e43753d36a222
++        assertEquals(-2.3089223996676603E-4, MathUtils.nextAfter(-2.3089223996676606E-4, 2.308922399667661E-4), 0.0);
++
++        // 0xbf2e43753d36a223 0x3f2e43753d36a223 -> bf2e43753d36a222
++        assertEquals(-2.3089223996676603E-4, MathUtils.nextAfter(-2.3089223996676606E-4, 2.3089223996676606E-4), 0.0);
++
++        // 0xbf2e43753d36a223 0x3f2e43753d36a222 -> bf2e43753d36a222
++        assertEquals(-2.3089223996676603E-4, MathUtils.nextAfter(-2.3089223996676606E-4, 2.3089223996676603E-4), 0.0);
++
++        // 0xbf2e43753d36a223 0xbf2e43753d36a224 -> bf2e43753d36a224
++        assertEquals(-2.308922399667661E-4, MathUtils.nextAfter(-2.3089223996676606E-4, -2.308922399667661E-4), 0.0);
++
++        // 0xbf2e43753d36a223 0xbf2e43753d36a223 -> bf2e43753d36a224
++        assertEquals(-2.308922399667661E-4, MathUtils.nextAfter(-2.3089223996676606E-4, -2.3089223996676606E-4), 0.0);
+ 
+-       /**
+-        * will kick out 1029 as the limit for double
+-        */
+-        foundLimit = false;
+-        test = 10;
+-        while (!foundLimit) {
+-            double x = MathUtils.binomialCoefficientDouble(test, test / 2);
+-            if (Double.isInfinite(x)) {
+-                foundLimit = true;
+-                System.out.println
+-                    ("largest n for binomialCoefficientD = " + (test - 1) );
++        // 0xbf2e43753d36a223 0xbf2e43753d36a222 -> bf2e43753d36a222
++        assertEquals(-2.3089223996676603E-4, MathUtils.nextAfter(-2.3089223996676606E-4, -2.3089223996676603E-4), 0.0);
++
++    }
++
++    public void testNextAfterSpecialCases() {
++        assertTrue(Double.isInfinite(MathUtils.nextAfter(Double.NEGATIVE_INFINITY, 0)));
++        assertTrue(Double.isInfinite(MathUtils.nextAfter(Double.POSITIVE_INFINITY, 0)));
++        assertTrue(Double.isNaN(MathUtils.nextAfter(Double.NaN, 0)));
++        assertTrue(Double.isInfinite(MathUtils.nextAfter(Double.MAX_VALUE, Double.POSITIVE_INFINITY)));
++        assertTrue(Double.isInfinite(MathUtils.nextAfter(-Double.MAX_VALUE, Double.NEGATIVE_INFINITY)));
++        assertEquals(Double.MIN_VALUE, MathUtils.nextAfter(0, 1), 0);
++        assertEquals(-Double.MIN_VALUE, MathUtils.nextAfter(0, -1), 0);
++        assertEquals(0, MathUtils.nextAfter(Double.MIN_VALUE, -1), 0);
++        assertEquals(0, MathUtils.nextAfter(-Double.MIN_VALUE, 1), 0);
++    }
++
++    public void testScalb() {
++        assertEquals( 0.0, MathUtils.scalb(0.0, 5), 1.0e-15);
++        assertEquals(32.0, MathUtils.scalb(1.0, 5), 1.0e-15);
++        assertEquals(1.0 / 32.0, MathUtils.scalb(1.0,  -5), 1.0e-15);
++        assertEquals(Math.PI, MathUtils.scalb(Math.PI, 0), 1.0e-15);
++        assertTrue(Double.isInfinite(MathUtils.scalb(Double.POSITIVE_INFINITY, 1)));
++        assertTrue(Double.isInfinite(MathUtils.scalb(Double.NEGATIVE_INFINITY, 1)));
++        assertTrue(Double.isNaN(MathUtils.scalb(Double.NaN, 1)));
++    }
++
++    public void testNormalizeAngle() {
++        for (double a = -15.0; a <= 15.0; a += 0.1) {
++            for (double b = -15.0; b <= 15.0; b += 0.2) {
++                double c = MathUtils.normalizeAngle(a, b);
++                assertTrue((b - Math.PI) <= c);
++                assertTrue(c <= (b + Math.PI));
++                double twoK = Math.rint((a - c) / Math.PI);
++                assertEquals(c, a - twoK * Math.PI, 1.0e-14);
+             }
+-            test++;
+         }
+     }
+ 
+-    /**
+-     * Finds the largest values of n for which factiorial and
+-     * factorialDouble will return values that fit in a long, double,
+-     * resp.  Remove comments around test below to get this in test-report
++    public void testRoundDouble() {
++        double x = 1.234567890;
++        assertEquals(1.23, MathUtils.round(x, 2), 0.0);
++        assertEquals(1.235, MathUtils.round(x, 3), 0.0);
++        assertEquals(1.2346, MathUtils.round(x, 4), 0.0);
+ 
+-        public void testFactiorialLimits() {
+-            findFactorialLimits();
+-        }
+-     */
++        // JIRA MATH-151
++        assertEquals(39.25, MathUtils.round(39.245, 2), 0.0);
++        assertEquals(39.24, MathUtils.round(39.245, 2, BigDecimal.ROUND_DOWN), 0.0);
++        double xx = 39.0;
++        xx = xx + 245d / 1000d;
++        assertEquals(39.25, MathUtils.round(xx, 2), 0.0);
++
++        // BZ 35904
++        assertEquals(30.1d, MathUtils.round(30.095d, 2), 0.0d);
++        assertEquals(30.1d, MathUtils.round(30.095d, 1), 0.0d);
++        assertEquals(33.1d, MathUtils.round(33.095d, 1), 0.0d);
++        assertEquals(33.1d, MathUtils.round(33.095d, 2), 0.0d);
++        assertEquals(50.09d, MathUtils.round(50.085d, 2), 0.0d);
++        assertEquals(50.19d, MathUtils.round(50.185d, 2), 0.0d);
++        assertEquals(50.01d, MathUtils.round(50.005d, 2), 0.0d);
++        assertEquals(30.01d, MathUtils.round(30.005d, 2), 0.0d);
++        assertEquals(30.65d, MathUtils.round(30.645d, 2), 0.0d);
++
++        assertEquals(1.24, MathUtils.round(x, 2, BigDecimal.ROUND_CEILING), 0.0);
++        assertEquals(1.235, MathUtils.round(x, 3, BigDecimal.ROUND_CEILING), 0.0);
++        assertEquals(1.2346, MathUtils.round(x, 4, BigDecimal.ROUND_CEILING), 0.0);
++        assertEquals(-1.23, MathUtils.round(-x, 2, BigDecimal.ROUND_CEILING), 0.0);
++        assertEquals(-1.234, MathUtils.round(-x, 3, BigDecimal.ROUND_CEILING), 0.0);
++        assertEquals(-1.2345, MathUtils.round(-x, 4, BigDecimal.ROUND_CEILING), 0.0);
+ 
+-    private void findFactorialLimits() {
+-        /**
+-         * will kick out 20 as the limit for long
+-         */
+-        boolean foundLimit = false;
+-        int test = 10;
+-        while (!foundLimit) {
+-            try {
+-                double x = MathUtils.factorial(test);
+-            } catch (ArithmeticException ex) {
+-                foundLimit = true;
+-                System.out.println
+-                    ("largest n for factorial = " + (test - 1) );
+-            }
+-            test++;
++        assertEquals(1.23, MathUtils.round(x, 2, BigDecimal.ROUND_DOWN), 0.0);
++        assertEquals(1.234, MathUtils.round(x, 3, BigDecimal.ROUND_DOWN), 0.0);
++        assertEquals(1.2345, MathUtils.round(x, 4, BigDecimal.ROUND_DOWN), 0.0);
++        assertEquals(-1.23, MathUtils.round(-x, 2, BigDecimal.ROUND_DOWN), 0.0);
++        assertEquals(-1.234, MathUtils.round(-x, 3, BigDecimal.ROUND_DOWN), 0.0);
++        assertEquals(-1.2345, MathUtils.round(-x, 4, BigDecimal.ROUND_DOWN), 0.0);
++
++        assertEquals(1.23, MathUtils.round(x, 2, BigDecimal.ROUND_FLOOR), 0.0);
++        assertEquals(1.234, MathUtils.round(x, 3, BigDecimal.ROUND_FLOOR), 0.0);
++        assertEquals(1.2345, MathUtils.round(x, 4, BigDecimal.ROUND_FLOOR), 0.0);
++        assertEquals(-1.24, MathUtils.round(-x, 2, BigDecimal.ROUND_FLOOR), 0.0);
++        assertEquals(-1.235, MathUtils.round(-x, 3, BigDecimal.ROUND_FLOOR), 0.0);
++        assertEquals(-1.2346, MathUtils.round(-x, 4, BigDecimal.ROUND_FLOOR), 0.0);
++
++        assertEquals(1.23, MathUtils.round(x, 2, BigDecimal.ROUND_HALF_DOWN), 0.0);
++        assertEquals(1.235, MathUtils.round(x, 3, BigDecimal.ROUND_HALF_DOWN), 0.0);
++        assertEquals(1.2346, MathUtils.round(x, 4, BigDecimal.ROUND_HALF_DOWN), 0.0);
++        assertEquals(-1.23, MathUtils.round(-x, 2, BigDecimal.ROUND_HALF_DOWN), 0.0);
++        assertEquals(-1.235, MathUtils.round(-x, 3, BigDecimal.ROUND_HALF_DOWN), 0.0);
++        assertEquals(-1.2346, MathUtils.round(-x, 4, BigDecimal.ROUND_HALF_DOWN), 0.0);
++        assertEquals(1.234, MathUtils.round(1.2345, 3, BigDecimal.ROUND_HALF_DOWN), 0.0);
++        assertEquals(-1.234, MathUtils.round(-1.2345, 3, BigDecimal.ROUND_HALF_DOWN), 0.0);
++
++        assertEquals(1.23, MathUtils.round(x, 2, BigDecimal.ROUND_HALF_EVEN), 0.0);
++        assertEquals(1.235, MathUtils.round(x, 3, BigDecimal.ROUND_HALF_EVEN), 0.0);
++        assertEquals(1.2346, MathUtils.round(x, 4, BigDecimal.ROUND_HALF_EVEN), 0.0);
++        assertEquals(-1.23, MathUtils.round(-x, 2, BigDecimal.ROUND_HALF_EVEN), 0.0);
++        assertEquals(-1.235, MathUtils.round(-x, 3, BigDecimal.ROUND_HALF_EVEN), 0.0);
++        assertEquals(-1.2346, MathUtils.round(-x, 4, BigDecimal.ROUND_HALF_EVEN), 0.0);
++        assertEquals(1.234, MathUtils.round(1.2345, 3, BigDecimal.ROUND_HALF_EVEN), 0.0);
++        assertEquals(-1.234, MathUtils.round(-1.2345, 3, BigDecimal.ROUND_HALF_EVEN), 0.0);
++        assertEquals(1.236, MathUtils.round(1.2355, 3, BigDecimal.ROUND_HALF_EVEN), 0.0);
++        assertEquals(-1.236, MathUtils.round(-1.2355, 3, BigDecimal.ROUND_HALF_EVEN), 0.0);
++
++        assertEquals(1.23, MathUtils.round(x, 2, BigDecimal.ROUND_HALF_UP), 0.0);
++        assertEquals(1.235, MathUtils.round(x, 3, BigDecimal.ROUND_HALF_UP), 0.0);
++        assertEquals(1.2346, MathUtils.round(x, 4, BigDecimal.ROUND_HALF_UP), 0.0);
++        assertEquals(-1.23, MathUtils.round(-x, 2, BigDecimal.ROUND_HALF_UP), 0.0);
++        assertEquals(-1.235, MathUtils.round(-x, 3, BigDecimal.ROUND_HALF_UP), 0.0);
++        assertEquals(-1.2346, MathUtils.round(-x, 4, BigDecimal.ROUND_HALF_UP), 0.0);
++        assertEquals(1.235, MathUtils.round(1.2345, 3, BigDecimal.ROUND_HALF_UP), 0.0);
++        assertEquals(-1.235, MathUtils.round(-1.2345, 3, BigDecimal.ROUND_HALF_UP), 0.0);
++
++        assertEquals(-1.23, MathUtils.round(-1.23, 2, BigDecimal.ROUND_UNNECESSARY), 0.0);
++        assertEquals(1.23, MathUtils.round(1.23, 2, BigDecimal.ROUND_UNNECESSARY), 0.0);
++
++        try {
++            MathUtils.round(1.234, 2, BigDecimal.ROUND_UNNECESSARY);
++            fail();
++        } catch (ArithmeticException ex) {
++            // success
+         }
+ 
+-       /**
+-        * will kick out 170 as the limit for double
+-        */
+-        foundLimit = false;
+-        test = 10;
+-        while (!foundLimit) {
+-            double x = MathUtils.factorialDouble(test);
+-            if (Double.isInfinite(x)) {
+-                foundLimit = true;
+-                System.out.println
+-                    ("largest n for factorialDouble = " + (test - 1) );
+-            }
+-            test++;
++        assertEquals(1.24, MathUtils.round(x, 2, BigDecimal.ROUND_UP), 0.0);
++        assertEquals(1.235, MathUtils.round(x, 3, BigDecimal.ROUND_UP), 0.0);
++        assertEquals(1.2346, MathUtils.round(x, 4, BigDecimal.ROUND_UP), 0.0);
++        assertEquals(-1.24, MathUtils.round(-x, 2, BigDecimal.ROUND_UP), 0.0);
++        assertEquals(-1.235, MathUtils.round(-x, 3, BigDecimal.ROUND_UP), 0.0);
++        assertEquals(-1.2346, MathUtils.round(-x, 4, BigDecimal.ROUND_UP), 0.0);
++
++        try {
++            MathUtils.round(1.234, 2, 1923);
++            fail();
++        } catch (IllegalArgumentException ex) {
++            // success
+         }
++
++        // MATH-151
++        assertEquals(39.25, MathUtils.round(39.245, 2, BigDecimal.ROUND_HALF_UP), 0.0);
++
++        // special values
++        TestUtils.assertEquals(Double.NaN, MathUtils.round(Double.NaN, 2), 0.0);
++        assertEquals(0.0, MathUtils.round(0.0, 2), 0.0);
++        assertEquals(Double.POSITIVE_INFINITY, MathUtils.round(Double.POSITIVE_INFINITY, 2), 0.0);
++        assertEquals(Double.NEGATIVE_INFINITY, MathUtils.round(Double.NEGATIVE_INFINITY, 2), 0.0);
+     }
+ 
++    public void testRoundFloat() {
++        float x = 1.234567890f;
++        assertEquals(1.23f, MathUtils.round(x, 2), 0.0);
++        assertEquals(1.235f, MathUtils.round(x, 3), 0.0);
++        assertEquals(1.2346f, MathUtils.round(x, 4), 0.0);
++
++        // BZ 35904
++        assertEquals(30.1f, MathUtils.round(30.095f, 2), 0.0f);
++        assertEquals(30.1f, MathUtils.round(30.095f, 1), 0.0f);
++        assertEquals(50.09f, MathUtils.round(50.085f, 2), 0.0f);
++        assertEquals(50.19f, MathUtils.round(50.185f, 2), 0.0f);
++        assertEquals(50.01f, MathUtils.round(50.005f, 2), 0.0f);
++        assertEquals(30.01f, MathUtils.round(30.005f, 2), 0.0f);
++        assertEquals(30.65f, MathUtils.round(30.645f, 2), 0.0f);
++
++        assertEquals(1.24f, MathUtils.round(x, 2, BigDecimal.ROUND_CEILING), 0.0);
++        assertEquals(1.235f, MathUtils.round(x, 3, BigDecimal.ROUND_CEILING), 0.0);
++        assertEquals(1.2346f, MathUtils.round(x, 4, BigDecimal.ROUND_CEILING), 0.0);
++        assertEquals(-1.23f, MathUtils.round(-x, 2, BigDecimal.ROUND_CEILING), 0.0);
++        assertEquals(-1.234f, MathUtils.round(-x, 3, BigDecimal.ROUND_CEILING), 0.0);
++        assertEquals(-1.2345f, MathUtils.round(-x, 4, BigDecimal.ROUND_CEILING), 0.0);
++
++        assertEquals(1.23f, MathUtils.round(x, 2, BigDecimal.ROUND_DOWN), 0.0);
++        assertEquals(1.234f, MathUtils.round(x, 3, BigDecimal.ROUND_DOWN), 0.0);
++        assertEquals(1.2345f, MathUtils.round(x, 4, BigDecimal.ROUND_DOWN), 0.0);
++        assertEquals(-1.23f, MathUtils.round(-x, 2, BigDecimal.ROUND_DOWN), 0.0);
++        assertEquals(-1.234f, MathUtils.round(-x, 3, BigDecimal.ROUND_DOWN), 0.0);
++        assertEquals(-1.2345f, MathUtils.round(-x, 4, BigDecimal.ROUND_DOWN), 0.0);
++
++        assertEquals(1.23f, MathUtils.round(x, 2, BigDecimal.ROUND_FLOOR), 0.0);
++        assertEquals(1.234f, MathUtils.round(x, 3, BigDecimal.ROUND_FLOOR), 0.0);
++        assertEquals(1.2345f, MathUtils.round(x, 4, BigDecimal.ROUND_FLOOR), 0.0);
++        assertEquals(-1.24f, MathUtils.round(-x, 2, BigDecimal.ROUND_FLOOR), 0.0);
++        assertEquals(-1.235f, MathUtils.round(-x, 3, BigDecimal.ROUND_FLOOR), 0.0);
++        assertEquals(-1.2346f, MathUtils.round(-x, 4, BigDecimal.ROUND_FLOOR), 0.0);
++
++        assertEquals(1.23f, MathUtils.round(x, 2, BigDecimal.ROUND_HALF_DOWN), 0.0);
++        assertEquals(1.235f, MathUtils.round(x, 3, BigDecimal.ROUND_HALF_DOWN), 0.0);
++        assertEquals(1.2346f, MathUtils.round(x, 4, BigDecimal.ROUND_HALF_DOWN), 0.0);
++        assertEquals(-1.23f, MathUtils.round(-x, 2, BigDecimal.ROUND_HALF_DOWN), 0.0);
++        assertEquals(-1.235f, MathUtils.round(-x, 3, BigDecimal.ROUND_HALF_DOWN), 0.0);
++        assertEquals(-1.2346f, MathUtils.round(-x, 4, BigDecimal.ROUND_HALF_DOWN), 0.0);
++        assertEquals(1.234f, MathUtils.round(1.2345f, 3, BigDecimal.ROUND_HALF_DOWN), 0.0);
++        assertEquals(-1.234f, MathUtils.round(-1.2345f, 3, BigDecimal.ROUND_HALF_DOWN), 0.0);
++
++        assertEquals(1.23f, MathUtils.round(x, 2, BigDecimal.ROUND_HALF_EVEN), 0.0);
++        assertEquals(1.235f, MathUtils.round(x, 3, BigDecimal.ROUND_HALF_EVEN), 0.0);
++        assertEquals(1.2346f, MathUtils.round(x, 4, BigDecimal.ROUND_HALF_EVEN), 0.0);
++        assertEquals(-1.23f, MathUtils.round(-x, 2, BigDecimal.ROUND_HALF_EVEN), 0.0);
++        assertEquals(-1.235f, MathUtils.round(-x, 3, BigDecimal.ROUND_HALF_EVEN), 0.0);
++        assertEquals(-1.2346f, MathUtils.round(-x, 4, BigDecimal.ROUND_HALF_EVEN), 0.0);
++        assertEquals(1.234f, MathUtils.round(1.2345f, 3, BigDecimal.ROUND_HALF_EVEN), 0.0);
++        assertEquals(-1.234f, MathUtils.round(-1.2345f, 3, BigDecimal.ROUND_HALF_EVEN), 0.0);
++        assertEquals(1.236f, MathUtils.round(1.2355f, 3, BigDecimal.ROUND_HALF_EVEN), 0.0);
++        assertEquals(-1.236f, MathUtils.round(-1.2355f, 3, BigDecimal.ROUND_HALF_EVEN), 0.0);
++
++        assertEquals(1.23f, MathUtils.round(x, 2, BigDecimal.ROUND_HALF_UP), 0.0);
++        assertEquals(1.235f, MathUtils.round(x, 3, BigDecimal.ROUND_HALF_UP), 0.0);
++        assertEquals(1.2346f, MathUtils.round(x, 4, BigDecimal.ROUND_HALF_UP), 0.0);
++        assertEquals(-1.23f, MathUtils.round(-x, 2, BigDecimal.ROUND_HALF_UP), 0.0);
++        assertEquals(-1.235f, MathUtils.round(-x, 3, BigDecimal.ROUND_HALF_UP), 0.0);
++        assertEquals(-1.2346f, MathUtils.round(-x, 4, BigDecimal.ROUND_HALF_UP), 0.0);
++        assertEquals(1.235f, MathUtils.round(1.2345f, 3, BigDecimal.ROUND_HALF_UP), 0.0);
++        assertEquals(-1.235f, MathUtils.round(-1.2345f, 3, BigDecimal.ROUND_HALF_UP), 0.0);
+ 
+-    /**
+-     * Exact direct multiplication implementation to test against
+-     */
+-    private long factorial(int n) {
+-        long result = 1;
+-        for (int i = 2; i <= n; i++) {
+-            result *= i;
++        assertEquals(-1.23f, MathUtils.round(-1.23f, 2, BigDecimal.ROUND_UNNECESSARY), 0.0);
++        assertEquals(1.23f, MathUtils.round(1.23f, 2, BigDecimal.ROUND_UNNECESSARY), 0.0);
++
++        try {
++            MathUtils.round(1.234f, 2, BigDecimal.ROUND_UNNECESSARY);
++            fail();
++        } catch (ArithmeticException ex) {
++            // success
+         }
+-        return result;
+-    }
+ 
+-    public void testSignDouble() {
+-        double delta = 0.0 ;
+-        assertEquals( 1.0, MathUtils.indicator( 2.0 ), delta ) ;
+-        assertEquals( -1.0, MathUtils.indicator( -2.0 ), delta ) ;
+-    }
++        assertEquals(1.24f, MathUtils.round(x, 2, BigDecimal.ROUND_UP), 0.0);
++        assertEquals(1.235f, MathUtils.round(x, 3, BigDecimal.ROUND_UP), 0.0);
++        assertEquals(1.2346f, MathUtils.round(x, 4, BigDecimal.ROUND_UP), 0.0);
++        assertEquals(-1.24f, MathUtils.round(-x, 2, BigDecimal.ROUND_UP), 0.0);
++        assertEquals(-1.235f, MathUtils.round(-x, 3, BigDecimal.ROUND_UP), 0.0);
++        assertEquals(-1.2346f, MathUtils.round(-x, 4, BigDecimal.ROUND_UP), 0.0);
+ 
+-    public void testSignFloat() {
+-        float delta = 0.0F ;
+-        assertEquals( 1.0F, MathUtils.indicator( 2.0F ), delta ) ;
+-        assertEquals( -1.0F, MathUtils.indicator( -2.0F ), delta ) ;
++        try {
++            MathUtils.round(1.234f, 2, 1923);
++            fail();
++        } catch (IllegalArgumentException ex) {
++            // success
++        }
++
++        // special values
++        TestUtils.assertEquals(Float.NaN, MathUtils.round(Float.NaN, 2), 0.0f);
++        assertEquals(0.0f, MathUtils.round(0.0f, 2), 0.0f);
++        assertEquals(Float.POSITIVE_INFINITY, MathUtils.round(Float.POSITIVE_INFINITY, 2), 0.0f);
++        assertEquals(Float.NEGATIVE_INFINITY, MathUtils.round(Float.NEGATIVE_INFINITY, 2), 0.0f);
+     }
+ 
+     public void testSignByte() {
+-        assertEquals( (byte)1, MathUtils.indicator( (byte)2 ) ) ;
+-        assertEquals( (byte)(-1), MathUtils.indicator( (byte)(-2) ) ) ;
++        assertEquals((byte)1, MathUtils.indicator((byte)2));
++        assertEquals((byte)(-1), MathUtils.indicator((byte)(-2)));
+     }
+ 
+-    public void testSignShort() {
+-        assertEquals( (short)1, MathUtils.indicator( (short)2 ) ) ;
+-        assertEquals( (short)(-1), MathUtils.indicator( (short)(-2) ) ) ;
++    public void testSignDouble() {
++        double delta = 0.0;
++        assertEquals(1.0, MathUtils.indicator(2.0), delta);
++        assertEquals(-1.0, MathUtils.indicator(-2.0), delta);
++    }
++
++    public void testSignFloat() {
++        float delta = 0.0F;
++        assertEquals(1.0F, MathUtils.indicator(2.0F), delta);
++        assertEquals(-1.0F, MathUtils.indicator(-2.0F), delta);
+     }
+ 
+     public void testSignInt() {
+-        assertEquals( (int)1, MathUtils.indicator( (int)(2) ) ) ;
+-        assertEquals( (int)(-1), MathUtils.indicator( (int)(-2) ) ) ;
++        assertEquals((int)1, MathUtils.indicator((int)(2)));
++        assertEquals((int)(-1), MathUtils.indicator((int)(-2)));
+     }
+ 
+     public void testSignLong() {
+-        assertEquals( 1L, MathUtils.indicator( 2L ) ) ;
+-        assertEquals( -1L, MathUtils.indicator( -2L ) ) ;
+-    }
+-   
+-    public void testIndicatorDouble() {
+-        double delta = 0.0 ;
+-        assertEquals( 1.0, MathUtils.indicator( 2.0 ), delta ) ;
+-        assertEquals( 1.0, MathUtils.indicator( 0.0 ), delta ) ;
+-        assertEquals( -1.0, MathUtils.indicator( -2.0 ), delta ) ;
+-    }
+-    
+-    public void testIndicatorFloat() {
+-        float delta = 0.0F ;
+-        assertEquals( 1.0F, MathUtils.indicator( 2.0F ), delta ) ;
+-        assertEquals( 1.0F, MathUtils.indicator( 0.0F ), delta ) ;
+-        assertEquals( -1.0F, MathUtils.indicator( -2.0F ), delta ) ;
+-    }
+-    
+-    public void testIndicatorByte() {
+-        assertEquals( (byte)1, MathUtils.indicator( (byte)2 ) ) ;
+-        assertEquals( (byte)1, MathUtils.indicator( (byte)0 ) ) ;
+-        assertEquals( (byte)(-1), MathUtils.indicator( (byte)(-2) ) ) ;
+-    }
+-    
+-    public void testIndicatorShort() {
+-        assertEquals( (short)1, MathUtils.indicator( (short)2 ) ) ;
+-        assertEquals( (short)1, MathUtils.indicator( (short)0 ) ) ;
+-        assertEquals( (short)(-1), MathUtils.indicator( (short)(-2) ) ) ;
+-    }
+-    
+-    public void testIndicatorInt() {
+-        assertEquals( (int)1, MathUtils.indicator( (int)(2) ) ) ;
+-        assertEquals( (int)1, MathUtils.indicator( (int)(0) ) ) ;
+-        assertEquals( (int)(-1), MathUtils.indicator( (int)(-2) ) ) ;
++        assertEquals(1L, MathUtils.indicator(2L));
++        assertEquals(-1L, MathUtils.indicator(-2L));
+     }
+-    
+-    public void testIndicatorLong() {
+-        assertEquals( 1L, MathUtils.indicator( 2L ) ) ;
+-        assertEquals( 1L, MathUtils.indicator( 0L ) ) ;
+-        assertEquals( -1L, MathUtils.indicator( -2L ) ) ;
++
++    public void testSignShort() {
++        assertEquals((short)1, MathUtils.indicator((short)2));
++        assertEquals((short)(-1), MathUtils.indicator((short)(-2)));
+     }
+-    
+-    public void testCosh() {
+-        double x = 3.0;
+-        double expected = 10.06766;
+-        assertEquals(expected, MathUtils.cosh(x), 1.0e-5);
+-    }   
+-    
++
+     public void testSinh() {
+         double x = 3.0;
+         double expected = 10.01787;
+         assertEquals(expected, MathUtils.sinh(x), 1.0e-5);
+-    }   
+-    
+-    public void testCoshNaN() {
+-        assertTrue(Double.isNaN(MathUtils.cosh(Double.NaN)));
+-    }   
+-    
++    }
++
+     public void testSinhNaN() {
+         assertTrue(Double.isNaN(MathUtils.sinh(Double.NaN)));
+-    } 
+-    
+-    public void testEquals() {
+-        double[] testArray = {Double.NaN, Double.POSITIVE_INFINITY, 
+-                Double.NEGATIVE_INFINITY, 1d, 0d};
+-        for (int i = 0; i < testArray.length; i++) {
+-            for (int j = 0; j < testArray.length; j ++) {
+-                if (i == j) {
+-                    assertTrue(MathUtils.equals(testArray[i], testArray[j]));
+-                    assertTrue(MathUtils.equals(testArray[j], testArray[i]));
+-                } else {
+-                    assertTrue(!MathUtils.equals(testArray[i], testArray[j]));
+-                    assertTrue(!MathUtils.equals(testArray[j], testArray[i]));
+-                }
+-            }
+-        } 
+-    }
+-    
+-    public void testHash() {
+-        double[] testArray = {Double.NaN, Double.POSITIVE_INFINITY, 
+-                Double.NEGATIVE_INFINITY, 1d, 0d, 1E-14, (1 + 1E-14), 
+-                Double.MIN_VALUE, Double.MAX_VALUE};
+-        for (int i = 0; i < testArray.length; i++) {
+-            for (int j = 0; j < testArray.length; j ++) {
+-                if (i == j) {
+-                    assertEquals(MathUtils.hash(testArray[i]), MathUtils.hash(testArray[j]));
+-                    assertEquals(MathUtils.hash(testArray[j]), MathUtils.hash(testArray[i]));
+-                } else {
+-                    assertTrue(MathUtils.hash(testArray[i]) != MathUtils.hash(testArray[j]));
+-                    assertTrue(MathUtils.hash(testArray[j]) != MathUtils.hash(testArray[i]));
+-                }
+-            }
+-        } 
+     }
+-    
+-    public void testGcd() {
+-        int a = 30;
+-        int b = 50;
+-        int c = 77;
+ 
+-        assertEquals(0, MathUtils.gcd(0, 0));
+-        
+-        assertEquals(b, MathUtils.gcd( 0,  b));
+-        assertEquals(a, MathUtils.gcd( a,  0));
+-        assertEquals(b, MathUtils.gcd( 0, -b));
+-        assertEquals(a, MathUtils.gcd(-a,  0));
+-        
+-        assertEquals(10, MathUtils.gcd( a,  b));
+-        assertEquals(10, MathUtils.gcd(-a,  b));
+-        assertEquals(10, MathUtils.gcd( a, -b));
+-        assertEquals(10, MathUtils.gcd(-a, -b));
+-        
+-        assertEquals(1, MathUtils.gcd( a,  c));
+-        assertEquals(1, MathUtils.gcd(-a,  c));
+-        assertEquals(1, MathUtils.gcd( a, -c));
+-        assertEquals(1, MathUtils.gcd(-a, -c));
++    public void testSubAndCheck() {
++        int big = Integer.MAX_VALUE;
++        int bigNeg = Integer.MIN_VALUE;
++        assertEquals(big, MathUtils.subAndCheck(big, 0));
++        try {
++            MathUtils.subAndCheck(big, -1);
++            fail("Expecting ArithmeticException");
++        } catch (ArithmeticException ex) {
++        }
++        try {
++            MathUtils.subAndCheck(bigNeg, 1);
++            fail("Expecting ArithmeticException");
++        } catch (ArithmeticException ex) {
++        }
+     }
+-    
+-    public void testLcm() {
+-        int a = 30;
+-        int b = 50;
+-        int c = 77;
+-        
+-        assertEquals(0, MathUtils.lcm(0, b));
+-        assertEquals(0, MathUtils.lcm(a, 0));
+-        assertEquals(b, MathUtils.lcm(1, b));
+-        assertEquals(a, MathUtils.lcm(a, 1));
+-        assertEquals(150, MathUtils.lcm(a, b));
+-        assertEquals(150, MathUtils.lcm(-a, b));
+-        assertEquals(150, MathUtils.lcm(a, -b));
+-        assertEquals(2310, MathUtils.lcm(a, c));
++
++    public void testSubAndCheckErrorMessage() {
++        int big = Integer.MAX_VALUE;
++        try {
++            MathUtils.subAndCheck(big, -1);
++            fail("Expecting ArithmeticException");
++        } catch (ArithmeticException ex) {
++            assertEquals("overflow: subtract", ex.getMessage());
++        }
+     }
+-    
+-    public void testRoundFloat() {
+-        float x = 1.234567890f;
+-        assertEquals(1.23f, MathUtils.round(x, 2), 0.0f);
+-        assertEquals(1.235f, MathUtils.round(x, 3), 0.0f);
+-        assertEquals(1.2346f, MathUtils.round(x, 4), 0.0f);
+-
+-        assertEquals(1.23f, MathUtils.round(x, 2, BigDecimal.ROUND_DOWN), 0.0f);
+-        assertEquals(1.234f, MathUtils.round(x, 3, BigDecimal.ROUND_DOWN), 0.0f);
+-        assertEquals(1.2345f, MathUtils.round(x, 4, BigDecimal.ROUND_DOWN), 0.0f);
++
++    public void testSubAndCheckLong() {
++        long max = Long.MAX_VALUE;
++        long min = Long.MIN_VALUE;
++        assertEquals(max, MathUtils.subAndCheck(max, 0));
++        assertEquals(min, MathUtils.subAndCheck(min, 0));
++        assertEquals(-max, MathUtils.subAndCheck(0, max));
++        testSubAndCheckLongFailure(0L, min);
++        testSubAndCheckLongFailure(max, -1L);
++        testSubAndCheckLongFailure(min, 1L);
+     }
+-    
+-    public void testRoundDouble() {
+-        double x = 1.234567890;
+-        assertEquals(1.23, MathUtils.round(x, 2), 0.0);
+-        assertEquals(1.235, MathUtils.round(x, 3), 0.0);
+-        assertEquals(1.2346, MathUtils.round(x, 4), 0.0);
+ 
+-        assertEquals(1.23, MathUtils.round(x, 2, BigDecimal.ROUND_DOWN), 0.0);
+-        assertEquals(1.234, MathUtils.round(x, 3, BigDecimal.ROUND_DOWN), 0.0);
+-        assertEquals(1.2345, MathUtils.round(x, 4, BigDecimal.ROUND_DOWN), 0.0);
++    private void testSubAndCheckLongFailure(long a, long b) {
++        try {
++            MathUtils.subAndCheck(a, b);
++            fail("Expecting ArithmeticException");
++        } catch (ArithmeticException ex) {
++            // success
++        }
++
+     }
+ }
+\ No newline at end of file

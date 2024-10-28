@@ -1,0 +1,3321 @@
+diff --git a/src/java/org/apache/commons/lang/enum/Enum.java b/src/java/org/apache/commons/lang/enum/Enum.java
+index 2cc3fd5..d14ca78 100644
+--- a/src/java/org/apache/commons/lang/enum/Enum.java
++++ b/src/java/org/apache/commons/lang/enum/Enum.java
+@@ -224,12 +224,17 @@
+  * 
+  * <p>For more details, see the 'Nested' test cases.
+  * 
++ * @deprecated Replaced by {@link org.apache.commons.lang.enums.Enum org.apache.commons.lang.enums.Enum} 
++ *          and will be removed in version 3.0. All classes in this package are deprecated and repackaged to 
++ *          <a href="../enums/package-summary.html">org.apache.commons.lang.enums</a> since <code>enum</code> 
++ *          is a Java 1.5 keyword. 
++ * @see org.apache.commons.lang.enums.Enum
+  * @author Apache Avalon project
+  * @author Stephen Colebourne
+  * @author Chris Webb
+  * @author Mike Bowler
+  * @since 1.0
+- * @version $Id: Enum.java,v 1.27 2004/02/18 22:53:51 ggregory Exp $
++ * @version $Id: Enum.java,v 1.28 2004/02/23 04:34:20 ggregory Exp $
+  */
+ public abstract class Enum implements Comparable, Serializable {
+ 
+diff --git a/src/java/org/apache/commons/lang/enum/EnumUtils.java b/src/java/org/apache/commons/lang/enum/EnumUtils.java
+index ce466db..79660d6 100644
+--- a/src/java/org/apache/commons/lang/enum/EnumUtils.java
++++ b/src/java/org/apache/commons/lang/enum/EnumUtils.java
+@@ -22,12 +22,17 @@
+ /**
+  * <p>Utility class for accessing and manipulating {@link Enum}s.</p>
+  *
++ * @deprecated Replaced by {@link org.apache.commons.lang.enums.EnumUtils org.apache.commons.lang.enums.EnumUtils} 
++ *          and will be removed in version 3.0. All classes in this package are deprecated and repackaged to 
++ *          <a href="../enums/package-summary.html">org.apache.commons.lang.enums</a> since <code>enum</code> 
++ *          is a Java 1.5 keyword. 
++ * @see org.apache.commons.lang.enums.EnumUtils
+  * @see Enum
+  * @see ValuedEnum
+  * @author Stephen Colebourne
+  * @author Gary Gregory
+  * @since 1.0
+- * @version $Id: EnumUtils.java,v 1.11 2004/02/18 22:53:51 ggregory Exp $
++ * @version $Id: EnumUtils.java,v 1.12 2004/02/23 04:34:20 ggregory Exp $
+  */
+ public class EnumUtils {
+ 
+diff --git a/src/java/org/apache/commons/lang/enum/ValuedEnum.java b/src/java/org/apache/commons/lang/enum/ValuedEnum.java
+index 8456552..5ca6929 100644
+--- a/src/java/org/apache/commons/lang/enum/ValuedEnum.java
++++ b/src/java/org/apache/commons/lang/enum/ValuedEnum.java
+@@ -92,10 +92,15 @@
+  * Unfortunately, Java restrictions require these to be coded as shown in each subclass.
+  * An alternative choice is to use the {@link EnumUtils} class.</p>
+  *
++ * @deprecated Replaced by {@link org.apache.commons.lang.enums.ValuedEnum org.apache.commons.lang.enums.ValuedEnum}
++ *          and will be removed in version 3.0. All classes in this package are deprecated and repackaged to 
++ *          <a href="../enums/package-summary.html">org.apache.commons.lang.enums</a> since <code>enum</code> 
++ *          is a Java 1.5 keyword. 
++ * @see org.apache.commons.lang.enums.ValuedEnum
+  * @author Apache Avalon project
+  * @author Stephen Colebourne
+  * @since 1.0
+- * @version $Id: ValuedEnum.java,v 1.15 2004/02/18 22:53:51 ggregory Exp $
++ * @version $Id: ValuedEnum.java,v 1.16 2004/02/23 04:34:20 ggregory Exp $
+  */
+ public abstract class ValuedEnum extends Enum {
+     
+diff --git a/src/java/org/apache/commons/lang/enum/package.html b/src/java/org/apache/commons/lang/enum/package.html
+index 81a9ec4..85df393 100644
+--- a/src/java/org/apache/commons/lang/enum/package.html
++++ b/src/java/org/apache/commons/lang/enum/package.html
+@@ -15,9 +15,18 @@
+ -->
+ <html>
+ <body>
+-Provides an implementation of the C style 'enum' in the Java world.
+-
++<p>
++<b>Deprecated</b> and replaced by {@link org.apache.commons.lang.enums.ValuedEnum org.apache.commons.lang.enums.ValuedEnum}
++and will be removed in version 3.0. All classes in this package are deprecated and repackaged to 
++<a href="../enums/package-summary.html">org.apache.commons.lang.enums</a> since <code>enum</code> 
++is a Java 1.5 keyword.
++</p>
++<p>
++Provides an implementation of the C style <code>enum</code> in the Java world.
++</p>
++<p>
+ The classic example being an RGB color enumeration.
++</p>
+ <pre>
+ public final class ColorEnum extends Enum {
+     public static final ColorEnum RED = new ColorEnum("Red");
+diff --git a/src/java/org/apache/commons/lang/enums/Enum.java b/src/java/org/apache/commons/lang/enums/Enum.java
+new file mode 100644
+index 0000000..220540b
+--- /dev/null
++++ b/src/java/org/apache/commons/lang/enums/Enum.java
+@@ -0,0 +1,600 @@
++/*
++ * Copyright 2002-2004 The Apache Software Foundation.
++ * 
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.enums;
++
++import java.io.Serializable;
++import java.lang.reflect.InvocationTargetException;
++import java.lang.reflect.Method;
++import java.util.ArrayList;
++import java.util.Collections;
++import java.util.HashMap;
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++
++import org.apache.commons.lang.ClassUtils;
++import org.apache.commons.lang.StringUtils;
++
++/**
++ * <p>Abstract superclass for type-safe enums.</p>
++ *
++ * <p>One feature of the C programming language lacking in Java is enumerations. The
++ * C implementation based on ints was poor and open to abuse. The original Java
++ * recommendation and most of the JDK also uses int constants. It has been recognised
++ * however that a more robust type-safe class-based solution can be designed. This
++ * class follows the basic Java type-safe enumeration pattern.</p>
++ *
++ * <p><em>NOTE:</em>Due to the way in which Java ClassLoaders work, comparing
++ * Enum objects should always be done using <code>equals()</code>, not <code>==</code>.
++ * The equals() method will try == first so in most cases the effect is the same.</p>
++ * 
++ * <p>Of course, if you actually want (or don't mind) Enums in different class
++ * loaders being non-equal, then you can use <code>==</code>.</p>
++ * 
++ * <h4>Simple Enums</h4>
++ *
++ * <p>To use this class, it must be subclassed. For example:</p>
++ *
++ * <pre>
++ * public final class ColorEnum extends Enum {
++ *   public static final ColorEnum RED = new ColorEnum("Red");
++ *   public static final ColorEnum GREEN = new ColorEnum("Green");
++ *   public static final ColorEnum BLUE = new ColorEnum("Blue");
++ *
++ *   private ColorEnum(String color) {
++ *     super(color);
++ *   }
++ * 
++ *   public static ColorEnum getEnum(String color) {
++ *     return (ColorEnum) getEnum(ColorEnum.class, color);
++ *   }
++ * 
++ *   public static Map getEnumMap() {
++ *     return getEnumMap(ColorEnum.class);
++ *   }
++ * 
++ *   public static List getEnumList() {
++ *     return getEnumList(ColorEnum.class);
++ *   }
++ * 
++ *   public static Iterator iterator() {
++ *     return iterator(ColorEnum.class);
++ *   }
++ * }
++ * </pre>
++ *
++ * <p>As shown, each enum has a name. This can be accessed using <code>getName</code>.</p>
++ *
++ * <p>The <code>getEnum</code> and <code>iterator</code> methods are recommended.
++ * Unfortunately, Java restrictions require these to be coded as shown in each subclass.
++ * An alternative choice is to use the {@link EnumUtils} class.</p>
++ * 
++ * <h4>Subclassed Enums</h4>
++ * <p>A hierarchy of Enum classes can be built. In this case, the superclass is
++ * unaffected by the addition of subclasses (as per normal Java). The subclasses
++ * may add additional Enum constants <em>of the type of the superclass</em>. The
++ * query methods on the subclass will return all of the Enum constants from the
++ * superclass and subclass.</p>
++ *
++ * <pre>
++ * public final class ExtraColorEnum extends ColorEnum {
++ *   // NOTE: Color enum declared above is final, change that to get this
++ *   // example to compile.
++ *   public static final ColorEnum YELLOW = new ExtraColorEnum("Yellow");
++ *
++ *   private ExtraColorEnum(String color) {
++ *     super(color);
++ *   }
++ * 
++ *   public static ColorEnum getEnum(String color) {
++ *     return (ColorEnum) getEnum(ExtraColorEnum.class, color);
++ *   }
++ * 
++ *   public static Map getEnumMap() {
++ *     return getEnumMap(ExtraColorEnum.class);
++ *   }
++ * 
++ *   public static List getEnumList() {
++ *     return getEnumList(ExtraColorEnum.class);
++ *   }
++ * 
++ *   public static Iterator iterator() {
++ *     return iterator(ExtraColorEnum.class);
++ *   }
++ * }
++ * </pre>
++ *
++ * <p>This example will return RED, GREEN, BLUE, YELLOW from the List and iterator
++ * methods in that order. The RED, GREEN and BLUE instances will be the same (==) 
++ * as those from the superclass ColorEnum. Note that YELLOW is declared as a
++ * ColorEnum and not an ExtraColorEnum.</p>
++ * 
++ * <h4>Functional Enums</h4>
++ *
++ * <p>The enums can have functionality by defining subclasses and
++ * overriding the <code>getEnumClass()</code> method:</p>
++ * 
++ * <pre>
++ *   public static final OperationEnum PLUS = new PlusOperation();
++ *   private static final class PlusOperation extends OperationEnum {
++ *     private PlusOperation() {
++ *       super("Plus");
++ *     }
++ *     public int eval(int a, int b) {
++ *       return (a + b);
++ *     }
++ *   }
++ *   public static final OperationEnum MINUS = new MinusOperation();
++ *   private static final class MinusOperation extends OperationEnum {
++ *     private MinusOperation() {
++ *       super("Minus");
++ *     }
++ *     public int eval(int a, int b) {
++ *       return (a - b);
++ *     }
++ *   }
++ *
++ *   private OperationEnum(String color) {
++ *     super(color);
++ *   }
++ * 
++ *   public final Class getEnumClass() {     // NOTE: new method!
++ *     return OperationEnum.class;
++ *   }
++ *
++ *   public abstract double eval(double a, double b);
++ * 
++ *   public static OperationEnum getEnum(String name) {
++ *     return (OperationEnum) getEnum(OperationEnum.class, name);
++ *   }
++ * 
++ *   public static Map getEnumMap() {
++ *     return getEnumMap(OperationEnum.class);
++ *   }
++ * 
++ *   public static List getEnumList() {
++ *     return getEnumList(OperationEnum.class);
++ *   }
++ * 
++ *   public static Iterator iterator() {
++ *     return iterator(OperationEnum.class);
++ *   }
++ * }
++ * </pre>
++ * <p>The code above will work on JDK 1.2. If JDK1.3 and later is used,
++ * the subclasses may be defined as anonymous.</p>
++ * 
++ * <h4>Nested class Enums</h4>
++ *
++ * <p>Care must be taken with class loading when defining a static nested class
++ * for enums. The static nested class can be loaded without the surrounding outer
++ * class being loaded. This can result in an empty list/map/iterator being returned.
++ * One solution is to define a static block that references the outer class where
++ * the constants are defined. For example:</p>
++ *
++ * <pre>
++ * public final class Outer {
++ *   public static final BWEnum BLACK = new BWEnum("Black");
++ *   public static final BWEnum WHITE = new BWEnum("White");
++ *
++ *   // static nested enum class
++ *   public static final class BWEnum extends Enum {
++ * 
++ *     static {
++ *       // explicitly reference BWEnum class to force constants to load
++ *       Object obj = Outer.BLACK;
++ *     }
++ * 
++ *     // ... other methods omitted
++ *   }
++ * }
++ * </pre>
++ * 
++ * <p>Although the above solves the problem, it is not recommended. The best solution
++ * is to define the constants in the enum class, and hold references in the outer class:
++ *
++ * <pre>
++ * public final class Outer {
++ *   public static final BWEnum BLACK = BWEnum.BLACK;
++ *   public static final BWEnum WHITE = BWEnum.WHITE;
++ *
++ *   // static nested enum class
++ *   public static final class BWEnum extends Enum {
++ *     // only define constants in enum classes - private if desired
++ *     private static final BWEnum BLACK = new BWEnum("Black");
++ *     private static final BWEnum WHITE = new BWEnum("White");
++ * 
++ *     // ... other methods omitted
++ *   }
++ * }
++ * </pre>
++ * 
++ * <p>For more details, see the 'Nested' test cases.
++ * 
++ * @author Apache Avalon project
++ * @author Stephen Colebourne
++ * @author Chris Webb
++ * @author Mike Bowler
++ * @since 1.0
++ * @version $Id: Enum.java,v 1.1 2004/02/23 04:34:20 ggregory Exp $
++ */
++public abstract class Enum implements Comparable, Serializable {
++
++    /** Lang version 1.0.1 serial compatibility */
++    private static final long serialVersionUID = -487045951170455942L;
++    
++    // After discussion, the default size for HashMaps is used, as the
++    // sizing algorithm changes across the JDK versions
++    /**
++     * An empty <code>Map</code>, as JDK1.2 didn't have an empty map.
++     */
++    private static final Map EMPTY_MAP = Collections.unmodifiableMap(new HashMap(0));
++    
++    /**
++     * <code>Map</code>, key of class name, value of <code>Entry</code>.
++     */
++    private static final Map cEnumClasses = new HashMap();
++    
++    /**
++     * The string representation of the Enum.
++     */
++    private final String iName;
++    
++    /**
++     * The hashcode representation of the Enum.
++     */
++    private transient final int iHashCode;
++    
++    /**
++     * The toString representation of the Enum.
++     * @since 2.0
++     */
++    protected transient String iToString = null;
++
++    /**
++     * <p>Enable the iterator to retain the source code order.</p>
++     */
++    private static class Entry {
++        /**
++         * Map of Enum name to Enum.
++         */
++        final Map map = new HashMap();
++        /**
++         * Map of Enum name to Enum.
++         */
++        final Map unmodifiableMap = Collections.unmodifiableMap(map);
++        /**
++         * List of Enums in source code order.
++         */
++        final List list = new ArrayList(25);
++        /**
++         * Map of Enum name to Enum.
++         */
++        final List unmodifiableList = Collections.unmodifiableList(list);
++
++        /**
++         * <p>Restrictive constructor.</p>
++         */
++        private Entry() {
++        }
++    }
++
++    /**
++     * <p>Constructor to add a new named item to the enumeration.</p>
++     *
++     * @param name  the name of the enum object,
++     *  must not be empty or <code>null</code>
++     * @throws IllegalArgumentException if the name is <code>null</code>
++     *  or an empty string
++     * @throws IllegalArgumentException if the getEnumClass() method returns
++     *  a null or invalid Class
++     */
++    protected Enum(String name) {
++        super();
++        init(name);
++        iName = name;
++        iHashCode = 7 + getEnumClass().hashCode() + 3 * name.hashCode();
++        // cannot create toString here as subclasses may want to include other data
++    }
++
++    /**
++     * Initializes the enumeration.
++     * 
++     * @param name  the enum name
++     * @throws IllegalArgumentException if the name is null or empty or duplicate
++     * @throws IllegalArgumentException if the enumClass is null or invalid
++     */
++    private void init(String name) {
++        if (StringUtils.isEmpty(name)) {
++            throw new IllegalArgumentException("The Enum name must not be empty or null");
++        }
++        
++        Class enumClass = getEnumClass();
++        if (enumClass == null) {
++            throw new IllegalArgumentException("getEnumClass() must not be null");
++        }
++        Class cls = getClass();
++        boolean ok = false;
++        while (cls != null && cls != Enum.class && cls != ValuedEnum.class) {
++            if (cls == enumClass) {
++                ok = true;
++                break;
++            }
++            cls = cls.getSuperclass();
++        }
++        if (ok == false) {
++            throw new IllegalArgumentException("getEnumClass() must return a superclass of this class");
++        }
++        
++        // create entry
++        Entry entry = (Entry) cEnumClasses.get(enumClass);
++        if (entry == null) {
++            entry = createEntry(enumClass);
++            cEnumClasses.put(enumClass, entry);
++        }
++        if (entry.map.containsKey(name)) {
++            throw new IllegalArgumentException("The Enum name must be unique, '" + name + "' has already been added");
++        }
++        entry.map.put(name, this);
++        entry.list.add(this);
++    }
++
++    /**
++     * <p>Handle the deserialization of the class to ensure that multiple
++     * copies are not wastefully created, or illegal enum types created.</p>
++     *
++     * @return the resolved object
++     */
++    protected Object readResolve() {
++        Entry entry = (Entry) cEnumClasses.get(getEnumClass());
++        if (entry == null) {
++            return null;
++        }
++        return (Enum) entry.map.get(getName());
++    }
++    
++    //--------------------------------------------------------------------------------
++
++    /**
++     * <p>Gets an <code>Enum</code> object by class and name.</p>
++     * 
++     * @param enumClass  the class of the Enum to get, must not
++     *  be <code>null</code>
++     * @param name  the name of the <code>Enum</code> to get,
++     *  may be <code>null</code>
++     * @return the enum object, or null if the enum does not exist
++     * @throws IllegalArgumentException if the enum class
++     *  is <code>null</code>
++     */
++    protected static Enum getEnum(Class enumClass, String name) {
++        Entry entry = getEntry(enumClass);
++        if (entry == null) {
++            return null;
++        }
++        return (Enum) entry.map.get(name);
++    }
++
++    /**
++     * <p>Gets the <code>Map</code> of <code>Enum</code> objects by
++     * name using the <code>Enum</code> class.</p>
++     *
++     * <p>If the requested class has no enum objects an empty
++     * <code>Map</code> is returned.</p>
++     * 
++     * @param enumClass  the class of the <code>Enum</code> to get,
++     *  must not be <code>null</code>
++     * @return the enum object Map
++     * @throws IllegalArgumentException if the enum class is <code>null</code>
++     * @throws IllegalArgumentException if the enum class is not a subclass of Enum
++     */
++    protected static Map getEnumMap(Class enumClass) {
++        Entry entry = getEntry(enumClass);
++        if (entry == null) {
++            return EMPTY_MAP;
++        }
++        return entry.unmodifiableMap;
++    }
++
++    /**
++     * <p>Gets the <code>List</code> of <code>Enum</code> objects using the
++     * <code>Enum</code> class.</p>
++     *
++     * <p>The list is in the order that the objects were created (source code order).
++     * If the requested class has no enum objects an empty <code>List</code> is
++     * returned.</p>
++     * 
++     * @param enumClass  the class of the <code>Enum</code> to get,
++     *  must not be <code>null</code>
++     * @return the enum object Map
++     * @throws IllegalArgumentException if the enum class is <code>null</code>
++     * @throws IllegalArgumentException if the enum class is not a subclass of Enum
++     */
++    protected static List getEnumList(Class enumClass) {
++        Entry entry = getEntry(enumClass);
++        if (entry == null) {
++            return Collections.EMPTY_LIST;
++        }
++        return entry.unmodifiableList;
++    }
++
++    /**
++     * <p>Gets an <code>Iterator</code> over the <code>Enum</code> objects in
++     * an <code>Enum</code> class.</p>
++     *
++     * <p>The <code>Iterator</code> is in the order that the objects were
++     * created (source code order). If the requested class has no enum
++     * objects an empty <code>Iterator</code> is returned.</p>
++     * 
++     * @param enumClass  the class of the <code>Enum</code> to get,
++     *  must not be <code>null</code>
++     * @return an iterator of the Enum objects
++     * @throws IllegalArgumentException if the enum class is <code>null</code>
++     * @throws IllegalArgumentException if the enum class is not a subclass of Enum
++     */
++    protected static Iterator iterator(Class enumClass) {
++        return Enum.getEnumList(enumClass).iterator();
++    }
++
++    //-----------------------------------------------------------------------
++    /**
++     * <p>Gets an <code>Entry</code> from the map of Enums.</p>
++     * 
++     * @param enumClass  the class of the <code>Enum</code> to get
++     * @return the enum entry
++     */
++    private static Entry getEntry(Class enumClass) {
++        if (enumClass == null) {
++            throw new IllegalArgumentException("The Enum Class must not be null");
++        }
++        if (Enum.class.isAssignableFrom(enumClass) == false) {
++            throw new IllegalArgumentException("The Class must be a subclass of Enum");
++        }
++        Entry entry = (Entry) cEnumClasses.get(enumClass);
++        return entry;
++    }
++    
++    /**
++     * <p>Creates an <code>Entry</code> for storing the Enums.</p>
++     *
++     * <p>This accounts for subclassed Enums.</p>
++     * 
++     * @param enumClass  the class of the <code>Enum</code> to get
++     * @return the enum entry
++     */
++    private static Entry createEntry(Class enumClass) {
++        Entry entry = new Entry();
++        Class cls = enumClass.getSuperclass();
++        while (cls != null && cls != Enum.class && cls != ValuedEnum.class) {
++            Entry loopEntry = (Entry) cEnumClasses.get(cls);
++            if (loopEntry != null) {
++                entry.list.addAll(loopEntry.list);
++                entry.map.putAll(loopEntry.map);
++                break;  // stop here, as this will already have had superclasses added
++            }
++            cls = cls.getSuperclass();
++        }
++        return entry;
++    }
++    
++    //-----------------------------------------------------------------------
++    /**
++     * <p>Retrieve the name of this Enum item, set in the constructor.</p>
++     * 
++     * @return the <code>String</code> name of this Enum item
++     */
++    public final String getName() {
++        return iName;
++    }
++
++    /**
++     * <p>Retrieves the Class of this Enum item, set in the constructor.</p>
++     * 
++     * <p>This is normally the same as <code>getClass()</code>, but for
++     * advanced Enums may be different. If overridden, it must return a
++     * constant value.</p>
++     * 
++     * @return the <code>Class</code> of the enum
++     * @since 2.0
++     */
++    public Class getEnumClass() {
++        return getClass();
++    }
++
++    /**
++     * <p>Tests for equality.</p>
++     *
++     * <p>Two Enum objects are considered equal
++     * if they have the same class names and the same names.
++     * Identity is tested for first, so this method usually runs fast.</p>
++     * 
++     * <p>If the parameter is in a different class loader than this instance,
++     * reflection is used to compare the names.</p>
++     *
++     * @param other  the other object to compare for equality
++     * @return <code>true</code> if the Enums are equal
++     */
++    public final boolean equals(Object other) {
++        if (other == this) {
++            return true;
++        } else if (other == null) {
++            return false;
++        } else if (other.getClass() == this.getClass()) {
++            // Ok to do a class cast to Enum here since the test above
++            // guarantee both
++            // classes are in the same class loader.
++            return iName.equals(((Enum) other).iName);
++        } else {
++            // This and other are in different class loaders, we must use reflection.
++            try {
++                Method mth = other.getClass().getMethod("getName", null);
++                String name = (String) mth.invoke(other, null);
++                return iName.equals(name);
++            } catch (NoSuchMethodException e) {
++                // ignore - should never happen
++            } catch (IllegalAccessException e) {
++                // ignore - should never happen
++            } catch (InvocationTargetException e) {
++                // ignore - should never happen
++            }
++            return false;
++        }
++    }
++    
++    /**
++     * <p>Returns a suitable hashCode for the enumeration.</p>
++     *
++     * @return a hashcode based on the name
++     */
++    public final int hashCode() {
++        return iHashCode;
++    }
++
++    /**
++     * <p>Tests for order.</p>
++     *
++     * <p>The default ordering is alphabetic by name, but this
++     * can be overridden by subclasses.</p>
++     * 
++     * @see java.lang.Comparable#compareTo(Object)
++     * @param other  the other object to compare to
++     * @return -ve if this is less than the other object, +ve if greater
++     *  than, <code>0</code> of equal
++     * @throws ClassCastException if other is not an Enum
++     * @throws NullPointerException if other is <code>null</code>
++     */
++    public int compareTo(Object other) {
++        if (other == this) {
++            return 0;
++        }
++        return iName.compareTo(((Enum) other).iName);
++    }
++
++    /**
++     * <p>Human readable description of this Enum item.</p>
++     * 
++     * @return String in the form <code>type[name]</code>, for example:
++     * <code>Color[Red]</code>. Note that the package name is stripped from
++     * the type name.
++     */
++    public String toString() {
++        if (iToString == null) {
++            String shortName = ClassUtils.getShortClassName(getEnumClass());
++            iToString = shortName + "[" + getName() + "]";
++        }
++        return iToString;
++    }
++    
++}
+diff --git a/src/java/org/apache/commons/lang/enums/EnumUtils.java b/src/java/org/apache/commons/lang/enums/EnumUtils.java
+new file mode 100644
+index 0000000..ea585fb
+--- /dev/null
++++ b/src/java/org/apache/commons/lang/enums/EnumUtils.java
+@@ -0,0 +1,122 @@
++/*
++ * Copyright 2002-2004 The Apache Software Foundation.
++ * 
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.enums;
++
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++
++/**
++ * <p>Utility class for accessing and manipulating {@link Enum}s.</p>
++ *
++ * @see Enum
++ * @see ValuedEnum
++ * @author Stephen Colebourne
++ * @author Gary Gregory
++ * @since 1.0
++ * @version $Id: EnumUtils.java,v 1.1 2004/02/23 04:34:20 ggregory Exp $
++ */
++public class EnumUtils {
++
++    /**
++     * Public constructor. This class should not normally be instantiated.
++     * @since 2.0
++     */
++    public EnumUtils() {
++    }
++
++    /**
++     * <p>Gets an <code>Enum</code> object by class and name.</p>
++     * 
++     * @param enumClass  the class of the <code>Enum</code> to get
++     * @param name  the name of the Enum to get, may be <code>null</code>
++     * @return the enum object
++     * @throws IllegalArgumentException if the enum class is <code>null</code>
++     */
++    public static Enum getEnum(Class enumClass, String name) {
++        return Enum.getEnum(enumClass, name);
++    }
++
++    /**
++     * <p>Gets a <code>ValuedEnum</code> object by class and value.</p>
++     * 
++     * @param enumClass  the class of the <code>Enum</code> to get
++     * @param value  the value of the <code>Enum</code> to get
++     * @return the enum object, or null if the enum does not exist
++     * @throws IllegalArgumentException if the enum class is <code>null</code>
++     */
++    public static ValuedEnum getEnum(Class enumClass, int value) {
++        return (ValuedEnum) ValuedEnum.getEnum(enumClass, value);
++    }
++
++    /**
++     * <p>Gets the <code>Map</code> of <code>Enum</code> objects by
++     * name using the <code>Enum</code> class.</p>
++     *
++     * <p>If the requested class has no enum objects an empty
++     * <code>Map</code> is returned. The <code>Map</code> is unmodifiable.</p>
++     * 
++     * @param enumClass  the class of the <code>Enum</code> to get
++     * @return the enum object Map
++     * @throws IllegalArgumentException if the enum class is <code>null</code>
++     * @throws IllegalArgumentException if the enum class is not a subclass
++     *  of <code>Enum</code>
++     */
++    public static Map getEnumMap(Class enumClass) {
++        return Enum.getEnumMap(enumClass);
++    }
++
++    /**
++     * <p>Gets the <code>List</code> of <code>Enum</code> objects using
++     * the <code>Enum</code> class.</p>
++     *
++     * <p>The list is in the order that the objects were created
++     * (source code order).</p>
++     *
++     * <p>If the requested class has no enum objects an empty
++     * <code>List</code> is returned. The <code>List</code> is unmodifiable.</p>
++     * 
++     * @param enumClass  the class of the Enum to get
++     * @return the enum object Map
++     * @throws IllegalArgumentException if the enum class is <code>null</code>
++     * @throws IllegalArgumentException if the enum class is not a subclass
++     *  of <code>Enum</code>
++     */
++    public static List getEnumList(Class enumClass) {
++        return Enum.getEnumList(enumClass);
++    }
++
++    /**
++     * <p>Gets an <code>Iterator</code> over the <code>Enum</code> objects
++     * in an <code>Enum</code> class.</p>
++     *
++     * <p>The iterator is in the order that the objects were created
++     * (source code order).</p>
++     *
++     * <p>If the requested class has no enum objects an empty
++     * <code>Iterator</code> is returned. The <code>Iterator</code>
++     * is unmodifiable.</p>
++     * 
++     * @param enumClass  the class of the <code>Enum</code> to get
++     * @return an <code>Iterator</code> of the <code>Enum</code> objects
++     * @throws IllegalArgumentException if the enum class is <code>null</code>
++     * @throws IllegalArgumentException if the enum class is not a subclass of <code>Enum</code>
++     */
++    public static Iterator iterator(Class enumClass) {
++        return Enum.getEnumList(enumClass).iterator();
++    }
++    
++}
+diff --git a/src/java/org/apache/commons/lang/enums/ValuedEnum.java b/src/java/org/apache/commons/lang/enums/ValuedEnum.java
+new file mode 100644
+index 0000000..7a32251
+--- /dev/null
++++ b/src/java/org/apache/commons/lang/enums/ValuedEnum.java
+@@ -0,0 +1,187 @@
++/*
++ * Copyright 2002-2004 The Apache Software Foundation.
++ * 
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.enums;
++
++import java.util.Iterator;
++import java.util.List;
++
++import org.apache.commons.lang.ClassUtils;
++
++/**
++ * <p>Abstract superclass for type-safe enums with integer values suitable
++ * for use in <code>switch</code> statements.</p>
++ *
++ * <p><em>NOTE:</em>Due to the way in which Java ClassLoaders work, comparing
++ * <code>Enum</code> objects should always be done using the equals() method,
++ * not <code>==</code>. The equals() method will try <code>==</code> first so
++ * in most cases the effect is the same.</p>
++ *
++ * <p>To use this class, it must be subclassed. For example:</p>
++ *
++ * <pre>
++ * public final class JavaVersionEnum extends ValuedEnum {
++ *   //standard enums for version of JVM
++ *   public static final int  JAVA1_0_VALUE  = 100;
++ *   public static final int  JAVA1_1_VALUE  = 110;
++ *   public static final int  JAVA1_2_VALUE  = 120;
++ *   public static final int  JAVA1_3_VALUE  = 130;
++ *   public static final JavaVersionEnum  JAVA1_0  = new JavaVersionEnum( "Java 1.0", JAVA1_0_VALUE );
++ *   public static final JavaVersionEnum  JAVA1_1  = new JavaVersionEnum( "Java 1.1", JAVA1_1_VALUE );
++ *   public static final JavaVersionEnum  JAVA1_2  = new JavaVersionEnum( "Java 1.2", JAVA1_2_VALUE );
++ *   public static final JavaVersionEnum  JAVA1_3  = new JavaVersionEnum( "Java 1.3", JAVA1_3_VALUE );
++ *
++ *   private JavaVersionEnum(String name, int value) {
++ *     super( name, value );
++ *   }
++ * 
++ *   public static JavaVersionEnum getEnum(String javaVersion) {
++ *     return (JavaVersionEnum) getEnum(JavaVersionEnum.class, javaVersion);
++ *   }
++ * 
++ *   public static JavaVersionEnum getEnum(int javaVersion) {
++ *     return (JavaVersionEnum) getEnum(JavaVersionEnum.class, javaVersion);
++ *   }
++ * 
++ *   public static Map getEnumMap() {
++ *     return getEnumMap(JavaVersionEnum.class);
++ *   }
++ * 
++ *   public static List getEnumList() {
++ *     return getEnumList(JavaVersionEnum.class);
++ *   }
++ * 
++ *   public static Iterator iterator() {
++ *     return iterator(JavaVersionEnum.class);
++ *   }
++ * }
++ * </pre>
++ *
++ * <p>The above class could then be used as follows:</p>
++ *
++ * <pre>
++ * public void doSomething(JavaVersion ver) {
++ *   switch (ver.getValue()) {
++ *     case JAVA1_0_VALUE:
++ *       // ...
++ *       break;
++ *     case JAVA1_1_VALUE:
++ *       // ...
++ *       break;
++ *     //...
++ *   }
++ * }
++ * </pre>
++ *
++ * <p>As shown, each enum has a name and a value. These can be accessed using
++ * <code>getName</code> and <code>getValue</code>.</p>
++ *
++ * <p>The <code>getEnum</code> and <code>iterator</code> methods are recommended.
++ * Unfortunately, Java restrictions require these to be coded as shown in each subclass.
++ * An alternative choice is to use the {@link EnumUtils} class.</p>
++ *
++ * @author Apache Avalon project
++ * @author Stephen Colebourne
++ * @since 1.0
++ * @version $Id: ValuedEnum.java,v 1.1 2004/02/23 04:34:20 ggregory Exp $
++ */
++public abstract class ValuedEnum extends Enum {
++    
++    /** Lang version 1.0.1 serial compatibility */
++    private static final long serialVersionUID = -7129650521543789085L;
++    
++    /**
++     * The value contained in enum.
++     */
++    private final int iValue;
++
++    /**
++     * Constructor for enum item.
++     *
++     * @param name  the name of enum item
++     * @param value  the value of enum item
++     */
++    protected ValuedEnum(String name, int value) {
++        super(name);
++        iValue = value;
++    }
++
++    /**
++     * <p>Gets an <code>Enum</code> object by class and value.</p>
++     *
++     * <p>This method loops through the list of <code>Enum</code>,
++     * thus if there are many <code>Enum</code>s this will be
++     * slow.</p>
++     * 
++     * @param enumClass  the class of the <code>Enum</code> to get
++     * @param value  the value of the <code>Enum</code> to get
++     * @return the enum object, or null if the enum does not exist
++     * @throws IllegalArgumentException if the enum class is <code>null</code>
++     */
++    protected static Enum getEnum(Class enumClass, int value) {
++        if (enumClass == null) {
++            throw new IllegalArgumentException("The Enum Class must not be null");
++        }
++        List list = Enum.getEnumList(enumClass);
++        for (Iterator it = list.iterator(); it.hasNext();) {
++            ValuedEnum enum = (ValuedEnum) it.next();
++            if (enum.getValue() == value) {
++                return enum;
++            }
++        }
++        return null;
++    }
++
++    /**
++     * <p>Get value of enum item.</p>
++     *
++     * @return the enum item's value.
++     */
++    public final int getValue() {
++        return iValue;
++    }
++
++    /**
++     * <p>Tests for order.</p>
++     *
++     * <p>The default ordering is numeric by value, but this
++     * can be overridden by subclasses.</p>
++     * 
++     * @see java.lang.Comparable#compareTo(Object)
++     * @param other  the other object to compare to
++     * @return -ve if this is less than the other object, +ve if greater than,
++     *  <code>0</code> of equal
++     * @throws ClassCastException if other is not an <code>Enum</code>
++     * @throws NullPointerException if other is <code>null</code>
++     */
++    public int compareTo(Object other) {
++        return iValue - ((ValuedEnum) other).iValue;
++    }
++
++    /**
++     * <p>Human readable description of this <code>Enum</code> item.</p>
++     *
++     * @return String in the form <code>type[name=value]</code>, for example:
++     *  <code>JavaVersion[Java 1.0=100]</code>. Note that the package name is
++     *  stripped from the type name.
++     */
++    public String toString() {
++        if (iToString == null) {
++            String shortName = ClassUtils.getShortClassName(getEnumClass());
++            iToString = shortName + "[" + getName() + "=" + getValue() + "]";
++        }
++        return iToString;
++    }
++}
+diff --git a/src/java/org/apache/commons/lang/enums/package.html b/src/java/org/apache/commons/lang/enums/package.html
+new file mode 100644
+index 0000000..2049a75
+--- /dev/null
++++ b/src/java/org/apache/commons/lang/enums/package.html
+@@ -0,0 +1,53 @@
++<!--
++Copyright 2002-2004 The Apache Software Foundation.
++ 
++Licensed under the Apache License, Version 2.0 (the "License");
++you may not use this file except in compliance with the License.
++You may obtain a copy of the License at
++
++     http://www.apache.org/licenses/LICENSE-2.0
++
++Unless required by applicable law or agreed to in writing, software
++distributed under the License is distributed on an "AS IS" BASIS,
++WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++See the License for the specific language governing permissions and
++limitations under the License.
++-->
++<html>
++<body>
++<p>
++Provides an implementation of the C style <code>enum</code> in the Java world.
++</p>
++<p>
++The classic example being an RGB color enumeration.
++</p>
++<pre>
++public final class ColorEnum extends Enum {
++    public static final ColorEnum RED = new ColorEnum("Red");
++    public static final ColorEnum GREEN = new ColorEnum("Green");
++    public static final ColorEnum BLUE = new ColorEnum("Blue");
++
++    private ColorEnum(String color) {
++        super(color);
++    }
++
++    public static ColorEnum getEnum(String color) {
++        return (ColorEnum) getEnum(ColorEnum.class, color);
++    }
++
++    public static Map getEnumMap() {
++        return getEnumMap(ColorEnum.class);
++    }
++
++    public static List getEnumList() {
++        return getEnumList(ColorEnum.class);
++    }
++
++    public static Iterator iterator() {
++        return iterator(ColorEnum.class);
++    }
++}
++</pre>
++@since 2.1
++</body>
++</html>
+diff --git a/src/test/org/apache/commons/lang/enums/Broken1Enum.java b/src/test/org/apache/commons/lang/enums/Broken1Enum.java
+new file mode 100644
+index 0000000..a7eb9d7
+--- /dev/null
++++ b/src/test/org/apache/commons/lang/enums/Broken1Enum.java
+@@ -0,0 +1,52 @@
++/*
++ * Copyright 2002-2004 The Apache Software Foundation.
++ * 
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.enums;
++
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++
++/**
++ * Broken color enumeration.
++ *
++ * @author <a href="mailto:scolebourne@joda.org">Stephen Colebourne</a>
++ * @version $Id: Broken1Enum.java,v 1.1 2004/02/23 04:34:20 ggregory Exp $
++ */
++public final class Broken1Enum extends Enum {
++    public static final Broken1Enum RED = new Broken1Enum("Red");
++    public static final Broken1Enum GREEN = new Broken1Enum("Green");
++    public static final Broken1Enum GREENISH = new Broken1Enum("Green");  // duplicate not allowed
++
++    private Broken1Enum(String color) {
++        super(color);
++    }
++
++    public static Broken1Enum getEnum(String color) {
++        return (Broken1Enum) getEnum(Broken1Enum.class, color);
++    }
++
++    public static Map getEnumMap() {
++        return getEnumMap(Broken1Enum.class);
++    }
++
++    public static List getEnumList() {
++        return getEnumList(Broken1Enum.class);
++    }
++
++    public static Iterator iterator() {
++        return iterator(Broken1Enum.class);
++    }
++}
+diff --git a/src/test/org/apache/commons/lang/enums/Broken1OperationEnum.java b/src/test/org/apache/commons/lang/enums/Broken1OperationEnum.java
+new file mode 100644
+index 0000000..3f8d320
+--- /dev/null
++++ b/src/test/org/apache/commons/lang/enums/Broken1OperationEnum.java
+@@ -0,0 +1,85 @@
++/*
++ * Copyright 2002-2004 The Apache Software Foundation.
++ * 
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.enums;
++
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++
++/**
++ * Broken Operator enumeration, null class.
++ *
++ * @author Stephen Colebourne
++ * @version $Id: Broken1OperationEnum.java,v 1.1 2004/02/23 04:34:20 ggregory Exp $
++ */
++public abstract class Broken1OperationEnum extends Enum {
++    // This syntax works for JDK 1.3 and upwards:
++//    public static final OperationEnum PLUS = new OperationEnum("Plus") {
++//        public int eval(int a, int b) {
++//            return (a + b);
++//        }
++//    };
++//    public static final OperationEnum MINUS = new OperationEnum("Minus") {
++//        public int eval(int a, int b) {
++//            return (a - b);
++//        }
++//    };
++    // This syntax works for JDK 1.2 and upwards:
++    public static final Broken1OperationEnum PLUS = new PlusOperation();
++    private static class PlusOperation extends Broken1OperationEnum {
++        private PlusOperation() {
++            super("Plus");
++        }
++        public int eval(int a, int b) {
++            return (a + b);
++        }
++    }
++    public static final Broken1OperationEnum MINUS = new MinusOperation();
++    private static class MinusOperation extends Broken1OperationEnum {
++        private MinusOperation() {
++            super("Minus");
++        }
++        public int eval(int a, int b) {
++            return (a - b);
++        }
++    }
++
++    private Broken1OperationEnum(String name) {
++        super(name);
++    }
++    
++    public final Class getEnumClass() {
++        return null;
++    }
++
++    public abstract int eval(int a, int b);
++
++    public static Broken1OperationEnum getEnum(String name) {
++        return (Broken1OperationEnum) getEnum(Broken1OperationEnum.class, name);
++    }
++
++    public static Map getEnumMap() {
++        return getEnumMap(Broken1OperationEnum.class);
++    }
++
++    public static List getEnumList() {
++        return getEnumList(Broken1OperationEnum.class);
++    }
++
++    public static Iterator iterator() {
++        return iterator(Broken1OperationEnum.class);
++    }
++}
+diff --git a/src/test/org/apache/commons/lang/enums/Broken2Enum.java b/src/test/org/apache/commons/lang/enums/Broken2Enum.java
+new file mode 100644
+index 0000000..e5496a1
+--- /dev/null
++++ b/src/test/org/apache/commons/lang/enums/Broken2Enum.java
+@@ -0,0 +1,52 @@
++/*
++ * Copyright 2002-2004 The Apache Software Foundation.
++ * 
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.enums;
++
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++
++/**
++ * Broken color enumeration.
++ *
++ * @author <a href="mailto:scolebourne@joda.org">Stephen Colebourne</a>
++ * @version $Id: Broken2Enum.java,v 1.1 2004/02/23 04:34:20 ggregory Exp $
++ */
++public final class Broken2Enum extends Enum {
++    public static final Broken2Enum RED = new Broken2Enum("Red");
++    public static final Broken2Enum GREEN = new Broken2Enum("Green");
++    public static final Broken2Enum BLUE = new Broken2Enum("");  // blank not allowed
++
++    private Broken2Enum(String color) {
++        super(color);
++    }
++
++    public static Broken2Enum getEnum(String color) {
++        return (Broken2Enum) getEnum(Broken2Enum.class, color);
++    }
++
++    public static Map getEnumMap() {
++        return getEnumMap(Broken2Enum.class);
++    }
++
++    public static List getEnumList() {
++        return getEnumList(Broken2Enum.class);
++    }
++
++    public static Iterator iterator() {
++        return iterator(Broken2Enum.class);
++    }
++}
+diff --git a/src/test/org/apache/commons/lang/enums/Broken2OperationEnum.java b/src/test/org/apache/commons/lang/enums/Broken2OperationEnum.java
+new file mode 100644
+index 0000000..16b24ec
+--- /dev/null
++++ b/src/test/org/apache/commons/lang/enums/Broken2OperationEnum.java
+@@ -0,0 +1,85 @@
++/*
++ * Copyright 2002-2004 The Apache Software Foundation.
++ * 
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.enums;
++
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++
++/**
++ * Broken Operator enumeration, getEnumClass() not superclass.
++ *
++ * @author Stephen Colebourne
++ * @version $Id: Broken2OperationEnum.java,v 1.1 2004/02/23 04:34:20 ggregory Exp $
++ */
++public abstract class Broken2OperationEnum extends Enum {
++    // This syntax works for JDK 1.3 and upwards:
++//    public static final OperationEnum PLUS = new OperationEnum("Plus") {
++//        public int eval(int a, int b) {
++//            return (a + b);
++//        }
++//    };
++//    public static final OperationEnum MINUS = new OperationEnum("Minus") {
++//        public int eval(int a, int b) {
++//            return (a - b);
++//        }
++//    };
++    // This syntax works for JDK 1.2 and upwards:
++    public static final Broken2OperationEnum PLUS = new PlusOperation();
++    private static class PlusOperation extends Broken2OperationEnum {
++        private PlusOperation() {
++            super("Plus");
++        }
++        public int eval(int a, int b) {
++            return (a + b);
++        }
++    }
++    public static final Broken2OperationEnum MINUS = new MinusOperation();
++    private static class MinusOperation extends Broken2OperationEnum {
++        private MinusOperation() {
++            super("Minus");
++        }
++        public int eval(int a, int b) {
++            return (a - b);
++        }
++    }
++
++    private Broken2OperationEnum(String name) {
++        super(name);
++    }
++    
++    public final Class getEnumClass() {
++        return ColorEnum.class;
++    }
++
++    public abstract int eval(int a, int b);
++
++    public static Broken2OperationEnum getEnum(String name) {
++        return (Broken2OperationEnum) getEnum(Broken2OperationEnum.class, name);
++    }
++
++    public static Map getEnumMap() {
++        return getEnumMap(Broken2OperationEnum.class);
++    }
++
++    public static List getEnumList() {
++        return getEnumList(Broken2OperationEnum.class);
++    }
++
++    public static Iterator iterator() {
++        return iterator(Broken2OperationEnum.class);
++    }
++}
+diff --git a/src/test/org/apache/commons/lang/enums/Broken3Enum.java b/src/test/org/apache/commons/lang/enums/Broken3Enum.java
+new file mode 100644
+index 0000000..3be1ec0
+--- /dev/null
++++ b/src/test/org/apache/commons/lang/enums/Broken3Enum.java
+@@ -0,0 +1,52 @@
++/*
++ * Copyright 2002-2004 The Apache Software Foundation.
++ * 
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.enums;
++
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++
++/**
++ * Broken color enumeration.
++ *
++ * @author <a href="mailto:scolebourne@joda.org">Stephen Colebourne</a>
++ * @version $Id: Broken3Enum.java,v 1.1 2004/02/23 04:34:20 ggregory Exp $
++ */
++public final class Broken3Enum extends Enum {
++    public static final Broken3Enum RED = new Broken3Enum("Red");
++    public static final Broken3Enum GREEN = new Broken3Enum("Green");
++    public static final Broken3Enum BLUE = new Broken3Enum(null);  // null not allowed
++
++    private Broken3Enum(String color) {
++        super(color);
++    }
++
++    public static Broken3Enum getEnum(String color) {
++        return (Broken3Enum) getEnum(Broken3Enum.class, color);
++    }
++
++    public static Map getEnumMap() {
++        return getEnumMap(Broken3Enum.class);
++    }
++
++    public static List getEnumList() {
++        return getEnumList(Broken3Enum.class);
++    }
++
++    public static Iterator iterator() {
++        return iterator(Broken3Enum.class);
++    }
++}
+diff --git a/src/test/org/apache/commons/lang/enums/Broken3OperationEnum.java b/src/test/org/apache/commons/lang/enums/Broken3OperationEnum.java
+new file mode 100644
+index 0000000..3dcdbf5
+--- /dev/null
++++ b/src/test/org/apache/commons/lang/enums/Broken3OperationEnum.java
+@@ -0,0 +1,85 @@
++/*
++ * Copyright 2002-2004 The Apache Software Foundation.
++ * 
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.enums;
++
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++
++/**
++ * Broken Operator enumeration, getEnumClass() is Enum.class.
++ *
++ * @author Stephen Colebourne
++ * @version $Id: Broken3OperationEnum.java,v 1.1 2004/02/23 04:34:20 ggregory Exp $
++ */
++public abstract class Broken3OperationEnum extends Enum {
++    // This syntax works for JDK 1.3 and upwards:
++//    public static final OperationEnum PLUS = new OperationEnum("Plus") {
++//        public int eval(int a, int b) {
++//            return (a + b);
++//        }
++//    };
++//    public static final OperationEnum MINUS = new OperationEnum("Minus") {
++//        public int eval(int a, int b) {
++//            return (a - b);
++//        }
++//    };
++    // This syntax works for JDK 1.2 and upwards:
++    public static final Broken3OperationEnum PLUS = new PlusOperation();
++    private static class PlusOperation extends Broken3OperationEnum {
++        private PlusOperation() {
++            super("Plus");
++        }
++        public int eval(int a, int b) {
++            return (a + b);
++        }
++    }
++    public static final Broken3OperationEnum MINUS = new MinusOperation();
++    private static class MinusOperation extends Broken3OperationEnum {
++        private MinusOperation() {
++            super("Minus");
++        }
++        public int eval(int a, int b) {
++            return (a - b);
++        }
++    }
++
++    private Broken3OperationEnum(String name) {
++        super(name);
++    }
++    
++    public final Class getEnumClass() {
++        return Enum.class;
++    }
++
++    public abstract int eval(int a, int b);
++
++    public static Broken3OperationEnum getEnum(String name) {
++        return (Broken3OperationEnum) getEnum(Broken3OperationEnum.class, name);
++    }
++
++    public static Map getEnumMap() {
++        return getEnumMap(Broken3OperationEnum.class);
++    }
++
++    public static List getEnumList() {
++        return getEnumList(Broken3OperationEnum.class);
++    }
++
++    public static Iterator iterator() {
++        return iterator(Broken3OperationEnum.class);
++    }
++}
+diff --git a/src/test/org/apache/commons/lang/enums/Broken4OperationEnum.java b/src/test/org/apache/commons/lang/enums/Broken4OperationEnum.java
+new file mode 100644
+index 0000000..aa9fcdf
+--- /dev/null
++++ b/src/test/org/apache/commons/lang/enums/Broken4OperationEnum.java
+@@ -0,0 +1,85 @@
++/*
++ * Copyright 2002-2004 The Apache Software Foundation.
++ * 
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.enums;
++
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++
++/**
++ * Broken Operator enumeration, getEnumClass() is ValuedEnum.class.
++ *
++ * @author Stephen Colebourne
++ * @version $Id: Broken4OperationEnum.java,v 1.1 2004/02/23 04:34:20 ggregory Exp $
++ */
++public abstract class Broken4OperationEnum extends Enum {
++    // This syntax works for JDK 1.3 and upwards:
++//    public static final OperationEnum PLUS = new OperationEnum("Plus") {
++//        public int eval(int a, int b) {
++//            return (a + b);
++//        }
++//    };
++//    public static final OperationEnum MINUS = new OperationEnum("Minus") {
++//        public int eval(int a, int b) {
++//            return (a - b);
++//        }
++//    };
++    // This syntax works for JDK 1.2 and upwards:
++    public static final Broken4OperationEnum PLUS = new PlusOperation();
++    private static class PlusOperation extends Broken4OperationEnum {
++        private PlusOperation() {
++            super("Plus");
++        }
++        public int eval(int a, int b) {
++            return (a + b);
++        }
++    }
++    public static final Broken4OperationEnum MINUS = new MinusOperation();
++    private static class MinusOperation extends Broken4OperationEnum {
++        private MinusOperation() {
++            super("Minus");
++        }
++        public int eval(int a, int b) {
++            return (a - b);
++        }
++    }
++
++    private Broken4OperationEnum(String name) {
++        super(name);
++    }
++    
++    public final Class getEnumClass() {
++        return ValuedEnum.class;
++    }
++
++    public abstract int eval(int a, int b);
++
++    public static Broken4OperationEnum getEnum(String name) {
++        return (Broken4OperationEnum) getEnum(Broken4OperationEnum.class, name);
++    }
++
++    public static Map getEnumMap() {
++        return getEnumMap(Broken4OperationEnum.class);
++    }
++
++    public static List getEnumList() {
++        return getEnumList(Broken4OperationEnum.class);
++    }
++
++    public static Iterator iterator() {
++        return iterator(Broken4OperationEnum.class);
++    }
++}
+diff --git a/src/test/org/apache/commons/lang/enums/Broken5OperationEnum.java b/src/test/org/apache/commons/lang/enums/Broken5OperationEnum.java
+new file mode 100644
+index 0000000..e2a8994
+--- /dev/null
++++ b/src/test/org/apache/commons/lang/enums/Broken5OperationEnum.java
+@@ -0,0 +1,85 @@
++/*
++ * Copyright 2002-2004 The Apache Software Foundation.
++ * 
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.enums;
++
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++
++/**
++ * Broken Operator enumeration, getEnumClass() is not an Enum class.
++ *
++ * @author Stephen Colebourne
++ * @version $Id: Broken5OperationEnum.java,v 1.1 2004/02/23 04:34:20 ggregory Exp $
++ */
++public abstract class Broken5OperationEnum extends Enum {
++    // This syntax works for JDK 1.3 and upwards:
++//    public static final OperationEnum PLUS = new OperationEnum("Plus") {
++//        public int eval(int a, int b) {
++//            return (a + b);
++//        }
++//    };
++//    public static final OperationEnum MINUS = new OperationEnum("Minus") {
++//        public int eval(int a, int b) {
++//            return (a - b);
++//        }
++//    };
++    // This syntax works for JDK 1.2 and upwards:
++    public static final Broken5OperationEnum PLUS = new PlusOperation();
++    private static class PlusOperation extends Broken5OperationEnum {
++        private PlusOperation() {
++            super("Plus");
++        }
++        public int eval(int a, int b) {
++            return (a + b);
++        }
++    }
++    public static final Broken5OperationEnum MINUS = new MinusOperation();
++    private static class MinusOperation extends Broken5OperationEnum {
++        private MinusOperation() {
++            super("Minus");
++        }
++        public int eval(int a, int b) {
++            return (a - b);
++        }
++    }
++
++    private Broken5OperationEnum(String name) {
++        super(name);
++    }
++    
++    public final Class getEnumClass() {
++        return String.class;
++    }
++
++    public abstract int eval(int a, int b);
++
++    public static Broken5OperationEnum getEnum(String name) {
++        return (Broken5OperationEnum) getEnum(Broken5OperationEnum.class, name);
++    }
++
++    public static Map getEnumMap() {
++        return getEnumMap(Broken5OperationEnum.class);
++    }
++
++    public static List getEnumList() {
++        return getEnumList(Broken5OperationEnum.class);
++    }
++
++    public static Iterator iterator() {
++        return iterator(Broken5OperationEnum.class);
++    }
++}
+diff --git a/src/test/org/apache/commons/lang/enums/ColorEnum.java b/src/test/org/apache/commons/lang/enums/ColorEnum.java
+new file mode 100644
+index 0000000..4a63c99
+--- /dev/null
++++ b/src/test/org/apache/commons/lang/enums/ColorEnum.java
+@@ -0,0 +1,53 @@
++/*
++ * Copyright 2002-2004 The Apache Software Foundation.
++ * 
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.enums;
++
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++
++/**
++ * Color enumeration.
++ *
++ * @author <a href="mailto:scolebourne@joda.org">Stephen Colebourne</a>
++ * @version $Id: ColorEnum.java,v 1.1 2004/02/23 04:34:20 ggregory Exp $
++ */
++
++public final class ColorEnum extends Enum {
++    public static final ColorEnum RED = new ColorEnum("Red");
++    public static final ColorEnum GREEN = new ColorEnum("Green");
++    public static final ColorEnum BLUE = new ColorEnum("Blue");
++
++    private ColorEnum(String color) {
++        super(color);
++    }
++
++    public static ColorEnum getEnum(String color) {
++        return (ColorEnum) getEnum(ColorEnum.class, color);
++    }
++
++    public static Map getEnumMap() {
++        return getEnumMap(ColorEnum.class);
++    }
++
++    public static List getEnumList() {
++        return getEnumList(ColorEnum.class);
++    }
++
++    public static Iterator iterator() {
++        return iterator(ColorEnum.class);
++    }
++}
+diff --git a/src/test/org/apache/commons/lang/enums/DummyEnum.java b/src/test/org/apache/commons/lang/enums/DummyEnum.java
+new file mode 100644
+index 0000000..17d5b73
+--- /dev/null
++++ b/src/test/org/apache/commons/lang/enums/DummyEnum.java
+@@ -0,0 +1,30 @@
++/*
++ * Copyright 2002-2004 The Apache Software Foundation.
++ * 
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.enums;
++
++/**
++ * Dummy enumeration - no values.
++ *
++ * @author Stephen Colebourne
++ * @version $Id: DummyEnum.java,v 1.1 2004/02/23 04:34:20 ggregory Exp $
++ */
++public abstract class DummyEnum extends Enum {
++
++    private DummyEnum(String name) {
++        super(name);
++    }
++
++}
+diff --git a/src/test/org/apache/commons/lang/enums/EnumTest.java b/src/test/org/apache/commons/lang/enums/EnumTest.java
+new file mode 100644
+index 0000000..1c8e2c4
+--- /dev/null
++++ b/src/test/org/apache/commons/lang/enums/EnumTest.java
+@@ -0,0 +1,516 @@
++/*
++ * Copyright 2002-2004 The Apache Software Foundation.
++ * 
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.enums;
++
++import java.lang.reflect.InvocationTargetException;
++import java.lang.reflect.Method;
++import java.util.ArrayList;
++import java.util.HashMap;
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++
++import junit.framework.AssertionFailedError;
++import junit.framework.Test;
++import junit.framework.TestCase;
++import junit.framework.TestSuite;
++import org.apache.commons.lang.ClassUtilsTest;
++import org.apache.commons.lang.SerializationUtils;
++
++/**
++ * Test cases for the {@link Enum} class.
++ *
++ * @author Stephen Colebourne
++ * @author Gary D. Gregory
++ * @version $Id: EnumTest.java,v 1.1 2004/02/23 04:34:20 ggregory Exp $
++ */
++
++public final class EnumTest extends TestCase {
++
++    public EnumTest(String name) {
++        super(name);
++    }
++
++    public void setUp() {
++    }
++
++    public static Test suite() {
++        TestSuite suite = new TestSuite(EnumTest.class);
++        suite.setName("Enum Tests");
++        return suite;
++    }
++
++    public void testName() {
++        assertEquals("Red", ColorEnum.RED.getName());
++        assertEquals("Green", ColorEnum.GREEN.getName());
++        assertEquals("Blue", ColorEnum.BLUE.getName());
++    }
++
++    public void testCompareTo() {
++        assertTrue(ColorEnum.BLUE.compareTo(ColorEnum.BLUE) == 0);
++        assertTrue(ColorEnum.RED.compareTo(ColorEnum.BLUE) > 0);
++        assertTrue(ColorEnum.BLUE.compareTo(ColorEnum.RED) < 0);
++        try {
++            ColorEnum.RED.compareTo(null);
++            fail();
++        } catch (NullPointerException ex) {}
++        try {
++            ColorEnum.RED.compareTo(new Object());
++            fail();
++        } catch (ClassCastException ex) {}
++    }
++
++    public void testEquals() {
++        assertSame(ColorEnum.RED, ColorEnum.RED);
++        assertSame(ColorEnum.getEnum("Red"), ColorEnum.RED);
++        assertEquals(false, ColorEnum.RED.equals(null));
++        assertEquals(true, ColorEnum.RED.equals(ColorEnum.RED));
++        assertEquals(true, ColorEnum.RED.equals(ColorEnum.getEnum("Red")));
++    }
++
++    public void testHashCode() {
++        assertEquals(ColorEnum.RED.hashCode(), ColorEnum.RED.hashCode());
++        assertEquals(7 + ColorEnum.class.hashCode() + 3 * "Red".hashCode(), ColorEnum.RED.hashCode());
++    }
++
++    public void testToString() {
++        String toString = ColorEnum.RED.toString();
++        assertEquals("ColorEnum[Red]", toString);
++        assertSame(toString, ColorEnum.RED.toString());
++    }
++
++    public void testIterator() {
++        Iterator it = ColorEnum.iterator();
++        assertSame(ColorEnum.RED, it.next());
++        assertSame(ColorEnum.GREEN, it.next());
++        assertSame(ColorEnum.BLUE, it.next());
++    }
++
++    public void testList() {
++        List list = new ArrayList(ColorEnum.getEnumList());
++        
++        assertNotNull(list);
++        
++        assertEquals( list.size(),
++        				ColorEnum.getEnumMap().keySet().size());
++        
++        Iterator it = list.iterator();
++        assertSame(ColorEnum.RED, it.next());
++        assertSame(ColorEnum.GREEN, it.next());
++        assertSame(ColorEnum.BLUE, it.next());
++    }
++
++    public void testMap() {
++        Map map = new HashMap(ColorEnum.getEnumMap());
++        
++        assertNotNull(map);
++        assertTrue(map.containsValue(ColorEnum.RED));
++        assertTrue(map.containsValue(ColorEnum.GREEN));
++        assertTrue(map.containsValue(ColorEnum.BLUE));
++        assertSame(ColorEnum.RED, map.get("Red"));
++        assertSame(ColorEnum.GREEN, map.get("Green"));
++        assertSame(ColorEnum.BLUE, map.get("Blue"));
++        assertEquals( map.keySet().size(),
++                        ColorEnum.getEnumList().size());
++    }
++
++    public void testGet() {
++        assertSame(ColorEnum.RED, ColorEnum.getEnum("Red"));
++        assertSame(ColorEnum.GREEN, ColorEnum.getEnum("Green"));
++        assertSame(ColorEnum.BLUE, ColorEnum.getEnum("Blue"));
++        assertSame(null, ColorEnum.getEnum("Pink"));
++    }
++
++    public void testSerialization() {
++        int hashCode = ColorEnum.RED.hashCode();
++        assertSame(ColorEnum.RED, SerializationUtils.clone(ColorEnum.RED));
++        assertEquals(hashCode, SerializationUtils.clone(ColorEnum.RED).hashCode());
++        assertSame(ColorEnum.GREEN, SerializationUtils.clone(ColorEnum.GREEN));
++        assertSame(ColorEnum.BLUE, SerializationUtils.clone(ColorEnum.BLUE));
++    }
++
++    public void testBroken1() {
++        try {
++            Broken1Enum.RED.getName();
++            fail();
++        } catch (ExceptionInInitializerError ex) {
++            assertTrue(ex.getException() instanceof IllegalArgumentException);
++        }
++    }
++
++    public void testBroken2() {
++        try {
++            Broken2Enum.RED.getName();
++            fail();
++        } catch (ExceptionInInitializerError ex) {
++            assertTrue(ex.getException() instanceof IllegalArgumentException);
++        }
++    }
++
++    public void testBroken3() {
++        try {
++            Broken3Enum.RED.getName();
++            fail();
++        } catch (ExceptionInInitializerError ex) {
++            assertTrue(ex.getException() instanceof IllegalArgumentException);
++        }
++    }
++
++    public void testBroken1Operation() {
++        try {
++            Broken1OperationEnum.PLUS.getName();
++            fail();
++        } catch (ExceptionInInitializerError ex) {
++            assertTrue(ex.getException() instanceof IllegalArgumentException);
++        }
++    }
++
++    public void testBroken2Operation() {
++        try {
++            Broken2OperationEnum.PLUS.getName();
++            fail();
++        } catch (ExceptionInInitializerError ex) {
++            assertTrue(ex.getException() instanceof IllegalArgumentException);
++        }
++    }
++
++    public void testBroken3Operation() {
++        try {
++            Broken3OperationEnum.PLUS.getName();
++            fail();
++        } catch (ExceptionInInitializerError ex) {
++            assertTrue(ex.getException() instanceof IllegalArgumentException);
++        }
++    }
++
++    public void testBroken4Operation() {
++        try {
++            Broken4OperationEnum.PLUS.getName();
++            fail();
++        } catch (ExceptionInInitializerError ex) {
++            assertTrue(ex.getException() instanceof IllegalArgumentException);
++        }
++    }
++
++    public void testBroken5Operation() {
++        try {
++            Broken5OperationEnum.PLUS.getName();
++            fail();
++        } catch (ExceptionInInitializerError ex) {
++            assertTrue(ex.getException() instanceof IllegalArgumentException);
++        }
++    }
++
++    public void testOperationGet() {
++        assertSame(OperationEnum.PLUS, OperationEnum.getEnum("Plus"));
++        assertSame(OperationEnum.MINUS, OperationEnum.getEnum("Minus"));
++        assertSame(null, OperationEnum.getEnum("Pink"));
++    }
++
++    public void testOperationSerialization() {
++        assertSame(OperationEnum.PLUS, SerializationUtils.clone(OperationEnum.PLUS));
++        assertSame(OperationEnum.MINUS, SerializationUtils.clone(OperationEnum.MINUS));
++    }
++
++    public void testOperationToString() {
++        assertEquals("OperationEnum[Plus]", OperationEnum.PLUS.toString());
++    }
++
++    public void testOperationList() {
++        List list = OperationEnum.getEnumList();
++        assertNotNull(list);
++        assertEquals(2, list.size());
++        assertEquals(list.size(), OperationEnum.getEnumMap().keySet().size());
++        
++        Iterator it = list.iterator();
++        assertSame(OperationEnum.PLUS, it.next());
++        assertSame(OperationEnum.MINUS, it.next());
++    }
++
++    public void testOperationMap() {
++        Map map = OperationEnum.getEnumMap();
++        assertNotNull(map);
++        assertEquals(map.keySet().size(), OperationEnum.getEnumList().size());
++        
++        assertTrue(map.containsValue(OperationEnum.PLUS));
++        assertTrue(map.containsValue(OperationEnum.MINUS));
++        assertSame(OperationEnum.PLUS, map.get("Plus"));
++        assertSame(OperationEnum.MINUS, map.get("Minus"));
++    }
++
++    public void testOperationCalculation() {
++        assertEquals(3, OperationEnum.PLUS.eval(1, 2));
++        assertEquals(-1, OperationEnum.MINUS.eval(1, 2));
++    }
++    
++    //-----------------------------------------------------------------------
++    public void testExtended1Get() {
++        assertSame(Extended1Enum.ALPHA, Extended1Enum.getEnum("Alpha"));
++        assertSame(Extended1Enum.BETA, Extended1Enum.getEnum("Beta"));
++        assertSame(null, Extended1Enum.getEnum("Gamma"));
++        assertSame(null, Extended1Enum.getEnum("Delta"));
++    }
++            
++    public void testExtended2Get() {
++        assertSame(Extended1Enum.ALPHA, Extended2Enum.ALPHA);
++        assertSame(Extended1Enum.BETA, Extended2Enum.BETA);
++        
++        assertSame(Extended2Enum.ALPHA, Extended2Enum.getEnum("Alpha"));
++        assertSame(Extended2Enum.BETA, Extended2Enum.getEnum("Beta"));
++        assertSame(Extended2Enum.GAMMA, Extended2Enum.getEnum("Gamma"));
++        assertSame(null, Extended2Enum.getEnum("Delta"));
++    }
++
++    public void testExtended3Get() {
++        assertSame(Extended2Enum.ALPHA, Extended3Enum.ALPHA);
++        assertSame(Extended2Enum.BETA, Extended3Enum.BETA);
++        assertSame(Extended2Enum.GAMMA, Extended3Enum.GAMMA);
++        
++        assertSame(Extended3Enum.ALPHA, Extended3Enum.getEnum("Alpha"));
++        assertSame(Extended3Enum.BETA, Extended3Enum.getEnum("Beta"));
++        assertSame(Extended3Enum.GAMMA, Extended3Enum.getEnum("Gamma"));
++        assertSame(Extended3Enum.DELTA, Extended3Enum.getEnum("Delta"));
++    }
++
++    public void testExtendedSerialization() {
++        assertSame(Extended1Enum.ALPHA, SerializationUtils.clone(Extended1Enum.ALPHA));
++        assertSame(Extended1Enum.BETA, SerializationUtils.clone(Extended1Enum.BETA));
++        assertSame(Extended2Enum.GAMMA, SerializationUtils.clone(Extended2Enum.GAMMA));
++        assertSame(Extended3Enum.DELTA, SerializationUtils.clone(Extended3Enum.DELTA));
++    }
++
++    public void testExtendedToString() {
++        assertEquals("Extended1Enum[Alpha]", Extended1Enum.ALPHA.toString());
++        assertEquals("Extended1Enum[Beta]", Extended1Enum.BETA.toString());
++        
++        assertEquals("Extended1Enum[Alpha]", Extended2Enum.ALPHA.toString());
++        assertEquals("Extended1Enum[Beta]", Extended2Enum.BETA.toString());
++        assertEquals("Extended2Enum[Gamma]", Extended2Enum.GAMMA.toString());
++        
++        assertEquals("Extended1Enum[Alpha]", Extended3Enum.ALPHA.toString());
++        assertEquals("Extended1Enum[Beta]", Extended3Enum.BETA.toString());
++        assertEquals("Extended2Enum[Gamma]", Extended3Enum.GAMMA.toString());
++        assertEquals("Extended3Enum[Delta]", Extended3Enum.DELTA.toString());
++    }
++
++    public void testExtended1List() {
++        List list = Extended1Enum.getEnumList();
++        assertNotNull(list);
++        assertEquals(2, list.size());
++        assertEquals(list.size(), Extended1Enum.getEnumMap().keySet().size());
++        
++        Iterator it = list.iterator();
++        assertSame(Extended1Enum.ALPHA, it.next());
++        assertSame(Extended1Enum.BETA, it.next());
++    }
++
++    public void testExtended2List() {
++        List list = Extended2Enum.getEnumList();
++        assertNotNull(list);
++        assertEquals(3, list.size());
++        assertEquals(list.size(), Extended2Enum.getEnumMap().keySet().size());
++        
++        Iterator it = list.iterator();
++        assertSame(Extended2Enum.ALPHA, it.next());
++        assertSame(Extended2Enum.BETA, it.next());
++        assertSame(Extended2Enum.GAMMA, it.next());
++    }
++
++    public void testExtended3List() {
++        List list = Extended3Enum.getEnumList();
++        assertNotNull(list);
++        assertEquals(4, list.size());
++        assertEquals(list.size(), Extended3Enum.getEnumMap().keySet().size());
++        
++        Iterator it = list.iterator();
++        assertSame(Extended3Enum.ALPHA, it.next());
++        assertSame(Extended3Enum.BETA, it.next());
++        assertSame(Extended3Enum.GAMMA, it.next());
++        assertSame(Extended3Enum.DELTA, it.next());
++    }
++
++    public void testExtended1Map() {
++        Map map = Extended1Enum.getEnumMap();
++        assertNotNull(map);
++        assertEquals(map.keySet().size(), Extended1Enum.getEnumList().size());
++        
++        assertTrue(map.containsValue(Extended1Enum.ALPHA));
++        assertTrue(map.containsValue(Extended1Enum.BETA));
++        assertSame(Extended1Enum.ALPHA, map.get("Alpha"));
++        assertSame(Extended1Enum.BETA, map.get("Beta"));
++    }
++
++    public void testExtended2Map() {
++        Map map = Extended2Enum.getEnumMap();
++        assertNotNull(map);
++        assertEquals(map.keySet().size(), Extended2Enum.getEnumList().size());
++        
++        assertTrue(map.containsValue(Extended2Enum.ALPHA));
++        assertTrue(map.containsValue(Extended2Enum.BETA));
++        assertTrue(map.containsValue(Extended2Enum.GAMMA));
++        assertSame(Extended2Enum.ALPHA, map.get("Alpha"));
++        assertSame(Extended2Enum.BETA, map.get("Beta"));
++        assertSame(Extended2Enum.GAMMA, map.get("Gamma"));
++    }
++
++    public void testExtended3Map() {
++        Map map = Extended3Enum.getEnumMap();
++        assertNotNull(map);
++        assertEquals(map.keySet().size(), Extended3Enum.getEnumList().size());
++        
++        assertTrue(map.containsValue(Extended3Enum.ALPHA));
++        assertTrue(map.containsValue(Extended3Enum.BETA));
++        assertTrue(map.containsValue(Extended3Enum.GAMMA));
++        assertTrue(map.containsValue(Extended3Enum.DELTA));
++        assertSame(Extended3Enum.ALPHA, map.get("Alpha"));
++        assertSame(Extended3Enum.BETA, map.get("Beta"));
++        assertSame(Extended3Enum.GAMMA, map.get("Gamma"));
++        assertSame(Extended3Enum.DELTA, map.get("Delta"));
++    }
++
++    //-----------------------------------------------------------------------
++    public void testNested() {
++        List list = new ArrayList(Nest.ColorEnum.getEnumList());
++        assertEquals(3, list.size());  // all is well
++        Iterator it = list.iterator();
++        assertSame(Nest.ColorEnum.RED, it.next());
++        assertSame(Nest.ColorEnum.GREEN, it.next());
++        assertSame(Nest.ColorEnum.BLUE, it.next());
++        // This nesting works because the enum constants are defined in the SAME
++        // class as the getEnumList(). It just acts as a normal enum.
++    }
++
++    public void testNestedBroken() {
++        List list = new ArrayList(NestBroken.ColorEnum.getEnumList());
++        try {
++            assertEquals(0, list.size());  // no enums!!! 
++            // this is BROKEN because the enum constants are defined in a DIFFERENT
++            // class from getEnumList(). Once NestBroken class is referenced,
++            // and thus class loaded with its enum constants, the getEnumList works:
++        } catch (AssertionFailedError ex) {
++            // this actually works and isn't broken on Linux SunJDK1.4.1, so...
++            assertEquals(3, list.size());
++        }
++        new NestBroken();
++        list = new ArrayList(NestBroken.ColorEnum.getEnumList());
++        assertEquals(3, list.size());  // all is well!!!
++        Iterator it = list.iterator();
++        assertSame(NestBroken.RED, it.next());
++        assertSame(NestBroken.GREEN, it.next());
++        assertSame(NestBroken.BLUE, it.next());
++    }
++
++    public void testNestedLinked() {
++        List list = new ArrayList(NestLinked.ColorEnum.getEnumList());
++        assertEquals(3, list.size());  // all is well
++        Iterator it = list.iterator();
++        assertSame(NestLinked.RED, it.next());
++        assertSame(NestLinked.GREEN, it.next());
++        assertSame(NestLinked.BLUE, it.next());
++        // This nesting works because a static block in the enum class forces a
++        // class load of the outer class which defines the enum constants.
++    }
++
++    public void testNestedReferenced() {
++        List list = new ArrayList(NestReferenced.ColorEnum.getEnumList());
++        assertEquals(3, list.size());  // all is well
++        Iterator it = list.iterator();
++        assertSame(NestReferenced.RED, it.next());
++        assertSame(NestReferenced.GREEN, it.next());
++        assertSame(NestReferenced.BLUE, it.next());
++        // This nesting works because the enum constants are actually defined in
++        // the SAME class as the getEnumList(). The references in the outer class
++        // are just extra references.
++    }
++    
++    public void testColorEnumEqualsWithDifferentClassLoaders() throws SecurityException, IllegalArgumentException,
++            ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
++        this.testEqualsTrueWithDifferentClassLoaders(ColorEnum.BLUE);
++        this.testEqualsTrueWithDifferentClassLoaders(ColorEnum.GREEN);
++        this.testEqualsTrueWithDifferentClassLoaders(ColorEnum.RED);
++    }
++
++    void testEqualsTrueWithDifferentClassLoaders(ColorEnum colorEnum) throws ClassNotFoundException, SecurityException,
++            NoSuchMethodException, IllegalArgumentException, IllegalAccessException, InvocationTargetException {
++        // Sanity checks:
++        assertTrue(colorEnum.equals(colorEnum));
++        assertNotNull(ColorEnum.class.getClassLoader());
++        // set up:
++        ClassLoader classLoader = ClassUtilsTest.newSystemClassLoader();
++        Object enumObjectFromOtherClassLoader = this.getColorEnum(classLoader, colorEnum.getName());
++        // the real test, part 1.
++        try {
++            ColorEnum testCase = (ColorEnum) enumObjectFromOtherClassLoader;
++            fail("Should have thrown a ClassCastException for " + testCase);
++        } catch (ClassCastException e) {
++            // normal.
++        }
++        // the real test, part 2.
++        assertEquals("The two objects should match even though they are from different class loaders", colorEnum,
++                enumObjectFromOtherClassLoader);
++        // the real test, part 3.
++        int falseCount = 0;
++        for (Iterator iter = ColorEnum.iterator(); iter.hasNext();) {
++            ColorEnum element = (ColorEnum) iter.next();
++            if (!colorEnum.equals(element)) {
++                falseCount++;
++                assertFalse(enumObjectFromOtherClassLoader.equals(element));
++            }
++        }
++        assertEquals(ColorEnum.getEnumList().size() - 1, falseCount);
++    }
++
++    Object getColorEnum(ClassLoader classLoader, String color) throws ClassNotFoundException, SecurityException,
++            NoSuchMethodException, IllegalArgumentException, IllegalAccessException, InvocationTargetException {
++        // Sanity check:
++        ColorEnum.RED.equals(ColorEnum.RED);
++        assertNotNull(ColorEnum.class.getClassLoader());
++        // set up:
++        assertNotNull(classLoader);
++        assertFalse(classLoader.equals(ColorEnum.class.getClassLoader()));
++        Class otherColorEnumClass = classLoader.loadClass("org.apache.commons.lang.enums.ColorEnum");
++        assertNotNull(otherColorEnumClass);
++        assertNotNull(otherColorEnumClass.getClassLoader());
++        assertTrue(classLoader.equals(otherColorEnumClass.getClassLoader()));
++        assertFalse(otherColorEnumClass.getClassLoader().equals(ColorEnum.class.getClassLoader()));
++        Method method = otherColorEnumClass.getMethod("getEnum", new Class[]{String.class});
++        Object enumObject = method.invoke(otherColorEnumClass, new Object[]{color});
++        assertNotNull(enumObject);
++        assertFalse(ColorEnum.class.equals(enumObject.getClass()));
++        assertFalse(ColorEnum.class == enumObject.getClass());
++        return enumObject;
++    }
++
++    public void testEqualsToWrongInstance() {
++        for (Iterator iter = ColorEnum.iterator(); iter.hasNext();) {
++            ColorEnum element = (ColorEnum) iter.next();
++            this.testEqualsToWrongInstance(element);
++        }
++    }
++
++    void testEqualsToWrongInstance(ColorEnum colorEnum) {
++        assertEquals(false, colorEnum.equals("test"));
++        assertEquals(false, colorEnum.equals(new Integer(1)));
++        assertEquals(false, colorEnum.equals(new Boolean(true)));
++        assertEquals(false, colorEnum.equals(new StringBuffer("test")));
++        assertEquals(false, colorEnum.equals(new Object()));
++        assertEquals(false, colorEnum.equals(null));
++        assertEquals(false, colorEnum.equals(""));
++        assertEquals(false, colorEnum.equals(ColorEnum.getEnum(null)));
++        assertEquals(false, colorEnum.equals(ColorEnum.getEnum("")));
++        assertEquals(false, colorEnum.equals(ColorEnum.getEnum("This ColorEnum does not exist.")));
++    }
++}
+diff --git a/src/test/org/apache/commons/lang/enums/EnumTestSuite.java b/src/test/org/apache/commons/lang/enums/EnumTestSuite.java
+new file mode 100644
+index 0000000..794f54f
+--- /dev/null
++++ b/src/test/org/apache/commons/lang/enums/EnumTestSuite.java
+@@ -0,0 +1,56 @@
++/*
++ * Copyright 2002-2004 The Apache Software Foundation.
++ * 
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.enums;
++
++import junit.framework.Test;
++import junit.framework.TestCase;
++import junit.framework.TestSuite;
++import junit.textui.TestRunner;
++
++/**
++ * Test suite for the Enum package.
++ *
++ * @author <a href="mailto:scolebourne@joda.org">Stephen Colebourne</a>
++ * @version $Id: EnumTestSuite.java,v 1.1 2004/02/23 04:34:20 ggregory Exp $
++ */
++public class EnumTestSuite extends TestCase {
++    
++    /**
++     * Construct a new instance.
++     */
++    public EnumTestSuite(String name) {
++        super(name);
++    }
++
++    /**
++     * Command-line interface.
++     */
++    public static void main(String[] args) {
++        TestRunner.run(suite());
++    }
++
++    /**
++     * Get the suite of tests
++     */
++    public static Test suite() {
++        TestSuite suite = new TestSuite();
++        suite.setName("Commons-Lang-Enum Tests");
++        suite.addTest(EnumTest.suite());
++        suite.addTest(EnumUtilsTest.suite());
++        suite.addTest(ValuedEnumTest.suite());
++        return suite;
++    }
++}
+diff --git a/src/test/org/apache/commons/lang/enums/EnumUtilsTest.java b/src/test/org/apache/commons/lang/enums/EnumUtilsTest.java
+new file mode 100644
+index 0000000..7c7f47d
+--- /dev/null
++++ b/src/test/org/apache/commons/lang/enums/EnumUtilsTest.java
+@@ -0,0 +1,167 @@
++/*
++ * Copyright 2002-2004 The Apache Software Foundation.
++ * 
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.enums;
++
++import java.lang.reflect.Constructor;
++import java.lang.reflect.Modifier;
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++
++import junit.framework.Test;
++import junit.framework.TestCase;
++import junit.framework.TestSuite;
++
++/**
++ * Test cases for the {@link Enum} class.
++ *
++ * @author <a href="mailto:scolebourne@joda.org">Stephen Colebourne</a>
++ * @version $Id: EnumUtilsTest.java,v 1.1 2004/02/23 04:34:20 ggregory Exp $
++ */
++
++public final class EnumUtilsTest extends TestCase {
++
++    public EnumUtilsTest(String name) {
++        super(name);
++    }
++
++    public void setUp() {
++    }
++
++    public static Test suite() {
++        TestSuite suite = new TestSuite(EnumUtilsTest.class);
++        suite.setName("EnumUtils Tests");
++        return suite;
++    }
++
++    //-----------------------------------------------------------------------
++    public void testConstructor() {
++        assertNotNull(new EnumUtils());
++        Constructor[] cons = EnumUtils.class.getDeclaredConstructors();
++        assertEquals(1, cons.length);
++        assertEquals(true, Modifier.isPublic(cons[0].getModifiers()));
++        assertEquals(true, Modifier.isPublic(EnumUtils.class.getModifiers()));
++        assertEquals(false, Modifier.isFinal(EnumUtils.class.getModifiers()));
++    }
++    
++    //-----------------------------------------------------------------------
++    public void testIterator() {
++        Iterator it = EnumUtils.iterator(ColorEnum.class);
++        assertSame(ColorEnum.RED, it.next());
++        assertSame(ColorEnum.GREEN, it.next());
++        assertSame(ColorEnum.BLUE, it.next());
++        it = EnumUtils.iterator(DummyEnum.class);
++        assertEquals(false, it.hasNext());
++    }
++
++    public void testIteratorEx() {
++        try {
++            EnumUtils.iterator(null);
++            fail();
++        } catch (IllegalArgumentException ex) {}
++        try {
++            EnumUtils.iterator(Object.class);
++            fail();
++        } catch (IllegalArgumentException ex) {}
++    }
++
++    //-----------------------------------------------------------------------
++    public void testList() {
++        List list = EnumUtils.getEnumList(ColorEnum.class);
++        Iterator it = list.iterator();
++        assertSame(ColorEnum.RED, it.next());
++        assertSame(ColorEnum.GREEN, it.next());
++        assertSame(ColorEnum.BLUE, it.next());
++        list = EnumUtils.getEnumList(DummyEnum.class);
++        assertEquals(0, list.size());
++    }
++
++    public void testListEx() {
++        try {
++            EnumUtils.getEnumList(null);
++            fail();
++        } catch (IllegalArgumentException ex) {}
++        try {
++            EnumUtils.getEnumList(Object.class);
++            fail();
++        } catch (IllegalArgumentException ex) {}
++    }
++
++    //-----------------------------------------------------------------------
++    public void testMap() {
++        Map map = EnumUtils.getEnumMap(ColorEnum.class);
++        assertTrue(map.containsValue(ColorEnum.RED));
++        assertTrue(map.containsValue(ColorEnum.GREEN));
++        assertTrue(map.containsValue(ColorEnum.BLUE));
++        assertSame(ColorEnum.RED, map.get("Red"));
++        assertSame(ColorEnum.GREEN, map.get("Green"));
++        assertSame(ColorEnum.BLUE, map.get("Blue"));
++        map = EnumUtils.getEnumMap(DummyEnum.class);
++        assertEquals(0, map.size());
++    }
++
++    public void testMapEx() {
++        try {
++            EnumUtils.getEnumMap(null);
++            fail();
++        } catch (IllegalArgumentException ex) {}
++        try {
++            EnumUtils.getEnumMap(Object.class);
++            fail();
++        } catch (IllegalArgumentException ex) {}
++    }
++
++    //-----------------------------------------------------------------------
++    public void testGet() {
++        assertSame(ColorEnum.RED, EnumUtils.getEnum(ColorEnum.class, "Red"));
++        assertSame(ColorEnum.GREEN, EnumUtils.getEnum(ColorEnum.class, "Green"));
++        assertSame(ColorEnum.BLUE, EnumUtils.getEnum(ColorEnum.class, "Blue"));
++        assertSame(null, EnumUtils.getEnum(ColorEnum.class, "Pink"));
++        assertSame(null, EnumUtils.getEnum(DummyEnum.class, "Pink"));
++    }
++
++    public void testGetEx() {
++        try {
++            EnumUtils.getEnum(null, "");
++            fail();
++        } catch (IllegalArgumentException ex) {}
++        try {
++            EnumUtils.getEnum(Object.class, "Red");
++            fail();
++        } catch (IllegalArgumentException ex) {}
++    }
++
++    //-----------------------------------------------------------------------
++    public void testGetValue() {
++        assertSame(ValuedColorEnum.RED, EnumUtils.getEnum(ValuedColorEnum.class, 1));
++        assertSame(ValuedColorEnum.GREEN, EnumUtils.getEnum(ValuedColorEnum.class, 2));
++        assertSame(ValuedColorEnum.BLUE, EnumUtils.getEnum(ValuedColorEnum.class, 3));
++        assertSame(null, EnumUtils.getEnum(ValuedColorEnum.class, 4));
++        assertSame(null, EnumUtils.getEnum(DummyEnum.class, 5));
++    }
++
++    public void testGetValueEx() {
++        try {
++            EnumUtils.getEnum(null, 0);
++            fail();
++        } catch (IllegalArgumentException ex) {}
++        try {
++            EnumUtils.getEnum(Object.class, 2);
++            fail();
++        } catch (IllegalArgumentException ex) {}
++    }
++
++}
+diff --git a/src/test/org/apache/commons/lang/enums/Extended1Enum.java b/src/test/org/apache/commons/lang/enums/Extended1Enum.java
+new file mode 100644
+index 0000000..6ea1b6f
+--- /dev/null
++++ b/src/test/org/apache/commons/lang/enums/Extended1Enum.java
+@@ -0,0 +1,52 @@
++/*
++ * Copyright 2003,2004 The Apache Software Foundation.
++ * 
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.enums;
++
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++
++/**
++ * Base extended enumeration.
++ *
++ * @author Stephen Colebourne
++ * @version $Id: Extended1Enum.java,v 1.1 2004/02/23 04:34:20 ggregory Exp $
++ */
++public class Extended1Enum extends Enum {
++    public static final Extended1Enum ALPHA = new Extended1Enum("Alpha");
++    public static final Extended1Enum BETA = new Extended1Enum("Beta");
++
++    protected Extended1Enum(String name) {
++        super(name);
++    }
++
++    public static Extended1Enum getEnum(String name) {
++        return (Extended1Enum) getEnum(Extended1Enum.class, name);
++    }
++
++    public static Map getEnumMap() {
++        return getEnumMap(Extended1Enum.class);
++    }
++
++    public static List getEnumList() {
++        return getEnumList(Extended1Enum.class);
++    }
++
++    public static Iterator iterator() {
++        return iterator(Extended1Enum.class);
++    }
++
++}
+diff --git a/src/test/org/apache/commons/lang/enums/Extended2Enum.java b/src/test/org/apache/commons/lang/enums/Extended2Enum.java
+new file mode 100644
+index 0000000..248910e
+--- /dev/null
++++ b/src/test/org/apache/commons/lang/enums/Extended2Enum.java
+@@ -0,0 +1,51 @@
++/*
++ * Copyright 2003,2004 The Apache Software Foundation.
++ * 
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.enums;
++
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++
++/**
++ * Extended enumeration.
++ *
++ * @author Stephen Colebourne
++ * @version $Id: Extended2Enum.java,v 1.1 2004/02/23 04:34:20 ggregory Exp $
++ */
++public class Extended2Enum extends Extended1Enum {
++    public static final Extended1Enum GAMMA = new Extended2Enum("Gamma");
++
++    protected Extended2Enum(String color) {
++        super(color);
++    }
++
++    public static Extended1Enum getEnum(String name) {
++        return (Extended1Enum) getEnum(Extended2Enum.class, name);
++    }
++
++    public static Map getEnumMap() {
++        return getEnumMap(Extended2Enum.class);
++    }
++
++    public static List getEnumList() {
++        return getEnumList(Extended2Enum.class);
++    }
++
++    public static Iterator iterator() {
++        return iterator(Extended2Enum.class);
++    }
++
++}
+diff --git a/src/test/org/apache/commons/lang/enums/Extended3Enum.java b/src/test/org/apache/commons/lang/enums/Extended3Enum.java
+new file mode 100644
+index 0000000..f74e009
+--- /dev/null
++++ b/src/test/org/apache/commons/lang/enums/Extended3Enum.java
+@@ -0,0 +1,51 @@
++/*
++ * Copyright 2003,2004 The Apache Software Foundation.
++ * 
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.enums;
++
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++
++/**
++ * Extended enumeration.
++ *
++ * @author Stephen Colebourne
++ * @version $Id: Extended3Enum.java,v 1.1 2004/02/23 04:34:20 ggregory Exp $
++ */
++public class Extended3Enum extends Extended2Enum {
++    public static final Extended1Enum DELTA = new Extended3Enum("Delta");
++
++    protected Extended3Enum(String name) {
++        super(name);
++    }
++
++    public static Extended1Enum getEnum(String name) {
++        return (Extended1Enum) Enum.getEnum(Extended3Enum.class, name);
++    }
++
++    public static Map getEnumMap() {
++        return Enum.getEnumMap(Extended3Enum.class);
++    }
++
++    public static List getEnumList() {
++        return Enum.getEnumList(Extended3Enum.class);
++    }
++
++    public static Iterator iterator() {
++        return Enum.iterator(Extended3Enum.class);
++    }
++
++}
+\ No newline at end of file
+diff --git a/src/test/org/apache/commons/lang/enums/Nest.java b/src/test/org/apache/commons/lang/enums/Nest.java
+new file mode 100644
+index 0000000..a71bfcd
+--- /dev/null
++++ b/src/test/org/apache/commons/lang/enums/Nest.java
+@@ -0,0 +1,62 @@
++/*
++ * Copyright 2002-2004 The Apache Software Foundation.
++ * 
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.enums;
++
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++
++/**
++ * Color enumeration demonstrating a normal simple nesting case.
++ * All is well here as the nested enum class is really no different
++ * to any other class.
++ *
++ * @author Stephen Colebourne
++ * @version $Id: Nest.java,v 1.1 2004/02/23 04:34:20 ggregory Exp $
++ */
++
++public final class Nest {
++    
++    public Nest() {
++        super();
++    }
++    
++    public static final class ColorEnum extends Enum {
++        public static final ColorEnum RED = new ColorEnum("Red");
++        public static final ColorEnum GREEN = new ColorEnum("Green");
++        public static final ColorEnum BLUE = new ColorEnum("Blue");
++
++        private ColorEnum(String color) {
++            super(color);
++        }
++
++        public static ColorEnum getEnum(String color) {
++            return (ColorEnum) getEnum(ColorEnum.class, color);
++        }
++
++        public static Map getEnumMap() {
++            return getEnumMap(ColorEnum.class);
++        }
++
++        public static List getEnumList() {
++            return getEnumList(ColorEnum.class);
++        }
++
++        public static Iterator iterator() {
++            return iterator(ColorEnum.class);
++        }
++    }
++}
+diff --git a/src/test/org/apache/commons/lang/enums/NestBroken.java b/src/test/org/apache/commons/lang/enums/NestBroken.java
+new file mode 100644
+index 0000000..ec0b2ca
+--- /dev/null
++++ b/src/test/org/apache/commons/lang/enums/NestBroken.java
+@@ -0,0 +1,66 @@
++/*
++ * Copyright 2002-2004 The Apache Software Foundation.
++ * 
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.enums;
++
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++
++/**
++ * Color enumeration which demonstrates how to break the enum system.
++ * <p>
++ * The class loader sees the two classes here as independent - the enum
++ * class is nested, not an inner class. Calling getEnumList() on ColorEnum
++ * will return an empty list, unless and until the NestBroken class is
++ * referenced.
++ *
++ * @author Stephen Colebourne
++ * @version $Id: NestBroken.java,v 1.1 2004/02/23 04:34:20 ggregory Exp $
++ */
++
++public final class NestBroken {
++    
++    public static final ColorEnum RED = new ColorEnum("Red");
++    public static final ColorEnum GREEN = new ColorEnum("Green");
++    public static final ColorEnum BLUE = new ColorEnum("Blue");
++    
++    public NestBroken() {
++        super();
++    }
++    
++    public static final class ColorEnum extends Enum {
++
++        private ColorEnum(String color) {
++            super(color);
++        }
++
++        public static ColorEnum getEnum(String color) {
++            return (ColorEnum) getEnum(ColorEnum.class, color);
++        }
++
++        public static Map getEnumMap() {
++            return getEnumMap(ColorEnum.class);
++        }
++
++        public static List getEnumList() {
++            return getEnumList(ColorEnum.class);
++        }
++
++        public static Iterator iterator() {
++            return iterator(ColorEnum.class);
++        }
++    }
++}
+diff --git a/src/test/org/apache/commons/lang/enums/NestLinked.java b/src/test/org/apache/commons/lang/enums/NestLinked.java
+new file mode 100644
+index 0000000..f33af55
+--- /dev/null
++++ b/src/test/org/apache/commons/lang/enums/NestLinked.java
+@@ -0,0 +1,73 @@
++/*
++ * Copyright 2002-2004 The Apache Software Foundation.
++ * 
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.enums;
++
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++
++/**
++ * Color enumeration which demonstrates how to define the constants in a
++ * different class to the Enum. The extra <code>static{}</code> block is
++ * needed to ensure that the enum constants are created before the
++ * static methods on the ColorEnum are used.
++ * <p>
++ * The class loader sees the two classes here as independent - the enum
++ * class is nested, not an inner class. The static block thus forces the
++ * class load of the outer class, which is needed to initialise the enums.
++ *
++ * @author Stephen Colebourne
++ * @version $Id: NestLinked.java,v 1.1 2004/02/23 04:34:20 ggregory Exp $
++ */
++
++public final class NestLinked {
++    
++    public static final ColorEnum RED = new ColorEnum("Red");
++    public static final ColorEnum GREEN = new ColorEnum("Green");
++    public static final ColorEnum BLUE = new ColorEnum("Blue");
++    
++    public NestLinked() {
++        super();
++    }
++    
++    public static final class ColorEnum extends Enum {
++
++        static {
++            // Explicitly reference the class where the enums are defined
++            Object obj = NestLinked.RED;
++        }
++        
++        private ColorEnum(String color) {
++            super(color);
++        }
++
++        public static ColorEnum getEnum(String color) {
++            return (ColorEnum) getEnum(ColorEnum.class, color);
++        }
++
++        public static Map getEnumMap() {
++            return getEnumMap(ColorEnum.class);
++        }
++
++        public static List getEnumList() {
++            return getEnumList(ColorEnum.class);
++        }
++
++        public static Iterator iterator() {
++            return iterator(ColorEnum.class);
++        }
++    }
++}
+diff --git a/src/test/org/apache/commons/lang/enums/NestReferenced.java b/src/test/org/apache/commons/lang/enums/NestReferenced.java
+new file mode 100644
+index 0000000..8b1cccd
+--- /dev/null
++++ b/src/test/org/apache/commons/lang/enums/NestReferenced.java
+@@ -0,0 +1,69 @@
++/*
++ * Copyright 2002-2004 The Apache Software Foundation.
++ * 
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.enums;
++
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++
++/**
++ * Color enumeration which demonstrates how to provide a view of the constants
++ * in a different class to the Enum. This technique is the safest, however it
++ * is obviously inconvenient as it involves defining two sets of constants.
++ * See NestedLinked for an alternative.
++ *
++ * @author Stephen Colebourne
++ * @version $Id: NestReferenced.java,v 1.1 2004/02/23 04:34:20 ggregory Exp $
++ */
++
++public final class NestReferenced {
++    
++    public static final ColorEnum RED = ColorEnum.RED;
++    public static final ColorEnum GREEN = ColorEnum.GREEN;
++    public static final ColorEnum BLUE = ColorEnum.BLUE;
++    
++    public NestReferenced() {
++        super();
++    }
++    
++    public static final class ColorEnum extends Enum {
++
++        // must be defined here, not just in outer class
++        private static final ColorEnum RED = new ColorEnum("Red");
++        private static final ColorEnum GREEN = new ColorEnum("Green");
++        private static final ColorEnum BLUE = new ColorEnum("Blue");
++        
++        private ColorEnum(String color) {
++            super(color);
++        }
++
++        public static ColorEnum getEnum(String color) {
++            return (ColorEnum) getEnum(ColorEnum.class, color);
++        }
++
++        public static Map getEnumMap() {
++            return getEnumMap(ColorEnum.class);
++        }
++
++        public static List getEnumList() {
++            return getEnumList(ColorEnum.class);
++        }
++
++        public static Iterator iterator() {
++            return iterator(ColorEnum.class);
++        }
++    }
++}
+diff --git a/src/test/org/apache/commons/lang/enums/OperationEnum.java b/src/test/org/apache/commons/lang/enums/OperationEnum.java
+new file mode 100644
+index 0000000..6784a80
+--- /dev/null
++++ b/src/test/org/apache/commons/lang/enums/OperationEnum.java
+@@ -0,0 +1,85 @@
++/*
++ * Copyright 2002-2004 The Apache Software Foundation.
++ * 
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.enums;
++
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++
++/**
++ * Operator enumeration.
++ *
++ * @author Stephen Colebourne
++ * @version $Id: OperationEnum.java,v 1.1 2004/02/23 04:34:20 ggregory Exp $
++ */
++public abstract class OperationEnum extends Enum {
++    // This syntax works for JDK 1.3 and upwards:
++//    public static final OperationEnum PLUS = new OperationEnum("Plus") {
++//        public int eval(int a, int b) {
++//            return (a + b);
++//        }
++//    };
++//    public static final OperationEnum MINUS = new OperationEnum("Minus") {
++//        public int eval(int a, int b) {
++//            return (a - b);
++//        }
++//    };
++    // This syntax works for JDK 1.2 and upwards:
++    public static final OperationEnum PLUS = new PlusOperation();
++    private static class PlusOperation extends OperationEnum {
++        private PlusOperation() {
++            super("Plus");
++        }
++        public int eval(int a, int b) {
++            return (a + b);
++        }
++    }
++    public static final OperationEnum MINUS = new MinusOperation();
++    private static class MinusOperation extends OperationEnum {
++        private MinusOperation() {
++            super("Minus");
++        }
++        public int eval(int a, int b) {
++            return (a - b);
++        }
++    }
++
++    private OperationEnum(String name) {
++        super(name);
++    }
++    
++    public final Class getEnumClass() {
++        return OperationEnum.class;
++    }
++
++    public abstract int eval(int a, int b);
++
++    public static OperationEnum getEnum(String name) {
++        return (OperationEnum) getEnum(OperationEnum.class, name);
++    }
++
++    public static Map getEnumMap() {
++        return getEnumMap(OperationEnum.class);
++    }
++
++    public static List getEnumList() {
++        return getEnumList(OperationEnum.class);
++    }
++
++    public static Iterator iterator() {
++        return iterator(OperationEnum.class);
++    }
++}
+diff --git a/src/test/org/apache/commons/lang/enums/ValuedColorEnum.java b/src/test/org/apache/commons/lang/enums/ValuedColorEnum.java
+new file mode 100644
+index 0000000..e7be44b
+--- /dev/null
++++ b/src/test/org/apache/commons/lang/enums/ValuedColorEnum.java
+@@ -0,0 +1,57 @@
++/*
++ * Copyright 2002-2004 The Apache Software Foundation.
++ * 
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.enums;
++
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++
++/**
++ * Color enumeration.
++ *
++ * @author <a href="mailto:scolebourne@joda.org">Stephen Colebourne</a>
++ * @version $Id: ValuedColorEnum.java,v 1.1 2004/02/23 04:34:20 ggregory Exp $
++ */
++
++public final class ValuedColorEnum extends ValuedEnum {
++    public static final ValuedColorEnum RED = new ValuedColorEnum("Red", 1);
++    public static final ValuedColorEnum GREEN = new ValuedColorEnum("Green", 2);
++    public static final ValuedColorEnum BLUE = new ValuedColorEnum("Blue", 3);
++
++    private ValuedColorEnum(String color, int value) {
++        super(color, value);
++    }
++
++    public static ValuedColorEnum getEnum(String color) {
++        return (ValuedColorEnum) getEnum(ValuedColorEnum.class, color);
++    }
++
++    public static ValuedColorEnum getEnum(int value) {
++        return (ValuedColorEnum) getEnum(ValuedColorEnum.class, value);
++    }
++
++    public static Map getEnumMap() {
++        return getEnumMap(ValuedColorEnum.class);
++    }
++
++    public static List getEnumList() {
++        return getEnumList(ValuedColorEnum.class);
++    }
++
++    public static Iterator iterator() {
++        return iterator(ValuedColorEnum.class);
++    }
++}
+diff --git a/src/test/org/apache/commons/lang/enums/ValuedEnumTest.java b/src/test/org/apache/commons/lang/enums/ValuedEnumTest.java
+new file mode 100644
+index 0000000..3e45510
+--- /dev/null
++++ b/src/test/org/apache/commons/lang/enums/ValuedEnumTest.java
+@@ -0,0 +1,135 @@
++/*
++ * Copyright 2002-2004 The Apache Software Foundation.
++ * 
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ * 
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ * 
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.commons.lang.enums;
++
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++
++import junit.framework.Test;
++import junit.framework.TestCase;
++import junit.framework.TestSuite;
++import org.apache.commons.lang.SerializationUtils;
++
++/**
++ * Test cases for the {@link Enum} class.
++ *
++ * @author <a href="mailto:scolebourne@joda.org">Stephen Colebourne</a>
++ * @version $Id: ValuedEnumTest.java,v 1.1 2004/02/23 04:34:20 ggregory Exp $
++ */
++
++public final class ValuedEnumTest extends TestCase {
++
++    public ValuedEnumTest(String name) {
++        super(name);
++    }
++
++    public void setUp() {
++    }
++
++    public static Test suite() {
++        TestSuite suite = new TestSuite(ValuedEnumTest.class);
++        suite.setName("ValuedEnum Tests");
++        return suite;
++    }
++
++    public void testName() {
++        assertEquals("Red", ValuedColorEnum.RED.getName());
++        assertEquals("Green", ValuedColorEnum.GREEN.getName());
++        assertEquals("Blue", ValuedColorEnum.BLUE.getName());
++    }
++
++    public void testValue() {
++        assertEquals(1, ValuedColorEnum.RED.getValue());
++        assertEquals(2, ValuedColorEnum.GREEN.getValue());
++        assertEquals(3, ValuedColorEnum.BLUE.getValue());
++    }
++
++    public void testCompareTo() {
++        assertTrue(ValuedColorEnum.BLUE.compareTo(ValuedColorEnum.BLUE) == 0);
++        assertTrue(ValuedColorEnum.RED.compareTo(ValuedColorEnum.BLUE) < 0);
++        assertTrue(ValuedColorEnum.BLUE.compareTo(ValuedColorEnum.RED) > 0);
++    }
++
++    public void testEquals() {
++        assertSame(ValuedColorEnum.RED, ValuedColorEnum.RED);
++        assertSame(ValuedColorEnum.getEnum("Red"), ValuedColorEnum.RED);
++    }
++
++    public void testToString() {
++        String toString = ValuedColorEnum.RED.toString();
++        assertEquals("ValuedColorEnum[Red=1]", toString);
++        assertSame(toString, ValuedColorEnum.RED.toString());
++    }
++
++    public void testIterator() {
++        Iterator it = ValuedColorEnum.iterator();
++        assertSame(ValuedColorEnum.RED, it.next());
++        assertSame(ValuedColorEnum.GREEN, it.next());
++        assertSame(ValuedColorEnum.BLUE, it.next());
++    }
++
++    public void testList() {
++        List list = ValuedColorEnum.getEnumList();
++        
++        assertNotNull(list);
++        
++        assertEquals( list.size(),
++        			 ValuedColorEnum.getEnumMap().keySet().size());
++        
++        Iterator it = list.iterator();
++        assertSame(ValuedColorEnum.RED, it.next());
++        assertSame(ValuedColorEnum.GREEN, it.next());
++        assertSame(ValuedColorEnum.BLUE, it.next());
++    }
++
++    public void testMap() {
++        Map map = ValuedColorEnum.getEnumMap();
++        
++        assertNotNull(map);
++        
++        assertEquals( map.keySet().size(),
++        			 ValuedColorEnum.getEnumList().size());
++        			 
++        assertTrue(map.containsValue(ValuedColorEnum.RED));
++        assertTrue(map.containsValue(ValuedColorEnum.GREEN));
++        assertTrue(map.containsValue(ValuedColorEnum.BLUE));
++        assertSame(ValuedColorEnum.RED, map.get("Red"));
++        assertSame(ValuedColorEnum.GREEN, map.get("Green"));
++        assertSame(ValuedColorEnum.BLUE, map.get("Blue"));
++    }
++
++    public void testGet() {
++        assertSame(ValuedColorEnum.RED, ValuedColorEnum.getEnum("Red"));
++        assertSame(ValuedColorEnum.GREEN, ValuedColorEnum.getEnum("Green"));
++        assertSame(ValuedColorEnum.BLUE, ValuedColorEnum.getEnum("Blue"));
++        assertSame(null, ValuedColorEnum.getEnum("Pink"));
++    }
++
++    public void testGetValue() {
++        assertSame(ValuedColorEnum.RED, ValuedColorEnum.getEnum(1));
++        assertSame(ValuedColorEnum.GREEN, ValuedColorEnum.getEnum(2));
++        assertSame(ValuedColorEnum.BLUE, ValuedColorEnum.getEnum(3));
++        assertSame(null, ValuedColorEnum.getEnum(4));
++    }
++
++    public void testSerialization() {
++        assertSame(ValuedColorEnum.RED, SerializationUtils.clone(ValuedColorEnum.RED));
++        assertSame(ValuedColorEnum.GREEN, SerializationUtils.clone(ValuedColorEnum.GREEN));
++        assertSame(ValuedColorEnum.BLUE, SerializationUtils.clone(ValuedColorEnum.BLUE));
++    }
++
++}

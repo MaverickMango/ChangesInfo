@@ -1,0 +1,187 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.databind.node.TestObjectNode::testIssue941",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.databind.deser.std.JsonNodeDeserializer",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonDatabind",
+  "id": "28",
+  "workingDir": "../bugs/JacksonDatabind_28_tmp",
+  "bug_name": "JacksonDatabind_28",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.databind.node.TestObjectNode",
+      "test_function": "testIssue941",
+      "assertion_line": "411",
+      "exception": "com.fasterxml.jackson.databind.JsonMappingException",
+      "message": "Can not deserialize instance of com.fasterxml.jackson.databind.node.ObjectNode out of END_OBJECT token"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/databind/deser/std/JsonNodeDeserializer.java",
+        "src/main/java/com/fasterxml/jackson/databind/deser/std/JsonNodeDeserializer.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.std.JsonNodeDeserializer\\$ObjectDeserializer:deserialize:[JsonParser p, DeserializationContext ctxt]:ObjectNode"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.databind.deser.std.JsonNodeDeserializer\\$ObjectDeserializer:deserialize:[JsonParser p, DeserializationContext ctxt]:ObjectNode"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "97",
+            "102",
+            "103"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "97",
+            "98",
+            "103",
+            "104"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/databind/deser/std/JsonNodeDeserializer.java b/src/main/java/com/fasterxml/jackson/databind/deser/std/JsonNodeDeserializer.java\nindex d5eb017..264ed20 100644\n--- a/src/main/java/com/fasterxml/jackson/databind/deser/std/JsonNodeDeserializer.java\n+++ b/src/main/java/com/fasterxml/jackson/databind/deser/std/JsonNodeDeserializer.java\n@@ -94,13 +94,14 @@\n         @Override\n         public ObjectNode deserialize(JsonParser p, DeserializationContext ctxt) throws IOException\n         {\n-            if (p.isExpectedStartObjectToken() || p.hasToken(JsonToken.FIELD_NAME)) {\n+            if (p.getCurrentToken() \u003d\u003d JsonToken.START_OBJECT) {\n+                p.nextToken();\n                 return deserializeObject(p, ctxt, ctxt.getNodeFactory());\n             }\n             // 23-Sep-2015, tatu: Ugh. We may also be given END_OBJECT (similar to FIELD_NAME),\n             //    if caller has advanced to the first token of Object, but for empty Object\n-            if (p.hasToken(JsonToken.END_OBJECT)) {\n-                return ctxt.getNodeFactory().objectNode();\n+            if (p.getCurrentToken() \u003d\u003d JsonToken.FIELD_NAME) {\n+                return deserializeObject(p, ctxt, ctxt.getNodeFactory());\n             }\n             throw ctxt.mappingException(ObjectNode.class);\n          }\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [3255,3426]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [3259,3304]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [3324,3338]"
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [3380,3410]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: p [3380,3381]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: ctxt [3383,3387]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_RECEIVER [3680,3701]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "METHOD_INVOCATION_RECEIVER [3293,3294]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "SimpleName: hasToken [3295,3303]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [3304,3324]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [3293,3325]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [3621,3653]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [3617,3729]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

@@ -1,0 +1,1364 @@
+diff -r -u original/src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java buggy/src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java
+--- original/src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java	2023-06-13 15:31:49.867132931 +0800
++++ buggy/src/com/google/javascript/jscomp/parsing/JsDocInfoParser.java	2023-06-12 11:40:34.674340083 +0800
+@@ -17,20 +17,25 @@
+ package com.google.javascript.jscomp.parsing;
+ 
+ import com.google.common.base.Preconditions;
++import com.google.common.base.Splitter;
+ import com.google.common.collect.ImmutableSet;
++import com.google.common.collect.Lists;
+ import com.google.common.collect.Sets;
+-import com.google.javascript.jscomp.mozilla.rhino.ErrorReporter;
+-import com.google.javascript.jscomp.mozilla.rhino.ast.Comment;
+ import com.google.javascript.jscomp.parsing.Config.LanguageMode;
++import com.google.javascript.rhino.IR;
+ import com.google.javascript.rhino.JSDocInfo;
++import com.google.javascript.rhino.JSDocInfo.Visibility;
+ import com.google.javascript.rhino.JSDocInfoBuilder;
+ import com.google.javascript.rhino.JSTypeExpression;
+ import com.google.javascript.rhino.Node;
+ import com.google.javascript.rhino.ScriptRuntime;
+ import com.google.javascript.rhino.Token;
+-import com.google.javascript.rhino.JSDocInfo.Visibility;
++import com.google.javascript.rhino.head.ErrorReporter;
++import com.google.javascript.rhino.head.ast.Comment;
++import com.google.javascript.rhino.jstype.StaticSourceFile;
+ 
+ import java.util.HashSet;
++import java.util.List;
+ import java.util.Map;
+ import java.util.Set;
+ 
+@@ -39,12 +44,13 @@
+  *
+  */
+ // TODO(nicksantos): Unify all the JSDocInfo stuff into one package, instead of
+-// spreading it across mutliple packages.
++// spreading it across multiple packages.
+ public final class JsDocInfoParser {
+ 
+   private final JsDocTokenStream stream;
+   private final JSDocInfoBuilder jsdocBuilder;
+-  private final String sourceName;
++  private final StaticSourceFile sourceFile;
++  private final Node associatedNode;
+   private final ErrorReporter errorReporter;
+   private final ErrorReporterParser parser = new ErrorReporterParser();
+ 
+@@ -56,12 +62,12 @@
+     void addParserWarning(String messageId, String messageArg, int lineno,
+         int charno) {
+       errorReporter.warning(ScriptRuntime.getMessage1(messageId, messageArg),
+-          sourceName, lineno, null, charno);
++          getSourceName(), lineno, null, charno);
+     }
+ 
+     void addParserWarning(String messageId, int lineno, int charno) {
+       errorReporter.warning(ScriptRuntime.getMessage0(messageId),
+-          sourceName, lineno, null, charno);
++          getSourceName(), lineno, null, charno);
+     }
+ 
+     void addTypeWarning(String messageId, String messageArg, int lineno,
+@@ -69,14 +75,14 @@
+       errorReporter.warning(
+           "Bad type annotation. " +
+           ScriptRuntime.getMessage1(messageId, messageArg),
+-          sourceName, lineno, null, charno);
++          getSourceName(), lineno, null, charno);
+     }
+ 
+     void addTypeWarning(String messageId, int lineno, int charno) {
+       errorReporter.warning(
+           "Bad type annotation. " +
+           ScriptRuntime.getMessage0(messageId),
+-          sourceName, lineno, null, charno);
++          getSourceName(), lineno, null, charno);
+     }
+   }
+ 
+@@ -94,7 +100,7 @@
+   /**
+    * Sets the JsDocBuilder for the file-level (root) node of this parse. The
+    * parser uses the builder to append any preserve annotations it encounters
+-   * in jsdoc comments.
++   * in JsDoc comments.
+    *
+    * @param fileLevelJsDocBuilder
+    */
+@@ -119,11 +125,16 @@
+ 
+   JsDocInfoParser(JsDocTokenStream stream,
+                   Comment commentNode,
+-                  String sourceName,
++                  Node associatedNode,
+                   Config config,
+                   ErrorReporter errorReporter) {
+     this.stream = stream;
+-    this.sourceName = sourceName;
++    this.associatedNode = associatedNode;
++
++    // Sometimes this will be null in tests.
++    this.sourceFile = associatedNode == null
++        ? null : associatedNode.getStaticSourceFile();
++
+     this.jsdocBuilder = new JSDocInfoBuilder(config.parseJsDocDocumentation);
+     if (commentNode != null) {
+       this.jsdocBuilder.recordOriginalCommentString(commentNode.getValue());
+@@ -135,6 +146,20 @@
+     this.templateNode = this.createTemplateNode();
+   }
+ 
++  private String getSourceName() {
++    return sourceFile == null ? null : sourceFile.getName();
++  }
++
++  public JSDocInfo parseInlineTypeDoc() {
++    Node typeAst = parseAndRecordTypeNode(next());
++    JSTypeExpression expr = createJSTypeExpression(typeAst);
++    if (expr != null) {
++      jsdocBuilder.recordType(expr);
++      return retrieveAndResetParsedJSDocInfo();
++    }
++    return null;
++  }
++
+   /**
+    * Parses a string containing a JsDoc type declaration, returning the
+    * type if the parsing succeeded or {@code null} if it failed.
+@@ -149,7 +174,7 @@
+     JsDocInfoParser parser = new JsDocInfoParser(
+         new JsDocTokenStream(typeString),
+         null,
+-        "typeparsing",
++        null,
+         config,
+         NullErrorReporter.forNewRhino());
+ 
+@@ -164,6 +189,7 @@
+    * @return {@code true} if JSDoc information was correctly parsed,
+    *     {@code false} otherwise
+    */
++  @SuppressWarnings("incomplete-switch")
+   boolean parse() {
+     int lineno;
+     int charno;
+@@ -176,6 +202,8 @@
+ 
+     JsDocToken token = next();
+ 
++    List<ExtendedTypeInfo> extendedTypes = Lists.newArrayList();
++
+     // Always record that we have a comment.
+     if (jsdocBuilder.shouldParseDocumentation()) {
+       ExtractionInfo blockInfo = extractBlockComment(token);
+@@ -211,6 +239,16 @@
+               jsdocBuilder.markAnnotation(annotationName, lineno, charno);
+ 
+               switch (annotation) {
++                case NG_INJECT:
++                  if (jsdocBuilder.isNgInjectRecorded()) {
++                    parser.addParserWarning("msg.jsdoc.nginject.extra",
++                      stream.getLineno(), stream.getCharno());
++                  } else {
++                    jsdocBuilder.recordNgInject(true);
++                  }
++                  token = eatTokensUntilEOL();
++                  continue retry;
++
+                 case AUTHOR:
+                   if (jsdocBuilder.shouldParseDocumentation()) {
+                     ExtractionInfo authorInfo = extractSingleLineBlock();
+@@ -228,10 +266,28 @@
+                   }
+                   continue retry;
+ 
+-                case CONSTANT:
+-                  if (!jsdocBuilder.recordConstancy()) {
+-                    parser.addParserWarning("msg.jsdoc.const",
+-                        stream.getLineno(), stream.getCharno());
++                case CONSISTENTIDGENERATOR:
++                  if (!jsdocBuilder.recordConsistentIdGenerator()) {
++                    parser.addParserWarning("msg.jsdoc.consistidgen",
++                      stream.getLineno(), stream.getCharno());
++                  }
++                  token = eatTokensUntilEOL();
++                  continue retry;
++
++                case STRUCT:
++                  if (!jsdocBuilder.recordStruct()) {
++                    parser.addTypeWarning("msg.jsdoc.incompat.type",
++                                          stream.getLineno(),
++                                          stream.getCharno());
++                  }
++                  token = eatTokensUntilEOL();
++                  continue retry;
++
++                case DICT:
++                  if (!jsdocBuilder.recordDict()) {
++                    parser.addTypeWarning("msg.jsdoc.incompat.type",
++                                          stream.getLineno(),
++                                          stream.getCharno());
+                   }
+                   token = eatTokensUntilEOL();
+                   continue retry;
+@@ -312,8 +368,7 @@
+                     token = eatTokensUntilEOL(token);
+                   }
+ 
+-                  if (!jsdocBuilder.recordFileOverview(fileOverview) ||
+-                      fileOverviewJSDocInfo != null) {
++                  if (!jsdocBuilder.recordFileOverview(fileOverview)) {
+                     parser.addParserWarning("msg.jsdoc.fileoverview.extra",
+                         stream.getLineno(), stream.getCharno());
+                   }
+@@ -365,6 +420,14 @@
+                   token = eatTokensUntilEOL();
+                   continue retry;
+ 
++                case EXPOSE:
++                  if (!jsdocBuilder.recordExpose()) {
++                    parser.addParserWarning("msg.jsdoc.expose",
++                        stream.getLineno(), stream.getCharno());
++                  }
++                  token = eatTokensUntilEOL();
++                  continue retry;
++
+                 case EXTERNS:
+                   if (!jsdocBuilder.recordExterns()) {
+                     parser.addParserWarning("msg.jsdoc.externs",
+@@ -402,16 +465,12 @@
+                     charno = stream.getCharno();
+ 
+                     typeNode = wrapNode(Token.BANG, typeNode);
+-                    if (typeNode != null && !matchingRc) {
+-                      typeNode.putBooleanProp(Node.BRACELESS_TYPE, true);
+-                    }
+                     type = createJSTypeExpression(typeNode);
+ 
+                     if (annotation == Annotation.EXTENDS) {
+-                      if (!jsdocBuilder.recordBaseType(type)) {
+-                        parser.addTypeWarning(
+-                            "msg.jsdoc.incompat.type", lineno, charno);
+-                      }
++                      // record the extended type, check later
++                      extendedTypes.add(new ExtendedTypeInfo(
++                          type, stream.getLineno(), stream.getCharno()));
+                     } else {
+                       Preconditions.checkState(
+                           annotation == Annotation.IMPLEMENTS);
+@@ -640,7 +699,7 @@
+                     continue retry;
+                   }
+ 
+-                  jsdocBuilder.markName(name, lineno, charno);
++                  jsdocBuilder.markName(name, sourceFile, lineno, charno);
+ 
+                   // Find the parameter's description (if applicable).
+                   if (jsdocBuilder.shouldParseDocumentation()) {
+@@ -668,30 +727,6 @@
+                   token = eatTokensUntilEOL();
+                   continue retry;
+ 
+-                case PRIVATE:
+-                  if (!jsdocBuilder.recordVisibility(Visibility.PRIVATE)) {
+-                    parser.addParserWarning("msg.jsdoc.visibility.private",
+-                        stream.getLineno(), stream.getCharno());
+-                  }
+-                  token = eatTokensUntilEOL();
+-                  continue retry;
+-
+-                case PROTECTED:
+-                  if (!jsdocBuilder.recordVisibility(Visibility.PROTECTED)) {
+-                    parser.addParserWarning("msg.jsdoc.visibility.protected",
+-                        stream.getLineno(), stream.getCharno());
+-                  }
+-                  token = eatTokensUntilEOL();
+-                  continue retry;
+-
+-                case PUBLIC:
+-                  if (!jsdocBuilder.recordVisibility(Visibility.PUBLIC)) {
+-                    parser.addParserWarning("msg.jsdoc.visibility.public",
+-                        stream.getLineno(), stream.getCharno());
+-                  }
+-                  token = eatTokensUntilEOL();
+-                  continue retry;
+-
+                 case NO_SHADOW:
+                   if (!jsdocBuilder.recordNoShadow()) {
+                     parser.addParserWarning("msg.jsdoc.noshadow",
+@@ -738,25 +773,65 @@
+                   }
+                   continue retry;
+ 
++                case STABLEIDGENERATOR:
++                  if (!jsdocBuilder.recordStableIdGenerator()) {
++                    parser.addParserWarning("msg.jsdoc.stableidgen",
++                      stream.getLineno(), stream.getCharno());
++                  }
++                  token = eatTokensUntilEOL();
++                  continue retry;
++
+                 case SUPPRESS:
+                   token = parseSuppressTag(next());
+                   continue retry;
+ 
+-                case TEMPLATE:
++                case TEMPLATE: {
+                   ExtractionInfo templateInfo = extractSingleLineBlock();
+-                  String templateTypeName = templateInfo.string;
++                  List<String> names = Lists.newArrayList(
++                      Splitter.on(',')
++                          .trimResults()
++                          .split(templateInfo.string));
+ 
+-                  if (templateTypeName.length() == 0) {
++                  if (names.size() == 0 || names.get(0).length() == 0) {
+                     parser.addTypeWarning("msg.jsdoc.templatemissing",
+                           stream.getLineno(), stream.getCharno());
+-                  } else if (!jsdocBuilder.recordTemplateTypeName(
+-                      templateTypeName)) {
++                  } else if (!jsdocBuilder.recordTemplateTypeNames(names)) {
+                     parser.addTypeWarning("msg.jsdoc.template.at.most.once",
+                         stream.getLineno(), stream.getCharno());
+                   }
+ 
+                   token = templateInfo.token;
+                   continue retry;
++                }
++
++                case CLASS_TEMPLATE: {
++                  ExtractionInfo classTemplateInfo = extractSingleLineBlock();
++                  List<String> names = Lists.newArrayList(
++                      Splitter.on(',')
++                          .trimResults()
++                          .split(classTemplateInfo.string));
++
++                  if (names.size() == 0 || names.get(0).length() == 0) {
++                    parser.addTypeWarning(
++                        "msg.jsdoc.classtemplate.missing.type.name",
++                        stream.getLineno(), stream.getCharno());
++                  } else if (!jsdocBuilder.recordClassTemplateTypeNames(names)) {
++                    parser.addTypeWarning(
++                        "msg.jsdoc.classtemplate.at.most.once",
++                        stream.getLineno(), stream.getCharno());
++                  }
++
++                  token = classTemplateInfo.token;
++                  continue retry;
++                }
++
++                case IDGENERATOR:
++                  if (!jsdocBuilder.recordIdGenerator()) {
++                    parser.addParserWarning("msg.jsdoc.idgen",
++                      stream.getLineno(), stream.getCharno());
++                  }
++                  token = eatTokensUntilEOL();
++                  continue retry;
+ 
+                 case VERSION:
+                   ExtractionInfo versionInfo = extractSingleLineBlock();
+@@ -775,8 +850,12 @@
+                   token = versionInfo.token;
+                   continue retry;
+ 
++                case CONSTANT:
+                 case DEFINE:
+                 case RETURN:
++                case PRIVATE:
++                case PROTECTED:
++                case PUBLIC:
+                 case THIS:
+                 case TYPE:
+                 case TYPEDEF:
+@@ -784,30 +863,54 @@
+                   charno = stream.getCharno();
+ 
+                   Node typeNode = null;
+-                  if (!lookAheadForTypeAnnotation() &&
+-                      annotation == Annotation.RETURN) {
+-                    // If RETURN doesn't have a type annotation, record
+-                    // it as the unknown type.
+-                    typeNode = newNode(Token.QMARK);
+-                  } else {
++                  boolean hasType = lookAheadForTypeAnnotation();
++                  boolean isAlternateTypeAnnotation =
++                      (annotation == Annotation.PRIVATE ||
++                       annotation == Annotation.PROTECTED ||
++                       annotation == Annotation.PUBLIC ||
++                       annotation == Annotation.CONSTANT);
++                  boolean canSkipTypeAnnotation =
++                      (isAlternateTypeAnnotation ||
++                       annotation == Annotation.RETURN);
++                  type = null;
++                  if (hasType || !canSkipTypeAnnotation) {
+                     skipEOLs();
+                     token = next();
+-                    typeNode = parseAndRecordTypeNode(token, lineno, charno);
+-                  }
++                    typeNode = parseAndRecordTypeNode(token);
+ 
+-                  if (annotation == Annotation.THIS) {
+-                    typeNode = wrapNode(Token.BANG, typeNode);
+-                    if (typeNode != null && token != JsDocToken.LC) {
+-                      typeNode.putBooleanProp(Node.BRACELESS_TYPE, true);
++                    if (annotation == Annotation.THIS) {
++                      typeNode = wrapNode(Token.BANG, typeNode);
+                     }
++                    type = createJSTypeExpression(typeNode);
+                   }
+-                  type = createJSTypeExpression(typeNode);
+ 
+-                  if (type == null) {
+-                    // error reported during recursive descent
+-                    // recovering parsing
+-                  } else {
++                  // The error was reported during recursive descent
++                  // recovering parsing
++                  boolean hasError = type == null && !canSkipTypeAnnotation;
++                  if (!hasError) {
++                    // Record types for @type.
++                    // If the @private, @protected, or @public annotations
++                    // have a type attached, pretend that they actually wrote:
++                    // @type {type}\n@private
++                    // This will have some weird behavior in some cases
++                    // (for example, @private can now be used as a type-cast),
++                    // but should be mostly OK.
++                    if ((type != null && isAlternateTypeAnnotation)
++                        || annotation == Annotation.TYPE) {
++                      if (!jsdocBuilder.recordType(type)) {
++                        parser.addTypeWarning(
++                            "msg.jsdoc.incompat.type", lineno, charno);
++                      }
++                    }
++
+                     switch (annotation) {
++                      case CONSTANT:
++                        if (!jsdocBuilder.recordConstancy()) {
++                          parser.addParserWarning("msg.jsdoc.const",
++                              stream.getLineno(), stream.getCharno());
++                        }
++                        break;
++
+                       case DEFINE:
+                         if (!jsdocBuilder.recordDefineType(type)) {
+                           parser.addParserWarning("msg.jsdoc.define",
+@@ -815,7 +918,35 @@
+                         }
+                         break;
+ 
++                      case PRIVATE:
++                        if (!jsdocBuilder.recordVisibility(Visibility.PRIVATE)) {
++                          parser.addParserWarning(
++                              "msg.jsdoc.visibility.private",
++                              lineno, charno);
++                        }
++                        break;
++
++                      case PROTECTED:
++                        if (!jsdocBuilder.recordVisibility(Visibility.PROTECTED)) {
++                          parser.addParserWarning(
++                              "msg.jsdoc.visibility.protected",
++                              lineno, charno);
++                        }
++                        break;
++
++                      case PUBLIC:
++                        if (!jsdocBuilder.recordVisibility(Visibility.PUBLIC)) {
++                          parser.addParserWarning(
++                              "msg.jsdoc.visibility.public",
++                              lineno, charno);
++                        }
++                        break;
++
+                       case RETURN:
++                        if (type == null) {
++                          type = createJSTypeExpression(newNode(Token.QMARK));
++                        }
++
+                         if (!jsdocBuilder.recordReturnType(type)) {
+                           parser.addTypeWarning(
+                               "msg.jsdoc.incompat.type", lineno, charno);
+@@ -848,13 +979,6 @@
+                         }
+                         break;
+ 
+-                      case TYPE:
+-                        if (!jsdocBuilder.recordType(type)) {
+-                          parser.addTypeWarning(
+-                              "msg.jsdoc.incompat.type", lineno, charno);
+-                        }
+-                        break;
+-
+                       case TYPEDEF:
+                         if (!jsdocBuilder.recordTypedef(type)) {
+                           parser.addTypeWarning(
+@@ -862,9 +986,9 @@
+                         }
+                         break;
+                     }
+-
+-                    token = eatTokensUntilEOL();
+                   }
++
++                  token = eatTokensUntilEOL();
+                   continue retry;
+               }
+             }
+@@ -875,7 +999,7 @@
+           if (hasParsedFileOverviewDocInfo()) {
+             fileOverviewJSDocInfo = retrieveAndResetParsedJSDocInfo();
+           }
+-
++          checkExtendedTypes(extendedTypes);
+           return true;
+ 
+         case EOF:
+@@ -883,6 +1007,7 @@
+           jsdocBuilder.build(null);
+           parser.addParserWarning("msg.unexpected.eof",
+               stream.getLineno(), stream.getCharno());
++          checkExtendedTypes(extendedTypes);
+           return false;
+ 
+         case EOL:
+@@ -908,6 +1033,23 @@
+     }
+   }
+ 
++  private void checkExtendedTypes(List<ExtendedTypeInfo> extendedTypes) {
++    for (ExtendedTypeInfo typeInfo : extendedTypes) {
++      // If interface, record the multiple extended interfaces
++      if (jsdocBuilder.isInterfaceRecorded()) {
++        if (!jsdocBuilder.recordExtendedInterface(typeInfo.type)) {
++          parser.addParserWarning("msg.jsdoc.extends.duplicate",
++              typeInfo.lineno, typeInfo.charno);
++        }
++      } else {
++        if (!jsdocBuilder.recordBaseType(typeInfo.type)) {
++          parser.addTypeWarning("msg.jsdoc.incompat.type",
++              typeInfo.lineno, typeInfo.charno);
++        }
++      }
++    }
++  }
++
+   /**
+    * Parse a {@code @suppress} tag of the form
+    * {@code @suppress&#123;warning1|warning2&#125;}.
+@@ -1008,7 +1150,7 @@
+    * @param token The current token.
+    * @return The type expression found or null if none.
+    */
+-  private Node parseAndRecordTypeNode(JsDocToken token) {
++  Node parseAndRecordTypeNode(JsDocToken token) {
+     return parseAndRecordTypeNode(token, token == JsDocToken.LC);
+   }
+ 
+@@ -1032,21 +1174,6 @@
+    * @param token The current token.
+    * @param lineno The line of the type expression.
+    * @param startCharno The starting character position of the type expression.
+-   * @return The type expression found or null if none.
+-   */
+-  private Node parseAndRecordTypeNode(JsDocToken token, int lineno,
+-      int startCharno) {
+-    return parseAndRecordTypeNode(token, lineno, startCharno,
+-        token == JsDocToken.LC, false);
+-  }
+-
+-  /**
+-   * Looks for a type expression at the current token and if found,
+-   * returns it. Note that this method consumes input.
+-   *
+-   * @param token The current token.
+-   * @param lineno The line of the type expression.
+-   * @param startCharno The starting character position of the type expression.
+    * @param matchingLC Whether the type expression starts with a "{".
+    * @return The type expression found or null if none.
+    */
+@@ -1074,10 +1201,13 @@
+     int startCharno = stream.getCharno();
+ 
+     Node typeNode = parseParamTypeExpressionAnnotation(token);
+-    int endCharno = stream.getCharno();
++    if (typeNode != null) {
++      int endLineno = stream.getLineno();
++      int endCharno = stream.getCharno();
+ 
+-    jsdocBuilder.markTypeNode(typeNode, lineno, startCharno, endCharno,
+-        true);
++      jsdocBuilder.markTypeNode(typeNode, lineno, startCharno,
++          endLineno, endCharno, true);
++    }
+     return typeNode;
+   }
+ 
+@@ -1106,14 +1236,13 @@
+       typeNode = parseTypeExpressionAnnotation(token);
+     }
+ 
+-    if (typeNode != null && !matchingLC) {
+-      typeNode.putBooleanProp(Node.BRACELESS_TYPE, true);
+-    }
+-
+-    int endCharno = stream.getCharno();
++    if (typeNode != null) {
++      int endLineno = stream.getLineno();
++      int endCharno = stream.getCharno();
+ 
+-    jsdocBuilder.markTypeNode(typeNode, lineno, startCharno, endCharno,
+-        matchingLC);
++      jsdocBuilder.markTypeNode(
++          typeNode, lineno, startCharno, endLineno, endCharno, matchingLC);
++    }
+ 
+     return typeNode;
+   }
+@@ -1186,9 +1315,9 @@
+    * Constructs a new {@code JSTypeExpression}.
+    * @param n A node. May be null.
+    */
+-  private JSTypeExpression createJSTypeExpression(Node n) {
++  JSTypeExpression createJSTypeExpression(Node n) {
+     return n == null ? null :
+-        new JSTypeExpression(n, sourceName);
++        new JSTypeExpression(n, getSourceName());
+   }
+ 
+   /**
+@@ -1207,6 +1336,21 @@
+   }
+ 
+   /**
++   * Tuple for recording extended types
++   */
++  private static class ExtendedTypeInfo {
++    final JSTypeExpression type;
++    final int lineno;
++    final int charno;
++
++    public ExtendedTypeInfo(JSTypeExpression type, int lineno, int charno) {
++      this.type = type;
++      this.lineno = lineno;
++      this.charno = charno;
++    }
++  }
++
++  /**
+    * Extracts the text found on the current line starting at token. Note that
+    * token = token.info; should be called after this method is used to update
+    * the token properly in the parser.
+@@ -1289,10 +1433,19 @@
+ 
+     boolean ignoreStar = false;
+ 
++    // Track the start of the line to count whitespace that
++    // the tokenizer skipped. Because this case is rare, it's easier
++    // to do this here than in the tokenizer.
++    int lineStartChar = -1;
++
+     do {
+       switch (token) {
+         case STAR:
+-          if (!ignoreStar) {
++          if (ignoreStar) {
++            // Mark the position after the star as the new start of the line.
++            lineStartChar = stream.getCharno() + 1;
++          } else {
++            // The star is part of the comment.
+             if (builder.length() > 0) {
+               builder.append(' ');
+             }
+@@ -1309,16 +1462,34 @@
+           }
+ 
+           ignoreStar = true;
++          lineStartChar = 0;
+           token = next();
+           continue;
+ 
+-        case ANNOTATION:
+-        case EOC:
+-        case EOF:
+-          // When we're capturing a license block, annotations
+-          // in the block are ok.
+-          if (!(option == WhitespaceOption.PRESERVE &&
+-                token == JsDocToken.ANNOTATION)) {
++        default:
++          ignoreStar = false;
++          state = State.SEARCHING_ANNOTATION;
++
++          boolean isEOC = token == JsDocToken.EOC;
++          if (!isEOC) {
++            if (lineStartChar != -1 && option == WhitespaceOption.PRESERVE) {
++              int numSpaces = stream.getCharno() - lineStartChar;
++              for (int i = 0; i < numSpaces; i++) {
++                builder.append(' ');
++              }
++              lineStartChar = -1;
++            } else if (builder.length() > 0) {
++              // All tokens must be separated by a space.
++              builder.append(' ');
++            }
++          }
++
++          if (token == JsDocToken.EOC ||
++              token == JsDocToken.EOF ||
++              // When we're capturing a license block, annotations
++              // in the block are OK.
++              (token == JsDocToken.ANNOTATION &&
++               option != WhitespaceOption.PRESERVE)) {
+             String multilineText = builder.toString();
+ 
+             if (option != WhitespaceOption.PRESERVE) {
+@@ -1336,16 +1507,6 @@
+             return new ExtractionInfo(multilineText, token);
+           }
+ 
+-          // FALL THROUGH
+-
+-        default:
+-          ignoreStar = false;
+-          state = State.SEARCHING_ANNOTATION;
+-
+-          if (builder.length() > 0) {
+-            builder.append(' ');
+-          }
+-
+           builder.append(toString(token));
+ 
+           line = stream.getRemainingJSDocLine();
+@@ -1498,7 +1659,7 @@
+       token = next();
+       if (token == JsDocToken.RC) {
+         // EMPTY represents the UNKNOWN type in the Type AST.
+-        return wrapNode(Token.ELLIPSIS, new Node(Token.EMPTY));
++        return wrapNode(Token.ELLIPSIS, IR.empty());
+       }
+       restArg = true;
+     }
+@@ -1579,7 +1740,7 @@
+     if (typeExpr == null) {
+       return null;
+     }
+-    Node typeList = new Node(Token.BLOCK);
++    Node typeList = IR.block();
+     typeList.addChildToBack(typeExpr);
+     while (match(JsDocToken.COMMA)) {
+       next();
+@@ -1610,15 +1771,19 @@
+       // {?=} - equals
+       // {function(?, number)} - comma
+       // {function(number, ?)} - right paren
++      // {function(number, ...[?])} - right bracket
+       // {function(): ?|number} - pipe
++      // {Array.<?>} - greater than
+       // I'm not a big fan of using look-ahead for this, but it makes
+       // the type language a lot nicer.
+       token = next();
+       if (token == JsDocToken.COMMA ||
+           token == JsDocToken.EQUALS ||
++          token == JsDocToken.RB ||
+           token == JsDocToken.RC ||
+           token == JsDocToken.RP ||
+-          token == JsDocToken.PIPE) {
++          token == JsDocToken.PIPE ||
++          token == JsDocToken.GT) {
+         restoreLookAhead(token);
+         return newNode(Token.QMARK);
+       }
+@@ -1670,13 +1835,13 @@
+       }
+     }
+ 
++    restoreLookAhead(token);
+     return reportGenericTypeSyntaxWarning();
+   }
+ 
+   /**
+    * TypeName := NameExpression | NameExpression TypeApplication
+    * TypeApplication := '.<' TypeExpressionList '>'
+-   * TypeExpressionList := TypeExpression // a white lie
+    */
+   private Node parseTypeName(JsDocToken token) {
+     if (token != JsDocToken.STRING) {
+@@ -1684,6 +1849,8 @@
+     }
+ 
+     String typeName = stream.getString();
++    int lineno = stream.getLineno();
++    int charno = stream.getCharno();
+     while (match(JsDocToken.EOL) &&
+         typeName.charAt(typeName.length() - 1) == '.') {
+       skipEOLs();
+@@ -1693,7 +1860,7 @@
+       }
+     }
+ 
+-    Node typeNameNode = newStringNode(typeName);
++    Node typeNameNode = newStringNode(typeName, lineno, charno);
+ 
+     if (match(JsDocToken.LT)) {
+       next();
+@@ -1722,6 +1889,7 @@
+     // NOTE(nicksantos): We're not implementing generics at the moment, so
+     // just throw out TypeParameters.
+     if (token != JsDocToken.LP) {
++      restoreLookAhead(token);
+       return reportTypeSyntaxWarning("msg.jsdoc.missing.lp");
+     }
+ 
+@@ -1812,7 +1980,7 @@
+   // has to happen during type resolution. Rather than duplicate the
+   // order-checking in two places, we just do all of it in type resolution.
+   private Node parseParametersType(JsDocToken token) {
+-    Node paramsType = newNode(Token.LP);
++    Node paramsType = newNode(Token.PARAM_LIST);
+     boolean isVarArgs = false;
+     Node paramType = null;
+     if (token != JsDocToken.RP) {
+@@ -1926,7 +2094,7 @@
+ 
+         boolean isPipe = token == JsDocToken.PIPE;
+         if (isPipe && match(JsDocToken.PIPE)) {
+-          // We support double pipes for backwards compatiblity.
++          // We support double pipes for backwards compatibility.
+           next();
+         }
+         skipEOLs();
+@@ -1938,7 +2106,7 @@
+       }
+ 
+       union.addChildToBack(expr);
+-      // We support commas for backwards compatiblity.
++      // We support commas for backwards compatibility.
+     } while (match(JsDocToken.PIPE, JsDocToken.COMMA));
+ 
+     if (alternate == null) {
+@@ -2105,16 +2273,24 @@
+   }
+ 
+   private Node newStringNode(String s) {
+-    return Node.newString(s, stream.getLineno(),
+-        stream.getCharno()).clonePropsFrom(templateNode);
++    return newStringNode(s, stream.getLineno(), stream.getCharno());
++  }
++
++  private Node newStringNode(String s, int lineno, int charno) {
++    Node n = Node.newString(s, lineno, charno).clonePropsFrom(templateNode);
++    n.setLength(s.length());
++    return n;
+   }
+ 
+   // This is similar to IRFactory.createTemplateNode to share common props
+   // e.g., source-name, between all nodes.
+   private Node createTemplateNode() {
+     // The Node type choice is arbitrary.
+-    Node templateNode = new Node(Token.SCRIPT);
+-    templateNode.putProp(Node.SOURCENAME_PROP, sourceName);
++    Node templateNode = IR.script();
++    templateNode.setStaticSourceFile(
++      this.associatedNode != null ?
++      this.associatedNode.getStaticSourceFile() :
++      null);
+     return templateNode;
+   }
+ 
+@@ -2230,7 +2406,7 @@
+   }
+ 
+   JSDocInfo retrieveAndResetParsedJSDocInfo() {
+-    return jsdocBuilder.build(sourceName);
++    return jsdocBuilder.build(associatedNode);
+   }
+ 
+   /**
+diff -r -u original/test/com/google/javascript/jscomp/PeepholeSubstituteAlternateSyntaxTest.java buggy/test/com/google/javascript/jscomp/PeepholeSubstituteAlternateSyntaxTest.java
+--- original/test/com/google/javascript/jscomp/PeepholeSubstituteAlternateSyntaxTest.java	2023-06-13 15:31:49.867132931 +0800
++++ buggy/test/com/google/javascript/jscomp/PeepholeSubstituteAlternateSyntaxTest.java	2023-06-12 11:40:34.678339901 +0800
+@@ -23,7 +23,7 @@
+  */
+ public class PeepholeSubstituteAlternateSyntaxTest extends CompilerTestCase {
+ 
+-  // Externs for builtin constructors
++  // Externs for built-in constructors
+   // Needed for testFoldLiteralObjectConstructors(),
+   // testFoldLiteralArrayConstructors() and testFoldRegExp...()
+   private static final String FOLD_CONSTANTS_TEST_EXTERNS =
+@@ -31,7 +31,7 @@
+       "var RegExp = function f(a){};\n" +
+       "var Array = function f(a){};\n";
+ 
+-  private boolean doCommaSplitting = true;
++  private boolean late = true;
+ 
+   // TODO(user): Remove this when we no longer need to do string comparison.
+   private PeepholeSubstituteAlternateSyntaxTest(boolean compareAsTree) {
+@@ -44,24 +44,25 @@
+ 
+   @Override
+   public void setUp() throws Exception {
+-    doCommaSplitting = true;
++    late = true;
+     super.setUp();
+     enableLineNumberCheck(true);
++    disableNormalize();
+   }
+ 
+   @Override
+   public CompilerPass getProcessor(final Compiler compiler) {
+     CompilerPass peepholePass =
+       new PeepholeOptimizationsPass(compiler,
+-          new PeepholeSubstituteAlternateSyntax(doCommaSplitting));
++          new PeepholeSubstituteAlternateSyntax(late))
++      .setRetraverseOnChange(false);
+ 
+     return peepholePass;
+   }
+ 
+   @Override
+   protected int getNumRepetitions() {
+-    // Reduce this to 2 if we get better expression evaluators.
+-    return 2;
++    return 1;
+   }
+ 
+   private void foldSame(String js) {
+@@ -72,10 +73,6 @@
+     test(js, expected);
+   }
+ 
+-  private void fold(String js, String expected, DiagnosticType warning) {
+-    test(js, expected, warning);
+-  }
+-
+   void assertResultString(String js, String expected) {
+     assertResultString(js, expected, false);
+   }
+@@ -97,6 +94,7 @@
+ 
+   /** Check that removing blocks with 1 child works */
+   public void testFoldOneChildBlocks() {
++    late = false;
+     fold("function f(){if(x)a();x=3}",
+         "function f(){x&&a();x=3}");
+     fold("function f(){if(x){a()}x=3}",
+@@ -176,19 +174,52 @@
+   public void testFoldReturns() {
+     fold("function f(){if(x)return 1;else return 2}",
+          "function f(){return x?1:2}");
++    fold("function f(){if(x)return 1;return 2}",
++         "function f(){return x?1:2}");
++    fold("function f(){if(x)return;return 2}",
++         "function f(){return x?void 0:2}");
+     fold("function f(){if(x)return 1+x;else return 2-x}",
+          "function f(){return x?1+x:2-x}");
++    fold("function f(){if(x)return 1+x;return 2-x}",
++         "function f(){return x?1+x:2-x}");
+     fold("function f(){if(x)return y += 1;else return y += 2}",
+          "function f(){return x?(y+=1):(y+=2)}");
+ 
+     fold("function f(){if(x)return;else return 2-x}",
+          "function f(){if(x);else return 2-x}");
++    fold("function f(){if(x)return;return 2-x}",
++         "function f(){return x?void 0:2-x}");
+     fold("function f(){if(x)return x;else return}",
+-         "function f(){if(x)return x;else;}");
++         "function f(){if(x)return x;{}}");
++    fold("function f(){if(x)return x;return}",
++         "function f(){if(x)return x}");
+ 
+     foldSame("function f(){for(var x in y) { return x.y; } return k}");
+   }
+ 
++  public void testCombineIfs1() {
++    fold("function f() {if (x) return 1; if (y) return 1}",
++         "function f() {if (x||y) return 1;}");
++    fold("function f() {if (x) return 1; if (y) foo(); else return 1}",
++         "function f() {if ((!x)&&y) foo(); else return 1;}");
++  }
++
++  public void testCombineIfs2() {
++    // combinable but not yet done
++    foldSame("function f() {if (x) throw 1; if (y) throw 1}");
++    // Can't combine, side-effect
++    fold("function f(){ if (x) g(); if (y) g() }",
++         "function f(){ x&&g(); y&&g() }");
++    // Can't combine, side-effect
++    fold("function f(){ if (x) y = 0; if (y) y = 0; }",
++         "function f(){ x&&(y = 0); y&&(y = 0); }");
++  }
++
++  public void testCombineIfs3() {
++    foldSame("function f() {if (x) return 1; if (y) {g();f()}}");
++  }
++
++
+   /** Try to minimize assignments */
+   public void testFoldAssignments() {
+     fold("function f(){if(x)y=3;else y=4;}", "function f(){y=x?3:4}");
+@@ -238,12 +269,15 @@
+   public void testNotCond() {
+     fold("function f(){if(!x)foo()}", "function f(){x||foo()}");
+     fold("function f(){if(!x)b=1}", "function f(){x||(b=1)}");
+-    fold("if(!x)z=1;else if(y)z=2", "x ? y&&(z=2) : z=1");
++    fold("if(!x)z=1;else if(y)z=2", "if(x){y&&(z=2);}else{z=1;}");
++    fold("if(x)y&&(z=2);else z=1;", "x ? y&&(z=2) : z=1");
+     foldSame("function f(){if(!(x=1))a.b=1}");
+   }
+ 
+   public void testAndParenthesesCount() {
+     fold("function f(){if(x||y)a.foo()}", "function f(){(x||y)&&a.foo()}");
++    fold("function f(){if(x.a)x.a=0}",
++         "function f(){x.a&&(x.a=0)}");
+     foldSame("function f(){if(x()||y()){x()||y()}}");
+   }
+ 
+@@ -276,12 +310,11 @@
+ 
+     // Cannot fold all the way to a literal because there are too few arguments.
+     fold("x = new RegExp",                    "x = RegExp()");
+-    // Empty regexp should not fold to // since that is a line comment in js
++    // Empty regexp should not fold to // since that is a line comment in JS
+     fold("x = new RegExp(\"\")",              "x = RegExp(\"\")");
+     fold("x = new RegExp(\"\", \"i\")",       "x = RegExp(\"\",\"i\")");
+     // Bogus flags should not fold
+-    fold("x = new RegExp(\"foobar\", \"bogus\")",
+-         "x = RegExp(\"foobar\",\"bogus\")",
++    testSame("x = RegExp(\"foobar\", \"bogus\")",
+          PeepholeSubstituteAlternateSyntax.INVALID_REGULAR_EXPRESSION_FLAGS);
+     // Can Fold
+     fold("x = new RegExp(\"foobar\")",        "x = /foobar/");
+@@ -318,7 +351,7 @@
+          "x = RegExp(\"foobar\",\"g\")");
+     fold("x = new RegExp(\"foobar\", \"ig\")",
+          "x = RegExp(\"foobar\",\"ig\")");
+-    // ... unless in EcmaScript 5 mode per section 7.8.5 of EcmaScript 5.
++    // ... unless in ECMAScript 5 mode per section 7.8.5 of ECMAScript 5.
+     enableEcmaScript5(true);
+     fold("x = new RegExp(\"foobar\", \"ig\")",
+          "x = /foobar/ig");
+@@ -327,7 +360,7 @@
+     enableEcmaScript5(false);
+     fold("x = new RegExp(\"\\u2028\")", "x = RegExp(\"\\u2028\")");
+     fold("x = new RegExp(\"\\\\\\\\u2028\")", "x = /\\\\u2028/");
+-    // Sunset Safari exclusions for EcmaScript 5 and later.
++    // Sunset Safari exclusions for ECMAScript 5 and later.
+     enableEcmaScript5(true);
+     fold("x = new RegExp(\"\\u2028\\u2029\")", "x = /\\u2028\\u2029/");
+     fold("x = new RegExp(\"\\\\u2028\")", "x = /\\u2028/");
+@@ -408,9 +441,9 @@
+     fold("x = new Array(Array(1, '2', 3, '4'))", "x = [[1, '2', 3, '4']]");
+     fold("x = Array(Array(1, '2', 3, '4'))", "x = [[1, '2', 3, '4']]");
+     fold("x = new Array(Object(), Array(\"abc\", Object(), Array(Array())))",
+-         "x = [{}, [\"abc\", {}, [[]]]");
++         "x = [{}, [\"abc\", {}, [[]]]]");
+     fold("x = new Array(Object(), Array(\"abc\", Object(), Array(Array())))",
+-         "x = [{}, [\"abc\", {}, [[]]]");
++         "x = [{}, [\"abc\", {}, [[]]]]");
+ 
+     disableNormalize();
+     // Cannot fold above when not normalized
+@@ -493,6 +526,34 @@
+     fold("if(!!(f() > 20)) {foo();foo()}", "if(f() > 20){foo();foo()}");
+   }
+ 
++  public void testFoldLoopBreakLate() {
++    late = true;
++    fold("for(;;) if (a) break", "for(;!a;);");
++    foldSame("for(;;) if (a) { f(); break }");
++    fold("for(;;) if (a) break; else f()", "for(;!a;) { { f(); } }");
++    fold("for(;a;) if (b) break", "for(;a && !b;);");
++    fold("for(;a;) { if (b) break; if (c) break; }",
++         "for(;(a && !b);) if (c) break;");
++    fold("for(;(a && !b);) if (c) break;", "for(;(a && !b) && !c;);");
++
++    // 'while' is normalized to 'for'
++    enableNormalize(true);
++    fold("while(true) if (a) break", "for(;1&&!a;);");
++  }
++
++  public void testFoldLoopBreakEarly() {
++    late = false;
++    foldSame("for(;;) if (a) break");
++    foldSame("for(;;) if (a) { f(); break }");
++    foldSame("for(;;) if (a) break; else f()");
++    foldSame("for(;a;) if (b) break");
++    foldSame("for(;a;) { if (b) break; if (c) break; }");
++
++    foldSame("while(1) if (a) break");
++    enableNormalize(true);
++    foldSame("while(1) if (a) break");
++  }
++
+   public void testFoldConditionalVarDeclaration() {
+     fold("if(x) var y=1;else y=2", "var y=x?1:2");
+     fold("if(x) y=1;else var y=2", "var y=x?1:2");
+@@ -508,12 +569,14 @@
+     fold("function f(){return false;}", "function f(){return !1}");
+     foldSame("function f(){return null;}");
+     fold("function f(){return void 0;}",
++         "function f(){return}");
++    fold("function f(){return;}",
+          "function f(){}");
+     foldSame("function f(){return void foo();}");
+     fold("function f(){return undefined;}",
+-         "function f(){}");
++         "function f(){return}");
+     fold("function f(){if(a()){return undefined;}}",
+-         "function f(){if(a()){}}");
++         "function f(){if(a()){return}}");
+   }
+ 
+   public void testFoldStandardConstructors() {
+@@ -765,9 +828,15 @@
+     foldSame(
+         "var undefined = 1;" +
+         "function f() {var undefined=2;var x = undefined;}");
++    foldSame("function f(undefined) {}");
++    foldSame("try {} catch(undefined) {}");
++    foldSame("for (undefined in {}) {}");
++    foldSame("undefined++;");
++    fold("undefined += undefined;", "undefined += void 0;");
+   }
+ 
+   public void testSplitCommaExpressions() {
++    late = false;
+     // Don't try to split in expressions.
+     foldSame("while (foo(), !0) boo()");
+     foldSame("var a = (foo(), !0);");
+@@ -778,38 +847,47 @@
+ 
+     fold("(x=2), foo()", "x=2; foo()");
+     fold("foo(), boo();", "foo(); boo()");
+-    fold("(a(), b()), (c(), d());", "a(); b(); c(); d();");
+-    fold("foo(), true", "foo();1");
+-    fold("function x(){foo(), !0}", "function x(){foo(); 1}");
++    fold("(a(), b()), (c(), d());", "a(); b(); (c(), d());");
++    fold("a(); b(); (c(), d());", "a(); b(); c(); d();");
++    fold("foo(), true", "foo();true");
++    fold("foo();true", "foo();1");
++    fold("function x(){foo(), !0}", "function x(){foo(); !0}");
++    fold("function x(){foo(); !0}", "function x(){foo(); 1}");
+   }
+ 
+   public void testComma1() {
+-    fold("1, 2", "1; 1");
+-    doCommaSplitting = false;
++    late = false;
++    fold("1, 2", "1; 2");
++    fold("1; 2", "1; 1");
++    late = true;
+     foldSame("1, 2");
+   }
+ 
+   public void testComma2() {
++    late = false;
+     test("1, a()", "1; a()");
+-    doCommaSplitting = false;
++    late = true;
+     foldSame("1, a()");
+   }
+ 
+   public void testComma3() {
++    late = false;
+     test("1, a(), b()", "1; a(); b()");
+-    doCommaSplitting = false;
++    late = true;
+     foldSame("1, a(), b()");
+   }
+ 
+   public void testComma4() {
++    late = false;
+     test("a(), b()", "a();b()");
+-    doCommaSplitting = false;
++    late = true;
+     foldSame("a(), b()");
+   }
+ 
+   public void testComma5() {
++    late = false;
+     test("a(), b(), 1", "a();b();1");
+-    doCommaSplitting = false;
++    late = true;
+     foldSame("a(), b(), 1");
+   }
+ 
+@@ -826,4 +904,175 @@
+     test("([a])", "1");
+     testSame("([foo()])");
+   }
++
++  public void testStringArraySplitting() {
++    testSame("var x=['1','2','3','4']");
++    testSame("var x=['1','2','3','4','5']");
++    test("var x=['1','2','3','4','5','6']",
++         "var x='123456'.split('')");
++    test("var x=['1','2','3','4','5','00']",
++         "var x='1 2 3 4 5 00'.split(' ')");
++    test("var x=['1','2','3','4','5','6','7']",
++        "var x='1234567'.split('')");
++    test("var x=['1','2','3','4','5','6','00']",
++         "var x='1 2 3 4 5 6 00'.split(' ')");
++    test("var x=[' ,',',',',',',',',',',']",
++         "var x=' ,;,;,;,;,;,'.split(';')");
++    test("var x=[',,',' ',',',',',',',',']",
++         "var x=',,; ;,;,;,;,'.split(';')");
++    test("var x=['a,',' ',',',',',',',',']",
++         "var x='a,; ;,;,;,;,'.split(';')");
++
++    // all possible delimiters used, leave it alone
++    testSame("var x=[',', ' ', ';', '{', '}']");
++  }
++
++  public void testRemoveElseCause() {
++    test("function f() {" +
++         " if(x) return 1;" +
++         " else if(x) return 2;" +
++         " else if(x) return 3 }",
++         "function f() {" +
++         " if(x) return 1;" +
++         "{ if(x) return 2;" +
++         "{ if(x) return 3 } } }");
++  }
++
++
++  public void testRemoveElseCause1() {
++    test("function f() { if (x) throw 1; else f() }",
++         "function f() { if (x) throw 1; { f() } }");
++  }
++
++  public void testRemoveElseCause2() {
++    test("function f() { if (x) return 1; else f() }",
++         "function f() { if (x) return 1; { f() } }");
++    test("function f() { if (x) return; else f() }",
++         "function f() { if (x) {} else { f() } }");
++    // This case is handled by minimize exit points.
++    testSame("function f() { if (x) return; f() }");
++  }
++
++  public void testRemoveElseCause3() {
++    testSame("function f() { a:{if (x) break a; else f() } }");
++    testSame("function f() { if (x) { a:{ break a } } else f() }");
++    testSame("function f() { if (x) a:{ break a } else f() }");
++  }
++
++  public void testRemoveElseCause4() {
++    testSame("function f() { if (x) { if (y) { return 1; } } else f() }");
++  }
++
++  public void testBindToCall1() {
++    test("(goog.bind(f))()", "f()");
++    test("(goog.bind(f,a))()", "f.call(a)");
++    test("(goog.bind(f,a,b))()", "f.call(a,b)");
++
++    test("(goog.bind(f))(a)", "f(a)");
++    test("(goog.bind(f,a))(b)", "f.call(a,b)");
++    test("(goog.bind(f,a,b))(c)", "f.call(a,b,c)");
++
++    test("(goog.partial(f))()", "f()");
++    test("(goog.partial(f,a))()", "f(a)");
++    test("(goog.partial(f,a,b))()", "f(a,b)");
++
++    test("(goog.partial(f))(a)", "f(a)");
++    test("(goog.partial(f,a))(b)", "f(a,b)");
++    test("(goog.partial(f,a,b))(c)", "f(a,b,c)");
++
++    test("((function(){}).bind())()", "((function(){}))()");
++    test("((function(){}).bind(a))()", "((function(){})).call(a)");
++    test("((function(){}).bind(a,b))()", "((function(){})).call(a,b)");
++
++    test("((function(){}).bind())(a)", "((function(){}))(a)");
++    test("((function(){}).bind(a))(b)", "((function(){})).call(a,b)");
++    test("((function(){}).bind(a,b))(c)", "((function(){})).call(a,b,c)");
++
++    // Without using type information we don't know "f" is a function.
++    testSame("(f.bind())()");
++    testSame("(f.bind(a))()");
++    testSame("(f.bind())(a)");
++    testSame("(f.bind(a))(b)");
++
++    // Don't rewrite if the bind isn't the immediate call target
++    testSame("(goog.bind(f)).call(g)");
++  }
++
++  public void testBindToCall2() {
++    test("(goog$bind(f))()", "f()");
++    test("(goog$bind(f,a))()", "f.call(a)");
++    test("(goog$bind(f,a,b))()", "f.call(a,b)");
++
++    test("(goog$bind(f))(a)", "f(a)");
++    test("(goog$bind(f,a))(b)", "f.call(a,b)");
++    test("(goog$bind(f,a,b))(c)", "f.call(a,b,c)");
++
++    test("(goog$partial(f))()", "f()");
++    test("(goog$partial(f,a))()", "f(a)");
++    test("(goog$partial(f,a,b))()", "f(a,b)");
++
++    test("(goog$partial(f))(a)", "f(a)");
++    test("(goog$partial(f,a))(b)", "f(a,b)");
++    test("(goog$partial(f,a,b))(c)", "f(a,b,c)");
++
++    // Don't rewrite if the bind isn't the immediate call target
++    testSame("(goog$bind(f)).call(g)");
++  }
++
++  public void testBindToCall3() {
++    // TODO(johnlenz): The code generator wraps free calls with (0,...) to
++    // prevent leaking "this", but the parser doesn't unfold it, making a
++    // AST comparison fail.  For now do a string comparison to validate the
++    // correct code is in fact generated.
++    // The FREE call wrapping should be moved out of the code generator
++    // and into a denormalizing pass.
++    new StringCompareTestCase().testBindToCall3();
++  }
++
++  public void testSimpleFunctionCall() {
++    test("var a = String(23)", "var a = '' + 23");
++    test("var a = String('hello')", "var a = '' + 'hello'");
++    testSame("var a = String('hello', bar());");
++    testSame("var a = String({valueOf: function() { return 1; }});");
++  }
++
++  private static class StringCompareTestCase extends CompilerTestCase {
++
++    StringCompareTestCase() {
++      super("", false);
++    }
++
++    @Override
++    protected CompilerPass getProcessor(Compiler compiler) {
++      CompilerPass peepholePass =
++        new PeepholeOptimizationsPass(compiler,
++            new PeepholeSubstituteAlternateSyntax(false));
++      return peepholePass;
++    }
++
++    public void testBindToCall3() {
++      test("(goog.bind(f.m))()", "(0,f.m)()");
++      test("(goog.bind(f.m,a))()", "f.m.call(a)");
++
++      test("(goog.bind(f.m))(a)", "(0,f.m)(a)");
++      test("(goog.bind(f.m,a))(b)", "f.m.call(a,b)");
++
++      test("(goog.partial(f.m))()", "(0,f.m)()");
++      test("(goog.partial(f.m,a))()", "(0,f.m)(a)");
++
++      test("(goog.partial(f.m))(a)", "(0,f.m)(a)");
++      test("(goog.partial(f.m,a))(b)", "(0,f.m)(a,b)");
++
++      // Without using type information we don't know "f" is a function.
++      testSame("f.m.bind()()");
++      testSame("f.m.bind(a)()");
++      testSame("f.m.bind()(a)");
++      testSame("f.m.bind(a)(b)");
++
++      // Don't rewrite if the bind isn't the immediate call target
++      testSame("goog.bind(f.m).call(g)");
++    }
++
++
++  }
+ }

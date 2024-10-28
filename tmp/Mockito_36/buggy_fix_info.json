@@ -1,0 +1,108 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.mockito.internal.invocation.InvocationTest::shouldScreamWhenCallingRealMethodOnInterface,org.mockitousage.spies.SpyingOnInterfacesTest::shouldFailInRuntimeWhenCallingRealMethodOnInterface",
+    "test.dir": "test",
+    "clz.modified": "org.mockito.internal.invocation.Invocation",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Mockito",
+  "id": "36",
+  "workingDir": "../bugs/Mockito_36_tmp",
+  "bug_name": "Mockito_36",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.mockito.internal.invocation.InvocationTest",
+      "test_function": "shouldScreamWhenCallingRealMethodOnInterface",
+      "assertion_line": "175",
+      "exception": "java.lang.NullPointerException",
+      "message": ""
+    },
+    {
+      "test_class": "org.mockitousage.spies.SpyingOnInterfacesTest",
+      "test_function": "shouldFailInRuntimeWhenCallingRealMethodOnInterface",
+      "assertion_line": "38",
+      "exception": "java.lang.NoSuchMethodError",
+      "message": "java.lang.Object.get(I)Ljava/lang/Object;"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/org/mockito/internal/invocation/Invocation.java",
+        "src/org/mockito/internal/invocation/Invocation.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.mockito.internal.invocation.Invocation:callRealMethod:[]:Object"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.mockito.internal.invocation.Invocation:callRealMethod:[]:Object"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "11",
+            "203",
+            "204",
+            "205"
+          ],
+          "num": 4
+        },
+        {
+          "qualified_names": [
+            "10",
+            "203"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/org/mockito/internal/invocation/Invocation.java b/src/org/mockito/internal/invocation/Invocation.java\nindex 5e9b795..94d4612 100644\n--- a/src/org/mockito/internal/invocation/Invocation.java\n+++ b/src/org/mockito/internal/invocation/Invocation.java\n@@ -8,7 +8,6 @@\n \n import org.hamcrest.Matcher;\n import org.mockito.exceptions.PrintableInvocation;\n-import org.mockito.exceptions.Reporter;\n import org.mockito.internal.debugging.Location;\n import org.mockito.internal.invocation.realmethod.RealMethod;\n import org.mockito.internal.matchers.*;\n@@ -200,9 +199,6 @@\n     }\n \n     public Object callRealMethod() throws Throwable {\n-        if (this.getMethod().getDeclaringClass().isInterface()) {\n-            new Reporter().cannotCallRealMethodOnInterface();\n-        }\n         return realMethod.invoke(mock, rawArguments);\n     }\n \n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "ImportDeclaration [263,302]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [6486,6615]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

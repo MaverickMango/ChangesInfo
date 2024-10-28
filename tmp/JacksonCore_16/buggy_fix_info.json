@@ -1,0 +1,214 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.fasterxml.jackson.core.json.ParserSequenceTest::testInitialized",
+    "test.dir": "src/test/java",
+    "clz.modified": "com.fasterxml.jackson.core.util.JsonParserSequence",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "JacksonCore",
+  "id": "16",
+  "workingDir": "../bugs/JacksonCore_16_tmp",
+  "bug_name": "JacksonCore_16",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "com.fasterxml.jackson.core.json.ParserSequenceTest",
+      "test_function": "testInitialized",
+      "assertion_line": "60",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": "expected:\u003c2\u003e but was:\u003c3\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/com/fasterxml/jackson/core/util/JsonParserSequence.java",
+        "src/main/java/com/fasterxml/jackson/core/util/JsonParserSequence.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.util.JsonParserSequence:JsonParserSequence:[JsonParser[] parsers]:null",
+            "com.fasterxml.jackson.core.util.JsonParserSequence:nextToken:[]:JsonToken"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.fasterxml.jackson.core.util.JsonParserSequence:nextToken:[]:JsonToken",
+            "com.fasterxml.jackson.core.util.JsonParserSequence:JsonParserSequence:[JsonParser[] parsers]:null"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "35",
+            "46",
+            "106",
+            "108",
+            "109",
+            "110",
+            "111",
+            "112",
+            "113",
+            "114",
+            "116",
+            "117",
+            "118",
+            "120"
+          ],
+          "num": 14
+        },
+        {
+          "qualified_names": [
+            "34",
+            "46",
+            "104",
+            "107",
+            "108",
+            "109",
+            "110",
+            "112"
+          ],
+          "num": 8
+        }
+      ],
+      "diff": "diff --git a/src/main/java/com/fasterxml/jackson/core/util/JsonParserSequence.java b/src/main/java/com/fasterxml/jackson/core/util/JsonParserSequence.java\nindex 0c9c4eb..9dadc51 100644\n--- a/src/main/java/com/fasterxml/jackson/core/util/JsonParserSequence.java\n+++ b/src/main/java/com/fasterxml/jackson/core/util/JsonParserSequence.java\n@@ -32,7 +32,6 @@\n      *\n      * @since 2.8\n      */\n-    protected boolean _suppressNextToken;\n     \n     /*\n      *******************************************************\n@@ -43,7 +42,6 @@\n     protected JsonParserSequence(JsonParser[] parsers)\n     {\n         super(parsers[0]);\n-        _suppressNextToken \u003d delegate.hasCurrentToken();\n         _parsers \u003d parsers;\n         _nextParser \u003d 1;\n     }\n@@ -103,21 +101,15 @@\n     }\n \n     @Override\n-    public JsonToken nextToken() throws IOException\n+    public JsonToken nextToken() throws IOException, JsonParseException\n     {\n-        if (delegate \u003d\u003d null) {\n-            return null;\n-        }\n-        if (_suppressNextToken) {\n-            _suppressNextToken \u003d false;\n-            return delegate.currentToken();\n-        }\n         JsonToken t \u003d delegate.nextToken();\n-        while ((t \u003d\u003d null) \u0026\u0026 switchToNext()) {\n-            t \u003d delegate.hasCurrentToken()\n-                    ? delegate.currentToken() : delegate.nextToken();\n+        if (t !\u003d null) return t;\n+        while (switchToNext()) {\n+            t \u003d delegate.nextToken();\n+            if (t !\u003d null) return t;\n         }\n-        return t;\n+        return null;\n     }\n \n     /*\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Javadoc [748,915]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [3351,3369]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [3428,3452]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [3432,3441]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [3536,3560]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [748,957]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [1217,1265]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [3467,3483]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "Block [3485,3521]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [3463,3521]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [3530,3649]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ParenthesizedExpression [3709,3720]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [3721,3723]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [3709,3738]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [3758,3784]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodInvocation [3807,3830]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "ConditionalExpression [3758,3853]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}

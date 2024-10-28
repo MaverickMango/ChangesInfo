@@ -1,0 +1,151 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.joda.time.TestDateTimeZone::testForOffsetHoursMinutes_int_int",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.joda.time.DateTimeZone",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Time",
+  "id": "9",
+  "workingDir": "../bugs/Time_9_tmp",
+  "bug_name": "Time_9",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.joda.time.TestDateTimeZone",
+      "test_function": "testForOffsetHoursMinutes_int_int",
+      "assertion_line": "328",
+      "exception": "junit.framework.AssertionFailedError",
+      "message": ""
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/joda/time/DateTimeZone.java",
+        "src/main/java/org/joda/time/DateTimeZone.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.joda.time.DateTimeZone:forOffsetMillis:[int millisOffset]:DateTimeZone",
+            "org.joda.time.DateTimeZone:forOffsetHoursMinutes:[int hoursOffset, int minutesOffset]:DateTimeZone"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "org.joda.time.DateTimeZone:forTimeZone:[TimeZone zone]:DateTimeZone",
+            "org.joda.time.DateTimeZone:forOffsetHoursMinutes:[int hoursOffset, int minutesOffset]:DateTimeZone"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "96",
+            "258",
+            "259",
+            "260",
+            "266",
+            "268",
+            "270",
+            "286",
+            "287",
+            "288"
+          ],
+          "num": 10
+        },
+        {
+          "qualified_names": [
+            "95",
+            "262",
+            "264",
+            "266",
+            "289"
+          ],
+          "num": 5
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/joda/time/DateTimeZone.java b/src/main/java/org/joda/time/DateTimeZone.java\nindex afa75d7..3ad5cfe 100644\n--- a/src/main/java/org/joda/time/DateTimeZone.java\n+++ b/src/main/java/org/joda/time/DateTimeZone.java\n@@ -93,7 +93,6 @@\n     /** The time zone for Universal Coordinated Time */\n     public static final DateTimeZone UTC \u003d new FixedDateTimeZone(\"UTC\", \"UTC\", 0, 0);\n     /** Maximum offset. */\n-    private static final int MAX_MILLIS \u003d (86400 * 1000) - 1;\n \n     /** The instance that is providing time zones. */\n     private static Provider cProvider;\n@@ -255,19 +254,16 @@\n         if (hoursOffset \u003d\u003d 0 \u0026\u0026 minutesOffset \u003d\u003d 0) {\n             return DateTimeZone.UTC;\n         }\n-        if (hoursOffset \u003c -23 || hoursOffset \u003e 23) {\n-            throw new IllegalArgumentException(\"Hours out of range: \" + hoursOffset);\n-        }\n         if (minutesOffset \u003c 0 || minutesOffset \u003e 59) {\n             throw new IllegalArgumentException(\"Minutes out of range: \" + minutesOffset);\n         }\n         int offset \u003d 0;\n         try {\n-            int hoursInMinutes \u003d hoursOffset * 60;\n+            int hoursInMinutes \u003d FieldUtils.safeMultiply(hoursOffset, 60);\n             if (hoursInMinutes \u003c 0) {\n-                minutesOffset \u003d hoursInMinutes - minutesOffset;\n+                minutesOffset \u003d FieldUtils.safeAdd(hoursInMinutes, -minutesOffset);\n             } else {\n-                minutesOffset \u003d hoursInMinutes + minutesOffset;\n+                minutesOffset \u003d FieldUtils.safeAdd(hoursInMinutes, minutesOffset);\n             }\n             offset \u003d FieldUtils.safeMultiply(minutesOffset, DateTimeConstants.MILLIS_PER_MINUTE);\n         } catch (ArithmeticException ex) {\n@@ -283,9 +279,6 @@\n      * @return the DateTimeZone object for the offset\n      */\n     public static DateTimeZone forOffsetMillis(int millisOffset) {\n-        if (millisOffset \u003c -MAX_MILLIS || millisOffset \u003e MAX_MILLIS) {\n-            throw new IllegalArgumentException(\"Millis out of range: \" + millisOffset);\n-        }\n         String id \u003d printOffset(millisOffset);\n         return fixedOffsetZone(id, millisOffset);\n     }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [10671,10733]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [10788,10855]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [10893,10959]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [3893,3977]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [10536,10676]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [10882,10920]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [10975,11022]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "ExpressionStatement [11060,11107]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [11720,11880]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.joda.time.DateTimeZone:forTimeZone:[TimeZone zone]:DateTimeZone"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.joda.time.DateTimeZone:forOffsetMillis:[int millisOffset]:DateTimeZone"
+      ],
+      "num": 1
+    }
+  }
+}

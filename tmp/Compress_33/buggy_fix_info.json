@@ -1,0 +1,174 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.compress.compressors.DetectCompressorTestCase::testDetection",
+    "test.dir": "src/test/java",
+    "clz.modified": "org.apache.commons.compress.compressors.CompressorStreamFactory,org.apache.commons.compress.compressors.deflate.DeflateCompressorInputStream",
+    "src.dir": "src/main/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Compress",
+  "id": "33",
+  "workingDir": "../bugs/Compress_33_tmp",
+  "bug_name": "Compress_33",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.compress.compressors.DetectCompressorTestCase",
+      "test_function": "testDetection",
+      "assertion_line": "108",
+      "exception": "org.apache.commons.compress.compressors.CompressorException",
+      "message": "No Compressor found for the stream signature."
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/compress/compressors/CompressorStreamFactory.java",
+        "src/main/java/org/apache/commons/compress/compressors/CompressorStreamFactory.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.compressors.CompressorStreamFactory:createCompressorInputStream:[final InputStream in]:CompressorInputStream"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.compressors.CompressorStreamFactory:createCompressorInputStream:[final InputStream in]:CompressorInputStream"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "240",
+            "241",
+            "242"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "239"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/compress/compressors/CompressorStreamFactory.java b/src/main/java/org/apache/commons/compress/compressors/CompressorStreamFactory.java\nindex 8dc3c52..935283a 100644\n--- a/src/main/java/org/apache/commons/compress/compressors/CompressorStreamFactory.java\n+++ b/src/main/java/org/apache/commons/compress/compressors/CompressorStreamFactory.java\n@@ -237,9 +237,6 @@\n                 return new ZCompressorInputStream(in);\n             }\n \n-            if (DeflateCompressorInputStream.matches(signature, signatureLength)) {\n-                return new DeflateCompressorInputStream(in);\n-            }\n \n             if (XZUtils.matches(signature, signatureLength) \u0026\u0026\n                 XZUtils.isXZCompressionAvailable()) {\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "IfStatement [9796,9942]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/main/java/org/apache/commons/compress/compressors/deflate/DeflateCompressorInputStream.java",
+        "src/main/java/org/apache/commons/compress/compressors/deflate/DeflateCompressorInputStream.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.compress.compressors.deflate.DeflateCompressorInputStream:matches:[byte[] signature, int length]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [],
+          "num": 0
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "33",
+            "34",
+            "35",
+            "36",
+            "37",
+            "111",
+            "112",
+            "113",
+            "114",
+            "115",
+            "116",
+            "117"
+          ],
+          "num": 12
+        },
+        {
+          "qualified_names": [
+            "32",
+            "115"
+          ],
+          "num": 2
+        }
+      ],
+      "diff": "diff --git a/src/main/java/org/apache/commons/compress/compressors/deflate/DeflateCompressorInputStream.java b/src/main/java/org/apache/commons/compress/compressors/deflate/DeflateCompressorInputStream.java\nindex b8ed198..98d8ec1 100644\n--- a/src/main/java/org/apache/commons/compress/compressors/deflate/DeflateCompressorInputStream.java\n+++ b/src/main/java/org/apache/commons/compress/compressors/deflate/DeflateCompressorInputStream.java\n@@ -30,11 +30,6 @@\n  * @since 1.9\n  */\n public class DeflateCompressorInputStream extends CompressorInputStream {\n-    private static final int MAGIC_1 \u003d 0x78;\n-    private static final int MAGIC_2a \u003d 0x01;\n-    private static final int MAGIC_2b \u003d 0x5e;\n-    private static final int MAGIC_2c \u003d 0x9c;\n-    private static final int MAGIC_2d \u003d 0xda;\n     \n     private final InputStream in;\n \n@@ -108,11 +103,4 @@\n      * \n      * @since 1.9\n      */\n-    public static boolean matches(byte[] signature, int length) {\n-        return length \u003e 3 \u0026\u0026 signature[0] \u003d\u003d MAGIC_1 \u0026\u0026 (\n-                signature[1] \u003d\u003d (byte) MAGIC_2a ||\n-                signature[1] \u003d\u003d (byte) MAGIC_2b ||\n-                signature[1] \u003d\u003d (byte) MAGIC_2c ||\n-                signature[1] \u003d\u003d (byte) MAGIC_2d);\n-    }\n }\n",
+      "operations": [
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [1190,1230]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [1235,1276]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [1281,1322]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [1327,1368]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "FieldDeclaration [1373,1414]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "MethodDeclaration [3021,3751]",
+          "to": ""
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "org.apache.commons.compress.compressors.deflate.DeflateCompressorInputStream:matches:[byte[] signature, int length]:boolean"
+      ],
+      "num": 1
+    }
+  }
+}

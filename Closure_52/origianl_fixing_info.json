@@ -1,0 +1,1251 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "/home/liumengjiao/Desktop/CI/Benchmark/data/changesInfo/",
+  "properties": {
+    "trigger.tests": "com.google.javascript.jscomp.CodePrinterTest::testNumericKeys",
+    "test.dir": "test",
+    "clz.modified": "com.google.javascript.jscomp.CodeGenerator",
+    "src.dir": "src"
+  },
+  "timeoutSecond": 100,
+  "proj": "Closure",
+  "id": "52",
+  "workingDir": "../bugs/Closure_52_buggy",
+  "buggyCommit": "d79072969c2f31860ea1f55e392a146c49bc2d0f",
+  "inducingCommit": "41acde3e8e5e8d37ade765b41d9fd29861f03e5e",
+  "originalCommit": "4434b45f18d2e74ec809a9bbeb67571b604ce6d0",
+  "bug_name": "Closure_52",
+  "derive": "defects4j",
+  "original_fixing_commit": "5909c3db59b16886917456ab950ef9661a7fe6b1",
+  "buildFiles_changed": false,
+  "regression": false,
+  "inducing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CodeGenerator.java",
+        "src/com/google/javascript/jscomp/CodeGenerator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CodeGenerator:add:[Node n, Context context]:void",
+            "com.google.javascript.jscomp.CodeGenerator:addArrayList:[Node firstInList]:void",
+            "com.google.javascript.jscomp.CodeGenerator:strEscape:[String s, char quote, String doublequoteEscape, String singlequoteEscape, String backslashEscape, CharsetEncoder outputCharsetEncoder]:String"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CodeGenerator:getSimpleNumber:[String s]:double",
+            "com.google.javascript.jscomp.CodeGenerator:add:[Node n, Context context]:void",
+            "com.google.javascript.jscomp.CodeGenerator:strEscape:[String s, char quote, String doublequoteEscape, String singlequoteEscape, String backslashEscape, CharsetEncoder outputCharsetEncoder]:String",
+            "com.google.javascript.jscomp.CodeGenerator:addArrayList:[Node firstInList]:void",
+            "com.google.javascript.jscomp.CodeGenerator:isSimpleNumber:[String s]:boolean",
+            "com.google.javascript.jscomp.CodeGenerator:tagAsStrict:[]:void"
+          ],
+          "num": 6
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "62",
+            "199",
+            "336",
+            "342",
+            "646",
+            "647",
+            "648",
+            "649",
+            "650",
+            "651",
+            "652",
+            "653",
+            "654",
+            "655",
+            "657",
+            "714",
+            "871",
+            "872",
+            "874",
+            "875",
+            "876",
+            "878",
+            "879",
+            "880",
+            "881",
+            "882",
+            "883",
+            "884",
+            "885",
+            "886",
+            "891",
+            "966"
+          ],
+          "num": 32
+        },
+        {
+          "qualified_names": [
+            "63",
+            "64",
+            "65",
+            "66",
+            "67",
+            "68",
+            "69",
+            "206",
+            "343",
+            "344",
+            "350",
+            "351",
+            "352",
+            "353",
+            "354",
+            "355",
+            "356",
+            "660",
+            "661",
+            "662",
+            "663",
+            "664",
+            "665",
+            "666",
+            "667",
+            "668",
+            "669",
+            "670",
+            "672",
+            "673",
+            "674",
+            "675",
+            "676",
+            "677",
+            "678",
+            "736",
+            "737",
+            "738",
+            "739",
+            "740",
+            "741",
+            "742",
+            "743",
+            "744",
+            "745",
+            "746",
+            "747",
+            "748",
+            "749",
+            "750",
+            "751",
+            "752",
+            "753",
+            "754",
+            "755",
+            "756",
+            "914",
+            "915",
+            "921",
+            "922",
+            "923",
+            "924",
+            "925",
+            "1001"
+          ],
+          "num": 64
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/CodeGenerator.java b/src/com/google/javascript/jscomp/CodeGenerator.java\nindex 668fe51..593ec05 100644\n--- a/src/com/google/javascript/jscomp/CodeGenerator.java\n+++ b/src/com/google/javascript/jscomp/CodeGenerator.java\n@@ -60,6 +60,13 @@\n     this(consumer, null);\n   }\n \n+  /**\n+   * Insert a ECMASCRIPT 5 strict annotation.\n+   */\n+  public void tagAsStrict() {\n+    add(\"\u0027use strict\u0027;\");\n+  }\n+\n   void add(String str) {\n     cc.add(str);\n   }\n@@ -196,7 +203,7 @@\n \n       case Token.ARRAYLIT:\n         add(\"[\");\n-        addArrayList(first, (int[]) n.getProp(Node.SKIP_INDEXES_PROP));\n+        addArrayList(first);\n         add(\"]\");\n         break;\n \n@@ -333,13 +340,20 @@\n         Node body \u003d fn.getLastChild();\n \n         // Add the property name.\n-        if (TokenStream.isJSIdentifier(name) \u0026\u0026\n+        if (!n.isQuotedString() \u0026\u0026\n+            TokenStream.isJSIdentifier(name) \u0026\u0026\n             // do not encode literally any non-literal characters that were\n             // unicode escaped.\n             NodeUtil.isLatin(name)) {\n           add(name);\n         } else {\n-          add(jsString(n.getString(), outputCharsetEncoder));\n+          // Determine if the string is a simple number.\n+          double d \u003d getSimpleNumber(name);\n+          if (!Double.isNaN(d)) {\n+            cc.addNumber(d);\n+          } else {\n+            add(jsString(n.getString(), outputCharsetEncoder));\n+          }\n         }\n \n         add(parameters);\n@@ -643,18 +657,25 @@\n           if (c.getType() \u003d\u003d Token.GET || c.getType() \u003d\u003d Token.SET) {\n             add(c);\n           } else {\n-            // Object literal property names don\u0027t have to be quoted if they are\n-            // not JavaScript keywords\n-            if (c.getType() \u003d\u003d Token.STRING \u0026\u0026\n-                !c.isQuotedString() \u0026\u0026\n-                !TokenStream.isKeyword(c.getString()) \u0026\u0026\n-                TokenStream.isJSIdentifier(c.getString()) \u0026\u0026\n-                // do not encode literally any non-literal characters that were\n-                // unicode escaped.\n-                NodeUtil.isLatin(c.getString())) {\n-              add(c.getString());\n+            Preconditions.checkState(c.getType() \u003d\u003d Token.STRING);\n+            String key \u003d c.getString();\n+            // Object literal property names don\u0027t have to be quoted if they\n+            // are not JavaScript keywords\n+            if (!c.isQuotedString() \u0026\u0026\n+                !TokenStream.isKeyword(key) \u0026\u0026\n+                TokenStream.isJSIdentifier(key) \u0026\u0026\n+                // do not encode literally any non-literal characters that\n+                // were unicode escaped.\n+                NodeUtil.isLatin(key)) {\n+              add(key);\n             } else {\n-              addExpr(c, 1);\n+              // Determine if the string is a simple number.\n+              double d \u003d getSimpleNumber(key);\n+              if (!Double.isNaN(d)) {\n+                cc.addNumber(d);\n+              } else {\n+                addExpr(c, 1);\n+              }\n             }\n             add(\":\");\n             addExpr(c.getFirstChild(), 1);\n@@ -712,6 +733,27 @@\n     cc.endSourceMapping(n);\n   }\n \n+  static boolean isSimpleNumber(String s) {\n+    int len \u003d s.length();\n+    for (int index \u003d 0; index \u003c len; index++) {\n+      char c \u003d s.charAt(index);\n+      if (c \u003c \u00270\u0027 || c \u003e \u00279\u0027) {\n+        return false;\n+      }\n+    }\n+    return len \u003e 0;\n+  }\n+\n+  static double getSimpleNumber(String s) {\n+    if (isSimpleNumber(s)) {\n+      long l \u003d Long.parseLong(s);\n+      if (l \u003c NodeUtil.MAX_POSITIVE_INTEGER_NUMBER) {\n+        return l;\n+      }\n+    }\n+    return Double.NaN;\n+  }\n+\n   /**\n    * @return Whether the name is an indirect eval.\n    */\n@@ -868,27 +910,19 @@\n    * slot.\n    * @param firstInList The first in the node list (chained through the next\n    * property).\n-   * @param skipIndexes If not null, then the array of skipped entries in the\n-   * array.\n    */\n-  void addArrayList(Node firstInList, int[] skipIndexes) {\n-    int nextSlot \u003d 0;\n-    int nextSkipSlot \u003d 0;\n+  void addArrayList(Node firstInList) {\n+    boolean lastWasEmpty \u003d false;\n     for (Node n \u003d firstInList; n !\u003d null; n \u003d n.getNext()) {\n-      while (skipIndexes !\u003d null \u0026\u0026 nextSkipSlot \u003c skipIndexes.length) {\n-        if (nextSlot \u003d\u003d skipIndexes[nextSkipSlot]) {\n-          cc.listSeparator();\n-          nextSlot++;\n-          nextSkipSlot++;\n-        } else {\n-          break;\n-        }\n-      }\n       if (n !\u003d firstInList) {\n         cc.listSeparator();\n       }\n       addExpr(n, 1);\n-      nextSlot++;\n+      lastWasEmpty \u003d n.getType() \u003d\u003d Token.EMPTY;\n+    }\n+\n+    if (lastWasEmpty) {\n+      cc.listSeparator();\n     }\n   }\n \n@@ -964,6 +998,7 @@\n     for (int i \u003d 0; i \u003c s.length(); i++) {\n       char c \u003d s.charAt(i);\n       switch (c) {\n+        case \u0027\\0\u0027: sb.append(\"\\\\0\"); break;\n         case \u0027\\n\u0027: sb.append(\"\\\\n\"); break;\n         case \u0027\\r\u0027: sb.append(\"\\\\r\"); break;\n         case \u0027\\t\u0027: sb.append(\"\\\\t\"); break;\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [22005,22244]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [22248,22465]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PrefixExpression [10065,10084]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [10387,10420]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [10431,10578]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PrefixExpression [10435,10451]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Block [10453,10495]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [10501,10578]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [19827,19881]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationStatement [19894,19921]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [19894,19900]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "VariableDeclarationFragment [19901,19920]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: key [19901,19904]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "PrefixExpression [20097,20124]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [20144,20175]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [20311,20332]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "VariableDeclarationStatement [20456,20488]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [20503,20629]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [20098,20124]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [20171,20174]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [20328,20331]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "PrefixExpression [20507,20523]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "Block [20525,20575]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [20581,20629]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [20120,20123]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: key [20354,20357]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [19719,19746]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [19747,19749]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [19719,19785]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [19786,19788]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [19828,19841]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [19806,19842]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "PrefixExpression [19805,19842]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [19719,19842]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [19843,19845]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [19889,19902]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [19862,19903]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [19719,19903]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "METHOD_INVOCATION_ARGUMENTS [20056,20069]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "MethodInvocation [20039,20070]",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "multi-move-tree",
+          "from": "",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/NodeUtil.java",
+        "src/com/google/javascript/jscomp/NodeUtil.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.NodeUtil:getImpureBooleanValue:[Node n]:TernaryValue",
+            "com.google.javascript.jscomp.NodeUtil:getPureBooleanValue:[Node n]:TernaryValue",
+            "com.google.javascript.jscomp.NodeUtil:isLiteralValue:[Node n, boolean includeFunctions]:boolean",
+            "com.google.javascript.jscomp.NodeUtil:isThis:[Node node]:boolean",
+            "com.google.javascript.jscomp.NodeUtil:isStrWhiteSpaceChar:[int c]:TernaryValue",
+            "com.google.javascript.jscomp.NodeUtil:getNumberValue:[Node n]:Double",
+            "com.google.javascript.jscomp.NodeUtil:precedence:[int type]:int",
+            "com.google.javascript.jscomp.NodeUtil:getFunctionBody:[Node fn]:Node",
+            "com.google.javascript.jscomp.NodeUtil:getStringValue:[Node n]:String",
+            "com.google.javascript.jscomp.NodeUtil:getStringNumberValue:[String rawJsString]:Double",
+            "com.google.javascript.jscomp.NodeUtil:trimJsWhiteSpace:[String s]:String",
+            "com.google.javascript.jscomp.NodeUtil:getArrayElementStringValue:[Node n]:String",
+            "com.google.javascript.jscomp.NodeUtil:arrayToString:[Node literal]:String"
+          ],
+          "num": 13
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.NodeUtil:getPureBooleanValue:[Node n]:TernaryValue",
+            "com.google.javascript.jscomp.NodeUtil:getStringValue:[Node n]:String",
+            "com.google.javascript.jscomp.NodeUtil:isLiteralValue:[Node n, boolean includeFunctions]:boolean",
+            "com.google.javascript.jscomp.NodeUtil:getImpureBooleanValue:[Node n]:TernaryValue",
+            "com.google.javascript.jscomp.NodeUtil:getStringNumberValue:[String rawJsString]:Double",
+            "com.google.javascript.jscomp.NodeUtil:getNumberValue:[Node n]:Double",
+            "com.google.javascript.jscomp.NodeUtil:getArrayElementStringValue:[Node n]:String",
+            "com.google.javascript.jscomp.NodeUtil:getStringValue:[double value]:String",
+            "com.google.javascript.jscomp.NodeUtil:precedence:[int type]:int",
+            "com.google.javascript.jscomp.NodeUtil:trimJsWhiteSpace:[String s]:String",
+            "com.google.javascript.jscomp.NodeUtil:isStrWhiteSpaceChar:[int c]:TernaryValue"
+          ],
+          "num": 11
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "47",
+            "72",
+            "77",
+            "79",
+            "82",
+            "83",
+            "87",
+            "88",
+            "92",
+            "94",
+            "102",
+            "108",
+            "110",
+            "119",
+            "139",
+            "140",
+            "148",
+            "170",
+            "171",
+            "172",
+            "173",
+            "174",
+            "175",
+            "176",
+            "177",
+            "178",
+            "189",
+            "203",
+            "213",
+            "218",
+            "223",
+            "224",
+            "225",
+            "226",
+            "227",
+            "228",
+            "229",
+            "230",
+            "231",
+            "292",
+            "310",
+            "354",
+            "357",
+            "366",
+            "374",
+            "378",
+            "380",
+            "508",
+            "1141",
+            "1853",
+            "1854",
+            "1855",
+            "1856",
+            "1857",
+            "1858",
+            "1859",
+            "1860",
+            "1861"
+          ],
+          "num": 58
+        },
+        {
+          "qualified_names": [
+            "48",
+            "49",
+            "74",
+            "79",
+            "81",
+            "84",
+            "85",
+            "89",
+            "90",
+            "94",
+            "96",
+            "103",
+            "104",
+            "105",
+            "106",
+            "107",
+            "109",
+            "115",
+            "116",
+            "117",
+            "119",
+            "128",
+            "150",
+            "151",
+            "152",
+            "153",
+            "154",
+            "155",
+            "182",
+            "193",
+            "208",
+            "209",
+            "210",
+            "211",
+            "212",
+            "213",
+            "214",
+            "215",
+            "216",
+            "217",
+            "218",
+            "228",
+            "229",
+            "298",
+            "317",
+            "318",
+            "319",
+            "320",
+            "321",
+            "365",
+            "366",
+            "369",
+            "370",
+            "379",
+            "381",
+            "382",
+            "392",
+            "394",
+            "395",
+            "524",
+            "525",
+            "526",
+            "527",
+            "528",
+            "529",
+            "530",
+            "531",
+            "532",
+            "1116",
+            "1829"
+          ],
+          "num": 70
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/NodeUtil.java b/src/com/google/javascript/jscomp/NodeUtil.java\nindex 201d69f..28222de 100644\n--- a/src/com/google/javascript/jscomp/NodeUtil.java\n+++ b/src/com/google/javascript/jscomp/NodeUtil.java\n@@ -45,6 +45,8 @@\n  */\n public final class NodeUtil {\n \n+  static final long MAX_POSITIVE_INTEGER_NUMBER \u003d (long)Math.pow(2, 53);\n+\n   final static String JSC_PROPERTY_NAME_FN \u003d \"JSCompiler_renameProperty\";\n \n   // TODO(user): Eliminate this class and make all of the static methods\n@@ -69,45 +71,52 @@\n    * Note: unlike getBooleanValue this function does not return UNKNOWN\n    * for expressions with side-effects.\n    */\n-  static TernaryValue getExpressionBooleanValue(Node n) {\n+  static TernaryValue getImpureBooleanValue(Node n) {\n     switch (n.getType()) {\n       case Token.ASSIGN:\n       case Token.COMMA:\n         // For ASSIGN and COMMA the value is the value of the RHS.\n-        return getExpressionBooleanValue(n.getLastChild());\n+        return getImpureBooleanValue(n.getLastChild());\n       case Token.NOT:\n-        TernaryValue value \u003d getExpressionBooleanValue(n.getLastChild());\n+        TernaryValue value \u003d getImpureBooleanValue(n.getLastChild());\n         return value.not();\n       case Token.AND: {\n-        TernaryValue lhs \u003d getExpressionBooleanValue(n.getFirstChild());\n-        TernaryValue rhs \u003d getExpressionBooleanValue(n.getLastChild());\n+        TernaryValue lhs \u003d getImpureBooleanValue(n.getFirstChild());\n+        TernaryValue rhs \u003d getImpureBooleanValue(n.getLastChild());\n         return lhs.and(rhs);\n       }\n       case Token.OR:  {\n-        TernaryValue lhs \u003d getExpressionBooleanValue(n.getFirstChild());\n-        TernaryValue rhs \u003d getExpressionBooleanValue(n.getLastChild());\n+        TernaryValue lhs \u003d getImpureBooleanValue(n.getFirstChild());\n+        TernaryValue rhs \u003d getImpureBooleanValue(n.getLastChild());\n         return lhs.or(rhs);\n       }\n       case Token.HOOK:  {\n-        TernaryValue trueValue \u003d getExpressionBooleanValue(\n+        TernaryValue trueValue \u003d getImpureBooleanValue(\n             n.getFirstChild().getNext());\n-        TernaryValue falseValue \u003d getExpressionBooleanValue(n.getLastChild());\n+        TernaryValue falseValue \u003d getImpureBooleanValue(n.getLastChild());\n         if (trueValue.equals(falseValue)) {\n           return trueValue;\n         } else {\n           return TernaryValue.UNKNOWN;\n         }\n       }\n+      case Token.ARRAYLIT:\n+      case Token.OBJECTLIT:\n+        // ignoring side-effects\n+        return TernaryValue.TRUE;\n+\n       default:\n-        return getBooleanValue(n);\n+        return getPureBooleanValue(n);\n     }\n   }\n \n   /**\n    * Gets the boolean value of a node that represents a literal. This method\n-   * effectively emulates the \u003ccode\u003eBoolean()\u003c/code\u003e JavaScript cast function.\n+   * effectively emulates the \u003ccode\u003eBoolean()\u003c/code\u003e JavaScript cast function\n+   * except it return UNKNOWN for known values with side-effects, use\n+   * getExpressionBooleanValue if you don\u0027t care about side-effects.\n    */\n-  static TernaryValue getBooleanValue(Node n) {\n+  static TernaryValue getPureBooleanValue(Node n) {\n     switch (n.getType()) {\n       case Token.STRING:\n         return TernaryValue.forBoolean(n.getString().length() \u003e 0);\n@@ -116,7 +125,7 @@\n         return TernaryValue.forBoolean(n.getDouble() !\u003d 0);\n \n       case Token.NOT:\n-        return getBooleanValue(n.getLastChild()).not();\n+        return getPureBooleanValue(n.getLastChild()).not();\n \n       case Token.NULL:\n       case Token.FALSE:\n@@ -136,16 +145,19 @@\n         break;\n \n       case Token.TRUE:\n-      case Token.ARRAYLIT:\n-      case Token.OBJECTLIT:\n       case Token.REGEXP:\n         return TernaryValue.TRUE;\n+\n+      case Token.ARRAYLIT:\n+      case Token.OBJECTLIT:\n+        if (!mayHaveSideEffects(n)) {\n+          return TernaryValue.TRUE;\n+        }\n     }\n \n     return TernaryValue.UNKNOWN;\n   }\n \n-\n   /**\n    * Gets the value of a node as a String, or null if it cannot be converted.\n    * When it returns a non-null String, this method effectively emulates the\n@@ -167,15 +179,7 @@\n         break;\n \n       case Token.NUMBER:\n-        double value \u003d n.getDouble();\n-        long longValue \u003d (long) value;\n-\n-        // Return \"1\" instead of \"1.0\"\n-        if (longValue \u003d\u003d value) {\n-          return Long.toString(longValue);\n-        } else {\n-          return Double.toString(n.getDouble());\n-        }\n+        return getStringValue(n.getDouble());\n \n       case Token.FALSE:\n       case Token.TRUE:\n@@ -186,7 +190,7 @@\n         return \"undefined\";\n \n       case Token.NOT:\n-        TernaryValue child \u003d getBooleanValue(n.getFirstChild());\n+        TernaryValue child \u003d getPureBooleanValue(n.getFirstChild());\n         if (child !\u003d TernaryValue.UNKNOWN) {\n           return child.toBoolean(true) ? \"false\" : \"true\"; // reversed.\n         }\n@@ -201,6 +205,17 @@\n     return null;\n   }\n \n+  static String getStringValue(double value) {\n+    long longValue \u003d (long) value;\n+\n+    // Return \"1\" instead of \"1.0\"\n+    if (longValue \u003d\u003d value) {\n+      return Long.toString(longValue);\n+    } else {\n+      return Double.toString(value);\n+    }\n+  }\n+\n   /**\n    * When converting arrays to string using Array.prototype.toString or\n    * Array.prototype.join, the rules for conversion to String are different\n@@ -210,25 +225,16 @@\n    * @return The string representation.\n    */\n   static String getArrayElementStringValue(Node n) {\n-    return NodeUtil.isNullOrUndefined(n) ? \"\" : getStringValue(n);\n+    return (NodeUtil.isNullOrUndefined(n) || n.getType() \u003d\u003d Token.EMPTY)\n+        ? \"\" : getStringValue(n);\n   }\n \n   static String arrayToString(Node literal) {\n     Node first \u003d literal.getFirstChild();\n-    int[] skipIndexes \u003d (int[]) literal.getProp(Node.SKIP_INDEXES_PROP);\n     StringBuilder result \u003d new StringBuilder();\n     int nextSlot \u003d 0;\n     int nextSkipSlot \u003d 0;\n     for (Node n \u003d first; n !\u003d null; n \u003d n.getNext()) {\n-      while (skipIndexes !\u003d null \u0026\u0026 nextSkipSlot \u003c skipIndexes.length) {\n-        if (nextSlot \u003d\u003d skipIndexes[nextSkipSlot]) {\n-          result.append(\u0027,\u0027);\n-          nextSlot++;\n-          nextSkipSlot++;\n-        } else {\n-          break;\n-        }\n-      }\n       String childValue \u003d getArrayElementStringValue(n);\n       if (childValue \u003d\u003d null) {\n         return null;\n@@ -289,7 +295,7 @@\n         return null;\n \n       case Token.NOT:\n-        TernaryValue child \u003d getBooleanValue(n.getFirstChild());\n+        TernaryValue child \u003d getPureBooleanValue(n.getFirstChild());\n         if (child !\u003d TernaryValue.UNKNOWN) {\n           return child.toBoolean(true) ? 0.0 : 1.0; // reversed.\n         }\n@@ -308,6 +314,11 @@\n   }\n \n   static Double getStringNumberValue(String rawJsString) {\n+    if (rawJsString.contains(\"\\u000b\")) {\n+      // vertical tab is not always whitespace\n+      return null;\n+    }\n+\n     String s \u003d trimJsWhiteSpace(rawJsString);\n     // return ScriptRuntime.toNumber(s);\n     if (s.length() \u003d\u003d 0) {\n@@ -351,10 +362,12 @@\n   static String trimJsWhiteSpace(String s) {\n     int start \u003d 0;\n     int end \u003d s.length();\n-    while (end \u003e 0 \u0026\u0026 isStrWhiteSpaceChar(s.charAt(end-1))) {\n+    while (end \u003e 0\n+        \u0026\u0026 isStrWhiteSpaceChar(s.charAt(end - 1)) \u003d\u003d TernaryValue.TRUE) {\n       end--;\n     }\n-    while (start \u003c end \u0026\u0026 isStrWhiteSpaceChar(s.charAt(start))) {\n+    while (start \u003c end\n+        \u0026\u0026 isStrWhiteSpaceChar(s.charAt(start)) \u003d\u003d TernaryValue.TRUE) {\n       start++;\n     }\n     return s.substring(start, end);\n@@ -363,21 +376,23 @@\n   /**\n    * Copied from Rhino\u0027s ScriptRuntime\n    */\n-  static boolean isStrWhiteSpaceChar(int c) {\n+  static TernaryValue isStrWhiteSpaceChar(int c) {\n     switch (c) {\n+      case \u0027\\u000B\u0027: // \u003cVT\u003e\n+        return TernaryValue.UNKNOWN;  // IE says \"no\", EcmaScript says \"yes\"\n       case \u0027 \u0027: // \u003cSP\u003e\n       case \u0027\\n\u0027: // \u003cLF\u003e\n       case \u0027\\r\u0027: // \u003cCR\u003e\n       case \u0027\\t\u0027: // \u003cTAB\u003e\n       case \u0027\\u00A0\u0027: // \u003cNBSP\u003e\n       case \u0027\\u000C\u0027: // \u003cFF\u003e\n-      case \u0027\\u000B\u0027: // \u003cVT\u003e\n       case \u0027\\u2028\u0027: // \u003cLS\u003e\n       case \u0027\\u2029\u0027: // \u003cPS\u003e\n       case \u0027\\uFEFF\u0027: // \u003cBOM\u003e\n-        return true;\n+        return TernaryValue.TRUE;\n       default:\n-        return Character.getType(c) \u003d\u003d Character.SPACE_SEPARATOR;\n+        return (Character.getType(c) \u003d\u003d Character.SPACE_SEPARATOR)\n+            ? TernaryValue.TRUE : TernaryValue.FALSE;\n     }\n   }\n \n@@ -506,6 +521,15 @@\n   static boolean isLiteralValue(Node n, boolean includeFunctions) {\n     switch (n.getType()) {\n       case Token.ARRAYLIT:\n+        for (Node child \u003d n.getFirstChild(); child !\u003d null;\n+             child \u003d child.getNext()) {\n+          if (child.getType() !\u003d Token.EMPTY\n+              \u0026\u0026 !isLiteralValue(child, includeFunctions)) {\n+            return false;\n+          }\n+        }\n+        return true;\n+\n       case Token.REGEXP:\n         // Return true only if all children are const.\n         for (Node child \u003d n.getFirstChild(); child !\u003d null;\n@@ -1138,7 +1162,6 @@\n       case Token.NUMBER:\n       case Token.OBJECTLIT:\n       case Token.REGEXP:\n-      case Token.RETURN:\n       case Token.STRING:\n       case Token.THIS:\n       case Token.TRUE:\n@@ -1850,15 +1873,6 @@\n   }\n \n   /**\n-   * Is this an sparse ARRAYLIT node\n-   */\n-  static boolean isSparseArray(Node node) {\n-    Preconditions.checkArgument(isArrayLiteral(node));\n-    int[] skipList \u003d (int[]) node.getProp(Node.SKIP_INDEXES_PROP);\n-    return skipList !\u003d null \u0026\u0026 skipList.length \u003e 0;\n-  }\n-\n-  /**\n    * Is this node or any of its children a CALL?\n    */\n   static boolean containsCall(Node n) {\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "FieldDeclaration [1537,1607]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodDeclaration [6449,6693]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Modifier: static [6449,6455]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SimpleType [6456,6462]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: getStringValue [6463,6477]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "SingleVariableDeclaration [6478,6490]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "Block [6492,6693]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "ReturnStatement [5854,5891]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [5861,5890]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: getStringValue [5861,5875]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [5876,5889]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: value [6676,6681]"
+        },
+        {
+          "type": "delete-tree",
+          "from": "VariableDeclarationStatement [5781,5810]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/RenamePrototypes.java",
+        "src/com/google/javascript/jscomp/RenamePrototypes.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.RenamePrototypes\\$ProcessProperties:visit:[NodeTraversal t, Node n, Node parent]:void",
+            "com.google.javascript.jscomp.RenamePrototypes\\$ProcessProperties:processPrototypeParent:[Node n, CompilerInput input]:void"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.RenamePrototypes\\$ProcessProperties:visit:[NodeTraversal t, Node n, Node parent]:void",
+            "com.google.javascript.jscomp.RenamePrototypes\\$ProcessProperties:processPrototypeParent:[Node n, CompilerInput input]:void"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "23",
+            "335",
+            "376"
+          ],
+          "num": 3
+        },
+        {
+          "qualified_names": [
+            "24",
+            "336",
+            "377",
+            "378"
+          ],
+          "num": 4
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/RenamePrototypes.java b/src/com/google/javascript/jscomp/RenamePrototypes.java\nindex 048fc5f..d7558d0 100644\n--- a/src/com/google/javascript/jscomp/RenamePrototypes.java\n+++ b/src/com/google/javascript/jscomp/RenamePrototypes.java\n@@ -21,6 +21,7 @@\n import com.google.javascript.jscomp.NodeTraversal.AbstractPostOrderCallback;\n import com.google.javascript.rhino.Node;\n import com.google.javascript.rhino.Token;\n+import com.google.javascript.rhino.TokenStream;\n \n import java.util.Arrays;\n import java.util.Comparator;\n@@ -332,7 +333,7 @@\n                  child !\u003d null;\n                  child \u003d child.getNext()) {\n \n-              if (child.getType() !\u003d Token.NUMBER) {\n+              if (TokenStream.isJSIdentifier(child.getString())) {\n                 markObjLitPropertyCandidate(child, t.getInput());\n               }\n             }\n@@ -373,7 +374,8 @@\n \n             for (Node key \u003d map.getFirstChild();\n                  key !\u003d null; key \u003d key.getNext()) {\n-              if (key.getType() !\u003d Token.NUMBER) { // May be STRING, GET, or SET\n+              if (TokenStream.isJSIdentifier(key.getString())) {\n+               // May be STRING, GET, or SET\n                 markPrototypePropertyCandidate(key, input);\n               }\n             }\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ImportDeclaration [927,974]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [11151,11196]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "MethodInvocation [12574,12617]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [11151,11162]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: isJSIdentifier [11163,11177]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [11178,11195]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "METHOD_INVOCATION_RECEIVER [12574,12585]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "SimpleName: isJSIdentifier [12586,12600]"
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "METHOD_INVOCATION_ARGUMENTS [12601,12616]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "update-node",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: !\u003d [11119,11121]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "QualifiedName: Token.NUMBER [11122,11134]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [11103,11134]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: !\u003d [12526,12528]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "QualifiedName: Token.NUMBER [12529,12541]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [12512,12541]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/parsing/IRFactory.java",
+        "src/com/google/javascript/jscomp/parsing/IRFactory.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.parsing.IRFactory\\$TransformDispatcher:processArrayLiteral:[ArrayLiteral literalNode]:Node",
+            "com.google.javascript.jscomp.parsing.IRFactory\\$TransformDispatcher:processName:[Name nameNode, boolean asString]:Node",
+            "com.google.javascript.jscomp.parsing.IRFactory\\$TransformDispatcher:transformAsString:[AstNode n]:Node",
+            "com.google.javascript.jscomp.parsing.IRFactory:setSourceInfo:[Node irNode, AstNode node]:void",
+            "com.google.javascript.jscomp.parsing.IRFactory\\$TransformDispatcher:processGeneric:[com.google.javascript.jscomp.mozilla.rhino.Node n]:Node",
+            "com.google.javascript.jscomp.parsing.IRFactory:transform:[AstNode node]:Node",
+            "com.google.javascript.jscomp.parsing.IRFactory\\$TransformDispatcher:processName:[Name nameNode]:Node"
+          ],
+          "num": 7
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.parsing.IRFactory:createJsDocInfoParser:[Comment node]:JsDocInfoParser",
+            "com.google.javascript.jscomp.parsing.IRFactory:transform:[AstNode node]:Node",
+            "com.google.javascript.jscomp.parsing.IRFactory:transformNumberAsString:[NumberLiteral literalNode]:Node",
+            "com.google.javascript.jscomp.parsing.IRFactory\\$TransformDispatcher:processName:[Name nameNode, boolean asString]:Node",
+            "com.google.javascript.jscomp.parsing.IRFactory:setSourceInfo:[Node irNode, AstNode node]:void",
+            "com.google.javascript.jscomp.parsing.IRFactory:transformNameAsString:[Name node]:Node",
+            "com.google.javascript.jscomp.parsing.IRFactory\\$TransformDispatcher:processName:[Name nameNode]:Node",
+            "com.google.javascript.jscomp.parsing.IRFactory:getStringValue:[double value]:String",
+            "com.google.javascript.jscomp.parsing.IRFactory\\$TransformDispatcher:transformAsString:[AstNode n]:Node"
+          ],
+          "num": 9
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "240",
+            "258",
+            "327",
+            "328",
+            "330",
+            "331",
+            "343",
+            "346",
+            "347",
+            "348",
+            "350",
+            "351",
+            "352",
+            "353",
+            "354",
+            "355",
+            "356",
+            "357",
+            "358",
+            "359",
+            "360",
+            "361",
+            "362",
+            "363",
+            "364",
+            "664",
+            "665",
+            "666",
+            "667",
+            "668",
+            "670"
+          ],
+          "num": 31
+        },
+        {
+          "qualified_names": [
+            "222",
+            "241",
+            "242",
+            "243",
+            "245",
+            "246",
+            "247",
+            "248",
+            "249",
+            "250",
+            "251",
+            "252",
+            "253",
+            "254",
+            "255",
+            "256",
+            "257",
+            "258",
+            "259",
+            "260",
+            "261",
+            "262",
+            "263",
+            "264",
+            "265",
+            "266",
+            "267",
+            "268",
+            "269",
+            "270",
+            "271",
+            "272",
+            "273",
+            "274",
+            "275",
+            "276",
+            "303",
+            "361",
+            "362",
+            "363",
+            "364",
+            "365",
+            "367",
+            "368",
+            "369",
+            "371",
+            "684",
+            "685",
+            "686",
+            "687",
+            "688",
+            "689",
+            "690",
+            "691",
+            "692",
+            "693",
+            "694",
+            "695",
+            "696",
+            "697"
+          ],
+          "num": 60
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/parsing/IRFactory.java b/src/com/google/javascript/jscomp/parsing/IRFactory.java\nindex 5e9b298..3d1db67 100644\n--- a/src/com/google/javascript/jscomp/parsing/IRFactory.java\n+++ b/src/com/google/javascript/jscomp/parsing/IRFactory.java\n@@ -238,7 +238,42 @@\n     if (jsDocInfo !\u003d null) {\n       irNode.setJSDocInfo(jsDocInfo);\n     }\n+    setSourceInfo(irNode, node);\n+    return irNode;\n+  }\n \n+  private Node transformNameAsString(Name node) {\n+    JSDocInfo jsDocInfo \u003d handleJsDoc(node);\n+    Node irNode \u003d transformDispatcher.processName(node, true);\n+    if (jsDocInfo !\u003d null) {\n+      irNode.setJSDocInfo(jsDocInfo);\n+    }\n+    setSourceInfo(irNode, node);\n+    return irNode;\n+  }\n+\n+  private Node transformNumberAsString(NumberLiteral literalNode) {\n+    JSDocInfo jsDocInfo \u003d handleJsDoc(literalNode);\n+    Node irNode \u003d newStringNode(getStringValue(literalNode.getNumber()));\n+    if (jsDocInfo !\u003d null) {\n+      irNode.setJSDocInfo(jsDocInfo);\n+    }\n+    setSourceInfo(irNode, literalNode);\n+    return irNode;\n+  }\n+\n+  private static String getStringValue(double value) {\n+    long longValue \u003d (long) value;\n+\n+    // Return \"1\" instead of \"1.0\"\n+    if (longValue \u003d\u003d value) {\n+      return Long.toString(longValue);\n+    } else {\n+      return Double.toString(value);\n+    }\n+  }\n+\n+  private void setSourceInfo(Node irNode, AstNode node) {\n     // If we have a named function, set the position to that of the name.\n     if (irNode.getType() \u003d\u003d Token.FUNCTION \u0026\u0026\n         irNode.getFirstChild().getLineno() !\u003d -1) {\n@@ -255,7 +290,6 @@\n         irNode.setCharno(charno);\n       }\n     }\n-    return irNode;\n   }\n \n   /**\n@@ -324,12 +358,17 @@\n      * unquoted.\n      */\n     private Node transformAsString(AstNode n) {\n-      Node ret \u003d transform(n);\n-      if (ret.getType() \u003d\u003d Token.STRING) {\n+      Node ret;\n+      if (n instanceof Name) {\n+        ret \u003d transformNameAsString((Name)n);\n+      } else if (n instanceof NumberLiteral) {\n+        ret \u003d transformNumberAsString((NumberLiteral)n);\n         ret.putBooleanProp(Node.QUOTED_PROP, true);\n-      } else if (ret.getType() \u003d\u003d Token.NAME) {\n-        ret.setType(Token.STRING);\n+      } else {\n+        ret \u003d transform(n);\n+        ret.putBooleanProp(Node.QUOTED_PROP, true);\n       }\n+      Preconditions.checkState(ret.getType() \u003d\u003d Token.STRING);\n       return ret;\n     }\n \n@@ -340,28 +379,9 @@\n       }\n \n       Node node \u003d newNode(Token.ARRAYLIT);\n-      int skipCount \u003d 0;\n       for (AstNode child : literalNode.getElements()) {\n         Node c \u003d transform(child);\n-        if (c.getType() \u003d\u003d Token.EMPTY) {\n-          skipCount++;\n-        }\n         node.addChildToBack(c);\n-\n-      }\n-      if (skipCount \u003e 0) {\n-        int[] skipIndexes \u003d new int[skipCount];\n-        int i \u003d 0;\n-        int j \u003d 0;\n-        for (Node child : node.children()) {\n-          if (child.getType() \u003d\u003d Token.EMPTY) {\n-            node.removeChild(child);\n-            skipIndexes[j] \u003d i;\n-            j++;\n-          }\n-          i++;\n-        }\n-        node.putProp(Node.SKIP_INDEXES_PROP, skipIndexes);\n       }\n       return node;\n     }\n@@ -661,13 +681,21 @@\n \n     @Override\n     Node processName(Name nameNode) {\n-      if (isReservedKeyword(nameNode.getIdentifier())) {\n-        errorReporter.error(\n-          \"identifier is a reserved word\",\n-          sourceName,\n-          nameNode.getLineno(), \"\", 0);\n+      return processName(nameNode, false);\n+    }\n+\n+    Node processName(Name nameNode, boolean asString) {\n+      if (asString) {\n+        return newStringNode(Token.STRING, nameNode.getIdentifier());\n+      } else {\n+        if (isReservedKeyword(nameNode.getIdentifier())) {\n+          errorReporter.error(\n+            \"identifier is a reserved word\",\n+            sourceName,\n+            nameNode.getLineno(), \"\", 0);\n+        }\n+        return newStringNode(Token.NAME, nameNode.getIdentifier());\n       }\n-      return newStringNode(Token.NAME, nameNode.getIdentifier());\n     }\n \n     /**\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [10190,10517]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [10521,10773]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "IfStatement [14162,14407]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InstanceofExpression [14166,14192]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [14204,14252]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "ExpressionStatement [14356,14399]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [13727,13756]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "IfStatement [13723,13823]",
+          "to": ""
+        },
+        {
+          "type": "delete-tree",
+          "from": "InfixExpression [13638,13667]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "INFIX_EXPRESSION_OPERATOR: || [13680,13682]",
+          "to": ""
+        },
+        {
+          "type": "delete-node",
+          "from": "InfixExpression [13638,13712]",
+          "to": ""
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/rhino/Node.java",
+        "src/com/google/javascript/rhino/Node.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.Node:toString:[StringBuilder sb, boolean printSource, boolean printAnnotations, boolean printType]:void",
+            "com.google.javascript.rhino.Node:propToString:[int propType]:String"
+          ],
+          "num": 2
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.rhino.Node:propToString:[int propType]:String",
+            "com.google.javascript.rhino.Node:toString:[StringBuilder sb, boolean printSource, boolean printAnnotations, boolean printType]:void"
+          ],
+          "num": 2
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "150",
+            "221",
+            "222",
+            "223",
+            "938"
+          ],
+          "num": 5
+        },
+        {
+          "qualified_names": [
+            "149",
+            "220",
+            "221",
+            "222",
+            "937",
+            "938",
+            "939"
+          ],
+          "num": 7
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/rhino/Node.java b/src/com/google/javascript/rhino/Node.java\nindex 47df0ac..8d41e81 100644\n--- a/src/com/google/javascript/rhino/Node.java\n+++ b/src/com/google/javascript/rhino/Node.java\n@@ -147,7 +147,6 @@\n       DIRECT_EVAL        \u003d 48,    // ES5 distinguishes between direct and\n                                   // indirect calls to eval.\n       FREE_CALL          \u003d 49,    // A CALL without an explicit \"this\" value.\n-                                  //\n       LAST_PROP          \u003d 49;\n \n   // values of ISNUMBER_PROP to specify\n@@ -218,9 +217,9 @@\n         case QUOTED_PROP:        return \"quoted\";\n \n         case SYNTHETIC_BLOCK_PROP: return \"synthetic\";\n-        case EMPTY_BLOCK: return \"empty_block\";\n-        case ORIGINALNAME_PROP: return \"originalname\";\n-        case SIDE_EFFECT_FLAGS: return \"side_effect_flags\";\n+        case EMPTY_BLOCK:        return \"empty_block\";\n+        case ORIGINALNAME_PROP:  return \"originalname\";\n+        case SIDE_EFFECT_FLAGS:  return \"side_effect_flags\";\n \n         case IS_CONSTANT_NAME:   return \"is_constant_name\";\n         case IS_OPTIONAL_PARAM:  return \"is_optional_param\";\n@@ -935,7 +934,9 @@\n         // In the case of JsDoc trees, the first child is often not a string\n         // which causes exceptions to be thrown when calling toString or\n         // toStringTree.\n-        if (first.getType() \u003d\u003d Token.STRING) {\n+        if (first \u003d\u003d null || first.getType() !\u003d Token.NAME) {\n+          sb.append(\"\u003cinvalid\u003e\");\n+        } else {\n           sb.append(first.getString());\n         }\n       } else if (this instanceof ScriptOrFnNode) {\n",
+      "operations": []
+    }
+  ],
+  "inducing_type": {
+    "add_classes": {
+      "qualified_names": [
+        "gen/com/google/debugging/sourcemap/proto/Mapping.java",
+        "src/com/google/debugging/sourcemap/SourceMapConsumer.java",
+        "src/com/google/debugging/sourcemap/SourceMapConsumerFactory.java",
+        "src/com/google/debugging/sourcemap/SourceMapConsumerV1.java",
+        "src/com/google/debugging/sourcemap/SourceMapConsumerV2.java",
+        "src/com/google/debugging/sourcemap/SourceMapFormat.java",
+        "src/com/google/debugging/sourcemap/SourceMapGeneratorFactory.java",
+        "src/com/google/debugging/sourcemap/SourceMapLineDecoder.java",
+        "src/com/google/debugging/sourcemap/SourceMapParseException.java",
+        "src/com/google/debugging/sourcemap/SourceMapping.java",
+        "src/com/google/javascript/jscomp/ExploitAssigns.java",
+        "src/com/google/javascript/jscomp/OperaCompoundAssignFix.java",
+        "src/com/google/javascript/jscomp/PeepholeCollectPropertyAssignments.java"
+      ],
+      "num": 13
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.CodeGenerator:tagAsStrict:[]:void",
+        "com.google.javascript.jscomp.parsing.IRFactory:transformNameAsString:[Name node]:Node",
+        "com.google.javascript.jscomp.parsing.IRFactory:getStringValue:[double value]:String",
+        "com.google.javascript.jscomp.CodeGenerator:isSimpleNumber:[String s]:boolean",
+        "com.google.javascript.jscomp.CodeGenerator:getSimpleNumber:[String s]:double",
+        "com.google.javascript.jscomp.parsing.IRFactory:transformNumberAsString:[NumberLiteral literalNode]:Node",
+        "com.google.javascript.jscomp.NodeUtil:getStringValue:[double value]:String",
+        "com.google.javascript.jscomp.parsing.IRFactory:createJsDocInfoParser:[Comment node]:JsDocInfoParser"
+      ],
+      "num": 8
+    },
+    "delete_functions": {
+      "qualified_names": [
+        "com.google.javascript.jscomp.NodeUtil:isThis:[Node node]:boolean",
+        "com.google.javascript.jscomp.parsing.IRFactory\\$TransformDispatcher:processArrayLiteral:[ArrayLiteral literalNode]:Node",
+        "com.google.javascript.jscomp.parsing.IRFactory\\$TransformDispatcher:processGeneric:[com.google.javascript.jscomp.mozilla.rhino.Node n]:Node",
+        "com.google.javascript.jscomp.NodeUtil:getFunctionBody:[Node fn]:Node",
+        "com.google.javascript.jscomp.NodeUtil:arrayToString:[Node literal]:String"
+      ],
+      "num": 5
+    }
+  },
+  "trigger_tests": [
+    {
+      "test_class": "com.google.javascript.jscomp.CodePrinterTest",
+      "test_function": "testNumericKeys",
+      "assertion_line": "1259",
+      "exception": "junit.framework.ComparisonFailure",
+      "message": "expected:\u003cvar x\u003d{[\"010\"]:1}\u003e but was:\u003cvar x\u003d{[10]:1}\u003e"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/com/google/javascript/jscomp/CodeGenerator.java",
+        "src/com/google/javascript/jscomp/CodeGenerator.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CodeGenerator:isSimpleNumber:[String s]:boolean"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "com.google.javascript.jscomp.CodeGenerator:isSimpleNumber:[String s]:boolean"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "745"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "745"
+          ],
+          "num": 1
+        }
+      ],
+      "diff": "diff --git a/src/com/google/javascript/jscomp/CodeGenerator.java b/src/com/google/javascript/jscomp/CodeGenerator.java\nindex ac6299d..535148c 100644\n--- a/src/com/google/javascript/jscomp/CodeGenerator.java\n+++ b/src/com/google/javascript/jscomp/CodeGenerator.java\n@@ -742,7 +742,7 @@\n         return false;\n       }\n     }\n-    return len \u003e 0;\n+    return len \u003e 0 \u0026\u0026 s.charAt(0) !\u003d \u00270\u0027;\n   }\n \n   static double getSimpleNumber(String s) {\n",
+      "operations": [
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "InfixExpression [22258,22287]"
+        },
+        {
+          "type": "move-tree",
+          "from": "",
+          "to": ""
+        },
+        {
+          "type": "insert-node",
+          "from": "",
+          "to": "INFIX_EXPRESSION_OPERATOR: \u0026\u0026 [22266,22268]"
+        },
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "InfixExpression [22269,22287]"
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  },
+  "patch_changed_mths": {
+    "qualified_names": [],
+    "num": 0
+  }
+}

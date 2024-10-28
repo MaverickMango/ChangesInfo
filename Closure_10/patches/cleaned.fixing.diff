@@ -1,0 +1,42 @@
+diff -u -r data/changesInfo//Closure_10/properties/modified_classes/inducing/src/com/google/javascript/jscomp/NodeUtil.java data/changesInfo//Closure_10/cleaned/fixing/src/com/google/javascript/jscomp/NodeUtil.java
+--- data/changesInfo//Closure_10/properties/modified_classes/inducing/src/com/google/javascript/jscomp/NodeUtil.java	2023-12-27 22:36:13.823137937 -0800
++++ data/changesInfo//Closure_10/cleaned/fixing/src/com/google/javascript/jscomp/NodeUtil.java	2023-06-20 01:49:25.536859398 -0700
+@@ -1095,6 +1095,27 @@
+     }
+   }
+ 
++  /**
++   * Apply the supplied predicate against
++   * all possible result Nodes of the expression.
++   */
++  static boolean anyResultsMatch(Node n, Predicate<Node> p) {
++    switch (n.getType()) {
++      case Token.ASSIGN:
++      case Token.COMMA:
++        return anyResultsMatch(n.getLastChild(), p);
++      case Token.AND:
++      case Token.OR:
++        return anyResultsMatch(n.getFirstChild(), p)
++                || anyResultsMatch(n.getLastChild(), p);
++      case Token.HOOK:
++        return anyResultsMatch(n.getFirstChild().getNext(), p)
++                || anyResultsMatch(n.getLastChild(), p);
++      default:
++        return p.apply(n);
++    }
++  }
++
+   static class NumbericResultPredicate implements Predicate<Node> {
+     public boolean apply(Node n) {
+       return isNumericResultHelper(n);
+@@ -1222,7 +1243,7 @@
+ 
+   static boolean mayBeString(Node n, boolean recurse) {
+     if (recurse) {
+-      return valueCheck(n, MAY_BE_STRING_PREDICATE);
++      return anyResultsMatch(n, MAY_BE_STRING_PREDICATE);
+     } else {
+       return mayBeStringHelper(n);
+     }
+Only in data/changesInfo//Closure_10/properties/modified_classes/inducing/src/com/google/javascript/jscomp: PeepholeFoldConstants.java
+Only in data/changesInfo//Closure_10/properties/modified_classes/inducing/: test

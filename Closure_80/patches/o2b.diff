@@ -1,0 +1,899 @@
+diff -r -u original/src/com/google/javascript/jscomp/NodeUtil.java buggy/src/com/google/javascript/jscomp/NodeUtil.java
+--- original/src/com/google/javascript/jscomp/NodeUtil.java	2023-06-13 15:31:43.311100631 +0800
++++ buggy/src/com/google/javascript/jscomp/NodeUtil.java	2023-06-12 11:40:26.894695144 +0800
+@@ -25,6 +25,8 @@
+ import com.google.javascript.rhino.Node;
+ import com.google.javascript.rhino.Token;
+ import com.google.javascript.rhino.TokenStream;
++import com.google.javascript.rhino.jstype.FunctionType;
++import com.google.javascript.rhino.jstype.JSType;
+ import com.google.javascript.rhino.jstype.TernaryValue;
+ 
+ import java.util.Arrays;
+@@ -113,6 +115,9 @@
+       case Token.NUMBER:
+         return TernaryValue.forBoolean(n.getDouble() != 0);
+ 
++      case Token.NOT:
++        return getBooleanValue(n.getLastChild()).not();
++
+       case Token.NULL:
+       case Token.FALSE:
+       case Token.VOID:
+@@ -147,7 +152,7 @@
+    * <code>String()</code> JavaScript cast function.
+    */
+   static String getStringValue(Node n) {
+-    // TODO(user): Convert constant array, object, and regex literals as well.
++    // TODO(user): regex literals as well.
+     switch (n.getType()) {
+       case Token.STRING:
+         return n.getString();
+@@ -179,11 +184,66 @@
+ 
+       case Token.VOID:
+         return "undefined";
++
++      case Token.NOT:
++        TernaryValue child = getBooleanValue(n.getFirstChild());
++        if (child != TernaryValue.UNKNOWN) {
++          return child.toBoolean(true) ? "false" : "true"; // reversed.
++        }
++        break;
++
++      case Token.ARRAYLIT:
++        return arrayToString(n);
++
++      case Token.OBJECTLIT:
++        return "[object Object]";
+     }
+     return null;
+   }
+ 
+   /**
++   * When converting arrays to string using Array.prototype.toString or
++   * Array.prototype.join, the rules for conversion to String are different
++   * than converting each element individually.  Specifically, "null" and
++   * "undefined" are converted to an empty string.
++   * @param n A node that is a member of an Array.
++   * @return The string representation.
++   */
++  static String getArrayElementStringValue(Node n) {
++    return NodeUtil.isNullOrUndefined(n) ? "" : getStringValue(n);
++  }
++
++  static String arrayToString(Node literal) {
++    Node first = literal.getFirstChild();
++    int[] skipIndexes = (int[]) literal.getProp(Node.SKIP_INDEXES_PROP);
++    StringBuilder result = new StringBuilder();
++    int nextSlot = 0;
++    int nextSkipSlot = 0;
++    for (Node n = first; n != null; n = n.getNext()) {
++      while (skipIndexes != null && nextSkipSlot < skipIndexes.length) {
++        if (nextSlot == skipIndexes[nextSkipSlot]) {
++          result.append(',');
++          nextSlot++;
++          nextSkipSlot++;
++        } else {
++          break;
++        }
++      }
++      String childValue = getArrayElementStringValue(n);
++      if (childValue == null) {
++        return null;
++      }
++      if (n != first) {
++        result.append(',');
++      }
++      result.append(childValue);
++
++      nextSlot++;
++    }
++    return result.toString();
++  }
++
++  /**
+    * Gets the value of a node as a Number, or null if it cannot be converted.
+    * When it returns a non-null Double, this method effectively emulates the
+    * <code>Number()</code> JavaScript cast function.
+@@ -192,6 +252,7 @@
+     switch (n.getType()) {
+       case Token.TRUE:
+         return 1.0;
++
+       case Token.FALSE:
+       case Token.NULL:
+         return 0.0;
+@@ -200,9 +261,14 @@
+         return n.getDouble();
+ 
+       case Token.VOID:
+-        return Double.NaN;
++        if (mayHaveSideEffects(n.getFirstChild())) {
++          return null;
++        } else {
++          return Double.NaN;
++        }
+ 
+       case Token.NAME:
++        // Check for known constants
+         String name = n.getString();
+         if (name.equals("undefined")) {
+           return Double.NaN;
+@@ -214,10 +280,107 @@
+           return Double.POSITIVE_INFINITY;
+         }
+         return null;
++
++      case Token.NEG:
++        if (n.getChildCount() == 1 && n.getFirstChild().getType() == Token.NAME
++            && n.getFirstChild().getString().equals("Infinity")) {
++          return Double.NEGATIVE_INFINITY;
++        }
++        return null;
++
++      case Token.NOT:
++        TernaryValue child = getBooleanValue(n.getFirstChild());
++        if (child != TernaryValue.UNKNOWN) {
++          return child.toBoolean(true) ? 0.0 : 1.0; // reversed.
++        }
++        break;
++
++      case Token.STRING:
++        return getStringNumberValue(n.getString());
++
++      case Token.ARRAYLIT:
++      case Token.OBJECTLIT:
++        String value = getStringValue(n);
++        return value != null ? getStringNumberValue(value) : null;
+     }
++
+     return null;
+   }
+ 
++  static Double getStringNumberValue(String rawJsString) {
++    String s = trimJsWhiteSpace(rawJsString);
++    // return ScriptRuntime.toNumber(s);
++    if (s.length() == 0) {
++      return 0.0;
++    }
++
++    if (s.length() > 2
++        && s.charAt(0) == '0'
++        && (s.charAt(1) == 'x' || s.charAt(1) == 'X')) {
++      // Attempt to convert hex numbers.
++      try {
++        return Double.valueOf(Integer.parseInt(s.substring(2), 16));
++      } catch (NumberFormatException e) {
++        return Double.NaN;
++      }
++    }
++
++    if (s.length() > 3
++        && (s.charAt(0) == '-' || s.charAt(0) == '+')
++        && s.charAt(1) == '0'
++        && (s.charAt(2) == 'x' || s.charAt(2) == 'X')) {
++      // hex numbers with explicit signs vary between browsers.
++      return null;
++    }
++
++    // FireFox and IE treat the "Infinity" differently. FireFox is case
++    // insensitive, but IE treats "infinity" as NaN.  So leave it alone.
++    if (s.equals("infinity")
++        || s.equals("-infinity")
++        || s.equals("+infinity")) {
++      return null;
++    }
++
++    try {
++      return Double.parseDouble(s);
++    } catch (NumberFormatException e) {
++      return Double.NaN;
++    }
++  }
++
++  static String trimJsWhiteSpace(String s) {
++    int start = 0;
++    int end = s.length();
++    while (end > 0 && isStrWhiteSpaceChar(s.charAt(end-1))) {
++      end--;
++    }
++    while (start < end && isStrWhiteSpaceChar(s.charAt(start))) {
++      start++;
++    }
++    return s.substring(start, end);
++  }
++
++  /**
++   * Copied from Rhino's ScriptRuntime
++   */
++  static boolean isStrWhiteSpaceChar(int c) {
++    switch (c) {
++      case ' ': // <SP>
++      case '\n': // <LF>
++      case '\r': // <CR>
++      case '\t': // <TAB>
++      case '\u00A0': // <NBSP>
++      case '\u000C': // <FF>
++      case '\u000B': // <VT>
++      case '\u2028': // <LS>
++      case '\u2029': // <PS>
++      case '\uFEFF': // <BOM>
++        return true;
++      default:
++        return Character.getType(c) == Character.SPACE_SEPARATOR;
++    }
++  }
++
+   /**
+    * Gets the function's name. This method recognizes five forms:
+    * <ul>
+@@ -277,8 +440,12 @@
+     // Check for the form { 'x' : function() { } }
+     Node parent = n.getParent();
+     switch (parent.getType()) {
++      case Token.SET:
++      case Token.GET:
+       case Token.STRING:
+         // Return the name of the literal's key.
++        return parent.getString();
++      case Token.NUMBER:
+         return getStringValue(parent);
+     }
+ 
+@@ -297,6 +464,8 @@
+       case Token.TRUE:
+       case Token.FALSE:
+         return true;
++      case Token.NOT:
++        return isImmutableValue(n.getFirstChild());
+       case Token.VOID:
+       case Token.NEG:
+         return isImmutableValue(n.getFirstChild());
+@@ -982,6 +1151,167 @@
+   }
+ 
+   /**
++   * Apply the supplied predicate against the potential
++   * all possible result of the expression.
++   */
++  static boolean valueCheck(Node n, Predicate<Node> p) {
++    switch (n.getType()) {
++      case Token.ASSIGN:
++      case Token.COMMA:
++        return valueCheck(n.getLastChild(), p);
++      case Token.AND:
++      case Token.OR:
++        return valueCheck(n.getFirstChild(), p)
++            && valueCheck(n.getLastChild(), p);
++      case Token.HOOK:
++        return valueCheck(n.getFirstChild().getNext(), p)
++            && valueCheck(n.getLastChild(), p);
++      default:
++        return p.apply(n);
++    }
++  }
++
++  static class NumbericResultPredicate implements Predicate<Node> {
++    public boolean apply(Node n) {
++      return isNumericResultHelper(n);
++    }
++  }
++
++  static final NumbericResultPredicate NUMBERIC_RESULT_PREDICATE =
++      new NumbericResultPredicate();
++
++  /**
++   * Returns true if the result of node evaluation is always a number
++   */
++  static boolean isNumericResult(Node n) {
++    return valueCheck(n, NUMBERIC_RESULT_PREDICATE);
++  }
++
++  static boolean isNumericResultHelper(Node n) {
++    switch (n.getType()) {
++      case Token.ADD:
++        return !mayBeString(n.getFirstChild())
++            && !mayBeString(n.getLastChild());
++      case Token.BITNOT:
++      case Token.BITOR:
++      case Token.BITXOR:
++      case Token.BITAND:
++      case Token.LSH:
++      case Token.RSH:
++      case Token.URSH:
++      case Token.SUB:
++      case Token.MUL:
++      case Token.MOD:
++      case Token.DIV:
++      case Token.INC:
++      case Token.DEC:
++      case Token.POS:
++      case Token.NEG:
++      case Token.NUMBER:
++        return true;
++      case Token.NAME:
++        String name = n.getString();
++        if (name.equals("NaN")) {
++          return true;
++        }
++        if (name.equals("Infinity")) {
++          return true;
++        }
++        return false;
++      default:
++        return false;
++    }
++  }
++
++  static class BooleanResultPredicate implements Predicate<Node> {
++    public boolean apply(Node n) {
++      return isBooleanResultHelper(n);
++    }
++  }
++
++  static final BooleanResultPredicate BOOLEAN_RESULT_PREDICATE =
++      new BooleanResultPredicate();
++
++  /**
++   * @return Whether the result of node evaluation is always a boolean
++   */
++  static boolean isBooleanResult(Node n) {
++    return valueCheck(n, BOOLEAN_RESULT_PREDICATE);
++  }
++
++  static boolean isBooleanResultHelper(Node n) {
++    switch (n.getType()) {
++      // Primitives
++      case Token.TRUE:
++      case Token.FALSE:
++      // Comparisons
++      case Token.EQ:
++      case Token.NE:
++      case Token.SHEQ:
++      case Token.SHNE:
++      case Token.LT:
++      case Token.GT:
++      case Token.LE:
++      case Token.GE:
++      // Queryies
++      case Token.IN:
++      case Token.INSTANCEOF:
++      // Inversion
++      case Token.NOT:
++        return true;
++      default:
++        return false;
++    }
++  }
++
++  static boolean isUndefined(Node n) {
++    switch (n.getType()) {
++      case Token.VOID:
++        return true;
++      case Token.NAME:
++        return n.getString().equals("undefined");
++    }
++    return false;
++  }
++
++  static boolean isNull(Node n) {
++    return n.getType() == Token.NULL;
++  }
++
++  static boolean isNullOrUndefined(Node n) {
++    return isNull(n) || isUndefined(n);
++  }
++
++  static class MayBeStringResultPredicate implements Predicate<Node> {
++    public boolean apply(Node n) {
++      return mayBeStringHelper(n);
++    }
++  }
++
++  static final MayBeStringResultPredicate MAY_BE_STRING_PREDICATE =
++      new MayBeStringResultPredicate();
++
++  /**
++   * @returns Whether the results is possibly a string.
++   */
++  static boolean mayBeString(Node n) {
++    return mayBeString(n, true);
++  }
++
++  static boolean mayBeString(Node n, boolean recurse) {
++    if (recurse) {
++      return valueCheck(n, MAY_BE_STRING_PREDICATE);
++    } else {
++      return mayBeStringHelper(n);
++    }
++  }
++
++  static boolean mayBeStringHelper(Node n) {
++    return !isNumericResult(n) && !isBooleanResult(n)
++        && !isUndefined(n) && !isNull(n);
++  }
++
++  /**
+    * Returns true if the operator is associative.
+    * e.g. (a * b) * c = a * (b * c)
+    * Note: "+" is not associative because it is also the concatenation
+@@ -993,6 +1323,7 @@
+       case Token.AND:
+       case Token.OR:
+       case Token.BITOR:
++      case Token.BITXOR:
+       case Token.BITAND:
+         return true;
+       default:
+@@ -1011,6 +1342,7 @@
+     switch (type) {
+       case Token.MUL:
+       case Token.BITOR:
++      case Token.BITXOR:
+       case Token.BITAND:
+         return true;
+       default:
+@@ -1504,6 +1836,23 @@
+     return node.getType() == Token.THIS;
+   }
+ 
++
++  /**
++   * Is this an ARRAYLIT node
++   */
++  static boolean isArrayLiteral(Node node) {
++    return node.getType() == Token.ARRAYLIT;
++  }
++
++  /**
++   * Is this an sparse ARRAYLIT node
++   */
++  static boolean isSparseArray(Node node) {
++    Preconditions.checkArgument(isArrayLiteral(node));
++    int[] skipList = (int[]) node.getProp(Node.SKIP_INDEXES_PROP);
++    return skipList != null && skipList.length > 0;
++  }
++
+   /**
+    * Is this node or any of its children a CALL?
+    */
+@@ -1680,6 +2029,55 @@
+   }
+ 
+   /**
++   * Get the name of an object literal key.
++   *
++   * @param key A node
++   */
++  static String getObjectLitKeyName(Node key) {
++    switch (key.getType()) {
++      case Token.NUMBER:
++        return NodeUtil.getStringValue(key);
++      case Token.STRING:
++      case Token.GET:
++      case Token.SET:
++        return key.getString();
++    }
++    throw new IllegalStateException("Unexpected node type: " + key);
++  }
++
++  /**
++   * @param key A OBJECTLIT key node.
++   * @return The type expected when using the key.
++   */
++  static JSType getObjectLitKeyTypeFromValueType(Node key, JSType valueType) {
++    if (valueType != null) {
++      switch (key.getType()) {
++        case Token.GET:
++          // GET must always return a function type.
++          if (valueType.isFunctionType()) {
++            FunctionType fntype = ((FunctionType) valueType);
++            valueType = fntype.getReturnType();
++          } else {
++            return null;
++          }
++          break;
++        case Token.SET:
++          if (valueType.isFunctionType()) {
++            // SET must always return a function type.
++            FunctionType fntype = ((FunctionType) valueType);
++            Node param = fntype.getParametersNode().getFirstChild();
++            // SET function must always have one parameter.
++            valueType = param.getJSType();
++          } else {
++            return null;
++          }
++          break;
++      }
++    }
++    return valueType;
++  }
++
++  /**
+    * Determines whether a node represents an object literal get or set key
+    * (e.g. key1 in {get key1() {}, set key2(a){}).
+    *
+@@ -2110,7 +2508,6 @@
+    *   "void 0"
+    */
+   static Node newUndefinedNode(Node srcReferenceNode) {
+-    // TODO(johnlenz): Why this instead of the more common "undefined"?
+     Node node = new Node(Token.VOID, Node.newNumber(0));
+     if (srcReferenceNode != null) {
+         node.copyInformationFromForTree(srcReferenceNode);
+@@ -2344,9 +2741,9 @@
+     * @return The Node containing the Function parameters.
+     */
+   static Node getFnParameters(Node fnNode) {
+-   // Function NODE: [ FUNCTION -> NAME, LP -> ARG1, ARG2, ... ]
+-   Preconditions.checkArgument(fnNode.getType() == Token.FUNCTION);
+-   return fnNode.getFirstChild().getNext();
++    // Function NODE: [ FUNCTION -> NAME, LP -> ARG1, ARG2, ... ]
++    Preconditions.checkArgument(fnNode.getType() == Token.FUNCTION);
++    return fnNode.getFirstChild().getNext();
+   }
+ 
+   /**
+diff -r -u original/test/com/google/javascript/jscomp/NodeUtilTest.java buggy/test/com/google/javascript/jscomp/NodeUtilTest.java
+--- original/test/com/google/javascript/jscomp/NodeUtilTest.java	2023-06-13 15:31:43.315100651 +0800
++++ buggy/test/com/google/javascript/jscomp/NodeUtilTest.java	2023-06-12 11:40:26.894695144 +0800
+@@ -36,6 +36,8 @@
+ 
+   private static Node parse(String js) {
+     Compiler compiler = new Compiler();
++    compiler.initCompilerOptionsIfTesting();
++    compiler.getOptions().languageIn = LanguageMode.ECMASCRIPT5;
+     Node n = compiler.parseTestCode(js);
+     assertEquals(0, compiler.getErrorCount());
+     return n;
+@@ -196,8 +198,8 @@
+     assertEquals("1", NodeUtil.getStringValue(getNode("1.0")));
+     assertEquals("0", NodeUtil.getStringValue(getNode("'0'")));
+     assertEquals(null, NodeUtil.getStringValue(getNode("/a/")));
+-    assertEquals(null, NodeUtil.getStringValue(getNode("{}")));
+-    assertEquals(null, NodeUtil.getStringValue(getNode("[]")));
++    assertEquals("[object Object]", NodeUtil.getStringValue(getNode("{}")));
++    assertEquals("", NodeUtil.getStringValue(getNode("[]")));
+     assertEquals("false", NodeUtil.getStringValue(getNode("false")));
+     assertEquals("null", NodeUtil.getStringValue(getNode("null")));
+     assertEquals("0", NodeUtil.getStringValue(getNode("0")));
+@@ -211,6 +213,20 @@
+     assertEquals(null, NodeUtil.getStringValue(getNode("x")));
+   }
+ 
++  public void testGetArrayStringValue() {
++    assertEquals("", NodeUtil.getStringValue(getNode("[]")));
++    assertEquals("", NodeUtil.getStringValue(getNode("['']")));
++    assertEquals("", NodeUtil.getStringValue(getNode("[null]")));
++    assertEquals("", NodeUtil.getStringValue(getNode("[undefined]")));
++    assertEquals("", NodeUtil.getStringValue(getNode("[void 0]")));
++    assertEquals("NaN", NodeUtil.getStringValue(getNode("[NaN]")));
++    assertEquals(",", NodeUtil.getStringValue(getNode("[,'']")));
++    assertEquals(",,", NodeUtil.getStringValue(getNode("[[''],[''],['']]")));
++    assertEquals("1,2", NodeUtil.getStringValue(getNode("[[1.0],[2.0]]")));
++    assertEquals(null, NodeUtil.getStringValue(getNode("[a]")));
++    assertEquals(null, NodeUtil.getStringValue(getNode("[1,a]")));
++  }
++
+   public void testIsObjectLiteralKey1() throws Exception {
+     testIsObjectLiteralKey(
+       parseExpr("({})"), false);
+@@ -669,10 +685,10 @@
+             parse("foo();")));
+     assertNodeNames(Sets.<String>newHashSet(),
+         NodeUtil.getVarsDeclaredInBranch(
+-            parse("function(){var foo;}")));
++            parse("function f(){var foo;}")));
+     assertNodeNames(Sets.newHashSet("goo"),
+         NodeUtil.getVarsDeclaredInBranch(
+-            parse("var goo;function(){var foo;}")));
++            parse("var goo;function f(){var foo;}")));
+   }
+ 
+   private void assertNodeNames(Set<String> nodeNames, Collection<Node> nodes) {
+@@ -1293,4 +1309,304 @@
+     ImmutableSet<String> defines = ImmutableSet.of();
+     return NodeUtil.isValidDefineValue(value, defines);
+   }
++
++  public void testGetNumberValue() {
++    // Strings
++    assertEquals(1.0, NodeUtil.getNumberValue(getNode("'\\uFEFF1'")));
++    assertEquals(0.0, NodeUtil.getNumberValue(getNode("''")));
++    assertEquals(0.0, NodeUtil.getNumberValue(getNode("' '")));
++    assertEquals(0.0, NodeUtil.getNumberValue(getNode("' \\t'")));
++    assertEquals(0.0, NodeUtil.getNumberValue(getNode("'+0'")));
++    assertEquals(-0.0, NodeUtil.getNumberValue(getNode("'-0'")));
++    assertEquals(2.0, NodeUtil.getNumberValue(getNode("'+2'")));
++    assertEquals(-1.6, NodeUtil.getNumberValue(getNode("'-1.6'")));
++    assertEquals(16.0, NodeUtil.getNumberValue(getNode("'16'")));
++    assertEquals(16.0, NodeUtil.getNumberValue(getNode("' 16 '")));
++    assertEquals(16.0, NodeUtil.getNumberValue(getNode("' 16 '")));
++    assertEquals(12300.0, NodeUtil.getNumberValue(getNode("'123e2'")));
++    assertEquals(12300.0, NodeUtil.getNumberValue(getNode("'123E2'")));
++    assertEquals(1.23, NodeUtil.getNumberValue(getNode("'123e-2'")));
++    assertEquals(1.23, NodeUtil.getNumberValue(getNode("'123E-2'")));
++    assertEquals(-1.23, NodeUtil.getNumberValue(getNode("'-123e-2'")));
++    assertEquals(-1.23, NodeUtil.getNumberValue(getNode("'-123E-2'")));
++    assertEquals(1.23, NodeUtil.getNumberValue(getNode("'+123e-2'")));
++    assertEquals(1.23, NodeUtil.getNumberValue(getNode("'+123E-2'")));
++    assertEquals(12300.0, NodeUtil.getNumberValue(getNode("'+123e+2'")));
++    assertEquals(12300.0, NodeUtil.getNumberValue(getNode("'+123E+2'")));
++
++    assertEquals(15.0, NodeUtil.getNumberValue(getNode("'0xf'")));
++    assertEquals(15.0, NodeUtil.getNumberValue(getNode("'0xF'")));
++
++    // Chrome and rhino behavior differently from FF and IE. FF and IE
++    // consider a negative hex number to be invalid
++    assertEquals(null, NodeUtil.getNumberValue(getNode("'-0xf'")));
++    assertEquals(null, NodeUtil.getNumberValue(getNode("'-0xF'")));
++    assertEquals(null, NodeUtil.getNumberValue(getNode("'+0xf'")));
++    assertEquals(null, NodeUtil.getNumberValue(getNode("'+0xF'")));
++
++    assertEquals(16.0, NodeUtil.getNumberValue(getNode("'0X10'")));
++    assertEquals(Double.NaN, NodeUtil.getNumberValue(getNode("'0X10.8'")));
++    assertEquals(77.0, NodeUtil.getNumberValue(getNode("'077'")));
++    assertEquals(-77.0, NodeUtil.getNumberValue(getNode("'-077'")));
++    assertEquals(-77.5, NodeUtil.getNumberValue(getNode("'-077.5'")));
++    assertEquals(
++        Double.NEGATIVE_INFINITY,
++        NodeUtil.getNumberValue(getNode("'-Infinity'")));
++    assertEquals(
++        Double.POSITIVE_INFINITY,
++        NodeUtil.getNumberValue(getNode("'Infinity'")));
++    assertEquals(
++        Double.POSITIVE_INFINITY,
++        NodeUtil.getNumberValue(getNode("'+Infinity'")));
++    // FireFox treats "infinity" as "Infinity", IE treats it as NaN
++    assertEquals(null, NodeUtil.getNumberValue(getNode("'-infinity'")));
++    assertEquals(null, NodeUtil.getNumberValue(getNode("'infinity'")));
++    assertEquals(null, NodeUtil.getNumberValue(getNode("'+infinity'")));
++
++    assertEquals(Double.NaN, NodeUtil.getNumberValue(getNode("'NaN'")));
++    assertEquals(
++        Double.NaN, NodeUtil.getNumberValue(getNode("'some unknown string'")));
++    assertEquals(Double.NaN, NodeUtil.getNumberValue(getNode("'123 blah'")));
++
++    // Literals
++    assertEquals(1.0, NodeUtil.getNumberValue(getNode("1")));
++    // "-1" is parsed as a literal
++    assertEquals(-1.0, NodeUtil.getNumberValue(getNode("-1")));
++    // "+1" is parse as an op + literal
++    assertEquals(null, NodeUtil.getNumberValue(getNode("+1")));
++    assertEquals(22.0, NodeUtil.getNumberValue(getNode("22")));
++    assertEquals(18.0, NodeUtil.getNumberValue(getNode("022")));
++    assertEquals(34.0, NodeUtil.getNumberValue(getNode("0x22")));
++
++    assertEquals(
++        1.0, NodeUtil.getNumberValue(getNode("true")));
++    assertEquals(
++        0.0, NodeUtil.getNumberValue(getNode("false")));
++    assertEquals(
++        0.0, NodeUtil.getNumberValue(getNode("null")));
++    assertEquals(
++        Double.NaN, NodeUtil.getNumberValue(getNode("void 0")));
++    assertEquals(
++        Double.NaN, NodeUtil.getNumberValue(getNode("void f")));
++    // values with side-effects are ignored.
++    assertEquals(
++        null, NodeUtil.getNumberValue(getNode("void f()")));
++    assertEquals(
++        Double.NaN, NodeUtil.getNumberValue(getNode("NaN")));
++    assertEquals(
++        Double.POSITIVE_INFINITY,
++        NodeUtil.getNumberValue(getNode("Infinity")));
++    assertEquals(
++        Double.NEGATIVE_INFINITY,
++        NodeUtil.getNumberValue(getNode("-Infinity")));
++
++    // "infinity" is not a known name.
++    assertEquals(null, NodeUtil.getNumberValue(getNode("infinity")));
++    assertEquals(null, NodeUtil.getNumberValue(getNode("-infinity")));
++
++    // getNumberValue only converts literals
++    assertEquals(null, NodeUtil.getNumberValue(getNode("x")));
++    assertEquals(null, NodeUtil.getNumberValue(getNode("x.y")));
++    assertEquals(null, NodeUtil.getNumberValue(getNode("1/2")));
++    assertEquals(null, NodeUtil.getNumberValue(getNode("1-2")));
++    assertEquals(null, NodeUtil.getNumberValue(getNode("+1")));
++  }
++
++  public void testIsNumbericResult() {
++    assertTrue(NodeUtil.isNumericResult(getNode("1")));
++    assertFalse(NodeUtil.isNumericResult(getNode("true")));
++    assertTrue(NodeUtil.isNumericResult(getNode("+true")));
++    assertTrue(NodeUtil.isNumericResult(getNode("+1")));
++    assertTrue(NodeUtil.isNumericResult(getNode("-1")));
++    assertTrue(NodeUtil.isNumericResult(getNode("-Infinity")));
++    assertTrue(NodeUtil.isNumericResult(getNode("Infinity")));
++    assertTrue(NodeUtil.isNumericResult(getNode("NaN")));
++    assertFalse(NodeUtil.isNumericResult(getNode("undefined")));
++    assertFalse(NodeUtil.isNumericResult(getNode("void 0")));
++
++    assertTrue(NodeUtil.isNumericResult(getNode("a << b")));
++    assertTrue(NodeUtil.isNumericResult(getNode("a >> b")));
++    assertTrue(NodeUtil.isNumericResult(getNode("a >>> b")));
++
++    assertFalse(NodeUtil.isNumericResult(getNode("a == b")));
++    assertFalse(NodeUtil.isNumericResult(getNode("a != b")));
++    assertFalse(NodeUtil.isNumericResult(getNode("a === b")));
++    assertFalse(NodeUtil.isNumericResult(getNode("a !== b")));
++    assertFalse(NodeUtil.isNumericResult(getNode("a < b")));
++    assertFalse(NodeUtil.isNumericResult(getNode("a > b")));
++    assertFalse(NodeUtil.isNumericResult(getNode("a <= b")));
++    assertFalse(NodeUtil.isNumericResult(getNode("a >= b")));
++    assertFalse(NodeUtil.isNumericResult(getNode("a in b")));
++    assertFalse(NodeUtil.isNumericResult(getNode("a instanceof b")));
++
++    assertFalse(NodeUtil.isNumericResult(getNode("'a'")));
++    assertFalse(NodeUtil.isNumericResult(getNode("'a'+b")));
++    assertFalse(NodeUtil.isNumericResult(getNode("a+'b'")));
++    assertFalse(NodeUtil.isNumericResult(getNode("a+b")));
++    assertFalse(NodeUtil.isNumericResult(getNode("a()")));
++    assertFalse(NodeUtil.isNumericResult(getNode("''.a")));
++    assertFalse(NodeUtil.isNumericResult(getNode("a.b")));
++    assertFalse(NodeUtil.isNumericResult(getNode("a.b()")));
++    assertFalse(NodeUtil.isNumericResult(getNode("a().b()")));
++    assertFalse(NodeUtil.isNumericResult(getNode("new a()")));
++
++    // Definitely not numberic
++    assertFalse(NodeUtil.isNumericResult(getNode("([1,2])")));
++    assertFalse(NodeUtil.isNumericResult(getNode("({a:1})")));
++
++    // Recurse into the expression when necessary.
++    assertTrue(NodeUtil.isNumericResult(getNode("1 && 2")));
++    assertTrue(NodeUtil.isNumericResult(getNode("1 || 2")));
++    assertTrue(NodeUtil.isNumericResult(getNode("a ? 2 : 3")));
++    assertTrue(NodeUtil.isNumericResult(getNode("a,1")));
++    assertTrue(NodeUtil.isNumericResult(getNode("a=1")));
++  }
++
++  public void testIsBooleanResult() {
++    assertFalse(NodeUtil.isBooleanResult(getNode("1")));
++    assertTrue(NodeUtil.isBooleanResult(getNode("true")));
++    assertFalse(NodeUtil.isBooleanResult(getNode("+true")));
++    assertFalse(NodeUtil.isBooleanResult(getNode("+1")));
++    assertFalse(NodeUtil.isBooleanResult(getNode("-1")));
++    assertFalse(NodeUtil.isBooleanResult(getNode("-Infinity")));
++    assertFalse(NodeUtil.isBooleanResult(getNode("Infinity")));
++    assertFalse(NodeUtil.isBooleanResult(getNode("NaN")));
++    assertFalse(NodeUtil.isBooleanResult(getNode("undefined")));
++    assertFalse(NodeUtil.isBooleanResult(getNode("void 0")));
++
++    assertFalse(NodeUtil.isBooleanResult(getNode("a << b")));
++    assertFalse(NodeUtil.isBooleanResult(getNode("a >> b")));
++    assertFalse(NodeUtil.isBooleanResult(getNode("a >>> b")));
++
++    assertTrue(NodeUtil.isBooleanResult(getNode("a == b")));
++    assertTrue(NodeUtil.isBooleanResult(getNode("a != b")));
++    assertTrue(NodeUtil.isBooleanResult(getNode("a === b")));
++    assertTrue(NodeUtil.isBooleanResult(getNode("a !== b")));
++    assertTrue(NodeUtil.isBooleanResult(getNode("a < b")));
++    assertTrue(NodeUtil.isBooleanResult(getNode("a > b")));
++    assertTrue(NodeUtil.isBooleanResult(getNode("a <= b")));
++    assertTrue(NodeUtil.isBooleanResult(getNode("a >= b")));
++    assertTrue(NodeUtil.isBooleanResult(getNode("a in b")));
++    assertTrue(NodeUtil.isBooleanResult(getNode("a instanceof b")));
++
++    assertFalse(NodeUtil.isBooleanResult(getNode("'a'")));
++    assertFalse(NodeUtil.isBooleanResult(getNode("'a'+b")));
++    assertFalse(NodeUtil.isBooleanResult(getNode("a+'b'")));
++    assertFalse(NodeUtil.isBooleanResult(getNode("a+b")));
++    assertFalse(NodeUtil.isBooleanResult(getNode("a()")));
++    assertFalse(NodeUtil.isBooleanResult(getNode("''.a")));
++    assertFalse(NodeUtil.isBooleanResult(getNode("a.b")));
++    assertFalse(NodeUtil.isBooleanResult(getNode("a.b()")));
++    assertFalse(NodeUtil.isBooleanResult(getNode("a().b()")));
++    assertFalse(NodeUtil.isBooleanResult(getNode("new a()")));
++
++    // Definitely not boolean
++    assertFalse(NodeUtil.isBooleanResult(getNode("([true,false])")));
++    assertFalse(NodeUtil.isBooleanResult(getNode("({a:true})")));
++
++    // These are boolean but aren't handled yet, "false" here means "unknown".
++    assertTrue(NodeUtil.isBooleanResult(getNode("true && false")));
++    assertTrue(NodeUtil.isBooleanResult(getNode("true || false")));
++    assertTrue(NodeUtil.isBooleanResult(getNode("a ? true : false")));
++    assertTrue(NodeUtil.isBooleanResult(getNode("a,true")));
++    assertTrue(NodeUtil.isBooleanResult(getNode("a=true")));
++    assertFalse(NodeUtil.isBooleanResult(getNode("a=1")));
++  }
++
++  public void testMayBeString() {
++    assertFalse(NodeUtil.mayBeString(getNode("1")));
++    assertFalse(NodeUtil.mayBeString(getNode("true")));
++    assertFalse(NodeUtil.mayBeString(getNode("+true")));
++    assertFalse(NodeUtil.mayBeString(getNode("+1")));
++    assertFalse(NodeUtil.mayBeString(getNode("-1")));
++    assertFalse(NodeUtil.mayBeString(getNode("-Infinity")));
++    assertFalse(NodeUtil.mayBeString(getNode("Infinity")));
++    assertFalse(NodeUtil.mayBeString(getNode("NaN")));
++    assertFalse(NodeUtil.mayBeString(getNode("undefined")));
++    assertFalse(NodeUtil.mayBeString(getNode("void 0")));
++    assertFalse(NodeUtil.mayBeString(getNode("null")));
++
++    assertFalse(NodeUtil.mayBeString(getNode("a << b")));
++    assertFalse(NodeUtil.mayBeString(getNode("a >> b")));
++    assertFalse(NodeUtil.mayBeString(getNode("a >>> b")));
++
++    assertFalse(NodeUtil.mayBeString(getNode("a == b")));
++    assertFalse(NodeUtil.mayBeString(getNode("a != b")));
++    assertFalse(NodeUtil.mayBeString(getNode("a === b")));
++    assertFalse(NodeUtil.mayBeString(getNode("a !== b")));
++    assertFalse(NodeUtil.mayBeString(getNode("a < b")));
++    assertFalse(NodeUtil.mayBeString(getNode("a > b")));
++    assertFalse(NodeUtil.mayBeString(getNode("a <= b")));
++    assertFalse(NodeUtil.mayBeString(getNode("a >= b")));
++    assertFalse(NodeUtil.mayBeString(getNode("a in b")));
++    assertFalse(NodeUtil.mayBeString(getNode("a instanceof b")));
++
++    assertTrue(NodeUtil.mayBeString(getNode("'a'")));
++    assertTrue(NodeUtil.mayBeString(getNode("'a'+b")));
++    assertTrue(NodeUtil.mayBeString(getNode("a+'b'")));
++    assertTrue(NodeUtil.mayBeString(getNode("a+b")));
++    assertTrue(NodeUtil.mayBeString(getNode("a()")));
++    assertTrue(NodeUtil.mayBeString(getNode("''.a")));
++    assertTrue(NodeUtil.mayBeString(getNode("a.b")));
++    assertTrue(NodeUtil.mayBeString(getNode("a.b()")));
++    assertTrue(NodeUtil.mayBeString(getNode("a().b()")));
++    assertTrue(NodeUtil.mayBeString(getNode("new a()")));
++
++    // These can't be strings but they aren't handled yet.
++    assertFalse(NodeUtil.mayBeString(getNode("1 && 2")));
++    assertFalse(NodeUtil.mayBeString(getNode("1 || 2")));
++    assertFalse(NodeUtil.mayBeString(getNode("1 ? 2 : 3")));
++    assertFalse(NodeUtil.mayBeString(getNode("1,2")));
++    assertFalse(NodeUtil.mayBeString(getNode("a=1")));
++    assertFalse(NodeUtil.mayBeString(getNode("1+1")));
++    assertFalse(NodeUtil.mayBeString(getNode("true+true")));
++    assertFalse(NodeUtil.mayBeString(getNode("null+null")));
++    assertFalse(NodeUtil.mayBeString(getNode("NaN+NaN")));
++
++    // These are not strings but they aren't primitives either
++    assertTrue(NodeUtil.mayBeString(getNode("([1,2])")));
++    assertTrue(NodeUtil.mayBeString(getNode("({a:1})")));
++    assertTrue(NodeUtil.mayBeString(getNode("({}+1)")));
++    assertTrue(NodeUtil.mayBeString(getNode("(1+{})")));
++    assertTrue(NodeUtil.mayBeString(getNode("([]+1)")));
++    assertTrue(NodeUtil.mayBeString(getNode("(1+[])")));
++  }
++
++  public void testGetNearestFunctionName() {
++    testFunctionName("function a() {}", "a");
++    testFunctionName("(function a() {})", "a");
++    testFunctionName("({a:function () {}})", "a");
++    testFunctionName("({get a() {}})", "a");
++    testFunctionName("({set a(b) {}})", "a");
++    testFunctionName("({set a(b) {}})", "a");
++    testFunctionName("({1:function () {}})", "1");
++    testFunctionName("var a = function a() {}", "a");
++    testFunctionName("var a;a = function a() {}", "a");
++    testFunctionName("var o;o.a = function a() {}", "o.a");
++    testFunctionName("this.a = function a() {}", "this.a");
++  }
++
++  static void testFunctionName(String js, String expected) {
++    assertEquals(
++        expected,
++        NodeUtil.getNearestFunctionName(getFunctionNode(js)));
++  }
++
++  static Node getFunctionNode(String js) {
++    Node root = parse(js);
++    return getFunctionNode(root);
++  }
++
++  static Node getFunctionNode(Node n) {
++    if (n.getType() == Token.FUNCTION) {
++      return n;
++    }
++    for (Node c : n.children()) {
++      Node result = getFunctionNode(c);
++      if (result != null) {
++        return result;
++      }
++    }
++    return null;
++  }
+ }

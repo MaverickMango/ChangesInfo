@@ -1,0 +1,143 @@
+{
+  "logger": {
+    "currentLogLevel": 20,
+    "name": "root.bean.benchmarks.Defects4JBug"
+  },
+  "d4jCmd": "/home/liumengjiao/Desktop/defects4j/framework/bin/defects4j",
+  "dataDir": "data/changesInfo/",
+  "properties": {
+    "trigger.tests": "org.apache.commons.codec.binary.Base64InputStreamTest::testCodec105",
+    "test.dir": "src/test",
+    "clz.modified": "org.apache.commons.codec.binary.Base64,org.apache.commons.codec.binary.Base64InputStream",
+    "src.dir": "src/java"
+  },
+  "timeoutSecond": 100,
+  "proj": "Codec",
+  "id": "8",
+  "workingDir": "../bugs/Codec_8_tmp",
+  "bug_name": "Codec_8",
+  "derive": "defects4j",
+  "trigger_tests": [
+    {
+      "test_class": "org.apache.commons.codec.binary.Base64InputStreamTest",
+      "test_function": "testCodec105",
+      "assertion_line": "58",
+      "exception": "java.lang.ArrayIndexOutOfBoundsException",
+      "message": "2"
+    }
+  ],
+  "fixing_changes": [
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/codec/binary/Base64.java",
+        "src/java/org/apache/commons/codec/binary/Base64.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [],
+          "num": 0
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.codec.binary.Base64:setInitialBuffer:[byte[] out, int outPos, int outAvail]:void"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "418"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "419",
+            "420",
+            "421",
+            "422",
+            "423",
+            "424",
+            "425"
+          ],
+          "num": 7
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/codec/binary/Base64.java b/src/java/org/apache/commons/codec/binary/Base64.java\nindex 2521c27..76f14f5 100644\n--- a/src/java/org/apache/commons/codec/binary/Base64.java\n+++ b/src/java/org/apache/commons/codec/binary/Base64.java\n@@ -416,6 +416,13 @@\n         return eof ? -1 : 0;\n     }\n \n+    void setInitialBuffer(byte[] out, int outPos, int outAvail) {\n+        if (out !\u003d null \u0026\u0026 out.length \u003d\u003d outAvail) {\n+            buffer \u003d out;\n+            pos \u003d outPos;\n+            readPos \u003d outPos;\n+        }\n+    }\n     /**\n      * \u003cp\u003e\n      * Encodes all of the provided data, starting at inPos, for inAvail bytes. Must be called at least twice: once with\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "MethodDeclaration [16397,16609]"
+        }
+      ]
+    },
+    {
+      "changed_type": "UPDATE",
+      "changed_class": [
+        "src/java/org/apache/commons/codec/binary/Base64InputStream.java",
+        "src/java/org/apache/commons/codec/binary/Base64InputStream.java"
+      ],
+      "changed_functions": [
+        {
+          "qualified_names": [
+            "org.apache.commons.codec.binary.Base64InputStream:read:[byte b[], int offset, int len]:int"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "org.apache.commons.codec.binary.Base64InputStream:read:[byte b[], int offset, int len]:int"
+          ],
+          "num": 1
+        }
+      ],
+      "changed_lines": [
+        {
+          "qualified_names": [
+            "168"
+          ],
+          "num": 1
+        },
+        {
+          "qualified_names": [
+            "169",
+            "170",
+            "171"
+          ],
+          "num": 3
+        }
+      ],
+      "diff": "diff --git a/src/java/org/apache/commons/codec/binary/Base64InputStream.java b/src/java/org/apache/commons/codec/binary/Base64InputStream.java\nindex ad006f2..a706702 100644\n--- a/src/java/org/apache/commons/codec/binary/Base64InputStream.java\n+++ b/src/java/org/apache/commons/codec/binary/Base64InputStream.java\n@@ -166,6 +166,9 @@\n                 if (!base64.hasData()) {\n                     byte[] buf \u003d new byte[doEncode ? 4096 : 8192];\n                     int c \u003d in.read(buf);\n+                    if (c \u003e 0 \u0026\u0026 b.length \u003d\u003d len) {\n+                        base64.setInitialBuffer(b, offset, len);\n+                    }\n                     if (doEncode) {\n                         base64.encode(buf, 0, c);\n                     } else {\n",
+      "operations": [
+        {
+          "type": "insert-tree",
+          "from": "",
+          "to": "IfStatement [6850,6968]"
+        }
+      ]
+    }
+  ],
+  "fixing_type": {
+    "add_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "delete_classes": {
+      "qualified_names": [],
+      "num": 0
+    },
+    "add_functions": {
+      "qualified_names": [
+        "org.apache.commons.codec.binary.Base64:setInitialBuffer:[byte[] out, int outPos, int outAvail]:void"
+      ],
+      "num": 1
+    },
+    "delete_functions": {
+      "qualified_names": [],
+      "num": 0
+    }
+  }
+}
